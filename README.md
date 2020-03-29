@@ -175,12 +175,14 @@ Let's take an example. Factor `f` has query `hash_bit_5` and dependencies `[inpu
 
 Our factor `f` would have a table such as:
 
-| `bit_13`        | `bit_21`        | `P(hash_bit_5 = 1 | bit_13, bit_21)` |
+
+| `bit_13`        | `bit_21`        | `P(hash_bit_5 = 1 ｜  bit_13, bit_21)` |
 | --------------- | --------------- | ------------------------------------ |
-| `0`             | `0`             | `P(1 | 0, 0) = ?`                    |
-| `0`             | `1`             | `P(1 | 0, 1) = ?`                    |
-| `1`             | `0`             | `P(1 | 1, 0) = ?`                    |
-| `1`             | `1`             | `P(1 | 1, 1) = ?`                    |
+| `0`             | `0`             | `P(1 ｜ 0, 0) = ?`                    |
+| `0`             | `1`             | `P(1 ｜ 0, 1) = ?`                    |
+| `1`             | `0`             | `P(1 ｜ 1, 0) = ?`                    |
+| `1`             | `1`             | `P(1 ｜ 1, 1) = ?`                    |
+
 
 **Note**: It's not necessary to compute `P(hash_bit_5 = 0 | bit_13, bit_21)` because it can be derived by `1.0 - P(hash_bit_5 = 1 | bit_13, bit_21)`.
 
