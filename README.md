@@ -252,13 +252,13 @@ The code for this section is in the `md5` directory. You can run tests with `pyt
 
 # References and Resources
 
-- [1] https://www.duo.uio.no/bitstream/handle/10852/34912/thesis-output.pdf?sequence=1&isAllowed=y
+- [1] [SAT-based preimage attacks on SHA-1, Masters Thesis of Vegard Nossum](https://www.duo.uio.no/bitstream/handle/10852/34912/thesis-output.pdf?sequence=1&isAllowed=y)
 
-- [2] http://jheusser.github.io/2013/02/03/satcoin.html
+- [2] [Explanation on using SAT solver with BitCoin](http://jheusser.github.io/2013/02/03/satcoin.html)
 
-- [3] https://www.microsoft.com/en-us/research/publication/applications-of-sat-solvers-to-cryptanalysis-of-hash-functions/
+- [3] [SAT Solvers for Cryptanalysis](https://www.microsoft.com/en-us/research/publication/applications-of-sat-solvers-to-cryptanalysis-of-hash-functions/)
 
-- [4] http://nghiaho.com/?page_id=1366
+- [4] [Loopy Belief Propagation Explanation](http://nghiaho.com/?page_id=1366)
 
-- [5] https://github.com/narkkil/md5
+- [5] [md5 Implementation](https://github.com/narkkil/md5)
 
