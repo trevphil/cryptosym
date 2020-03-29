@@ -107,7 +107,7 @@ The tests are currently configured to predict the 32-bit nonce for the [Genesis 
 
 ## Dataset
 
-The probabilistic approaches require a dataset. I formed a dataset by generating random 64-bit messages, feeding them to SHA-256, and writing the output to a CSV file. In real life, a message is usually much larger than 64 bits, but this is just for proof-of-concent.
+The probabilistic approaches require a dataset. I formed a dataset by generating random 64-bit messages, feeding them to SHA-256, and writing the output to a CSV file. In real life, a message is usually much larger than 64 bits, but this is just for proof-of-concept.
 
 Each line in the CSV file consists of 256 + 64 = 320 values, each 0 or 1. The first 256 entries are the SHA-256 hash and the remaining 64 are the hash input.
 
@@ -178,10 +178,10 @@ Our factor `f` would have a table such as:
 
 | `bit_13`        | `bit_21`        | `P(hash_bit_5 = 1 ｜  bit_13, bit_21)` |
 | --------------- | --------------- | ------------------------------------ |
-| `0`             | `0`             | `P(1 ｜ 0, 0) = ?`                    |
-| `0`             | `1`             | `P(1 ｜ 0, 1) = ?`                    |
-| `1`             | `0`             | `P(1 ｜ 1, 0) = ?`                    |
-| `1`             | `1`             | `P(1 ｜ 1, 1) = ?`                    |
+| 0             | 0             | `P(1 ｜ 0, 0) = ?`                    |
+| 0             | 1             | `P(1 ｜ 0, 1) = ?`                    |
+| 1             | 0             | `P(1 ｜ 1, 0) = ?`                    |
+| 1             | 1             | `P(1 ｜ 1, 1) = ?`                    |
 
 
 **Note**: It's not necessary to compute `P(hash_bit_5 = 0 | bit_13, bit_21)` because it can be derived by `1.0 - P(hash_bit_5 = 1 | bit_13, bit_21)`.
@@ -193,7 +193,7 @@ It's simple actually: go through each item in the dataset. Count how many items 
 
 Now count how many items have `input_message_bit_13 = 0 AND input_message_bit_21 = 1`. Let's call this value **y**.
 
-The CPD we want can be approxiated with **x / y**.
+The CPD we want can be approximated with **x / y**.
 
 Hopefully you can see that as the number of variables in the CPD increases, the chance that our dataset contains an entry where all variables are assigned the values we want will decrease. This would be called a "rare event."
 
@@ -208,6 +208,18 @@ What exactly is a "message"? It's hard to explain, to be honest. It's quite math
 Alternatively, just look at the code: [`factor_graph.py`](./ml/graphs/factor_graph.py)
 
 #### Inference
+
+If the only unknown variable were the hash input bit we are trying to predict, our lives would be easy. We could use the method described in [Creating a factor graph](#creating-a-factor-graph) to get the probability `P(input message bit | all other input message bits and hash bits)`.
+
+However, we don't know the values of all other hash input bits, which is why we have to go to the trouble of LBP.
+
+Let's say we want to know the probability of an input message bit being 1, given values (0 or 1) for all hash bits. Let's call our input message bit B.
+
+First find all factors who reference B, either as their query RV or in their dependency RVs. Multiply together the message from each of these factors to B when **B=1** and store the product in X. Now multiply together the message from each factor to B when **B=0** and store the product in Y.
+
+The probability of B=1 given all of the hash bits is then X / (X + Y).
+
+Note that each time the hash changes, the values of the "observed" RVs change, so loopy belief propagation must be re-run. Additionally, there are no guarantees of convergence with LBP, especially the more loops in the graph.
 
 #### Result
 
