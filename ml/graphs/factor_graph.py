@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from decimal import Decimal, Overflow
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,7 +13,7 @@ class RandomVariable(object):
     self.key = key
     self.message_cache = dict()
     self.neighboring_factors = []
-    self.default_initialization = 1.0
+    self.default_initialization = Decimal(1.0)
 
   def addNeighboringFactor(self, neighbor):
     self.neighboring_factors.append(neighbor)
@@ -25,7 +26,7 @@ class RandomVariable(object):
     return self.message_cache.get(tup, self.default_initialization)
 
   def message(self, to_factor, rv_value):
-    result = 1.0
+    result = Decimal(1.0)
     for factor in self.neighboring_factors:
       if factor is to_factor:
         continue
@@ -40,7 +41,7 @@ class Factor(object):
     self.rvs = [rv for rv in rvs if rv.key in cpd.allVars()]
     self.key = ','.join(sorted({str(rv.key) for rv in self.rvs}))
     self.message_cache = dict()
-    self.default_initialization = 1.0
+    self.default_initialization = Decimal(1.0)
 
     nvars = len(self.rvs)
     nrows = int(2 ** nvars)
@@ -88,15 +89,15 @@ class Factor(object):
     filtered = self.table[search]
     assert filtered.shape[1] == self.table.shape[1]
 
-    result = 0.0
+    result = Decimal(0.0)
     for row_idx in range(filtered.shape[0]):
-      message_product = 1.0
+      message_product = Decimal(1.0)
       for col_idx in range(filtered.shape[1] - 1):
         if col_idx == rv_idx: continue;
         rv_val = filtered[row_idx, col_idx]
         rv = self.rvs[col_idx]
         message_product *= rv.previousMessage(self, rv_val)
-      message_product *= filtered[row_idx, -1]
+      message_product *= Decimal(str(filtered[row_idx, -1]))
       result += message_product
 
     self.message_cache[(to_rv.key, rv_value)] = result
@@ -169,42 +170,58 @@ class FactorGraph(object):
       print('Running loopy belief propagation...')
 
     self.reset()
-    converged = False
-    iter = 0
+    itr, diverged, converged = 0, False, False
 
-    while not converged and iter < max_iterations:
+    while not converged and not diverged and itr < max_iterations:
       converged = True
 
       for factor in self.factors:
+        if diverged: break;
+
         for rv in factor.rvs:
           # Belif propagation: random variables --> factors
           prev0 = rv.previousMessage(factor, 0)
           prev1 = rv.previousMessage(factor, 1)
-          new0 = rv.message(factor, 0)
-          new1 = rv.message(factor, 1)
+          try:
+            new0 = rv.message(factor, 0)
+            new1 = rv.message(factor, 1)
+          except Overflow:
+            diverged, converged = True, False
+            break
+
           err0, err1 = abs(prev0 - new0), abs(prev1 - new1)
-          assert not np.isnan(err0), 'RV->factor : err0 = NaN'
-          assert not np.isnan(err1), 'RV->factor : err1 = NaN'
-          converged = converged and err0 < err_tol and err1 < err_tol
+          if not err0.is_finite() or not err1.is_finite():
+            diverged, converged = True, False
+            break
+          else:
+            converged = converged and err0 < err_tol and err1 < err_tol
 
           # Belief propagation: factors --> random variables
           prev0 = factor.previousMessage(rv, 0)
           prev1 = factor.previousMessage(rv, 1)
-          new0 = factor.message(rv, 0, observed)
-          new1 = factor.message(rv, 1, observed)
+          try:
+            new0 = factor.message(rv, 0, observed)
+            new1 = factor.message(rv, 1, observed)
+          except Overflow:
+            diverged, converged = True, False
+            break
+
           err0, err1 = abs(prev0 - new0), abs(prev1 - new1)
-          assert not np.isnan(err0), 'factor->RV : err0 = NaN'
-          assert not np.isnan(err1), 'factor->RV : err1 = NaN'
-          converged = converged and err0 < err_tol and err1 < err_tol
-      iter += 1
+          if not err0.is_finite() or not err1.is_finite():
+            diverged, converged = True, False
+          else:
+            converged = converged and err0 < err_tol and err1 < err_tol
+      itr += 1
 
     if self.verbose:
       if converged:
-        print('Loopy BP converged in %d iterations.' % iter)
-      else:
+        print('Loopy BP converged in %d iterations.' % itr)
+      elif diverged:
+        print('Loopy BP diverged')
+      elif itr >= max_iterations:
         print('Loopy BP did not converge, max iterations reached')
 
-    return converged, iter
+    return converged, itr
 
 
   def predict(self, rv_index, rv_value):
@@ -216,13 +233,18 @@ class FactorGraph(object):
     rv = [rv for rv in self.rvs if rv.key == rv_index][0]
     factors = [f for f in self.factors if rv in f.rvs]
 
-    total = 1.0
-    total_opposite = 1.0
+    total = Decimal(1.0)
+    total_opposite = Decimal(1.0)
     for factor in factors:
       total *= factor.previousMessage(rv, rv_value)
       total_opposite *= factor.previousMessage(rv, 1 - rv_value)
+      normalizer = min(total, total_opposite)
+      total /= normalizer
+      total_opposite /= normalizer
 
     if total + total_opposite == 0:
       print('WARNING: prediction would divide by zero!')
-      return 0.5
-    return total / (total + total_opposite)
+      return False, 0.5
+
+    prob = total / (total + total_opposite)
+    return prob.is_finite(), float(prob)

@@ -3,6 +3,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 
+from generate_dataset import INDEX_OF_BIT_TO_PREDICT as BIT_PRED
 
 class DirectedGraph(object):
 
@@ -37,15 +38,23 @@ class DirectedGraph(object):
       assert len(shared) == 0, 'No hash input bits should be connected!'
 
     g = nx.DiGraph()
-    queue = list(hash_input_bits)
     visited = set()
-    # Breadth-first search, starting from all hash input bits. Since none
-    # of them are connected, no arrows will point TOWARDS a hash input bit,
-    # which is what we want. The hash input bits are random and should not
+    component = nx.node_connected_component(undirected_graph, BIT_PRED)
+    queue = [b for b in hash_input_bits if b in component]
+    if len(queue) == 0:
+      # If no hash input bits in the graph component, choose random node
+      queue = [next(iter(component))]
+
+    # Breadth-first search, starting from all hash input bits which are
+    # members of the same component in the undirected graph as the bit
+    # we are trying to predict. Since none of the hash input bits are
+    # connected, no arrows will point TOWARDS a hash input bit, which
+    # is what we want. The hash input bits are random and should not
     # be conditionally dependent on anything.
     while len(queue) > 0:
       node = queue.pop(0)
       visited.add(node)
+      g.add_node(node)
       neighbors = list(undirected_graph[node].keys())
 
       for neighbor in neighbors:
@@ -57,7 +66,8 @@ class DirectedGraph(object):
         queue.append(neighbor)
 
     if self.verbose:
-      print('The directed BN has %d edges.' % g.number_of_edges())
+      print('The directed BN has %d edges and %d nodes.' % \
+            (g.number_of_edges(), g.number_of_nodes()))
 
     assert len(list(nx.simple_cycles(g))) == 0, 'BN should have no cycles'
     return g

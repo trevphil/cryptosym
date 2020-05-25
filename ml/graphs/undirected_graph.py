@@ -2,6 +2,8 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 
+from generate_dataset import INDEX_OF_BIT_TO_PREDICT as BIT_PRED
+
 
 class UndirectedGraph(object):
 
@@ -40,19 +42,18 @@ class UndirectedGraph(object):
       # (i, j) score is symmetric to (j, i) score so we only need to
       # calculate an upper-triangular matrix with zeros on the diagonal
       for j in range(i + 1, self.n):
+        counter += 1
 
         if i >= 256 and j >= 256:
           # No edges between hash input bit random variables
           break
 
-        # Make the weight negative since we technically want a MAXIMUM
-        # spanning tree (i.e. the most-negative minimum spanning tree)
-        weight = -self.prob.iHat([i, j])
+        weight = self.prob.iHat([i, j])
         graph.add_edge(i, j, weight=weight)
 
-        counter += 1
-        if counter % 10000 == 0 and self.verbose:
-          print('%.2f%% done.' % (100.0 * counter / max_count))
+        if self.verbose and counter % (max_count / 10) == 0:
+          pct_done = 100.0 * counter / max_count
+          print('%.2f%% done.' % pct_done)
 
     return graph
 
@@ -69,13 +70,19 @@ class UndirectedGraph(object):
           continue
 
         # Prune away least negative edge
-        prune = True
         neighbors = [n for n in graph.edges(rv, data='weight')]
         neighbors = list(sorted(neighbors, key=lambda n: n[2]))
-        to_remove = neighbors[-1] # last one is LEAST negative
+        to_remove = neighbors[0] # first one has smallest mutual info score
         graph.remove_edge(to_remove[0], to_remove[1])
+        prune = True
 
     if self.verbose:
       print('The optimized BN has %d edges.' % graph.number_of_edges())
+      print('\tconnected = {}'.format(nx.is_connected(graph)))
+      print('\tnum connected components = %d' % nx.number_connected_components(graph))
+      largest_cc = max(nx.connected_components(graph), key=len)
+      print('\tlargest component has %d nodes' % len(largest_cc))
+      relevant_component = nx.node_connected_component(graph, BIT_PRED)
+      print('\tcomponent with bit %d has %d nodes' % (BIT_PRED, len(relevant_component)))
 
     return graph

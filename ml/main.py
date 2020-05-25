@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 from numpy import loadtxt
+from matplotlib import pyplot as plt
+
 from graphs.undirected_graph import UndirectedGraph
 from graphs.directed_graph import DirectedGraph
 from graphs.factor_graph import FactorGraph
-
 from utils.probability import Probability
+from generate_dataset import INDEX_OF_BIT_TO_PREDICT as BIT_PRED
 
 VISUALIZE = True
 VERBOSE = True
+ENTRY_POINT = 0
 
 if __name__ == '__main__':
   dataset = loadtxt('./data/data.csv', delimiter=',')
@@ -25,24 +28,27 @@ if __name__ == '__main__':
   X_train = X[:N]
   X_test = X[N:]
 
-  prob = Probability(X_train)
+  if ENTRY_POINT == 0:
+    prob = Probability(X_train, verbose=VERBOSE)
+    prob.save('./data/prob.npy')
+  else:
+    prob = Probability(X_train, data='./data/prob.npy', verbose=VERBOSE)
 
-  udg = UndirectedGraph(prob, size=(N, n), max_connections=4, verbose=VERBOSE)
-  udg.saveGraph('./data/bn_undirected.yaml')
-  if VISUALIZE:
-    udg.visualizeGraph()
+  if ENTRY_POINT <= 1:
+    udg = UndirectedGraph(prob, size=(N, n), max_connections=5, verbose=VERBOSE)
+    udg.saveGraph('./data/bn_undirected.yaml')
+    if VISUALIZE:
+      udg.visualizeGraph()
 
-  dg = DirectedGraph('./data/bn_undirected.yaml', verbose=VERBOSE)
-  dg.saveGraph('./data/bn_directed.yaml')
-  if VISUALIZE:
-    dg.visualizeGraph()
+  if ENTRY_POINT <= 2:
+    dg = DirectedGraph('./data/bn_undirected.yaml', verbose=VERBOSE)
+    dg.saveGraph('./data/bn_directed.yaml')
+    if VISUALIZE:
+      dg.visualizeGraph()
 
   fg = FactorGraph(prob, './data/bn_directed.yaml', verbose=VERBOSE)
   if VISUALIZE:
     fg.visualizeGraph()
-
-  correct_count = 0
-  total_count = 0
 
   """
   TODO -
@@ -62,25 +68,48 @@ if __name__ == '__main__':
   """
 
   print('Checking accuracy of single bit prediction on test data...')
+  correct_count = 0
+  total_count = 0
+  probabilities = []
+  accuracies = []
+
   for i in range(X_test.shape[0]):
     hash = X_test[i, :256]
-    true_hash_input_bit = X_test[i, 256]
+    true_hash_input_bit = X_test[i, BIT_PRED]
 
     observed = dict()
     for rv, hash_val in enumerate(hash):
       observed[rv] = hash_val
 
-    fg.loopyBP(observed=observed)
-    prob_hash_input_bit_is_one = fg.predict(256, 1)
-    assert not np.isnan(prob_hash_input_bit_is_one), 'probability is NaN!'
+    converged, _ = fg.loopyBP(observed=observed)
+    if not converged: continue;
+
+    success, prob_hash_input_bit_is_one = fg.predict(BIT_PRED, 1)
+    if not success: continue;
 
     print(prob_hash_input_bit_is_one)
 
-    guess = 0
-    if prob_hash_input_bit_is_one >= 0.5:
-      guess = 1
-    correct_count += (guess == true_hash_input_bit)
+    guess = 1 if prob_hash_input_bit_is_one >= 0.5 else 0
+    is_correct = int(guess == true_hash_input_bit)
+    correct_count += is_correct
     total_count += 1
-    print('\tAccuracy: {0:.3f}%'.format(100.0 * correct_count / total_count))
+    
+    probabilities.append(prob_hash_input_bit_is_one)
+    accuracies.append(is_correct)
+
+    print('\tAccuracy: {0}/{1} ({2:.3f}%)'.format(
+      correct_count, total_count, 100.0 * correct_count / total_count))
+  
+  if VISUALIZE:
+    probabilities = np.array(probabilities)
+    accuracies = np.array(accuracies)
+    fig, axs = plt.subplots(1, 2, sharey=True, tight_layout=True)
+    axs[0].set_title('Correct predictions')
+    axs[0].set_xlabel('Prob. hash input bit is 1')
+    axs[0].hist(probabilities[accuracies == 1], bins=30)
+    axs[1].set_title('Incorrect predictions')
+    axs[1].set_xlabel('Prob. hash input bit is 1')
+    axs[1].hist(probabilities[accuracies == 0], bins=30)
+    plt.show()
 
   print('Done.')
