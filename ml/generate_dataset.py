@@ -20,7 +20,8 @@ INDEX_OF_BIT_TO_PREDICT = 256 + 0 # a.k.a. the first bit of the input message
 HASH_MODES = [
   'sha256',
   'map_from_input', # each hash bit is equivalent to a bit in the input message
-  'conditioned_on_hash' # use simple CPDs conditioned on a single hash input bit
+  'conditioned_on_input', # use simple CPDs conditioned on a single hash input bit
+  'conditioned_on_input_and_hash' # use more complex CPDs conditioned on hash and input msg
 ]
 
 
@@ -77,6 +78,13 @@ def hashFunc(binstr, hash_mode=HASH_MODES[0]):
       else:
         binhash += '0' if random_sample <= 0.85 else '1'
     return binhash
+  elif hash_mode == HASH_MODES[3]:
+    mapping = {'00': '1', '01': '0', '10': '1', '11': '0'}
+    binhash = binstr[:2]
+    for i in range(2, 256):
+      input_idx = int(i * HASH_INPUT_NBITS / 256)
+      binhash += mapping[binhash[i - 2] + binstr[input_idx]]
+    return binhash[::-1] # reverse
   else:
     raise 'Hash mode {} is not supported'.format(hash_mode)
 

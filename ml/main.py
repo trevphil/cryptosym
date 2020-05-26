@@ -73,43 +73,45 @@ if __name__ == '__main__':
   probabilities = []
   accuracies = []
 
-  for i in range(X_test.shape[0]):
-    hash = X_test[i, :256]
-    true_hash_input_bit = X_test[i, BIT_PRED]
+  try:
+    for i in range(X_test.shape[0]):
+      hash = X_test[i, :256]
+      true_hash_input_bit = X_test[i, BIT_PRED]
 
-    observed = dict()
-    for rv, hash_val in enumerate(hash):
-      observed[rv] = hash_val
+      observed = dict()
+      for rv, hash_val in enumerate(hash):
+        observed[rv] = hash_val
 
-    converged, _ = fg.loopyBP(observed=observed)
-    if not converged: continue;
+      converged, _ = fg.loopyBP(observed=observed)
+      if not converged: continue;
 
-    success, prob_hash_input_bit_is_one = fg.predict(BIT_PRED, 1)
-    if not success: continue;
+      success, prob_hash_input_bit_is_one = fg.predict(BIT_PRED, 1)
+      if not success: continue;
 
-    print(prob_hash_input_bit_is_one)
+      print(prob_hash_input_bit_is_one)
 
-    guess = 1 if prob_hash_input_bit_is_one >= 0.5 else 0
-    is_correct = int(guess == true_hash_input_bit)
-    correct_count += is_correct
-    total_count += 1
-    
-    probabilities.append(prob_hash_input_bit_is_one)
-    accuracies.append(is_correct)
+      guess = 1 if prob_hash_input_bit_is_one >= 0.5 else 0
+      is_correct = int(guess == true_hash_input_bit)
+      correct_count += is_correct
+      total_count += 1
 
-    print('\tAccuracy: {0}/{1} ({2:.3f}%)'.format(
-      correct_count, total_count, 100.0 * correct_count / total_count))
-  
-  if VISUALIZE:
-    probabilities = np.array(probabilities)
-    accuracies = np.array(accuracies)
-    fig, axs = plt.subplots(1, 2, sharey=True, tight_layout=True)
-    axs[0].set_title('Correct predictions')
-    axs[0].set_xlabel('Prob. hash input bit is 1')
-    axs[0].hist(probabilities[accuracies == 1], bins=30)
-    axs[1].set_title('Incorrect predictions')
-    axs[1].set_xlabel('Prob. hash input bit is 1')
-    axs[1].hist(probabilities[accuracies == 0], bins=30)
-    plt.show()
+      probabilities.append(prob_hash_input_bit_is_one)
+      accuracies.append(is_correct)
+
+      print('\tAccuracy: {0}/{1} ({2:.3f}%)'.format(
+        correct_count, total_count, 100.0 * correct_count / total_count))
+
+  finally:
+    if VISUALIZE:
+      probabilities = np.array(probabilities)
+      accuracies = np.array(accuracies)
+      fig, axs = plt.subplots(1, 2, sharey=True, tight_layout=True)
+      axs[0].set_title('Correct predictions')
+      axs[0].set_xlabel('Prob. hash input bit is 1')
+      axs[0].hist(probabilities[accuracies == 1], bins=30)
+      axs[1].set_title('Incorrect predictions')
+      axs[1].set_xlabel('Prob. hash input bit is 1')
+      axs[1].hist(probabilities[accuracies == 0], bins=30)
+      plt.show()
 
   print('Done.')
