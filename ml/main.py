@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import numpy as np
 from numpy import loadtxt
 from matplotlib import pyplot as plt
@@ -34,17 +35,17 @@ if __name__ == '__main__':
     udg = UndirectedGraph(prob, size=(N, n), max_connections=5, verbose=constants.VERBOSE)
     udg.saveGraph(constants.UDG_DATA_PATH)
     if constants.VISUALIZE:
-      udg.visualizeGraph()
+      udg.visualizeGraph(os.path.join(constants.EXPERIMENT_DIR, 'graph_undirected.png'))
 
   if constants.ENTRY_POINT <= 2:
     dg = DirectedGraph(constants.UDG_DATA_PATH, verbose=constants.VERBOSE)
     dg.saveGraph(constants.DG_DATA_PATH)
     if constants.VISUALIZE:
-      dg.visualizeGraph()
+      dg.visualizeGraph(os.path.join(constants.EXPERIMENT_DIR, 'graph_directed.png'))
 
   fg = FactorGraph(prob, constants.DG_DATA_PATH, verbose=constants.VERBOSE)
   if constants.VISUALIZE:
-    fg.visualizeGraph()
+    fg.visualizeGraph(os.path.join(constants.EXPERIMENT_DIR, 'graph_factor.png'))
 
   """
   TODO -
@@ -62,18 +63,17 @@ if __name__ == '__main__':
 
   try:
     for i in range(X_test.shape[0]):
-      hash = X_test[i, :256]
+      hash_bits = X_test[i, :256]
       true_hash_input_bit = X_test[i, constants.BIT_PRED]
 
       observed = dict()
-      for rv, hash_val in enumerate(hash):
+      for rv, hash_val in enumerate(hash_bits):
         observed[rv] = hash_val
 
-      converged, _ = fg.loopyBP(observed=observed)
-      if not converged: continue;
-
-      success, prob_hash_input_bit_is_one = fg.predict(constants.BIT_PRED, 1)
-      if not success: continue;
+      success, prob_hash_input_bit_is_one = fg.predict(constants.BIT_PRED, 1,
+        observed=observed, visualize_convergence=constants.VISUALIZE)
+      if not success:
+        continue
 
       print(prob_hash_input_bit_is_one)
 
@@ -92,6 +92,7 @@ if __name__ == '__main__':
     if constants.VISUALIZE:
       probabilities = np.array(probabilities)
       accuracies = np.array(accuracies)
+      plt.close()
       fig, axs = plt.subplots(1, 2, sharey=True, tight_layout=True)
       axs[0].set_title('Correct predictions')
       axs[0].set_xlabel('Prob. hash input bit is 1')
@@ -99,6 +100,6 @@ if __name__ == '__main__':
       axs[1].set_title('Incorrect predictions')
       axs[1].set_xlabel('Prob. hash input bit is 1')
       axs[1].hist(probabilities[accuracies == 0], bins=30)
-      plt.show()
+      plt.savefig(os.path.join(constants.EXPERIMENT_DIR, 'accuracy_distribution.png'))
 
   print('Done.')

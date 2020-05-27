@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 from decimal import Decimal, Overflow
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -6,7 +7,7 @@ import numpy as np
 from itertools import product
 
 from utils.probability import CPD
-from utils.constants import LBP_CONVERGENCE_THRESH, LBP_MAX_ITER
+from utils.constants import LBP_CONVERGENCE_THRESH, LBP_MAX_ITER, EXPERIMENT_DIR
 
 
 class RandomVariable(object):
@@ -16,15 +17,19 @@ class RandomVariable(object):
     self.neighboring_factors = []
     self.default_initialization = Decimal(1.0)
 
+
   def addNeighboringFactor(self, neighbor):
     self.neighboring_factors.append(neighbor)
+
 
   def reset(self):
     self.message_cache = dict()
 
+
   def previousMessage(self, to_factor, rv_value):
     tup = (to_factor.key, rv_value)
     return self.message_cache.get(tup, self.default_initialization)
+
 
   def message(self, to_factor, rv_value):
     result = Decimal(1.0)
@@ -65,12 +70,15 @@ class Factor(object):
 
     assert len(self.rvs) == self.table.shape[1] - 1
 
+
   def reset(self):
     self.message_cache = dict()
+
 
   def previousMessage(self, to_rv, rv_value):
     tup = (to_rv.key, rv_value)
     return self.message_cache.get(tup, self.default_initialization)
+
 
   def message(self, to_rv, rv_value, observed):
     """
@@ -110,6 +118,7 @@ class FactorGraph(object):
   def __init__(self, prob_util, directed_graph_yaml, verbose=True):
     self.prob_util = prob_util
     self.verbose = verbose
+    self.num_predictions = 0
 
     self.graph = nx.Graph()
     directed_graph = nx.read_yaml(directed_graph_yaml)
@@ -143,15 +152,16 @@ class FactorGraph(object):
       print('All %d factors initialized.' % len(self.factors))
 
 
-  def visualizeGraph(self):
+  def visualizeGraph(self, img_file):
     if self.verbose:
-      print('Showing factor graph...')
+      print('Visualizing factor graph...')
 
+    plt.close()
     first_partition = [f.key for f in self.factors]
     pos = nx.drawing.layout.bipartite_layout(self.graph, first_partition)
     nx.draw_networkx(self.graph, pos=pos, with_labels=False,
       width=0.1, node_size=5)
-    plt.show()
+    plt.savefig(img_file)
 
 
   def reset(self):
@@ -162,6 +172,7 @@ class FactorGraph(object):
 
 
   def loopyBP(self, observed=dict(),
+              intermediate_pred=None,
               err_tol=LBP_CONVERGENCE_THRESH,
               max_iterations=LBP_MAX_ITER):
     """
@@ -179,10 +190,14 @@ class FactorGraph(object):
       print('Running loopy belief propagation...')
 
     self.reset()
-    itr, diverged, converged = 0, False, False
+    itr, diverged, converged, predictions = 0, False, False, []
 
     while not converged and not diverged and itr < max_iterations:
       converged = True
+      
+      if intermediate_pred is not None:
+        valid, prediction = intermediate_pred()
+        if valid: predictions.append(prediction);
 
       for factor in self.factors:
         if diverged: break;
@@ -232,30 +247,40 @@ class FactorGraph(object):
       elif itr >= max_iterations:
         print('Loopy BP did not converge, max iterations reached')
 
-    return converged, itr
+    return converged, predictions
+  
 
-
-  def predict(self, rv_index, rv_value):
+  def predict(self, rv_index, rv_value, observed=dict(), visualize_convergence=False):
     """
     Predict probability that the RV has the given value.
-    Assume LBP has already been run, with observed variables if desired.
+    This will first run loopy belief propagation, with observed variables if desired.
     """
+    
+    def _predict():
+      rv = [rv for rv in self.rvs if rv.key == rv_index][0]
+      factors = [f for f in self.factors if rv in f.rvs]
 
-    rv = [rv for rv in self.rvs if rv.key == rv_index][0]
-    factors = [f for f in self.factors if rv in f.rvs]
+      total = Decimal(1.0)
+      total_opposite = Decimal(1.0)
+      for factor in factors:
+        total *= factor.previousMessage(rv, rv_value)
+        total_opposite *= factor.previousMessage(rv, 1 - rv_value)
+        normalizer = min(total, total_opposite)
+        total /= normalizer
+        total_opposite /= normalizer
 
-    total = Decimal(1.0)
-    total_opposite = Decimal(1.0)
-    for factor in factors:
-      total *= factor.previousMessage(rv, rv_value)
-      total_opposite *= factor.previousMessage(rv, 1 - rv_value)
-      normalizer = min(total, total_opposite)
-      total /= normalizer
-      total_opposite /= normalizer
+      prob = total / (total + total_opposite)
+      return prob.is_finite(), float(prob)
 
-    if total + total_opposite == 0:
-      print('WARNING: prediction would divide by zero!')
-      return False, 0.5
+    converged, preds = self.loopyBP(observed=observed, intermediate_pred=_predict)
 
-    prob = total / (total + total_opposite)
-    return prob.is_finite(), float(prob)
+    if visualize_convergence:
+      plt.clf()
+      plt.plot(preds)
+      plt.xlabel('Iteration')
+      plt.ylabel('Probability')
+      img_file = os.path.join(EXPERIMENT_DIR, 'lbp_%04d.png' % self.num_predictions)
+      plt.savefig(img_file)
+
+    self.num_predictions += 1
+    return _predict()

@@ -1,3 +1,7 @@
+from os import path
+from time import localtime, strftime
+from pathlib import Path
+
 VERBOSE = True
 
 VISUALIZE = True
@@ -29,10 +33,17 @@ BIT_PRED = 256 + 0 # a.k.a. the first bit of the input message
 
 DATASET_SIZE = 20000
 
-DATASET_PATH = './data/data.csv'
+EXPERIMENT_DIR = path.join(path.abspath('./experiments'),
+                           HASH_MODE + '_' + strftime('%Y-%m-%d-%H-%M-%S', localtime()))
+Path(EXPERIMENT_DIR).mkdir(parents=True, exist_ok=True)
 
-PROB_DATA_PATH = './data/prob.npy'
+DATA_DIR = path.abspath('./data')
+Path(DATA_DIR).mkdir(parents=True, exist_ok=True)
 
-UDG_DATA_PATH = './data/bn_undirected.yaml'
+DATASET_PATH = path.join(DATA_DIR, 'data.csv')
 
-DG_DATA_PATH = './data/bn_directed.yaml'
+PROB_DATA_PATH = path.join(DATA_DIR, 'prob.npy')
+
+UDG_DATA_PATH = path.join(DATA_DIR, 'bn_undirected.yaml')
+
+DG_DATA_PATH = path.join(DATA_DIR, 'bn_directed.yaml')

@@ -19,11 +19,13 @@ class DirectedGraph(object):
     nx.write_yaml(self.graph, filename)
 
 
-  def visualizeGraph(self):
+  def visualizeGraph(self, img_file):
     if self.verbose:
-      print('Showing directed Bayesian network...')
+      print('Visualizing directed Bayesian network...')
+
+    plt.close()
     nx.draw_spectral(self.graph, with_labels=True)
-    plt.show()
+    plt.savefig(img_file)
 
 
   def addDirections(self, undirected_graph):
