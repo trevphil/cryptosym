@@ -7,6 +7,8 @@ from keras.models import Sequential
 from keras.layers import Dense, Conv1D, MaxPooling1D, Flatten
 from keras.regularizers import l2
 
+from utils.constants import DATASET_PATH
+
 """
 Here is an attempt to train a simple neural network
 whose inputs are the 256 bits of a SHA-256 hash, and the
@@ -18,7 +20,7 @@ I was playing around with architectures, e.g. LSTM, but to no avail.
 """
 
 # load the dataset
-dataset = loadtxt('./data/data.csv', delimiter=',')
+dataset = loadtxt(DATASET_PATH, delimiter=',')
 
 # split into input (X) and output (y) variables
 X = dataset[:, :256]

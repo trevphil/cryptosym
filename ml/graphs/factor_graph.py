@@ -6,6 +6,7 @@ import numpy as np
 from itertools import product
 
 from utils.probability import CPD
+from utils.constants import LBP_CONVERGENCE_THRESH, LBP_MAX_ITER
 
 
 class RandomVariable(object):
@@ -160,8 +161,16 @@ class FactorGraph(object):
       factor.reset()
 
 
-  def loopyBP(self, observed=dict(), err_tol=0.01, max_iterations=20):
+  def loopyBP(self, observed=dict(),
+              err_tol=LBP_CONVERGENCE_THRESH,
+              max_iterations=LBP_MAX_ITER):
     """
+    https://arxiv.org/pdf/1301.6725.pdf
+    https://en.wikipedia.org/wiki/Junction_tree_algorithm - TODO try it out
+    TODO - normalize messages during LBP
+    Noisy-OR: https://people.csail.mit.edu/dsontag/papers/HalpernSontag_uai13.pdf
+              https://www.sciencedirect.com/science/article/pii/B9781483214511500160?via%3Dihub
+    ---
     `observed` is a dictionary mapping RV index --> RV value, for example,
     mapping all 0-255 hash bits to their observed values.
     """
@@ -182,6 +191,7 @@ class FactorGraph(object):
           # Belif propagation: random variables --> factors
           prev0 = rv.previousMessage(factor, 0)
           prev1 = rv.previousMessage(factor, 1)
+
           try:
             new0 = rv.message(factor, 0)
             new1 = rv.message(factor, 1)
@@ -199,6 +209,7 @@ class FactorGraph(object):
           # Belief propagation: factors --> random variables
           prev0 = factor.previousMessage(rv, 0)
           prev1 = factor.previousMessage(rv, 1)
+
           try:
             new0 = factor.message(rv, 0, observed)
             new1 = factor.message(rv, 1, observed)

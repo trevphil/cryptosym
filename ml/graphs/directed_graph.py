@@ -3,7 +3,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 
-from generate_dataset import INDEX_OF_BIT_TO_PREDICT as BIT_PRED
+from utils.constants import BIT_PRED
 
 class DirectedGraph(object):
 

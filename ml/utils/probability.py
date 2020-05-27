@@ -6,6 +6,8 @@ from itertools import product
 from operator import mul
 from functools import reduce
 
+from utils.constants import EPSILON
+
 ######################################################
 #################### PROBABILITY #####################
 ######################################################
@@ -90,5 +92,4 @@ class CPD(object):
     numerator = prob_util.count(query1)
     denominator = numerator + prob_util.count(query2)
 
-    # TODO - Non-optimal solution, need to evaluate how important this is...
-    return (0.01 + float(numerator)) / (0.02 + float(denominator))
+    return (EPSILON + float(numerator)) / (2 * EPSILON + float(denominator))
