@@ -2,20 +2,32 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 
-from utils.constants import BIT_PRED
+from utils.constants import BIT_PRED, MAX_CONNECTIONS_PER_NODE
 
 
 class UndirectedGraph(object):
 
-  def __init__(self, prob, size, max_connections, verbose=True):
+  def __init__(self, prob, size, max_connections=MAX_CONNECTIONS_PER_NODE,
+               fc_graph=None, verbose=True):
     self.prob = prob
     self.verbose = verbose
     self.max_connections = max_connections
     self.N, self.n = size # (number of samples, number of variables)
-    self.graph = self.pruneGraph(self.createFullyConnectedGraph())
+    if fc_graph is None:
+      self.fc_graph = self.createFullyConnectedGraph()
+    else:
+      self.fc_graph = nx.read_yaml(fc_graph)
+    self.graph = self.pruneGraph(self.fc_graph)
 
 
-  def saveGraph(self, filename):
+  def saveFullyConnectedGraph(self, filename):
+    if self.verbose:
+      print('Saving fully connected graph as "%s"...' % filename)
+    
+    nx.write_yaml(self.fc_graph, filename)
+
+
+  def saveUndirectedGraph(self, filename):
     if self.verbose:
       print('Saving undirected Bayesian network as "%s"...' % filename)
 

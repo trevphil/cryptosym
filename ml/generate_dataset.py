@@ -5,7 +5,8 @@ import random
 import hashlib
 from binascii import unhexlify
 
-from utils.constants import HASH_MODE, HASH_MODES, BIT_PRED, HASH_INPUT_NBITS, DATASET_SIZE, DATASET_PATH
+from utils import constants
+from utils.constants import HASH_MODE, HASH_MODES, BIT_PRED, HASH_INPUT_NBITS, DATASET_SIZE, DATASET_FILE
 
 """
 This generates a CSV dataset of random hash inputs of length 64 bits
@@ -55,17 +56,20 @@ def hashFunc(binstr, hash_mode):
     hash_val = hashlib.sha256(num).hexdigest()
     binhash = bin(int(hash_val, 16))[2:]
     return ('0' * (256 - len(binhash))) + binhash
+
   elif hash_mode == HASH_MODES[1]:
     num = int2bytes(int(binstr, 2))
     hash_val = hashlib.md5(num).hexdigest()
     binhash = bin(int(hash_val, 16))[2:]
     return ('0' * (256 - len(binhash))) + binhash
+
   elif hash_mode == HASH_MODES[2]:
     binhash = ''
     for i in range(256):
       input_idx = int(i * HASH_INPUT_NBITS / 256)
       binhash += binstr[input_idx]
     return binhash
+
   elif hash_mode == HASH_MODES[3]:
     binhash = ''
     for i in range(256):
@@ -76,6 +80,7 @@ def hashFunc(binstr, hash_mode):
       else:
         binhash += '0' if random_sample <= 0.85 else '1'
     return binhash
+
   elif hash_mode == HASH_MODES[4]:
     mapping = {'00': '1', '01': '0', '10': '1', '11': '0'}
     binhash = binstr[:2]
@@ -83,6 +88,7 @@ def hashFunc(binstr, hash_mode):
       input_idx = int(i * HASH_INPUT_NBITS / 256)
       binhash += mapping[binhash[i - 2] + binstr[input_idx]]
     return binhash[::-1] # reverse
+
   elif hash_mode == HASH_MODES[5]:
     num = int(binstr, 2)
     A, B, C, D = 0xAC32, 0xFFE1, 0xBF09, 0xBEEF
@@ -95,20 +101,24 @@ def hashFunc(binstr, hash_mode):
     c = (c ^ d)
     s = bin(a | (b << 16) | (c << 32) | (d << 48))[2:]
     return ('0' * (256 - len(s))) + s
+
   else:
     raise 'Hash mode {} is not supported'.format(hash_mode)
 
 
 if __name__ == '__main__':
   random.seed(0)
+  constants.makeDataDirectoryIfNeeded()
   
-  if os.path.exists(DATASET_PATH):
-      os.remove(DATASET_PATH)
+  if os.path.exists(DATASET_FILE):
+      os.remove(DATASET_FILE)
 
-  with open(DATASET_PATH, 'w') as f:
+  with open(DATASET_FILE, 'w') as f:
     for n in range(NUM_SAMPLES):
       binstr = randomBinaryString(HASH_INPUT_NBITS)
       ground_truth = binstr
       binhash = hashFunc(binstr, HASH_MODE)
       dataset_entry = ','.join([c for c in (binhash + ground_truth)])
       f.write(dataset_entry + '\n')
+  
+  print('Generated dataset with %d samples (hash=%s).' % (NUM_SAMPLES, HASH_MODE))

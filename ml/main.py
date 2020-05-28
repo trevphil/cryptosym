@@ -11,7 +11,10 @@ from utils.probability import Probability
 from utils import constants
 
 if __name__ == '__main__':
-  dataset = loadtxt(constants.DATASET_PATH, delimiter=',')
+  constants.makeDataDirectoryIfNeeded()
+  constants.makeExperimentDirectoryIfNeeded()
+
+  dataset = loadtxt(constants.DATASET_FILE, delimiter=',')
 
   train_cutoff = int(dataset.shape[0] * 0.8)
   N = train_cutoff # number of samples
@@ -26,24 +29,38 @@ if __name__ == '__main__':
   X_test = X[N:]
 
   if constants.ENTRY_POINT == 0:
+    # Probabilities need to be calculated
     prob = Probability(X_train, verbose=constants.VERBOSE)
-    prob.save(constants.PROB_DATA_PATH)
+    prob.save(constants.PROB_DATA_FILE)
   else:
-    prob = Probability(X_train, data=constants.PROB_DATA_PATH, verbose=constants.VERBOSE)
-
+    # Probabilities are already saved --> load them
+    prob = Probability(X_train, data=constants.PROB_DATA_FILE, verbose=constants.VERBOSE)
+  
   if constants.ENTRY_POINT <= 1:
-    udg = UndirectedGraph(prob, size=(N, n), max_connections=5, verbose=constants.VERBOSE)
-    udg.saveGraph(constants.UDG_DATA_PATH)
+    # Need to calculate mutual information scores between all RVs and then build graph
+    udg = UndirectedGraph(prob, size=(N, n), verbose=constants.VERBOSE)
+    udg.saveFullyConnectedGraph(constants.FCG_DATA_FILE)
+    udg.saveUndirectedGraph(constants.UDG_DATA_FILE)
     if constants.VISUALIZE:
       udg.visualizeGraph(os.path.join(constants.EXPERIMENT_DIR, 'graph_undirected.png'))
 
-  if constants.ENTRY_POINT <= 2:
-    dg = DirectedGraph(constants.UDG_DATA_PATH, verbose=constants.VERBOSE)
-    dg.saveGraph(constants.DG_DATA_PATH)
+  elif constants.ENTRY_POINT <= 2:
+    # Mutual information scores already calculated --> load them & build undirected graph
+    udg = UndirectedGraph(prob, size=(N, n), fc_graph=constants.FCG_DATA_FILE,
+                          verbose=constants.VERBOSE)
+    udg.saveGraph(constants.UDG_DATA_FILE)
+    if constants.VISUALIZE:
+      udg.visualizeGraph(os.path.join(constants.EXPERIMENT_DIR, 'graph_undirected.png'))
+
+  if constants.ENTRY_POINT <= 3:
+    # Need to make DAG --> assign directions from the undirected graph
+    dg = DirectedGraph(constants.UDG_DATA_FILE, verbose=constants.VERBOSE)
+    dg.saveGraph(constants.DG_DATA_FILE)
     if constants.VISUALIZE:
       dg.visualizeGraph(os.path.join(constants.EXPERIMENT_DIR, 'graph_directed.png'))
 
-  fg = FactorGraph(prob, constants.DG_DATA_PATH, verbose=constants.VERBOSE)
+  # Need to build factor graph from the directed graph
+  fg = FactorGraph(prob, constants.DG_DATA_FILE, verbose=constants.VERBOSE)
   if constants.VISUALIZE:
     fg.visualizeGraph(os.path.join(constants.EXPERIMENT_DIR, 'graph_factor.png'))
 
@@ -56,10 +73,8 @@ if __name__ == '__main__':
   """
 
   print('Checking accuracy of single bit prediction on test data...')
-  correct_count = 0
-  total_count = 0
-  probabilities = []
-  accuracies = []
+  correct_count, correct_count = 0, 0
+  probabilities, accuracies = [], []
 
   try:
     for i in range(X_test.shape[0]):
