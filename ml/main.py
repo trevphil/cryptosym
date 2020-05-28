@@ -48,7 +48,7 @@ if __name__ == '__main__':
     # Mutual information scores already calculated --> load them & build undirected graph
     udg = UndirectedGraph(prob, size=(N, n), fc_graph=constants.FCG_DATA_FILE,
                           verbose=constants.VERBOSE)
-    udg.saveGraph(constants.UDG_DATA_FILE)
+    udg.saveUndirectedGraph(constants.UDG_DATA_FILE)
     if constants.VISUALIZE:
       udg.visualizeGraph(os.path.join(constants.EXPERIMENT_DIR, 'graph_undirected.png'))
 
