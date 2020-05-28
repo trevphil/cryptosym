@@ -73,7 +73,7 @@ if __name__ == '__main__':
   """
 
   print('Checking accuracy of single bit prediction on test data...')
-  correct_count, correct_count = 0, 0
+  correct_count, total_count = 0, 0
   probabilities, accuracies = [], []
 
   try:

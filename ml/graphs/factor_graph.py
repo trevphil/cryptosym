@@ -195,9 +195,11 @@ class FactorGraph(object):
     while not converged and not diverged and itr < max_iterations:
       converged = True
       
-      if intermediate_pred is not None:
+      try:
         valid, prediction = intermediate_pred()
         if valid: predictions.append(prediction);
+      except:
+        pass
 
       for factor in self.factors:
         if diverged: break;
@@ -255,13 +257,14 @@ class FactorGraph(object):
     Predict probability that the RV has the given value.
     This will first run loopy belief propagation, with observed variables if desired.
     """
-    
+
     def _predict():
+      """ Helper function, also called during LBP to see how prediction changes """
       rv = [rv for rv in self.rvs if rv.key == rv_index][0]
       factors = [f for f in self.factors if rv in f.rvs]
 
-      total = Decimal(1.0)
-      total_opposite = Decimal(1.0)
+      total = Decimal(1e100)
+      total_opposite = Decimal(1e100)
       for factor in factors:
         total *= factor.previousMessage(rv, rv_value)
         total_opposite *= factor.previousMessage(rv, 1 - rv_value)
@@ -269,8 +272,12 @@ class FactorGraph(object):
         total /= normalizer
         total_opposite /= normalizer
 
-      prob = total / (total + total_opposite)
-      return prob.is_finite(), float(prob)
+      summed = total + total_opposite
+      if summed == 0:
+        return False, None
+      else:
+        prob = total / summed
+        return prob.is_finite(), float(prob)
 
     converged, preds = self.loopyBP(observed=observed, intermediate_pred=_predict)
 
@@ -283,4 +290,14 @@ class FactorGraph(object):
       plt.savefig(img_file)
 
     self.num_predictions += 1
-    return _predict()
+
+    try:
+      # Try to predict, but use try-catch in case there's failure due to numerical err
+      return _predict()
+    except:
+      if len(preds) > 0:
+        # Default to previous prediction from loopy belief propagation
+        return True, preds[-1]
+      else:
+        # If there are no other predictions from LBP, we straight up fail!
+        return False, None
