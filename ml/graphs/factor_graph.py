@@ -38,7 +38,9 @@ class RandomVariable(object):
     if total1 == 0: total1 = Decimal(1.0);
 
     for k, val in self.message_cache.items():
-      if val == 0: continue;
+      if val == 0:
+        continue
+
       if k[1] == 0:
         self.message_cache[k] = val / total0
       else:
@@ -101,7 +103,9 @@ class Factor(object):
     if total1 == 0: total1 = Decimal(1.0);
 
     for k, val in self.message_cache.items():
-      if val == 0: continue;
+      if val == 0:
+        continue
+
       if k[1] == 0:
         self.message_cache[k] = val / total0
       else:
@@ -220,9 +224,9 @@ class FactorGraph(object):
       print('Running loopy belief propagation...')
 
     self.reset()
-    itr, diverged, converged, predictions = 0, False, False, []
+    itr, converged, predictions = 0, False, []
 
-    while not converged and not diverged and itr < max_iterations:
+    while not converged and itr < max_iterations:
       converged = True
       
       try:
@@ -232,43 +236,24 @@ class FactorGraph(object):
         pass
 
       for factor in self.factors:
-        if diverged: break;
-
         for rv in factor.rvs:
           # Belif propagation: random variables --> factors
           prev0 = rv.previousMessage(factor, 0)
           prev1 = rv.previousMessage(factor, 1)
-
-          try:
-            new0 = rv.message(factor, 0)
-            new1 = rv.message(factor, 1)
-          except Overflow:
-            diverged, converged = True, False
-            break
+          new0 = rv.message(factor, 0)
+          new1 = rv.message(factor, 1)
 
           err0, err1 = abs(prev0 - new0), abs(prev1 - new1)
-          if not err0.is_finite() or not err1.is_finite():
-            diverged, converged = True, False
-            break
-          else:
-            converged = converged and err0 < err_tol and err1 < err_tol
+          converged = converged and err0 < err_tol and err1 < err_tol
 
           # Belief propagation: factors --> random variables
           prev0 = factor.previousMessage(rv, 0)
           prev1 = factor.previousMessage(rv, 1)
-
-          try:
-            new0 = factor.message(rv, 0, observed)
-            new1 = factor.message(rv, 1, observed)
-          except Overflow:
-            diverged, converged = True, False
-            break
+          new0 = factor.message(rv, 0, observed)
+          new1 = factor.message(rv, 1, observed)
 
           err0, err1 = abs(prev0 - new0), abs(prev1 - new1)
-          if not err0.is_finite() or not err1.is_finite():
-            diverged, converged = True, False
-          else:
-            converged = converged and err0 < err_tol and err1 < err_tol
+          converged = converged and err0 < err_tol and err1 < err_tol
 
       for rv in self.rvs:
         rv.normalizeMessages()
@@ -280,8 +265,6 @@ class FactorGraph(object):
     if self.verbose:
       if converged:
         print('Loopy BP converged in %d iterations.' % itr)
-      elif diverged:
-        print('Loopy BP diverged')
       elif itr >= max_iterations:
         print('Loopy BP did not converge, max iterations reached')
 
