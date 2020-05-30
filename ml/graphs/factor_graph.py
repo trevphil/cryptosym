@@ -31,6 +31,20 @@ class RandomVariable(object):
     return self.message_cache.get(tup, self.default_initialization)
 
 
+  def normalizeMessages(self):
+    total0 = sum([val for k, val in self.message_cache.items() if k[1] == 0])
+    total1 = sum([val for k, val in self.message_cache.items() if k[1] == 1])
+    if total0 == 0: total0 = Decimal(1.0);
+    if total1 == 0: total1 = Decimal(1.0);
+
+    for k, val in self.message_cache.items():
+      if val == 0: continue;
+      if k[1] == 0:
+        self.message_cache[k] = val / total0
+      else:
+        self.message_cache[k] = val / total1
+
+
   def message(self, to_factor, rv_value):
     result = Decimal(1.0)
     for factor in self.neighboring_factors:
@@ -78,6 +92,20 @@ class Factor(object):
   def previousMessage(self, to_rv, rv_value):
     tup = (to_rv.key, rv_value)
     return self.message_cache.get(tup, self.default_initialization)
+
+
+  def normalizeMessages(self):
+    total0 = sum([val for k, val in self.message_cache.items() if k[1] == 0])
+    total1 = sum([val for k, val in self.message_cache.items() if k[1] == 1])
+    if total0 == 0: total0 = Decimal(1.0);
+    if total1 == 0: total1 = Decimal(1.0);
+
+    for k, val in self.message_cache.items():
+      if val == 0: continue;
+      if k[1] == 0:
+        self.message_cache[k] = val / total0
+      else:
+        self.message_cache[k] = val / total1
 
 
   def message(self, to_rv, rv_value, observed):
@@ -177,7 +205,9 @@ class FactorGraph(object):
               max_iterations=LBP_MAX_ITER):
     """
     https://arxiv.org/pdf/1301.6725.pdf
-    https://en.wikipedia.org/wiki/Junction_tree_algorithm - TODO try it out
+    https://www.ski.org/sites/default/files/publications/bptutorial.pdf
+    https://www.mit.edu/~6.454/www_fall_2002/lizhong/factorgraph.pdf
+    https://en.wikipedia.org/wiki/Junction_tree_algorithm - TODO try it out, maybe
     TODO - normalize messages during LBP
     Noisy-OR: https://people.csail.mit.edu/dsontag/papers/HalpernSontag_uai13.pdf
               https://www.sciencedirect.com/science/article/pii/B9781483214511500160?via%3Dihub
@@ -239,6 +269,12 @@ class FactorGraph(object):
             diverged, converged = True, False
           else:
             converged = converged and err0 < err_tol and err1 < err_tol
+
+      for rv in self.rvs:
+        rv.normalizeMessages()
+      for factor in self.factors:
+        factor.normalizeMessages()
+
       itr += 1
 
     if self.verbose:
