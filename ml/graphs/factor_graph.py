@@ -163,7 +163,7 @@ class FactorGraph(object):
       dependencies = [e[0] for e in directed_graph.in_edges(rv)]
       cpd = CPD(rv, dependencies)
       cpds.append(cpd)
-      max_fac = max(max_fac, len(cpd.allVars()))
+      max_fac = max(max_fac, len(cpd.allVars()) - 1)
       self.rvs.append(RandomVariable(rv))
 
     if self.verbose:
@@ -212,7 +212,6 @@ class FactorGraph(object):
     https://www.ski.org/sites/default/files/publications/bptutorial.pdf
     https://www.mit.edu/~6.454/www_fall_2002/lizhong/factorgraph.pdf
     https://en.wikipedia.org/wiki/Junction_tree_algorithm - TODO try it out, maybe
-    TODO - normalize messages during LBP
     Noisy-OR: https://people.csail.mit.edu/dsontag/papers/HalpernSontag_uai13.pdf
               https://www.sciencedirect.com/science/article/pii/B9781483214511500160?via%3Dihub
     ---
