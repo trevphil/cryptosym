@@ -6,18 +6,30 @@ from itertools import product
 from operator import mul
 from functools import reduce
 
+from utils.constants import EPSILON
+
 ######################################################
 #################### PROBABILITY #####################
 ######################################################
 
 class Probability(object):
 
-  def __init__(self, samples):
+  def __init__(self, samples, data=None, verbose=True):
+    self.verbose = verbose
     self.samples = samples
     self.N = samples.shape[0] # number of samples
     self.n = samples.shape[1] # number of variables
-    self.phats = np.array(
-      [[self.pHat([(i, 0)]), self.pHat([(i, 1)])] for i in range(self.n)])
+    if data is not None:
+      self.phats = np.load(data)
+    else:
+      self.phats = np.array(
+        [[self.pHat([(i, 0)]), self.pHat([(i, 1)])] for i in range(self.n)])
+  
+  
+  def save(self, filename):
+    if self.verbose:
+      print('Saving probability as "%s"...' % filename)
+    np.save(filename, self.phats)
 
 
   def count(self, random_variables):
@@ -47,6 +59,8 @@ class Probability(object):
       denominator = 1.0
       for rv_index, rv_val in rv_assignments:
         denominator *= self.phats[rv_index, rv_val]
+      if phat == 0 or denominator == 0:
+        continue
       total += phat * log(phat / denominator)
 
     return total
@@ -78,5 +92,4 @@ class CPD(object):
     numerator = prob_util.count(query1)
     denominator = numerator + prob_util.count(query2)
 
-    # TODO - Non-optimal solution, need to evaluate how important this is...
-    return (0.01 + float(numerator)) / (0.02 + float(denominator))
+    return (EPSILON + float(numerator)) / (2 * EPSILON + float(denominator))

@@ -135,7 +135,7 @@ To attempt to exploit CPDs, I built a [Bayesian network](https://en.wikipedia.or
 
 #### Creating the undirected BN
 
-A Bayesian network models conditional dependencies between random variables (RVs). In our case, there are 256 binary RVs for the hash bits, and 64 binary RVs for the input message bits. The BN should prefer to create edges between RVs which have a stronger conditional independence rather than those which are conditionally independent.
+A Bayesian network models conditional dependencies between random variables (RVs). In our case, there are 256 binary RVs for the hash bits, and 64 binary RVs for the input message bits. The BN should prefer to create edges between RVs which have a stronger conditional dependence rather than those which are conditionally independent.
 
 We can get an idea of the conditional dependence between two RVs using their [mutual information score](https://en.wikipedia.org/wiki/Mutual_information). The first step is to calculate the mutual information score between all pairs of our RVs. We can skip the mutual information scores between input message RVs because we already know that we've generated them randomly and independently.
 

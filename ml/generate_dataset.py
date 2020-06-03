@@ -1,19 +1,22 @@
 # -*- coding: utf-8 -*-
+import os
+import sys
 import random
 import hashlib
 from binascii import unhexlify
+
+from utils import constants
+from utils.constants import HASH_MODE, HASH_MODES, BIT_PRED, HASH_INPUT_NBITS, DATASET_SIZE, DATASET_FILE
 
 """
 This generates a CSV dataset of random hash inputs of length 64 bits
 and their SHA-256 hashes (256 bits).
 
 Each line in the generated file is a comma-separated list of the
-256 hash bits followed by the 64 bits of the hash input.
+256 hash bits followed by the bits of the hash input.
 """
 
-NUM_SAMPLES = 20000
-HASH_INPUT_NBITS = 64
-INDEX_OF_BIT_TO_PREDICT = 0
+NUM_SAMPLES = int(sys.argv[1]) if len(sys.argv) > 1 else DATASET_SIZE
 
 
 def int2bytes(val):
@@ -39,15 +42,83 @@ def randomBinaryString(nbits):
   return ('0' * num_zero_padding) + binstr
 
 
-with open('./data/data.csv', 'w') as f:
-  for n in range(NUM_SAMPLES):
-    binstr = randomBinaryString(HASH_INPUT_NBITS)
-    ground_truth = binstr
+def hashFunc(binstr, hash_mode):
+  """
+  Parameters:
+   - binstr: the input to the hash function (a string of bits, 0 or 1)
+   - hash_mode: control which hash function is used (real SHA-256 or something for testing)
+  Returns:
+   - A 256-bit binary string of 0's and 1's representing the hash of the input
+  """
+
+  if hash_mode == HASH_MODES[0]:
     num = int2bytes(int(binstr, 2))
+    hash_val = hashlib.sha256(num).hexdigest()
+    binhash = bin(int(hash_val, 16))[2:]
+    return ('0' * (256 - len(binhash))) + binhash
 
-    hash = hashlib.sha256(num).hexdigest()
-    binhash = bin(int(hash, 16))[2:]
-    binhash = ('0' * (256 - len(binhash))) + binhash
+  elif hash_mode == HASH_MODES[1]:
+    num = int2bytes(int(binstr, 2))
+    hash_val = hashlib.md5(num).hexdigest()
+    binhash = bin(int(hash_val, 16))[2:]
+    return ('0' * (256 - len(binhash))) + binhash
 
-    dataset_entry = ','.join([c for c in (binhash + ground_truth)])
-    f.write(dataset_entry + '\n')
+  elif hash_mode == HASH_MODES[2]:
+    binhash = ''
+    for i in range(256):
+      input_idx = int(i * HASH_INPUT_NBITS / 256)
+      binhash += binstr[input_idx]
+    return binhash
+
+  elif hash_mode == HASH_MODES[3]:
+    binhash = ''
+    for i in range(256):
+      input_idx = int(i * HASH_INPUT_NBITS / 256)
+      random_sample = random.random()
+      if binstr[input_idx] == '1':
+        binhash += '1' if random_sample <= 0.9 else '0'
+      else:
+        binhash += '0' if random_sample <= 0.85 else '1'
+    return binhash
+
+  elif hash_mode == HASH_MODES[4]:
+    mapping = {'00': '1', '01': '0', '10': '1', '11': '0'}
+    binhash = binstr[:2]
+    for i in range(2, 256):
+      input_idx = int(i * HASH_INPUT_NBITS / 256)
+      binhash += mapping[binhash[i - 2] + binstr[input_idx]]
+    return binhash[::-1] # reverse
+
+  elif hash_mode == HASH_MODES[5]:
+    num = int(binstr, 2)
+    A, B, C, D = 0xAC32, 0xFFE1, 0xBF09, 0xBEEF
+    a = ((num >> 0 ) & 0xFFFF) ^ A
+    b = ((num >> 16) & 0xFFFF) ^ B
+    c = ((num >> 32) & 0xFFFF) ^ C
+    d = ((num >> 48) & 0xFFFF) ^ D
+    a = (a | b)
+    b = (b + c) & 0xFFFF
+    c = (c ^ d)
+    s = bin(a | (b << 16) | (c << 32) | (d << 48))[2:]
+    return ('0' * (256 - len(s))) + s
+
+  else:
+    raise 'Hash mode {} is not supported'.format(hash_mode)
+
+
+if __name__ == '__main__':
+  random.seed(0)
+  constants.makeDataDirectoryIfNeeded()
+  
+  if os.path.exists(DATASET_FILE):
+      os.remove(DATASET_FILE)
+
+  with open(DATASET_FILE, 'w') as f:
+    for n in range(NUM_SAMPLES):
+      binstr = randomBinaryString(HASH_INPUT_NBITS)
+      ground_truth = binstr
+      binhash = hashFunc(binstr, HASH_MODE)
+      dataset_entry = ','.join([c for c in (binhash + ground_truth)])
+      f.write(dataset_entry + '\n')
+  
+  print('Generated dataset with %d samples (hash=%s).' % (NUM_SAMPLES, HASH_MODE))

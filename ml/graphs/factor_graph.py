@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
+import os
+from decimal import Decimal, Overflow
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 from itertools import product
 
 from utils.probability import CPD
+from utils.constants import LBP_CONVERGENCE_THRESH, LBP_MAX_ITER, EXPERIMENT_DIR
 
 
 class RandomVariable(object):
@@ -12,20 +15,40 @@ class RandomVariable(object):
     self.key = key
     self.message_cache = dict()
     self.neighboring_factors = []
-    self.default_initialization = 1.0
+    self.default_initialization = Decimal(1.0)
+
 
   def addNeighboringFactor(self, neighbor):
     self.neighboring_factors.append(neighbor)
 
+
   def reset(self):
     self.message_cache = dict()
+
 
   def previousMessage(self, to_factor, rv_value):
     tup = (to_factor.key, rv_value)
     return self.message_cache.get(tup, self.default_initialization)
 
+
+  def normalizeMessages(self):
+    total0 = sum([val for k, val in self.message_cache.items() if k[1] == 0])
+    total1 = sum([val for k, val in self.message_cache.items() if k[1] == 1])
+    if total0 == 0: total0 = Decimal(1.0);
+    if total1 == 0: total1 = Decimal(1.0);
+
+    for k, val in self.message_cache.items():
+      if val == 0:
+        continue
+
+      if k[1] == 0:
+        self.message_cache[k] = val / total0
+      else:
+        self.message_cache[k] = val / total1
+
+
   def message(self, to_factor, rv_value):
-    result = 1.0
+    result = Decimal(1.0)
     for factor in self.neighboring_factors:
       if factor is to_factor:
         continue
@@ -40,7 +63,7 @@ class Factor(object):
     self.rvs = [rv for rv in rvs if rv.key in cpd.allVars()]
     self.key = ','.join(sorted({str(rv.key) for rv in self.rvs}))
     self.message_cache = dict()
-    self.default_initialization = 1.0
+    self.default_initialization = Decimal(1.0)
 
     nvars = len(self.rvs)
     nrows = int(2 ** nvars)
@@ -63,12 +86,31 @@ class Factor(object):
 
     assert len(self.rvs) == self.table.shape[1] - 1
 
+
   def reset(self):
     self.message_cache = dict()
+
 
   def previousMessage(self, to_rv, rv_value):
     tup = (to_rv.key, rv_value)
     return self.message_cache.get(tup, self.default_initialization)
+
+
+  def normalizeMessages(self):
+    total0 = sum([val for k, val in self.message_cache.items() if k[1] == 0])
+    total1 = sum([val for k, val in self.message_cache.items() if k[1] == 1])
+    if total0 == 0: total0 = Decimal(1.0);
+    if total1 == 0: total1 = Decimal(1.0);
+
+    for k, val in self.message_cache.items():
+      if val == 0:
+        continue
+
+      if k[1] == 0:
+        self.message_cache[k] = val / total0
+      else:
+        self.message_cache[k] = val / total1
+
 
   def message(self, to_rv, rv_value, observed):
     """
@@ -88,15 +130,15 @@ class Factor(object):
     filtered = self.table[search]
     assert filtered.shape[1] == self.table.shape[1]
 
-    result = 0.0
+    result = Decimal(0.0)
     for row_idx in range(filtered.shape[0]):
-      message_product = 1.0
+      message_product = Decimal(1.0)
       for col_idx in range(filtered.shape[1] - 1):
         if col_idx == rv_idx: continue;
         rv_val = filtered[row_idx, col_idx]
         rv = self.rvs[col_idx]
         message_product *= rv.previousMessage(self, rv_val)
-      message_product *= filtered[row_idx, -1]
+      message_product *= Decimal(str(filtered[row_idx, -1]))
       result += message_product
 
     self.message_cache[(to_rv.key, rv_value)] = result
@@ -108,6 +150,7 @@ class FactorGraph(object):
   def __init__(self, prob_util, directed_graph_yaml, verbose=True):
     self.prob_util = prob_util
     self.verbose = verbose
+    self.num_predictions = 0
 
     self.graph = nx.Graph()
     directed_graph = nx.read_yaml(directed_graph_yaml)
@@ -120,7 +163,7 @@ class FactorGraph(object):
       dependencies = [e[0] for e in directed_graph.in_edges(rv)]
       cpd = CPD(rv, dependencies)
       cpds.append(cpd)
-      max_fac = max(max_fac, len(cpd.allVars()))
+      max_fac = max(max_fac, len(cpd.allVars()) - 1)
       self.rvs.append(RandomVariable(rv))
 
     if self.verbose:
@@ -141,15 +184,16 @@ class FactorGraph(object):
       print('All %d factors initialized.' % len(self.factors))
 
 
-  def visualizeGraph(self):
+  def visualizeGraph(self, img_file):
     if self.verbose:
-      print('Showing factor graph...')
+      print('Visualizing factor graph...')
 
+    plt.close()
     first_partition = [f.key for f in self.factors]
     pos = nx.drawing.layout.bipartite_layout(self.graph, first_partition)
     nx.draw_networkx(self.graph, pos=pos, with_labels=False,
       width=0.1, node_size=5)
-    plt.show()
+    plt.savefig(img_file)
 
 
   def reset(self):
@@ -159,8 +203,18 @@ class FactorGraph(object):
       factor.reset()
 
 
-  def loopyBP(self, observed=dict(), err_tol=0.01, max_iterations=20):
+  def loopyBP(self, observed=dict(),
+              intermediate_pred=None,
+              err_tol=LBP_CONVERGENCE_THRESH,
+              max_iterations=LBP_MAX_ITER):
     """
+    https://arxiv.org/pdf/1301.6725.pdf
+    https://www.ski.org/sites/default/files/publications/bptutorial.pdf
+    https://www.mit.edu/~6.454/www_fall_2002/lizhong/factorgraph.pdf
+    https://en.wikipedia.org/wiki/Junction_tree_algorithm - TODO try it out, maybe
+    Noisy-OR: https://people.csail.mit.edu/dsontag/papers/HalpernSontag_uai13.pdf
+              https://www.sciencedirect.com/science/article/pii/B9781483214511500160?via%3Dihub
+    ---
     `observed` is a dictionary mapping RV index --> RV value, for example,
     mapping all 0-255 hash bits to their observed values.
     """
@@ -169,11 +223,16 @@ class FactorGraph(object):
       print('Running loopy belief propagation...')
 
     self.reset()
-    converged = False
-    iter = 0
+    itr, converged, predictions = 0, False, []
 
-    while not converged and iter < max_iterations:
+    while not converged and itr < max_iterations:
       converged = True
+      
+      try:
+        valid, prediction = intermediate_pred()
+        if valid: predictions.append(prediction);
+      except:
+        pass
 
       for factor in self.factors:
         for rv in factor.rvs:
@@ -182,9 +241,8 @@ class FactorGraph(object):
           prev1 = rv.previousMessage(factor, 1)
           new0 = rv.message(factor, 0)
           new1 = rv.message(factor, 1)
+
           err0, err1 = abs(prev0 - new0), abs(prev1 - new1)
-          assert not np.isnan(err0), 'RV->factor : err0 = NaN'
-          assert not np.isnan(err1), 'RV->factor : err1 = NaN'
           converged = converged and err0 < err_tol and err1 < err_tol
 
           # Belief propagation: factors --> random variables
@@ -192,37 +250,72 @@ class FactorGraph(object):
           prev1 = factor.previousMessage(rv, 1)
           new0 = factor.message(rv, 0, observed)
           new1 = factor.message(rv, 1, observed)
+
           err0, err1 = abs(prev0 - new0), abs(prev1 - new1)
-          assert not np.isnan(err0), 'factor->RV : err0 = NaN'
-          assert not np.isnan(err1), 'factor->RV : err1 = NaN'
           converged = converged and err0 < err_tol and err1 < err_tol
-      iter += 1
+
+      for rv in self.rvs:
+        rv.normalizeMessages()
+      for factor in self.factors:
+        factor.normalizeMessages()
+
+      itr += 1
 
     if self.verbose:
       if converged:
-        print('Loopy BP converged in %d iterations.' % iter)
-      else:
+        print('Loopy BP converged in %d iterations.' % itr)
+      elif itr >= max_iterations:
         print('Loopy BP did not converge, max iterations reached')
 
-    return converged, iter
+    return converged, predictions
+  
 
-
-  def predict(self, rv_index, rv_value):
+  def predict(self, rv_index, rv_value, observed=dict(), visualize_convergence=False):
     """
     Predict probability that the RV has the given value.
-    Assume LBP has already been run, with observed variables if desired.
+    This will first run loopy belief propagation, with observed variables if desired.
     """
 
-    rv = [rv for rv in self.rvs if rv.key == rv_index][0]
-    factors = [f for f in self.factors if rv in f.rvs]
+    def _predict():
+      """ Helper function, also called during LBP to see how prediction changes """
+      rv = [rv for rv in self.rvs if rv.key == rv_index][0]
+      factors = [f for f in self.factors if rv in f.rvs]
 
-    total = 1.0
-    total_opposite = 1.0
-    for factor in factors:
-      total *= factor.previousMessage(rv, rv_value)
-      total_opposite *= factor.previousMessage(rv, 1 - rv_value)
+      total = Decimal(1e100)
+      total_opposite = Decimal(1e100)
+      for factor in factors:
+        total *= factor.previousMessage(rv, rv_value)
+        total_opposite *= factor.previousMessage(rv, 1 - rv_value)
+        normalizer = min(total, total_opposite)
+        total /= normalizer
+        total_opposite /= normalizer
 
-    if total + total_opposite == 0:
-      print('WARNING: prediction would divide by zero!')
-      return 0.5
-    return total / (total + total_opposite)
+      summed = total + total_opposite
+      if summed == 0:
+        return False, None
+      else:
+        prob = total / summed
+        return prob.is_finite(), float(prob)
+
+    converged, preds = self.loopyBP(observed=observed, intermediate_pred=_predict)
+
+    if visualize_convergence:
+      plt.clf()
+      plt.plot(preds)
+      plt.xlabel('Iteration')
+      plt.ylabel('Probability')
+      img_file = os.path.join(EXPERIMENT_DIR, 'lbp_%04d.png' % self.num_predictions)
+      plt.savefig(img_file)
+
+    self.num_predictions += 1
+
+    try:
+      # Try to predict, but use try-catch in case there's failure due to numerical err
+      return _predict()
+    except:
+      if len(preds) > 0:
+        # Default to previous prediction from loopy belief propagation
+        return True, preds[-1]
+      else:
+        # If there are no other predictions from LBP, we straight up fail!
+        return False, None
