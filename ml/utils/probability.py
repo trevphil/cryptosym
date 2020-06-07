@@ -92,4 +92,5 @@ class CPD(object):
     numerator = prob_util.count(query1)
     denominator = numerator + prob_util.count(query2)
 
+    # EPSILON affects the model such that each event has a non-zero probability
     return (EPSILON + float(numerator)) / (2 * EPSILON + float(denominator))

@@ -85,10 +85,8 @@ if __name__ == '__main__':
       for rv, hash_val in enumerate(hash_bits):
         observed[rv] = hash_val
 
-      success, prob_hash_input_bit_is_one = fg.predict(constants.BIT_PRED, 1,
+      prob_hash_input_bit_is_one = fg.predict(constants.BIT_PRED, 1,
         observed=observed, visualize_convergence=constants.VISUALIZE)
-      if not success:
-        continue
 
       print(prob_hash_input_bit_is_one)
 

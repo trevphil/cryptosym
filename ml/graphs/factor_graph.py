@@ -9,42 +9,49 @@ from itertools import product
 from utils.probability import CPD
 from utils.constants import LBP_CONVERGENCE_THRESH, LBP_MAX_ITER, EXPERIMENT_DIR
 
+######################################################
+################# FACTOR GRAPH NODE ##################
+######################################################
 
-class RandomVariable(object):
-  def __init__(self, key):
-    self.key = key
+class FactorGraphNode(object):
+  def __init__(self):
     self.message_cache = dict()
-    self.neighboring_factors = []
     self.default_initialization = Decimal(1.0)
+  
+
+  def reset(self):
+    self.message_cache = dict()
+  
+  
+  def previousMessage(self, to_node, rv_value):
+    tup = (to_node.key, rv_value)
+    return self.message_cache.get(tup, self.default_initialization)
+    
+  
+  def sumOfMessages(self):
+    return sum(self.message_cache.values())
+
+
+  def normalizeMessages(self, normalizer):
+    for key, msg_value in self.message_cache.items():
+      if msg_value == 0:
+        self.message_cache[key] = Decimal(0.0)
+      else:
+        self.message_cache[key] = msg_value / normalizer
+
+######################################################
+################## RANDOM VARIABLE ###################
+######################################################
+
+class RandomVariable(FactorGraphNode):
+  def __init__(self, key):
+    super().__init__()
+    self.key = key
+    self.neighboring_factors = []
 
 
   def addNeighboringFactor(self, neighbor):
     self.neighboring_factors.append(neighbor)
-
-
-  def reset(self):
-    self.message_cache = dict()
-
-
-  def previousMessage(self, to_factor, rv_value):
-    tup = (to_factor.key, rv_value)
-    return self.message_cache.get(tup, self.default_initialization)
-
-
-  def normalizeMessages(self):
-    total0 = sum([val for k, val in self.message_cache.items() if k[1] == 0])
-    total1 = sum([val for k, val in self.message_cache.items() if k[1] == 1])
-    if total0 == 0: total0 = Decimal(1.0);
-    if total1 == 0: total1 = Decimal(1.0);
-
-    for k, val in self.message_cache.items():
-      if val == 0:
-        continue
-
-      if k[1] == 0:
-        self.message_cache[k] = val / total0
-      else:
-        self.message_cache[k] = val / total1
 
 
   def message(self, to_factor, rv_value):
@@ -57,13 +64,15 @@ class RandomVariable(object):
     self.message_cache[(to_factor.key, rv_value)] = result
     return result
 
+######################################################
+####################### FACTOR #######################
+######################################################
 
-class Factor(object):
+class Factor(FactorGraphNode):
   def __init__(self, cpd, rvs, prob_util):
+    super().__init__()
     self.rvs = [rv for rv in rvs if rv.key in cpd.allVars()]
     self.key = ','.join(sorted({str(rv.key) for rv in self.rvs}))
-    self.message_cache = dict()
-    self.default_initialization = Decimal(1.0)
 
     nvars = len(self.rvs)
     nrows = int(2 ** nvars)
@@ -85,31 +94,6 @@ class Factor(object):
       i += 1
 
     assert len(self.rvs) == self.table.shape[1] - 1
-
-
-  def reset(self):
-    self.message_cache = dict()
-
-
-  def previousMessage(self, to_rv, rv_value):
-    tup = (to_rv.key, rv_value)
-    return self.message_cache.get(tup, self.default_initialization)
-
-
-  def normalizeMessages(self):
-    total0 = sum([val for k, val in self.message_cache.items() if k[1] == 0])
-    total1 = sum([val for k, val in self.message_cache.items() if k[1] == 1])
-    if total0 == 0: total0 = Decimal(1.0);
-    if total1 == 0: total1 = Decimal(1.0);
-
-    for k, val in self.message_cache.items():
-      if val == 0:
-        continue
-
-      if k[1] == 0:
-        self.message_cache[k] = val / total0
-      else:
-        self.message_cache[k] = val / total1
 
 
   def message(self, to_rv, rv_value, observed):
@@ -144,6 +128,9 @@ class Factor(object):
     self.message_cache[(to_rv.key, rv_value)] = result
     return result
 
+######################################################
+################### FACTOR GRAPH #####################
+######################################################
 
 class FactorGraph(object):
 
@@ -229,10 +216,11 @@ class FactorGraph(object):
       converged = True
       
       try:
-        valid, prediction = intermediate_pred()
-        if valid: predictions.append(prediction);
-      except:
-        pass
+        prediction = intermediate_pred()
+        predictions.append(prediction)
+      except Exception as e:
+        print('Error during intermediate prediction: {}'.format(e))
+        exit()
 
       for factor in self.factors:
         for rv in factor.rvs:
@@ -254,10 +242,12 @@ class FactorGraph(object):
           err0, err1 = abs(prev0 - new0), abs(prev1 - new1)
           converged = converged and err0 < err_tol and err1 < err_tol
 
+      normalizer = sum(rv.sumOfMessages() for rv in self.rvs) + \
+                   sum(factor.sumOfMessages() for factor in self.factors)
       for rv in self.rvs:
-        rv.normalizeMessages()
+        rv.normalizeMessages(normalizer)
       for factor in self.factors:
-        factor.normalizeMessages()
+        factor.normalizeMessages(normalizer)
 
       itr += 1
 
@@ -281,21 +271,14 @@ class FactorGraph(object):
       rv = [rv for rv in self.rvs if rv.key == rv_index][0]
       factors = [f for f in self.factors if rv in f.rvs]
 
-      total = Decimal(1e100)
-      total_opposite = Decimal(1e100)
+      total = Decimal(1.0)
+      total_opposite = Decimal(1.0)
       for factor in factors:
         total *= factor.previousMessage(rv, rv_value)
         total_opposite *= factor.previousMessage(rv, 1 - rv_value)
-        normalizer = min(total, total_opposite)
-        total /= normalizer
-        total_opposite /= normalizer
 
       summed = total + total_opposite
-      if summed == 0:
-        return False, None
-      else:
-        prob = total / summed
-        return prob.is_finite(), float(prob)
+      return float(total / summed)
 
     converged, preds = self.loopyBP(observed=observed, intermediate_pred=_predict)
 
@@ -308,14 +291,4 @@ class FactorGraph(object):
       plt.savefig(img_file)
 
     self.num_predictions += 1
-
-    try:
-      # Try to predict, but use try-catch in case there's failure due to numerical err
-      return _predict()
-    except:
-      if len(preds) > 0:
-        # Default to previous prediction from loopy belief propagation
-        return True, preds[-1]
-      else:
-        # If there are no other predictions from LBP, we straight up fail!
-        return False, None
+    return _predict()
