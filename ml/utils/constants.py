@@ -1,4 +1,5 @@
 from os import path
+from math import log
 from time import localtime, strftime
 from pathlib import Path
 
@@ -28,15 +29,18 @@ HASH_MODES = [
 
 EPSILON = 1e-4
 
-LBP_CONVERGENCE_THRESH = 1e-4
-
 LBP_MAX_ITER = 20
 
 MAX_CONNECTIONS_PER_NODE = 6
 
 BIT_PRED = 256 + 0 # a.k.a. the first bit of the input message
 
-DATASET_SIZE = 20000
+PROB_ALL_CPDS_IN_DATASET = 0.95
+
+# Dataset size is computed such that for any configuration of (MAX_CONNECTIONS_PER_NODE + 1)
+# combinations of binary random variables, there is a probability of PROB_ALL_CPDS_IN_DATASET
+# that at least one item in the dataset has that configuration of 0's and 1's.
+DATASET_SIZE = int(log(1.0 - PROB_ALL_CPDS_IN_DATASET) / log(1.0 - pow(2.0, -(MAX_CONNECTIONS_PER_NODE + 1))))
 
 EXPERIMENT_DIR = path.join(path.abspath('./experiments'),
                            HASH_MODE + '_' + strftime('%Y-%m-%d-%H-%M-%S', localtime()))

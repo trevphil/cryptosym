@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 import os
-from decimal import Decimal, Overflow
+import math
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 from itertools import product
+from math import tanh, atanh, log
 
 from utils.probability import CPD
-from utils.constants import LBP_CONVERGENCE_THRESH, LBP_MAX_ITER, EXPERIMENT_DIR
+from utils.constants import LBP_MAX_ITER, EXPERIMENT_DIR
 
 ######################################################
 ################# FACTOR GRAPH NODE ##################
@@ -16,28 +17,19 @@ from utils.constants import LBP_CONVERGENCE_THRESH, LBP_MAX_ITER, EXPERIMENT_DIR
 class FactorGraphNode(object):
   def __init__(self):
     self.message_cache = dict()
-    self.default_initialization = Decimal(1.0)
-  
+    self.default_initialization = 0.0
+
+
+  def setInitialization(self, new_init):
+    self.default_initialization = new_init
+
 
   def reset(self):
     self.message_cache = dict()
-  
-  
-  def previousMessage(self, to_node, rv_value):
-    tup = (to_node.key, rv_value)
-    return self.message_cache.get(tup, self.default_initialization)
-    
-  
-  def sumOfMessages(self):
-    return sum(self.message_cache.values())
 
 
-  def normalizeMessages(self, normalizer):
-    for key, msg_value in self.message_cache.items():
-      if msg_value == 0:
-        self.message_cache[key] = Decimal(0.0)
-      else:
-        self.message_cache[key] = msg_value / normalizer
+  def prevMessage(self, to_node):
+    return self.message_cache.get(to_node.key, self.default_initialization)
 
 ######################################################
 ################## RANDOM VARIABLE ###################
@@ -54,15 +46,19 @@ class RandomVariable(FactorGraphNode):
     self.neighboring_factors.append(neighbor)
 
 
-  def message(self, to_factor, rv_value):
-    result = Decimal(1.0)
+  def update(self):
+    """ Update the messages from this random variable to neighboring factors """
     for factor in self.neighboring_factors:
-      if factor is to_factor:
-        continue
-      result *= factor.previousMessage(self, rv_value)
+      total = sum(f.prevMessage(self) for f in self.neighboring_factors if f is not factor)
+      self.message_cache[factor.key] = self.default_initialization + total
 
-    self.message_cache[(to_factor.key, rv_value)] = result
-    return result
+
+  def probIsOne(self):
+    """ Probability that this random variable is 1, using messages of neighbor factors """
+    x = self.default_initialization
+    x += sum(f.prevMessage(self) for f in self.neighboring_factors)
+    # An alternative would be to check if x < 0, but it doesn't give probability in [0, 1]
+    return float(1.0 / (1.0 + pow(math.e, x)))
 
 ######################################################
 ####################### FACTOR #######################
@@ -71,8 +67,9 @@ class RandomVariable(FactorGraphNode):
 class Factor(FactorGraphNode):
   def __init__(self, cpd, rvs, prob_util):
     super().__init__()
+    self.query = [rv for rv in rvs if rv.key == cpd.rv][0]
     self.rvs = [rv for rv in rvs if rv.key in cpd.allVars()]
-    self.key = ','.join(sorted({str(rv.key) for rv in self.rvs}))
+    self.key = ','.join(sorted(str(rv.key) for rv in self.rvs))
 
     nvars = len(self.rvs)
     nrows = int(2 ** nvars)
@@ -94,39 +91,21 @@ class Factor(FactorGraphNode):
       i += 1
 
     assert len(self.rvs) == self.table.shape[1] - 1
+  
 
+  def update(self):
+    """ Update the messages from this factor to neighboring random variables """
+    for rv in self.rvs:
+      prod = 1.0
 
-  def message(self, to_rv, rv_value, observed):
-    """
-    `observed` is a dict mapping from RV key --> RV value and we need
-    to re-map the RV key (node #) to a column index in `self.table`,
-    which can be done by finding the index of the RV in `self.rvs` whose
-    key (node #) matches the RV key in the `observed` dict.
-    """
-    rv_idx = self.rvs.index(to_rv)
-    search = self.table[:, rv_idx] == rv_value
-    for observed_rv, observed_rv_value in observed.items():
-      match = [(i, rv) for i, rv in enumerate(self.rvs) if rv.key == observed_rv]
-      if len(match) > 0:
-        idx = match[0][0]
-        search = search & (self.table[:, idx] == observed_rv_value)
+      for other_rv in self.rvs:
+        if rv is not other_rv:
+          prod *= tanh(rv.prevMessage(self) / 2.0)
 
-    filtered = self.table[search]
-    assert filtered.shape[1] == self.table.shape[1]
-
-    result = Decimal(0.0)
-    for row_idx in range(filtered.shape[0]):
-      message_product = Decimal(1.0)
-      for col_idx in range(filtered.shape[1] - 1):
-        if col_idx == rv_idx: continue;
-        rv_val = filtered[row_idx, col_idx]
-        rv = self.rvs[col_idx]
-        message_product *= rv.previousMessage(self, rv_val)
-      message_product *= Decimal(str(filtered[row_idx, -1]))
-      result += message_product
-
-    self.message_cache[(to_rv.key, rv_value)] = result
-    return result
+      if prod != 1.0:
+        # TODO - Not sure if the algo still works with this condition.
+        #        Factors with only 1 RV will never be updated.
+        self.message_cache[rv.key] = 2.0 * atanh(prod)
 
 ######################################################
 ################### FACTOR GRAPH #####################
@@ -138,12 +117,12 @@ class FactorGraph(object):
     self.prob_util = prob_util
     self.verbose = verbose
     self.num_predictions = 0
-
     self.graph = nx.Graph()
+    self.rvs = []
+
     directed_graph = nx.read_yaml(directed_graph_yaml)
     max_fac = 0
     cpds = []
-    self.rvs = []
 
     for rv in directed_graph.nodes():
       self.graph.add_node(rv, bipartite=0)
@@ -166,6 +145,15 @@ class FactorGraph(object):
       for rv in factor.rvs:
         self.graph.add_edge(factor.key, rv.key)
         rv.addNeighboringFactor(factor)
+    
+    if self.verbose:
+      print('Creating bipartite adjacency matrix H...')
+    M, N = len(self.factors), len(self.rvs)
+    self.H = np.zeros((M, N), dtype='int')
+    for factor_idx in range(M):
+      for rv_idx in range(N):
+        factor, rv = self.factors[factor_idx], self.rvs[rv_idx]
+        self.H[factor_idx, rv_idx] = (rv in factor.rvs)
 
     if self.verbose:
       print('All %d factors initialized.' % len(self.factors))
@@ -183,17 +171,44 @@ class FactorGraph(object):
     plt.savefig(img_file)
 
 
-  def reset(self):
+  def setup(self, observed):
+    """
+    `observed` is a dict mapping from RV key --> RV value and we need
+    to re-map the RV key (node #) to a column index in `factor.table`,
+    which can be done by finding the index of the RV in `factor.rvs` whose
+    key (node #) matches the RV key in the `observed` dict.
+    ---
+    This LBP algorithm is using a logarithmic version of the sum-product
+    algorithm for increased numerical stability. Messages for factor nodes
+    in the factor graph should be initialized to 0.0 and messages for
+    random variable nodes should be initialized with the log-likelihood
+    ratio (LLR) of the RV, i.e. log[P(x=0|observed) / P(x=1|observed)].
+    ---
+    See:
+    'Efficient Implementations of the Sum-Product Algorithm for Decoding LDPC Codes'
+    """
+
     for rv in self.rvs:
       rv.reset()
     for factor in self.factors:
       factor.reset()
+    
+    for rv in self.rvs:
+      factor = [f for f in self.factors if f.query is rv][0]
+      search = factor.table[:, 0] == 1 # Select all rows where column 0 is 1 (rv=1)
+      for observed_rv_key, observed_rv_value in observed.items():
+        match = [(i, rv2) for i, rv2 in enumerate(factor.rvs) if rv2.key == observed_rv_key]
+        if len(match) > 0:
+          idx = match[0][0]
+          search = search & (factor.table[:, idx] == observed_rv_value)
+      filtered = factor.table[search]
+      assert filtered.shape[1] == factor.table.shape[1]
+      
+      prob_rv_one = np.sum(filtered[:, -1]) # Marginalize out the unobserved variables
+      rv.setInitialization(log(1.0 - prob_rv_one) / log(prob_rv_one))
 
 
-  def loopyBP(self, observed=dict(),
-              intermediate_pred=None,
-              err_tol=LBP_CONVERGENCE_THRESH,
-              max_iterations=LBP_MAX_ITER):
+  def loopyBP(self, intermediate_pred=None, max_iterations=LBP_MAX_ITER):
     """
     https://arxiv.org/pdf/1301.6725.pdf
     https://www.ski.org/sites/default/files/publications/bptutorial.pdf
@@ -209,78 +224,59 @@ class FactorGraph(object):
     if self.verbose:
       print('Running loopy belief propagation...')
 
-    self.reset()
-    itr, converged, predictions = 0, False, []
-
-    while not converged and itr < max_iterations:
-      converged = True
-      
+    itr, predictions = 0, []
+    
+    while itr < max_iterations:
       try:
         prediction = intermediate_pred()
         predictions.append(prediction)
       except Exception as e:
         print('Error during intermediate prediction: {}'.format(e))
         exit()
-
+      
       for factor in self.factors:
-        for rv in factor.rvs:
-          # Belif propagation: random variables --> factors
-          prev0 = rv.previousMessage(factor, 0)
-          prev1 = rv.previousMessage(factor, 1)
-          new0 = rv.message(factor, 0)
-          new1 = rv.message(factor, 1)
-
-          err0, err1 = abs(prev0 - new0), abs(prev1 - new1)
-          converged = converged and err0 < err_tol and err1 < err_tol
-
-          # Belief propagation: factors --> random variables
-          prev0 = factor.previousMessage(rv, 0)
-          prev1 = factor.previousMessage(rv, 1)
-          new0 = factor.message(rv, 0, observed)
-          new1 = factor.message(rv, 1, observed)
-
-          err0, err1 = abs(prev0 - new0), abs(prev1 - new1)
-          converged = converged and err0 < err_tol and err1 < err_tol
-
-      normalizer = sum(rv.sumOfMessages() for rv in self.rvs) + \
-                   sum(factor.sumOfMessages() for factor in self.factors)
+        factor.update()
       for rv in self.rvs:
-        rv.normalizeMessages(normalizer)
-      for factor in self.factors:
-        factor.normalizeMessages(normalizer)
+        rv.update()
 
+      if self.isConverged():
+        break
       itr += 1
 
     if self.verbose:
-      if converged:
-        print('Loopy BP converged in %d iterations.' % itr)
-      elif itr >= max_iterations:
+      if itr >= max_iterations:
         print('Loopy BP did not converge, max iterations reached')
-
-    return converged, predictions
+      else:
+        print('Loopy BP converged in %d iterations.' % (itr + 1))
+    return predictions
   
+  
+  def isConverged(self):
+    """ Converged if u * transpose(H) is all zeros """
+    u = np.zeros(len(self.rvs), dtype='int')
+    for idx, rv in enumerate(self.rvs):
+      u[idx] = 1 if rv.probIsOne() > 0.5 else 0
+    all_zeros = not u.dot(self.H.T).any()
+    return all_zeros
+
 
   def predict(self, rv_index, rv_value, observed=dict(), visualize_convergence=False):
     """
     Predict probability that the RV has the given value.
     This will first run loopy belief propagation, with observed variables if desired.
+    ---
+    `observed` is a dictionary mapping RV index --> RV value, for example,
+    mapping all 0-255 hash bits to their observed values.
     """
 
     def _predict():
       """ Helper function, also called during LBP to see how prediction changes """
       rv = [rv for rv in self.rvs if rv.key == rv_index][0]
-      factors = [f for f in self.factors if rv in f.rvs]
+      p = rv.probIsOne()
+      return p if rv_value == 1 else (1.0 - p)
 
-      total = Decimal(1.0)
-      total_opposite = Decimal(1.0)
-      for factor in factors:
-        total *= factor.previousMessage(rv, rv_value)
-        total_opposite *= factor.previousMessage(rv, 1 - rv_value)
-
-      summed = total + total_opposite
-      return float(total / summed)
-
-    converged, preds = self.loopyBP(observed=observed, intermediate_pred=_predict)
+    self.setup(observed)
+    preds = self.loopyBP(intermediate_pred=_predict)
 
     if visualize_convergence:
       plt.clf()
