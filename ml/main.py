@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
   print('Checking accuracy of single bit prediction on test data...')
   correct_count, total_count = 0, 0
-  probabilities, accuracies = [], []
+  log_likelihood_ratios, accuracies = [], []
 
   try:
     for i in range(X_test.shape[0]):
@@ -77,7 +77,7 @@ if __name__ == '__main__':
       for rv, hash_val in enumerate(hash_bits):
         observed[rv] = hash_val
 
-      prob_hash_input_bit_is_one, _ = fg.predict(constants.BIT_PRED, 1,
+      prob_hash_input_bit_is_one, llr = fg.predict(constants.BIT_PRED, 1,
         observed=observed, visualize_convergence=constants.VISUALIZE)
 
       guess = 1 if prob_hash_input_bit_is_one >= 0.5 else 0
@@ -86,7 +86,7 @@ if __name__ == '__main__':
       total_count += 1
       print('\tGuessed {}, true value is {}'.format(guess, true_hash_input_bit))
 
-      probabilities.append(prob_hash_input_bit_is_one)
+      log_likelihood_ratios.append(llr)
       accuracies.append(is_correct)
 
       print('\tAccuracy: {0}/{1} ({2:.3f}%)'.format(
@@ -94,16 +94,16 @@ if __name__ == '__main__':
 
   finally:
     if constants.VISUALIZE:
-      probabilities = np.array(probabilities)
+      log_likelihood_ratios = np.array(log_likelihood_ratios)
       accuracies = np.array(accuracies)
       plt.close()
       fig, axs = plt.subplots(1, 2, sharey=True, tight_layout=True)
       axs[0].set_title('Correct predictions')
-      axs[0].set_xlabel('Prob. hash input bit is 1')
-      axs[0].hist(probabilities[accuracies == 1], bins=30)
+      axs[0].set_xlabel('Log-likelihood ratio')
+      axs[0].hist(log_likelihood_ratios[accuracies == 1], bins=30)
       axs[1].set_title('Incorrect predictions')
-      axs[1].set_xlabel('Prob. hash input bit is 1')
-      axs[1].hist(probabilities[accuracies == 0], bins=30)
+      axs[1].set_xlabel('Log-likelihood ratio')
+      axs[1].hist(log_likelihood_ratios[accuracies == 0], bins=30)
       plt.savefig(os.path.join(constants.EXPERIMENT_DIR, 'accuracy_distribution.png'))
 
   print('Done.')
