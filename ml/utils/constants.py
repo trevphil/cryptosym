@@ -28,9 +28,9 @@ HASH_MODES = [
 
 EPSILON = 1e-4
 
-LBP_MAX_ITER = 20
+LBP_MAX_ITER = 10
 
-MAX_CONNECTIONS_PER_NODE = 6
+MAX_CONNECTIONS_PER_NODE = 16
 
 BIT_PRED = 256 + 0 # a.k.a. the first bit of the input message
 
@@ -53,8 +53,6 @@ PROB_DATA_FILE = path.join(DATA_DIR, 'prob.npy')
 FCG_DATA_FILE = path.join(DATA_DIR, 'bn_fully_connected.yaml')
 
 UDG_DATA_FILE = path.join(DATA_DIR, 'bn_undirected.yaml')
-
-DG_DATA_FILE = path.join(DATA_DIR, 'bn_directed.yaml')
 
 def makeDataDirectoryIfNeeded():
   Path(DATA_DIR).mkdir(parents=True, exist_ok=True)
