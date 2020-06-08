@@ -7,8 +7,7 @@ import numpy as np
 from itertools import product
 from math import tanh, atanh, log
 
-from utils.probability import CPD
-from utils.constants import LBP_MAX_ITER, EXPERIMENT_DIR
+from utils.constants import LBP_MAX_ITER, EXPERIMENT_DIR, EPSILON
 
 ######################################################
 ################# FACTOR GRAPH NODE ##################
@@ -18,6 +17,7 @@ class FactorGraphNode(object):
   def __init__(self):
     self.message_cache = dict()
     self.default_initialization = 0.0
+    self.key = None
 
 
   def setInitialization(self, new_init):
@@ -28,7 +28,7 @@ class FactorGraphNode(object):
     self.message_cache = dict()
 
 
-  def prevMessage(self, to_node):
+  def message(self, to_node):
     return self.message_cache.get(to_node.key, self.default_initialization)
 
 ######################################################
@@ -49,49 +49,31 @@ class RandomVariable(FactorGraphNode):
   def update(self):
     """ Update the messages from this random variable to neighboring factors """
     for factor in self.neighboring_factors:
-      total = sum(f.prevMessage(self) for f in self.neighboring_factors if f is not factor)
+      total = sum(f.message(self) for f in self.neighboring_factors if f is not factor)
       self.message_cache[factor.key] = self.default_initialization + total
 
 
-  def probIsOne(self):
-    """ Probability that this random variable is 1, using messages of neighbor factors """
+  def isOne(self):
+    """
+    Returns a tuple where the first element is `True` if the random variable
+    is predicted to be 1 (based on the messages of neighboring factors) and
+    `False` otherwise. The second element of the tuple is the log-likelihood ratio,
+    log[P(x=0) / P(x=1)]. The LLR is < 0 if the variable is predicted to be 1.
+    """
     x = self.default_initialization
-    x += sum(f.prevMessage(self) for f in self.neighboring_factors)
-    # An alternative would be to check if x < 0, but it doesn't give probability in [0, 1]
-    return float(1.0 / (1.0 + pow(math.e, x)))
+    x += sum(f.message(self) for f in self.neighboring_factors)
+    return (x < 0), x
 
 ######################################################
 ####################### FACTOR #######################
 ######################################################
 
 class Factor(FactorGraphNode):
-  def __init__(self, cpd, rvs, prob_util):
+  def __init__(self, rvs):
     super().__init__()
-    self.query = [rv for rv in rvs if rv.key == cpd.rv][0]
-    self.rvs = [rv for rv in rvs if rv.key in cpd.allVars()]
+    self.rvs = rvs
     self.key = ','.join(sorted(str(rv.key) for rv in self.rvs))
 
-    nvars = len(self.rvs)
-    nrows = int(2 ** nvars)
-    self.table = np.zeros((nrows, nvars + 1), dtype=np.longdouble)
-
-    i = 0
-    bit_sequences = product([0, 1], repeat=len(cpd.dependencies))
-
-    for bit_sequence in bit_sequences:
-      prob_rv_one = cpd.probability_rv_one(
-        dependency_values=bit_sequence, prob_util=prob_util)
-
-      self.table[i, :-1]  = (0,) + bit_sequence
-      self.table[i, -1]   = 1.0 - prob_rv_one
-      i += 1
-
-      self.table[i, :-1]  = (1,) + bit_sequence
-      self.table[i, -1]   = prob_rv_one
-      i += 1
-
-    assert len(self.rvs) == self.table.shape[1] - 1
-  
 
   def update(self):
     """ Update the messages from this factor to neighboring random variables """
@@ -100,7 +82,7 @@ class Factor(FactorGraphNode):
 
       for other_rv in self.rvs:
         if rv is not other_rv:
-          prod *= tanh(rv.prevMessage(self) / 2.0)
+          prod *= tanh(other_rv.message(self) / 2.0)
 
       if prod != 1.0:
         # TODO - Not sure if the algo still works with this condition.
@@ -113,47 +95,34 @@ class Factor(FactorGraphNode):
 
 class FactorGraph(object):
 
-  def __init__(self, prob_util, directed_graph_yaml, verbose=True):
+  def __init__(self, prob_util, undirected_graph_yaml, verbose=True):
     self.prob_util = prob_util
     self.verbose = verbose
     self.num_predictions = 0
-    self.graph = nx.Graph()
+    self.bipartite_graph = nx.Graph()
     self.rvs = []
+    self.factors = []
 
-    directed_graph = nx.read_yaml(directed_graph_yaml)
-    max_fac = 0
-    cpds = []
+    self.undirected_graph = nx.read_yaml(undirected_graph_yaml)
 
-    for rv in directed_graph.nodes():
-      self.graph.add_node(rv, bipartite=0)
-      dependencies = [e[0] for e in directed_graph.in_edges(rv)]
-      cpd = CPD(rv, dependencies)
-      cpds.append(cpd)
-      max_fac = max(max_fac, len(cpd.allVars()) - 1)
+    for rv in self.undirected_graph.nodes():
+      self.bipartite_graph.add_node(rv, bipartite=0)
       self.rvs.append(RandomVariable(rv))
-
-    if self.verbose:
-      print('Creating %d factors (max factor size is %d)...' % \
-        (len(cpds), max_fac))
-
-    self.factors = [Factor(cpd, self.rvs, self.prob_util) for cpd in cpds]
-    sorter = lambda factor: len(factor.rvs)
-    self.factors = list(sorted(self.factors, key=sorter))
+    
+    factor_keys = set()
+    for rv in self.rvs:
+      neighbor_rv_keys = self.undirected_graph[rv.key].keys()
+      factor_rvs = [v for v in self.rvs if (v is rv or v.key in neighbor_rv_keys)]
+      new_factor = Factor(factor_rvs)
+      if new_factor.key not in factor_keys:
+        self.factors.append(new_factor)
+        factor_keys.add(new_factor.key)
 
     for factor in self.factors:
-      self.graph.add_node(factor.key, bipartite=1)
+      self.bipartite_graph.add_node(factor.key, bipartite=1)
       for rv in factor.rvs:
-        self.graph.add_edge(factor.key, rv.key)
+        self.bipartite_graph.add_edge(factor.key, rv.key)
         rv.addNeighboringFactor(factor)
-    
-    if self.verbose:
-      print('Creating bipartite adjacency matrix H...')
-    M, N = len(self.factors), len(self.rvs)
-    self.H = np.zeros((M, N), dtype='int')
-    for factor_idx in range(M):
-      for rv_idx in range(N):
-        factor, rv = self.factors[factor_idx], self.rvs[rv_idx]
-        self.H[factor_idx, rv_idx] = (rv in factor.rvs)
 
     if self.verbose:
       print('All %d factors initialized.' % len(self.factors))
@@ -165,18 +134,15 @@ class FactorGraph(object):
 
     plt.close()
     first_partition = [f.key for f in self.factors]
-    pos = nx.drawing.layout.bipartite_layout(self.graph, first_partition)
-    nx.draw_networkx(self.graph, pos=pos, with_labels=False,
+    pos = nx.drawing.layout.bipartite_layout(self.bipartite_graph, first_partition)
+    nx.draw_networkx(self.bipartite_graph, pos=pos, with_labels=False,
       width=0.1, node_size=5)
     plt.savefig(img_file)
 
 
   def setup(self, observed):
     """
-    `observed` is a dict mapping from RV key --> RV value and we need
-    to re-map the RV key (node #) to a column index in `factor.table`,
-    which can be done by finding the index of the RV in `factor.rvs` whose
-    key (node #) matches the RV key in the `observed` dict.
+    `observed` is a dict mapping from RV key --> RV value
     ---
     This LBP algorithm is using a logarithmic version of the sum-product
     algorithm for increased numerical stability. Messages for factor nodes
@@ -194,18 +160,21 @@ class FactorGraph(object):
       factor.reset()
     
     for rv in self.rvs:
-      factor = [f for f in self.factors if f.query is rv][0]
-      search = factor.table[:, 0] == 1 # Select all rows where column 0 is 1 (rv=1)
-      for observed_rv_key, observed_rv_value in observed.items():
-        match = [(i, rv2) for i, rv2 in enumerate(factor.rvs) if rv2.key == observed_rv_key]
-        if len(match) > 0:
-          idx = match[0][0]
-          search = search & (factor.table[:, idx] == observed_rv_value)
-      filtered = factor.table[search]
-      assert filtered.shape[1] == factor.table.shape[1]
-      
-      prob_rv_one = np.sum(filtered[:, -1]) # Marginalize out the unobserved variables
-      rv.setInitialization(log(1.0 - prob_rv_one) / log(prob_rv_one))
+      neighbors = set(self.undirected_graph[rv.key].keys())
+      rv_assignments = [(rv_key, val) for rv_key, val in observed.items() if rv_key in neighbors]
+      rv_assignments.append((rv.key, 0))
+      count0 = self.prob_util.count(rv_assignments)
+      rv_assignments[-1] = (rv.key, 1)
+      count1 = self.prob_util.count(rv_assignments)
+      total = count0 + count1
+
+      if total == 0:
+        prob_rv_one = 0.5
+      else:
+        # EPSILON affects the model such that no event can have 0.0 or 1.0 probability
+        prob_rv_one = max(EPSILON, min(1.0 - EPSILON, float(count1) / total))
+
+      rv.setInitialization(log((1.0 - prob_rv_one) / prob_rv_one))
 
 
   def loopyBP(self, intermediate_pred=None, max_iterations=LBP_MAX_ITER):
@@ -224,12 +193,12 @@ class FactorGraph(object):
     if self.verbose:
       print('Running loopy belief propagation...')
 
-    itr, predictions = 0, []
+    itr, log_likelihood_ratios = 0, []
     
     while itr < max_iterations:
       try:
-        prediction = intermediate_pred()
-        predictions.append(prediction)
+        _, llr = intermediate_pred()
+        log_likelihood_ratios.append(llr)
       except Exception as e:
         print('Error during intermediate prediction: {}'.format(e))
         exit()
@@ -248,16 +217,11 @@ class FactorGraph(object):
         print('Loopy BP did not converge, max iterations reached')
       else:
         print('Loopy BP converged in %d iterations.' % (itr + 1))
-    return predictions
+    return log_likelihood_ratios
   
   
   def isConverged(self):
-    """ Converged if u * transpose(H) is all zeros """
-    u = np.zeros(len(self.rvs), dtype='int')
-    for idx, rv in enumerate(self.rvs):
-      u[idx] = 1 if rv.probIsOne() > 0.5 else 0
-    all_zeros = not u.dot(self.H.T).any()
-    return all_zeros
+    return False # TODO
 
 
   def predict(self, rv_index, rv_value, observed=dict(), visualize_convergence=False):
@@ -272,17 +236,18 @@ class FactorGraph(object):
     def _predict():
       """ Helper function, also called during LBP to see how prediction changes """
       rv = [rv for rv in self.rvs if rv.key == rv_index][0]
-      p = rv.probIsOne()
-      return p if rv_value == 1 else (1.0 - p)
+      is_one, llr = rv.isOne()
+      prediction = int(is_one) if rv_value == 1 else 1 - int(is_one)
+      return prediction, llr
 
     self.setup(observed)
-    preds = self.loopyBP(intermediate_pred=_predict)
+    log_likelihood_ratios = self.loopyBP(intermediate_pred=_predict)
 
     if visualize_convergence:
       plt.clf()
-      plt.plot(preds)
+      plt.plot(log_likelihood_ratios)
       plt.xlabel('Iteration')
-      plt.ylabel('Probability')
+      plt.ylabel('Log likelihood ratio')
       img_file = os.path.join(EXPERIMENT_DIR, 'lbp_%04d.png' % self.num_predictions)
       plt.savefig(img_file)
 

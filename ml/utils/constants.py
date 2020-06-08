@@ -10,8 +10,7 @@ VISUALIZE = True
 # 0 = do everything
 # 1 = need to calculate mutual information scores
 # 2 = mutual info scores already calculated, make undirected graph
-# 3 = undirected graph already cached, make directed graph
-# 4 = directed graph already cached, make factor graph
+# 3 = undirected graph already cached, make factor graph
 ENTRY_POINT = 0
 
 HASH_INPUT_NBITS = 64

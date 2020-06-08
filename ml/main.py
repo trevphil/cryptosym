@@ -5,7 +5,6 @@ from numpy import loadtxt
 from matplotlib import pyplot as plt
 
 from graphs.undirected_graph import UndirectedGraph
-from graphs.directed_graph import DirectedGraph
 from graphs.factor_graph import FactorGraph
 from utils.probability import Probability
 from utils import constants
@@ -14,15 +13,15 @@ if __name__ == '__main__':
   constants.makeDataDirectoryIfNeeded()
   constants.makeExperimentDirectoryIfNeeded()
 
-  dataset = loadtxt(constants.DATASET_FILE, delimiter=',')
+  dataset = loadtxt(constants.DATASET_FILE, delimiter=',', dtype='int')
 
   train_cutoff = int(dataset.shape[0] * 0.8)
   N = train_cutoff # number of samples
   n = dataset.shape[1] # number of variables
 
   if constants.VERBOSE:
-    print('N={},\tnum_hash_bits={},\tnum_hash_input_bits={}'.format(
-        N, 256, n - 256))
+    print('train={},\ttest={},\tnum_hash_bits={},\tnum_hash_input_bits={}'.format(
+        N, dataset.shape[0] - N, 256, n - 256))
 
   X = dataset
   X_train = X[:N]
@@ -52,15 +51,8 @@ if __name__ == '__main__':
     if constants.VISUALIZE:
       udg.visualizeGraph(os.path.join(constants.EXPERIMENT_DIR, 'graph_undirected.png'))
 
-  if constants.ENTRY_POINT <= 3:
-    # Need to make DAG --> assign directions from the undirected graph
-    dg = DirectedGraph(constants.UDG_DATA_FILE, verbose=constants.VERBOSE)
-    dg.saveGraph(constants.DG_DATA_FILE)
-    if constants.VISUALIZE:
-      dg.visualizeGraph(os.path.join(constants.EXPERIMENT_DIR, 'graph_directed.png'))
-
-  # Need to build factor graph from the directed graph
-  fg = FactorGraph(prob, constants.DG_DATA_FILE, verbose=constants.VERBOSE)
+  # Need to build factor graph from the undirected graph
+  fg = FactorGraph(prob, constants.UDG_DATA_FILE, verbose=constants.VERBOSE)
   if constants.VISUALIZE:
     fg.visualizeGraph(os.path.join(constants.EXPERIMENT_DIR, 'graph_factor.png'))
 
@@ -85,15 +77,14 @@ if __name__ == '__main__':
       for rv, hash_val in enumerate(hash_bits):
         observed[rv] = hash_val
 
-      prob_hash_input_bit_is_one = fg.predict(constants.BIT_PRED, 1,
+      prob_hash_input_bit_is_one, _ = fg.predict(constants.BIT_PRED, 1,
         observed=observed, visualize_convergence=constants.VISUALIZE)
-
-      print(prob_hash_input_bit_is_one)
 
       guess = 1 if prob_hash_input_bit_is_one >= 0.5 else 0
       is_correct = int(guess == true_hash_input_bit)
       correct_count += is_correct
       total_count += 1
+      print('\tGuessed {}, true value is {}'.format(guess, true_hash_input_bit))
 
       probabilities.append(prob_hash_input_bit_is_one)
       accuracies.append(is_correct)
