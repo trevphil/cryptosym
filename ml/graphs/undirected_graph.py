@@ -89,13 +89,15 @@ class UndirectedGraph(object):
         graph.remove_edge(to_remove[0], to_remove[1])
         prune = True
 
+    components = [graph.subgraph(c) for c in nx.connected_components(graph)]
+    relevant_component = [g for g in components if BIT_PRED in g.nodes()][0]
+
     if self.verbose:
       print('The optimized BN has %d edges.' % graph.number_of_edges())
-      print('\tconnected = {}'.format(nx.is_connected(graph)))
-      print('\tnum connected components = %d' % nx.number_connected_components(graph))
+      print('\tconnected = {}'.format(len(components) == 1))
+      print('\tnum connected components = %d' % len(components))
       largest_cc = max(nx.connected_components(graph), key=len)
       print('\tlargest component has %d nodes' % len(largest_cc))
-      relevant_component = nx.node_connected_component(graph, BIT_PRED)
-      print('\tcomponent with bit %d has %d nodes' % (BIT_PRED, len(relevant_component)))
+      print('\tcomponent with bit %d has %d nodes' % (BIT_PRED, relevant_component.number_of_nodes()))
 
-    return graph
+    return relevant_component

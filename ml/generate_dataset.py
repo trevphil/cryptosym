@@ -29,14 +29,17 @@ def int2bytes(val):
 
   # format width specifier: four (4) bits per hex digit
   fmt = '%%0%dx' % (width // 4)
+  
+  # unhexlify requires an even number of hex digits
+  s = fmt % val
+  if len(s) % 2 != 0:
+    s = '0' + s
 
-  # prepend zero (0) to the width, to zero-pad the output
-  s = unhexlify(fmt % val)
-  return s
+  return unhexlify(s)
 
 
 def randomBinaryString(nbits):
-  x = random.randint(0, int(2**nbits))
+  x = random.randint(0, int(2**nbits) - 1)
   binstr = bin(x)[2:]
   num_zero_padding = nbits - len(binstr)
   return ('0' * num_zero_padding) + binstr

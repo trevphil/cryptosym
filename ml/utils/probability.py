@@ -6,8 +6,6 @@ from itertools import product
 from operator import mul
 from functools import reduce
 
-from utils.constants import EPSILON
-
 ######################################################
 #################### PROBABILITY #####################
 ######################################################
@@ -33,6 +31,11 @@ class Probability(object):
 
 
   def count(self, random_variables):
+    """
+    Accepts an array of tuples where each tuple is the random variable index
+    and the value taken by that random variable. Returns the number of samples
+    in the dataset where the RVs take their assigned values.
+    """
     assert len(random_variables) > 0
 
     rv_index, rv_value = random_variables[0]
@@ -64,32 +67,3 @@ class Probability(object):
       total += phat * log(phat / denominator)
 
     return total
-
-######################################################
-######## CONDITIONAL PROBABILITY DISTRIBUTION ########
-######################################################
-
-class CPD(object):
-  """Conditinal probability distribution"""
-
-  def __init__(self, rv, dependencies):
-    all_vars = [rv] + dependencies
-    assert len(all_vars) == len(set(all_vars))
-    self.rv = rv
-    self.dependencies = dependencies
-
-  def allVars(self):
-    return [self.rv] + self.dependencies
-
-  def probability_rv_one(self, dependency_values, prob_util):
-    rv_assignments = []
-    for idx, rv in enumerate(self.dependencies):
-      rv_assignments.append((rv, dependency_values[idx]))
-
-    query1 = rv_assignments + [(self.rv, 1)]
-    query2 = rv_assignments + [(self.rv, 0)]
-
-    numerator = prob_util.count(query1)
-    denominator = numerator + prob_util.count(query2)
-
-    return (EPSILON + float(numerator)) / (2 * EPSILON + float(denominator))
