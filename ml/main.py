@@ -20,8 +20,8 @@ if __name__ == '__main__':
   n = dataset.shape[1] # number of variables
 
   if constants.VERBOSE:
-    print('train={},\ttest={},\tnum_hash_bits={},\tnum_hash_input_bits={}'.format(
-        N, dataset.shape[0] - N, 256, n - 256))
+    print('train={},\ttest={},\tnum_hash_bits={},\tnum_hash_input_bits={},\tinternal_bits={}'.format(
+        N, dataset.shape[0] - N, 256, constants.HASH_INPUT_NBITS, n - 256 - constants.HASH_INPUT_NBITS))
 
   X = dataset
   X_train = X[:N]

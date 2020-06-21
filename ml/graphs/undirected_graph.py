@@ -2,7 +2,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 
-from utils.constants import BIT_PRED, MAX_CONNECTIONS_PER_NODE
+from utils.constants import BIT_PRED, HASH_INPUT_NBITS, MAX_CONNECTIONS_PER_NODE
 
 
 class UndirectedGraph(object):
@@ -57,7 +57,8 @@ class UndirectedGraph(object):
       for j in range(i + 1, self.n):
         counter += 1
 
-        if i >= 256 and j >= 256:
+        lb, ub = 256, 256 + HASH_INPUT_NBITS
+        if i >= lb and i < ub and j >= lb and j < ub:
           # No edges between hash input bit random variables
           break
 
