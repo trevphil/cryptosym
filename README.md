@@ -31,7 +31,7 @@ I recommend using [Anaconda](https://www.anaconda.com/) to run the code in this 
 Use Python 3.5 and install from `requirements.txt`:
 
 ```
-conda create -n hash_reversal -python=3.5
+conda create -n hash_reversal python=3.5
 conda activate hash_reversal
 pip install -r requirements.txt --user
 ```
