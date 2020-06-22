@@ -6,14 +6,16 @@ from itertools import product
 from operator import mul
 from functools import reduce
 
+from utils.log import getLogger
+
 ######################################################
 #################### PROBABILITY #####################
 ######################################################
 
 class Probability(object):
 
-  def __init__(self, samples, data=None, verbose=True):
-    self.verbose = verbose
+  def __init__(self, samples, data=None):
+    self.logger = getLogger('probability')
     self.samples = samples
     self.N = samples.shape[0]  # number of samples
     self.n = samples.shape[1]  # number of variables
@@ -21,8 +23,7 @@ class Probability(object):
     if data is not None:
       self.phats = np.load(data)
     else:
-      if self.verbose:
-        print('Computing marginals for %d random variables...' % self.n)
+      self.logger.info('Computing marginals for %d random variables...' % self.n)
 
       self.phats = np.zeros((self.n, 2))
       for rv in range(self.n):
@@ -31,8 +32,7 @@ class Probability(object):
 
 
   def save(self, filename):
-    if self.verbose:
-      print('Saving probability as "%s"...' % filename)
+    self.logger.info('Saving probability as "%s"...' % filename)
     np.save(filename, self.phats)
 
 

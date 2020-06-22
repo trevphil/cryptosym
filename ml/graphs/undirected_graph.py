@@ -3,6 +3,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
 
+from utils.log import getLogger
 from utils.constants import BIT_PRED, HASH_INPUT_NBITS, MAX_CONNECTIONS_PER_NODE
 
 
@@ -10,9 +11,9 @@ class UndirectedGraph(object):
 
   def __init__(self, prob, size, config, fc_graph=None,
                max_connections=MAX_CONNECTIONS_PER_NODE):
+    self.logger = getLogger('undirected_graph')
     self.prob = prob
     self.count = 0
-    self.verbose = config.verbose
     self.num_workers = config.num_workers
     self.max_connections = max_connections
     self.N, self.n = size  # (number of samples, number of variables)
@@ -24,22 +25,17 @@ class UndirectedGraph(object):
 
 
   def saveFullyConnectedGraph(self, filename):
-    if self.verbose:
-      print('Saving fully connected graph as "%s"...' % filename)
-
+    self.logger.info('Saving fully connected graph as "%s"...' % filename)
     nx.write_yaml(self.fc_graph, filename)
 
 
   def saveUndirectedGraph(self, filename):
-    if self.verbose:
-      print('Saving undirected Bayesian network as "%s"...' % filename)
-
+    self.logger.info('Saving undirected Bayesian network as "%s"...' % filename)
     nx.write_yaml(self.graph, filename)
 
 
   def visualizeGraph(self, img_file):
-    if self.verbose:
-      print('Visualizing undirected Bayesian network...')
+    self.logger.info('Visualizing undirected Bayesian network...')
 
     plt.close()
     nx.draw_spectral(self.graph, with_labels=True)
@@ -53,8 +49,7 @@ class UndirectedGraph(object):
     m = self.n - HASH_INPUT_NBITS
     max_count = m * (m - 1) / 2
 
-    if self.verbose:
-      print('Calculating %d mutual information scores...' % max_count)
+    self.logger.info('Calculating %d mutual information scores...' % max_count)
 
     for i in range(self.n):
       # (i, j) score is symmetric to (j, i) score so we only need to
@@ -88,13 +83,13 @@ class UndirectedGraph(object):
     components = [graph.subgraph(c) for c in nx.connected_components(graph)]
     relevant_component = [g for g in components if BIT_PRED in g.nodes()][0]
 
-    if self.verbose:
-      print('The optimized BN has %d edges.' % graph.number_of_edges())
-      print('\tconnected = {}'.format(len(components) == 1))
-      print('\tnum connected components = %d' % len(components))
-      largest_cc = max(nx.connected_components(graph), key=len)
-      print('\tlargest component has %d nodes' % len(largest_cc))
-      print('\tcomponent with bit %d has %d nodes' % (BIT_PRED, relevant_component.number_of_nodes()))
+    msg = 'The optimized BN has %d edges.\n' % graph.number_of_edges()
+    msg += '\tconnected = {}\n'.format(len(components) == 1)
+    msg += '\tnum connected components = %d\n' % len(components)
+    largest_cc = max(nx.connected_components(graph), key=len)
+    msg += '\tlargest component has %d nodes\n' % len(largest_cc)
+    msg += '\tcomponent with bit %d has %d nodes' % (BIT_PRED, relevant_component.number_of_nodes())
+    self.logger.info(msg)
 
     return relevant_component
 
@@ -115,6 +110,6 @@ def multiprocessingHelperFunc(x):
   weight = udg.prob.iHat([i, j])
   graph.add_edge(i, j, weight=weight)
 
-  if udg.verbose and udg.counter % (max_count / 100) == 0:
+  if udg.counter % (max_count / 100) == 0:
     pct_done = 100.0 * udg.counter / max_count
-    print('%.2f%% done.' % pct_done)
+    udg.logger.debug('%.2f%% done.' % pct_done)

@@ -37,6 +37,8 @@ EXPERIMENT_DIR = path.join(path.abspath('./experiments'),
 
 DATA_DIR = path.abspath('./data')
 
+LOG_DIR = path.join(EXPERIMENT_DIR, 'log')
+
 DATASET_FILE = path.join(DATA_DIR, 'data.csv')
 
 PROB_DATA_FILE = path.join(DATA_DIR, 'prob.npy')
@@ -49,4 +51,7 @@ def makeDataDirectoryIfNeeded():
   Path(DATA_DIR).mkdir(parents=True, exist_ok=True)
 
 def makeExperimentDirectoryIfNeeded():
-  Path(EXPERIMENT_DIR).mkdir(parents=True, exist_ok=True)
+  Path(EXPERIMENT_DIR).mkdir(parents=True, exist_ok=False)
+
+def makeLogDirectoryIfNeeded():
+  Path(LOG_DIR).mkdir(parents=True, exist_ok=False)

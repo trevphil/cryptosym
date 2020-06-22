@@ -7,6 +7,7 @@ import numpy as np
 from itertools import product
 from math import tanh, atanh, log
 
+from utils.log import getLogger
 from utils.constants import LBP_MAX_ITER, EXPERIMENT_DIR, EPSILON
 
 ######################################################
@@ -95,9 +96,9 @@ class Factor(FactorGraphNode):
 
 class FactorGraph(object):
 
-  def __init__(self, prob_util, undirected_graph_yaml, verbose=True):
+  def __init__(self, prob_util, undirected_graph_yaml):
+    self.logger = getLogger('factor_graph')
     self.prob_util = prob_util
-    self.verbose = verbose
     self.num_predictions = 0
     self.bipartite_graph = nx.Graph()
     self.rvs = []
@@ -124,13 +125,11 @@ class FactorGraph(object):
         self.bipartite_graph.add_edge(factor.key, rv.key)
         rv.addNeighboringFactor(factor)
 
-    if self.verbose:
-      print('All %d factors initialized.' % len(self.factors))
+    self.logger.info('All %d factors initialized.' % len(self.factors))
 
 
   def visualizeGraph(self, img_file):
-    if self.verbose:
-      print('Visualizing factor graph...')
+    self.logger.info('Visualizing factor graph...')
 
     plt.close()
     first_partition = [f.key for f in self.factors]
@@ -190,8 +189,7 @@ class FactorGraph(object):
     mapping all 0-255 hash bits to their observed values.
     """
 
-    if self.verbose:
-      print('Running loopy belief propagation...')
+    self.logger.info('Running loopy belief propagation...')
 
     itr, log_likelihood_ratios = 0, []
     
@@ -200,7 +198,7 @@ class FactorGraph(object):
         _, llr = intermediate_pred()
         log_likelihood_ratios.append(llr)
       except Exception as e:
-        print('Error during intermediate prediction: {}'.format(e))
+        self.logger.error('Error during intermediate prediction: {}'.format(e))
         exit()
       
       for factor in self.factors:
@@ -212,11 +210,10 @@ class FactorGraph(object):
         break
       itr += 1
 
-    if self.verbose:
-      if itr >= max_iterations:
-        print('Loopy BP did not converge, max iterations reached')
-      else:
-        print('Loopy BP converged in %d iterations.' % (itr + 1))
+    if itr >= max_iterations:
+      self.logger.warn('Loopy BP did not converge, max iterations reached')
+    else:
+      self.logger.info('Loopy BP converged in %d iterations.' % (itr + 1))
     return log_likelihood_ratios
   
   
