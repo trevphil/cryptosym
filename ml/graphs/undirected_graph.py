@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import networkx as nx
+from time import time
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
 
@@ -13,7 +14,6 @@ class UndirectedGraph(object):
                max_connections=MAX_CONNECTIONS_PER_NODE):
     self.logger = getLogger('undirected_graph')
     self.prob = prob
-    self.count = 0
     self.num_workers = config.num_workers
     self.max_connections = max_connections
     self.N, self.n = size  # (number of samples, number of variables)
@@ -45,20 +45,32 @@ class UndirectedGraph(object):
   def createFullyConnectedGraph(self):
     graph = nx.Graph()
 
-    self.counter = 0
-    m = self.n - HASH_INPUT_NBITS
-    max_count = m * (m - 1) / 2
+    counter = 0
+    max_count = (self.n * (self.n - 1) - HASH_INPUT_NBITS * (HASH_INPUT_NBITS - 1)) // 2
 
     self.logger.info('Calculating %d mutual information scores...' % max_count)
+    start = time()
 
     for i in range(self.n):
       # (i, j) score is symmetric to (j, i) score so we only need to
       # calculate an upper-triangular matrix with zeros on the diagonal
-      inputs = [(self, i, j, max_count, graph) for j in range(i + 1, self.n)]
+      l_bound = 256
+      u_bound = 256 + HASH_INPUT_NBITS
+      inputs = [(self.prob, i, j) for j in range(i + 1, self.n)
+                if not ((l_bound <= i < u_bound) and (l_bound <= j < u_bound))]
 
       with Pool(self.num_workers) as p:
-        p.map(multiprocessingHelperFunc, inputs)
-
+        outputs = p.map(multiprocessingHelperFunc, inputs)
+      
+      for j, score in outputs:
+        graph.add_edge(i, j, weight=score)
+        counter += 1
+        if counter % (max_count // 100) == 0:
+          pct_done = 100.0 * counter / max_count
+          self.logger.info('%.2f%% done.' % pct_done)
+      
+    self.logger.info('Finished calculating mutual information scores in %.1f sec.' % (time() - start))
+    self.logger.info('The fully connected graph has %d edges.' % graph.number_of_edges())
     return graph
 
 
@@ -99,17 +111,5 @@ def multiprocessingHelperFunc(x):
   A helper function for computing the fully-connected graph is given here
   at top-level due to pickling requirements of Python multiprocessing library
   """
-  udg, i, j, max_count, graph = x
-
-  l_bound = 256
-  u_bound = 256 + HASH_INPUT_NBITS
-  if (l_bound <= i < u_bound) and (l_bound <= j < u_bound):
-    return  # No edges between hash input bit random variables
-
-  udg.counter += 1
-  weight = udg.prob.iHat([i, j])
-  graph.add_edge(i, j, weight=weight)
-
-  if udg.counter % (max_count / 100) == 0:
-    pct_done = 100.0 * udg.counter / max_count
-    udg.logger.debug('%.2f%% done.' % pct_done)
+  prob, i, j = x
+  return j, prob.iHat([i, j])
