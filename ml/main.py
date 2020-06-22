@@ -7,9 +7,13 @@ from matplotlib import pyplot as plt
 from graphs.undirected_graph import UndirectedGraph
 from graphs.factor_graph import FactorGraph
 from utils.probability import Probability
+from utils.config import Config
 from utils import constants
 
+
 if __name__ == '__main__':
+  config = Config()
+
   constants.makeDataDirectoryIfNeeded()
   constants.makeExperimentDirectoryIfNeeded()
 
@@ -19,9 +23,9 @@ if __name__ == '__main__':
   N = train_cutoff # number of samples
   n = dataset.shape[1] # number of variables
 
-  if constants.VERBOSE:
+  if config.verbose:
     print('train={},\ttest={},\tnum_hash_bits={},\tnum_hash_input_bits={},\tinternal_bits={}'.format(
-        N, dataset.shape[0] - N, 256, constants.HASH_INPUT_NBITS, n - 256 - constants.HASH_INPUT_NBITS))
+          N, dataset.shape[0] - N, 256, constants.HASH_INPUT_NBITS, n - 256 - constants.HASH_INPUT_NBITS))
 
   X = dataset
   X_train = X[:N]
@@ -29,39 +33,36 @@ if __name__ == '__main__':
 
   if constants.ENTRY_POINT == 0:
     # Probabilities need to be calculated
-    prob = Probability(X_train, verbose=constants.VERBOSE)
+    prob = Probability(X_train, verbose=config.verbose)
     prob.save(constants.PROB_DATA_FILE)
   else:
     # Probabilities are already saved --> load them
-    prob = Probability(X_train, data=constants.PROB_DATA_FILE, verbose=constants.VERBOSE)
+    prob = Probability(X_train, data=constants.PROB_DATA_FILE, verbose=config.verbose)
   
   if constants.ENTRY_POINT <= 1:
     # Need to calculate mutual information scores between all RVs and then build graph
-    udg = UndirectedGraph(prob, size=(N, n), verbose=constants.VERBOSE)
+    udg = UndirectedGraph(prob, size=(N, n), config=config)
     udg.saveFullyConnectedGraph(constants.FCG_DATA_FILE)
     udg.saveUndirectedGraph(constants.UDG_DATA_FILE)
-    if constants.VISUALIZE:
+    if config.visualize:
       udg.visualizeGraph(os.path.join(constants.EXPERIMENT_DIR, 'graph_undirected.png'))
 
   elif constants.ENTRY_POINT <= 2:
     # Mutual information scores already calculated --> load them & build undirected graph
-    udg = UndirectedGraph(prob, size=(N, n), fc_graph=constants.FCG_DATA_FILE,
-                          verbose=constants.VERBOSE)
+    udg = UndirectedGraph(prob, size=(N, n), config=config, fc_graph=constants.FCG_DATA_FILE)
     udg.saveUndirectedGraph(constants.UDG_DATA_FILE)
-    if constants.VISUALIZE:
+    if config.visualize:
       udg.visualizeGraph(os.path.join(constants.EXPERIMENT_DIR, 'graph_undirected.png'))
 
   # Need to build factor graph from the undirected graph
-  fg = FactorGraph(prob, constants.UDG_DATA_FILE, verbose=constants.VERBOSE)
-  if constants.VISUALIZE:
+  fg = FactorGraph(prob, constants.UDG_DATA_FILE, verbose=config.verbose)
+  if config.visualize:
     fg.visualizeGraph(os.path.join(constants.EXPERIMENT_DIR, 'graph_factor.png'))
 
   """
   TODO -
   Think about what would be a natural BN structure...
     -> Should all hash bits in a byte be fully connected?
-
-  What about adding data points generated from "inside" the SHA256 algorithm?
   """
 
   print('Checking accuracy of single bit prediction on test data...')
@@ -78,7 +79,7 @@ if __name__ == '__main__':
         observed[rv] = hash_val
 
       prob_hash_input_bit_is_one, llr = fg.predict(constants.BIT_PRED, 1,
-        observed=observed, visualize_convergence=constants.VISUALIZE)
+        observed=observed, visualize_convergence=config.visualize)
 
       guess = 1 if prob_hash_input_bit_is_one >= 0.5 else 0
       is_correct = int(guess == true_hash_input_bit)
@@ -93,7 +94,7 @@ if __name__ == '__main__':
         correct_count, total_count, 100.0 * correct_count / total_count))
 
   finally:
-    if constants.VISUALIZE:
+    if config.visualize:
       log_likelihood_ratios = np.array(log_likelihood_ratios)
       accuracies = np.array(accuracies)
       plt.close()

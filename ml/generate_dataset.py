@@ -14,7 +14,9 @@ This generates a CSV dataset of random hash inputs of length 64 bits
 and their SHA-256 hashes (256 bits).
 
 Each line in the generated file is a comma-separated list of the
-256 hash bits followed by the bits of the hash input.
+256 hash bits followed by the bits of the hash input, and finally
+(and optionally) additional bits from computations which occurred
+during the hash algorithm.
 """
 
 NUM_SAMPLES = int(sys.argv[1]) if len(sys.argv) > 1 else DATASET_SIZE

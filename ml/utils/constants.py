@@ -3,10 +3,6 @@ from math import log
 from time import localtime, strftime
 from pathlib import Path
 
-VERBOSE = True
-
-VISUALIZE = True
-
 # 0 = do everything
 # 1 = need to calculate mutual information scores
 # 2 = mutual info scores already calculated, make undirected graph
@@ -34,13 +30,7 @@ MAX_CONNECTIONS_PER_NODE = 6
 
 BIT_PRED = 256 + 0 # a.k.a. the first bit of the input message
 
-PROB_ALL_CPDS_IN_DATASET = 0.95
-
-# Dataset size is computed such that for any configuration of (MAX_CONNECTIONS_PER_NODE + 1)
-# combinations of binary random variables, there is a probability of PROB_ALL_CPDS_IN_DATASET
-# that at least one item in the dataset has that configuration of 0's and 1's.
-DATASET_SIZE = int(log(1.0 - PROB_ALL_CPDS_IN_DATASET) / log(1.0 - pow(2.0, -(MAX_CONNECTIONS_PER_NODE + 1))))
-DATASET_SIZE *= 10
+DATASET_SIZE = 20000
 
 EXPERIMENT_DIR = path.join(path.abspath('./experiments'),
                            HASH_MODE + '_' + strftime('%Y-%m-%d-%H-%M-%S', localtime()))

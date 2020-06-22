@@ -15,15 +15,21 @@ class Probability(object):
   def __init__(self, samples, data=None, verbose=True):
     self.verbose = verbose
     self.samples = samples
-    self.N = samples.shape[0] # number of samples
-    self.n = samples.shape[1] # number of variables
+    self.N = samples.shape[0]  # number of samples
+    self.n = samples.shape[1]  # number of variables
+
     if data is not None:
       self.phats = np.load(data)
     else:
-      self.phats = np.array(
-        [[self.pHat([(i, 0)]), self.pHat([(i, 1)])] for i in range(self.n)])
-  
-  
+      if self.verbose:
+        print('Computing marginals for %d random variables...' % self.n)
+
+      self.phats = np.zeros((self.n, 2))
+      for rv in range(self.n):
+        phat = self.pHat([(rv, 0)])
+        self.phats[rv, :] = (phat, 1.0 - phat)
+
+
   def save(self, filename):
     if self.verbose:
       print('Saving probability as "%s"...' % filename)

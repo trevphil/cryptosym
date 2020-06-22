@@ -99,8 +99,7 @@ class SHA256:
       b = a
       a = (t1 + t2) & F32
       
-      if i == 31:
-        self._saved_states += self._h
+      self._saved_states += self._h
 
     for i, (x, y) in enumerate(zip(self._h, [a, b, c, d, e, f, g, h])):
       self._h[i] = (x + y) & F32

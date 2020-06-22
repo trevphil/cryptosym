@@ -1,18 +1,21 @@
 # -*- coding: utf-8 -*-
 import networkx as nx
 import matplotlib.pyplot as plt
+from multiprocessing import Pool
 
 from utils.constants import BIT_PRED, HASH_INPUT_NBITS, MAX_CONNECTIONS_PER_NODE
 
 
 class UndirectedGraph(object):
 
-  def __init__(self, prob, size, max_connections=MAX_CONNECTIONS_PER_NODE,
-               fc_graph=None, verbose=True):
+  def __init__(self, prob, size, config, fc_graph=None,
+               max_connections=MAX_CONNECTIONS_PER_NODE):
     self.prob = prob
-    self.verbose = verbose
+    self.count = 0
+    self.verbose = config.verbose
+    self.num_workers = config.num_workers
     self.max_connections = max_connections
-    self.N, self.n = size # (number of samples, number of variables)
+    self.N, self.n = size  # (number of samples, number of variables)
     if fc_graph is None:
       self.fc_graph = self.createFullyConnectedGraph()
     else:
@@ -23,7 +26,7 @@ class UndirectedGraph(object):
   def saveFullyConnectedGraph(self, filename):
     if self.verbose:
       print('Saving fully connected graph as "%s"...' % filename)
-    
+
     nx.write_yaml(self.fc_graph, filename)
 
 
@@ -44,30 +47,22 @@ class UndirectedGraph(object):
 
 
   def createFullyConnectedGraph(self):
-    if self.verbose:
-      print('Calculating mutual information scores...')
-
     graph = nx.Graph()
-    counter = 0
-    max_count = self.n * (self.n - 1) / 2
+
+    self.counter = 0
+    m = self.n - HASH_INPUT_NBITS
+    max_count = m * (m - 1) / 2
+
+    if self.verbose:
+      print('Calculating %d mutual information scores...' % max_count)
 
     for i in range(self.n):
       # (i, j) score is symmetric to (j, i) score so we only need to
       # calculate an upper-triangular matrix with zeros on the diagonal
-      for j in range(i + 1, self.n):
-        counter += 1
+      inputs = [(self, i, j, max_count, graph) for j in range(i + 1, self.n)]
 
-        lb, ub = 256, 256 + HASH_INPUT_NBITS
-        if i >= lb and i < ub and j >= lb and j < ub:
-          # No edges between hash input bit random variables
-          break
-
-        weight = self.prob.iHat([i, j])
-        graph.add_edge(i, j, weight=weight)
-
-        if self.verbose and counter % (max_count / 10) == 0:
-          pct_done = 100.0 * counter / max_count
-          print('%.2f%% done.' % pct_done)
+      with Pool(self.num_workers) as p:
+        p.map(multiprocessingHelperFunc, inputs)
 
     return graph
 
@@ -102,3 +97,24 @@ class UndirectedGraph(object):
       print('\tcomponent with bit %d has %d nodes' % (BIT_PRED, relevant_component.number_of_nodes()))
 
     return relevant_component
+
+
+def multiprocessingHelperFunc(x):
+  """
+  A helper function for computing the fully-connected graph is given here
+  at top-level due to pickling requirements of Python multiprocessing library
+  """
+  udg, i, j, max_count, graph = x
+
+  l_bound = 256
+  u_bound = 256 + HASH_INPUT_NBITS
+  if (l_bound <= i < u_bound) and (l_bound <= j < u_bound):
+    return  # No edges between hash input bit random variables
+
+  udg.counter += 1
+  weight = udg.prob.iHat([i, j])
+  graph.add_edge(i, j, weight=weight)
+
+  if udg.verbose and udg.counter % (max_count / 100) == 0:
+    pct_done = 100.0 * udg.counter / max_count
+    print('%.2f%% done.' % pct_done)
