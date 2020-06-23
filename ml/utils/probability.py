@@ -47,13 +47,25 @@ class Probability(object):
     """
     assert len(random_variables) > 0
 
+    # Method 1
     rv_index, rv_value = random_variables[0]
-    search = self.samples.loc[:, rv_index] == rv_value
+    search = (self.samples.iloc[:, rv_index] == rv_value)
 
     for rv_index, rv_value in random_variables[1:]:
-      search = search & (self.samples.loc[:, rv_index] == rv_value)
+      search = search & (self.samples.iloc[:, rv_index] == rv_value)
 
-    return self.samples.loc[search].shape[0]
+    return self.samples.iloc[search.values].shape[0]
+
+    """
+    # Method 2: This is slower, don't use
+    rv_indices = [rv_idx for rv_idx, _ in random_variables]
+    rv_values = tuple(bool(rv_val) for _, rv_val in random_variables)
+    df = self.samples.set_index(rv_indices).sort_index()
+    try:
+      return df.loc[rv_values].shape[0]
+    except KeyError:
+      return 0
+    """
 
 
   def pHat(self, random_variables):

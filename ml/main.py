@@ -22,7 +22,12 @@ if __name__ == '__main__':
 
   dataset_chunks = pd.read_csv(config.dataset, chunksize=500000,
                                sep=',', dtype=bool, header=None)
-  dataset = pd.concat([chunk for chunk in dataset_chunks])
+  dataset = None
+  for chunk in dataset_chunks:
+    if dataset is None:
+      dataset = chunk
+    else:
+      dataset = pd.concat([dataset, chunk])
 
   train_cutoff = int(dataset.shape[0] * 0.8)
   N = train_cutoff  # number of samples
@@ -68,6 +73,7 @@ if __name__ == '__main__':
   TODO -
   Think about what would be a natural BN structure...
     -> Should all hash bits in a byte be fully connected?
+    -> Stuff happens in groups of 32 bits, so it makes sense to use 32 connections per node
   """
 
   logger.info('Checking accuracy of single bit prediction on test data...')
@@ -76,8 +82,8 @@ if __name__ == '__main__':
 
   try:
     for i in range(X_test.shape[0]):
-      hash_bits = X_test.loc[i, :256]
-      true_hash_input_bit = int(X_test.loc[i, constants.BIT_PRED])
+      hash_bits = X_test.iloc[i, :256]
+      true_hash_input_bit = int(X_test.iat[i, constants.BIT_PRED])
 
       observed = dict()
       for rv, hash_val in enumerate(hash_bits):
