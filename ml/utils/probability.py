@@ -8,6 +8,10 @@ from functools import reduce
 
 from utils.log import getLogger
 
+# The logger is declared at top-level here because otherwise there
+# is an error when pickling a `Probability` object in Python multiprocessing
+logger = getLogger('probability')
+
 ######################################################
 #################### PROBABILITY #####################
 ######################################################
@@ -15,7 +19,6 @@ from utils.log import getLogger
 class Probability(object):
 
   def __init__(self, samples, data=None):
-    self.logger = getLogger('probability')
     self.samples = samples
     self.N = samples.shape[0]  # number of samples
     self.n = samples.shape[1]  # number of variables
@@ -23,7 +26,7 @@ class Probability(object):
     if data is not None:
       self.phats = np.load(data)
     else:
-      self.logger.info('Computing marginals for %d random variables...' % self.n)
+      logger.info('Computing marginals for %d random variables...' % self.n)
 
       self.phats = np.zeros((self.n, 2))
       for rv in range(self.n):
@@ -32,7 +35,7 @@ class Probability(object):
 
 
   def save(self, filename):
-    self.logger.info('Saving probability as "%s"...' % filename)
+    logger.info('Saving probability as "%s"...' % filename)
     np.save(filename, self.phats)
 
 
@@ -45,12 +48,12 @@ class Probability(object):
     assert len(random_variables) > 0
 
     rv_index, rv_value = random_variables[0]
-    search = self.samples[:, rv_index] == rv_value
+    search = self.samples.loc[:, rv_index] == rv_value
 
     for rv_index, rv_value in random_variables[1:]:
-      search = search & (self.samples[:, rv_index] == rv_value)
+      search = search & (self.samples.loc[:, rv_index] == rv_value)
 
-    return self.samples[search].shape[0]
+    return self.samples.loc[search].shape[0]
 
 
   def pHat(self, random_variables):

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import numpy as np
-from numpy import loadtxt
+import pandas as pd
 from matplotlib import pyplot as plt
 
 from graphs.undirected_graph import UndirectedGraph
@@ -22,11 +22,13 @@ if __name__ == '__main__':
   initLogging(constants.LOG_DIR)
   logger = getLogger('main')
 
-  dataset = loadtxt(constants.DATASET_FILE, delimiter=',', dtype='int')
+  dataset_chunks = pd.read_csv(constants.DATASET_FILE, chunksize=500000,
+                               sep=',', dtype=bool, header=None)
+  dataset = pd.concat([chunk for chunk in dataset_chunks])
 
   train_cutoff = int(dataset.shape[0] * 0.8)
-  N = train_cutoff # number of samples
-  n = dataset.shape[1] # number of variables
+  N = train_cutoff  # number of samples
+  n = dataset.shape[1]  # number of variables
 
   logger.info('train={},\ttest={},\tnum_hash_bits={},\tnum_hash_input_bits={},\tinternal_bits={}'.format(
     N, dataset.shape[0] - N, 256, constants.HASH_INPUT_NBITS, n - 256 - constants.HASH_INPUT_NBITS))
