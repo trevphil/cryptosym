@@ -61,15 +61,15 @@ class UndirectedGraph(object):
 
       with Pool(self.num_workers) as p:
         outputs = p.map(multiprocessingHelperFunc, inputs)
-      
+
       for j, score in outputs:
         graph.add_edge(i, j, weight=score)
         counter += 1
-        if counter % (max_count // 100) == 0:
+        if counter % (max_count // 10) == 0:
           pct_done = 100.0 * counter / max_count
           self.logger.info('%.2f%% done.' % pct_done)
-      
-    self.logger.info('Finished calculating mutual information scores in %.1f sec.' % (time() - start))
+
+    self.logger.info('Finished calculating mutual information scores in %.1f sec' % (time() - start))
     self.logger.info('The fully connected graph has %d edges.' % graph.number_of_edges())
     return graph
 

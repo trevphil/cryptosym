@@ -24,10 +24,3 @@ def getLogger(name=''):
   if len(name) != 0:
     logger_name += '.%s' % name
   return logging.getLogger(logger_name)
-
-
-def logArgs(logger, args):
-  msg = 'Logging command line arguments:\n'
-  for arg in args.__dict__:
-    msg += '{} --> {}\n'.format(arg, getattr(args, arg))
-  logger.info(msg)

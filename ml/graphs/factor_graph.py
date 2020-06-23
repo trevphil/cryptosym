@@ -8,7 +8,7 @@ from itertools import product
 from math import tanh, atanh, log
 
 from utils.log import getLogger
-from utils.constants import LBP_MAX_ITER, EXPERIMENT_DIR, EPSILON
+from utils.constants import LBP_MAX_ITER, EPSILON
 
 ######################################################
 ################# FACTOR GRAPH NODE ##################
@@ -96,8 +96,9 @@ class Factor(FactorGraphNode):
 
 class FactorGraph(object):
 
-  def __init__(self, prob_util, undirected_graph_yaml):
+  def __init__(self, prob_util, undirected_graph_yaml, config):
     self.logger = getLogger('factor_graph')
+    self.config = config
     self.prob_util = prob_util
     self.num_predictions = 0
     self.bipartite_graph = nx.Graph()
@@ -221,7 +222,7 @@ class FactorGraph(object):
     return False # TODO
 
 
-  def predict(self, rv_index, rv_value, observed=dict(), visualize_convergence=False):
+  def predict(self, rv_index, rv_value, observed=dict()):
     """
     Predict probability that the RV has the given value.
     This will first run loopy belief propagation, with observed variables if desired.
@@ -240,12 +241,12 @@ class FactorGraph(object):
     self.setup(observed)
     log_likelihood_ratios = self.loopyBP(intermediate_pred=_predict)
 
-    if visualize_convergence:
+    if self.config.visualize:
       plt.clf()
       plt.plot(log_likelihood_ratios)
       plt.xlabel('Iteration')
       plt.ylabel('Log likelihood ratio')
-      img_file = os.path.join(EXPERIMENT_DIR, 'lbp_%04d.png' % self.num_predictions)
+      img_file = os.path.join(self.config.experiment_dir, 'lbp_%04d.png' % self.num_predictions)
       plt.savefig(img_file)
 
     self.num_predictions += 1

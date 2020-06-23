@@ -15,14 +15,12 @@ from utils.log import initLogging, getLogger
 if __name__ == '__main__':
   config = Config()
 
-  constants.makeDataDirectoryIfNeeded()
-  constants.makeExperimentDirectoryIfNeeded()
-  constants.makeLogDirectoryIfNeeded()
+  initLogging(config.log_dir)
+  config.logConfig()
 
-  initLogging(constants.LOG_DIR)
   logger = getLogger('main')
 
-  dataset_chunks = pd.read_csv(constants.DATASET_FILE, chunksize=500000,
+  dataset_chunks = pd.read_csv(config.dataset, chunksize=500000,
                                sep=',', dtype=bool, header=None)
   dataset = pd.concat([chunk for chunk in dataset_chunks])
 
@@ -30,12 +28,13 @@ if __name__ == '__main__':
   N = train_cutoff  # number of samples
   n = dataset.shape[1]  # number of variables
 
-  logger.info('train={},\ttest={},\tnum_hash_bits={},\tnum_hash_input_bits={},\tinternal_bits={}'.format(
-    N, dataset.shape[0] - N, 256, constants.HASH_INPUT_NBITS, n - 256 - constants.HASH_INPUT_NBITS))
-
   X = dataset
   X_train = X[:N]
   X_test = X[N:]
+  X_test.reset_index(drop=True, inplace=True)
+
+  logger.info('train={},\ttest={},\tnum_hash_bits={},\tnum_hash_input_bits={},\tinternal_bits={}'.format(
+    X_train.shape[0], X_test.shape[0], 256, constants.HASH_INPUT_NBITS, n - 256 - constants.HASH_INPUT_NBITS))
 
   if constants.ENTRY_POINT == 0:
     # Probabilities need to be calculated
@@ -51,19 +50,19 @@ if __name__ == '__main__':
     udg.saveFullyConnectedGraph(constants.FCG_DATA_FILE)
     udg.saveUndirectedGraph(constants.UDG_DATA_FILE)
     if config.visualize:
-      udg.visualizeGraph(os.path.join(constants.EXPERIMENT_DIR, 'graph_undirected.png'))
+      udg.visualizeGraph(os.path.join(config.experiment_dir, 'graph_undirected.png'))
 
   elif constants.ENTRY_POINT <= 2:
     # Mutual information scores already calculated --> load them & build undirected graph
     udg = UndirectedGraph(prob, size=(N, n), config=config, fc_graph=constants.FCG_DATA_FILE)
     udg.saveUndirectedGraph(constants.UDG_DATA_FILE)
     if config.visualize:
-      udg.visualizeGraph(os.path.join(constants.EXPERIMENT_DIR, 'graph_undirected.png'))
+      udg.visualizeGraph(os.path.join(config.experiment_dir, 'graph_undirected.png'))
 
   # Need to build factor graph from the undirected graph
-  fg = FactorGraph(prob, constants.UDG_DATA_FILE)
+  fg = FactorGraph(prob, constants.UDG_DATA_FILE, config=config)
   if config.visualize:
-    fg.visualizeGraph(os.path.join(constants.EXPERIMENT_DIR, 'graph_factor.png'))
+    fg.visualizeGraph(os.path.join(config.experiment_dir, 'graph_factor.png'))
 
   """
   TODO -
@@ -77,15 +76,14 @@ if __name__ == '__main__':
 
   try:
     for i in range(X_test.shape[0]):
-      hash_bits = X_test[i, :256]
-      true_hash_input_bit = X_test[i, constants.BIT_PRED]
+      hash_bits = X_test.loc[i, :256]
+      true_hash_input_bit = int(X_test.loc[i, constants.BIT_PRED])
 
       observed = dict()
       for rv, hash_val in enumerate(hash_bits):
         observed[rv] = hash_val
 
-      prob_hash_input_bit_is_one, llr = fg.predict(constants.BIT_PRED, 1,
-        observed=observed, visualize_convergence=config.visualize)
+      prob_hash_input_bit_is_one, llr = fg.predict(constants.BIT_PRED, 1, observed=observed)
 
       guess = 1 if prob_hash_input_bit_is_one >= 0.5 else 0
       is_correct = int(guess == true_hash_input_bit)
@@ -111,6 +109,6 @@ if __name__ == '__main__':
       axs[1].set_title('Incorrect predictions')
       axs[1].set_xlabel('Log-likelihood ratio')
       axs[1].hist(log_likelihood_ratios[accuracies == 0], bins=30)
-      plt.savefig(os.path.join(constants.EXPERIMENT_DIR, 'accuracy_distribution.png'))
+      plt.savefig(os.path.join(config.experiment_dir, 'accuracy_distribution.png'))
 
   logger.info('Done.')

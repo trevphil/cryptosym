@@ -3,11 +3,12 @@ import os
 import sys
 import random
 import hashlib
+import argparse
 from binascii import unhexlify
 
 import nsha256
 from utils import constants
-from utils.constants import HASH_MODE, HASH_MODES, BIT_PRED, HASH_INPUT_NBITS, DATASET_SIZE, DATASET_FILE
+from utils.constants import BIT_PRED, HASH_INPUT_NBITS
 
 """
 This generates a CSV dataset of random hash inputs of length 64 bits
@@ -18,8 +19,6 @@ Each line in the generated file is a comma-separated list of the
 (and optionally) additional bits from computations which occurred
 during the hash algorithm.
 """
-
-NUM_SAMPLES = int(sys.argv[1]) if len(sys.argv) > 1 else DATASET_SIZE
 
 
 def int2bytes(val):
@@ -59,37 +58,26 @@ def hashFunc(binstr, hash_mode):
      additional, optional random variables from the internals of the hash algorithm.
   """
 
-  if hash_mode == HASH_MODES[0]:
+  if hash_mode == 'sha256':
     asint = int(binstr, 2)
     assert HASH_INPUT_NBITS % 8 == 0, 'HASH_INPUT_NBITS must be a multiple of 8'
     asbytes = (asint).to_bytes(HASH_INPUT_NBITS // 8, byteorder='big')
     return nsha256.SHA256(asbytes).get_data()
 
-  elif hash_mode == HASH_MODES[1]:
+  elif hash_mode == 'md5':
     num = int2bytes(int(binstr, 2))
     hash_val = hashlib.md5(num).hexdigest()
     binhash = bin(int(hash_val, 16))[2:]
     return ('0' * (256 - len(binhash))) + binhash, ''
 
-  elif hash_mode == HASH_MODES[2]:
+  elif hash_mode == 'map_from_input':
     binhash = ''
     for i in range(256):
       input_idx = int(i * HASH_INPUT_NBITS / 256)
       binhash += binstr[input_idx]
     return binhash, ''
 
-  elif hash_mode == HASH_MODES[3]:
-    binhash = ''
-    for i in range(256):
-      input_idx = int(i * HASH_INPUT_NBITS / 256)
-      random_sample = random.random()
-      if binstr[input_idx] == '1':
-        binhash += '1' if random_sample <= 0.9 else '0'
-      else:
-        binhash += '0' if random_sample <= 0.85 else '1'
-    return binhash, ''
-
-  elif hash_mode == HASH_MODES[4]:
+  elif hash_mode == 'conditioned_on_input_and_hash':
     mapping = {'00': '1', '01': '0', '10': '1', '11': '0'}
     binhash = binstr[:2]
     for i in range(2, 256):
@@ -97,7 +85,7 @@ def hashFunc(binstr, hash_mode):
       binhash += mapping[binhash[i - 2] + binstr[input_idx]]
     return binhash[::-1], '' # reverse
 
-  elif hash_mode == HASH_MODES[5]:
+  elif hash_mode == 'pseudo_hash':
     num = int(binstr, 2)
     A, B, C, D = 0xAC32, 0xFFE1, 0xBF09, 0xBEEF
     a = ((num >> 0 ) & 0xFFFF) ^ A
@@ -111,22 +99,32 @@ def hashFunc(binstr, hash_mode):
     return ('0' * (256 - len(s))) + s, ''
 
   else:
-    raise 'Hash mode {} is not supported'.format(hash_mode)
+    raise 'Hash algorithm "{}" is not supported'.format(hash_mode)
 
 
 if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description='Hash reversal dataset generator')
+  parser.add_argument('--num-samples', type=int, default=20000,
+                      help='Number of samples to use in the dataset')
+  parser.add_argument('--hash-algo', type=str, default='sha256',
+                      choices=['sha256', 'md5', 'map_from_input', 'conditioned_on_input_and_hash', 'pseudo_hash'],
+                      help='Choose the hashing algorithm to apply to the input data')
+  args = parser.parse_args()
+  
+  data_file = os.path.join(constants.DATA_DIR, '{}-{}.csv'.format(args.hash_algo, args.num_samples))
+
   random.seed(0)
   constants.makeDataDirectoryIfNeeded()
   
-  if os.path.exists(DATASET_FILE):
-      os.remove(DATASET_FILE)
+  if os.path.exists(data_file):
+      os.remove(data_file)
 
-  with open(DATASET_FILE, 'w') as f:
-    for n in range(NUM_SAMPLES):
+  with open(data_file, 'w') as f:
+    for n in range(args.num_samples):
       binstr = randomBinaryString(HASH_INPUT_NBITS)
       ground_truth = binstr
-      binhash, internals = hashFunc(binstr, HASH_MODE)
+      binhash, internals = hashFunc(binstr, args.hash_algo)
       dataset_entry = ','.join([c for c in binhash + ground_truth + internals])
       f.write(dataset_entry + '\n')
   
-  print('Generated dataset with %d samples (hash=%s).' % (NUM_SAMPLES, HASH_MODE))
+  print('Generated dataset with %d samples (hash=%s).' % (args.num_samples, args.hash_algo))
