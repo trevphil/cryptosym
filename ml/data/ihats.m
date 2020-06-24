@@ -1,5 +1,8 @@
+input_file = 'sha256-30000.csv';
+output_file = 'sha256-30000-ihat.csv';
+
 disp('Loading samples...');
-samples = readmatrix('sha256-30000.csv');
+samples = readmatrix(input_file);
 [N, num_vars] = size(samples);
 
 disp('Computing matrix square...');
@@ -45,7 +48,7 @@ r11(isinf(r11)) = 0;
 
 output = (r00 + r01 + r10 + r11) / N;
 
-writematrix(output, 'sha256-30000-ihat.csv');
+writematrix(output, output_file);
 disp('Done.');
 
 function ihat = compute_ihat(counts, i, j, C)
