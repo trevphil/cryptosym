@@ -48,6 +48,9 @@ r11(isinf(r11)) = 0;
 
 output = (r00 + r01 + r10 + r11) / N;
 
+disp('Removing self-connections in adjacency matrix...');
+output = output - diag(diag(output));
+
 writematrix(output, output_file);
 disp('Done.');
 
