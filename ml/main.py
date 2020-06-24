@@ -12,6 +12,15 @@ from utils import constants
 from utils.log import initLogging, getLogger
 
 
+def loadDataset(config):
+  dataset_chunks = pd.read_csv(config.dataset, chunksize=500000,
+                               sep=',', dtype=bool, header=None)
+  dataset = None
+  for chunk in dataset_chunks:
+    dataset = chunk if dataset is None else pd.concat([dataset, chunk])
+  return dataset
+
+
 if __name__ == '__main__':
   config = Config()
 
@@ -20,14 +29,9 @@ if __name__ == '__main__':
 
   logger = getLogger('main')
 
-  dataset_chunks = pd.read_csv(config.dataset, chunksize=500000,
-                               sep=',', dtype=bool, header=None)
-  dataset = None
-  for chunk in dataset_chunks:
-    if dataset is None:
-      dataset = chunk
-    else:
-      dataset = pd.concat([dataset, chunk])
+  logger.info('Loading dataset...')
+  dataset = loadDataset(config)
+  logger.info('Loaded dataset.')
 
   train_cutoff = int(dataset.shape[0] * 0.8)
   N = train_cutoff  # number of samples
@@ -41,23 +45,17 @@ if __name__ == '__main__':
   logger.info('train={},\ttest={},\tnum_hash_bits={},\tnum_hash_input_bits={},\tinternal_bits={}'.format(
     X_train.shape[0], X_test.shape[0], 256, constants.HASH_INPUT_NBITS, n - 256 - constants.HASH_INPUT_NBITS))
 
-  if constants.ENTRY_POINT == 0:
-    # Probabilities need to be calculated
-    prob = Probability(X_train)
-    prob.save(constants.PROB_DATA_FILE)
-  else:
-    # Probabilities are already saved --> load them
-    prob = Probability(X_train, data=constants.PROB_DATA_FILE)
+  prob = Probability(X_train)
 
-  if constants.ENTRY_POINT <= 1:
+  if constants.ENTRY_POINT == 0:
     # Need to calculate mutual information scores between all RVs and then build graph
     udg = UndirectedGraph(prob, size=(N, n), config=config)
-    udg.saveFullyConnectedGraph(constants.FCG_DATA_FILE)
+    udg.saveFullyConnectedGraph(config.fcg_data_file)
     udg.saveUndirectedGraph(constants.UDG_DATA_FILE)
     if config.visualize:
       udg.visualizeGraph(os.path.join(config.experiment_dir, 'graph_undirected.png'))
 
-  elif constants.ENTRY_POINT <= 2:
+  elif constants.ENTRY_POINT <= 1:
     # Mutual information scores already calculated --> load them & build undirected graph
     udg = UndirectedGraph(prob, size=(N, n), config=config, fc_graph=constants.FCG_DATA_FILE)
     udg.saveUndirectedGraph(constants.UDG_DATA_FILE)

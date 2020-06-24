@@ -1,2 +1,3 @@
-data
+data/*
 experiments
+!data/ihats.m
