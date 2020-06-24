@@ -8,10 +8,6 @@ from functools import reduce
 
 from utils.log import getLogger
 
-# The logger is declared at top-level here because otherwise there
-# is an error when pickling a `Probability` object in Python multiprocessing
-logger = getLogger('probability')
-
 ######################################################
 #################### PROBABILITY #####################
 ######################################################
@@ -26,6 +22,7 @@ class Probability(object):
     """
 
     self.samples = samples
+    self.logger = getLogger('probability')
     self.N = samples.shape[0]  # number of samples
     self.n = samples.shape[1]  # number of variables
 
