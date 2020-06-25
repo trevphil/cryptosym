@@ -1,9 +1,9 @@
-num_vars = 16704;
-N = 100;
-input_file = 'sha256-16704-100.bits';
-output_file = 'sha256-30000-graph.csv';
-% input_file = 'pseudo_hash-2000.csv';
-% output_file = 'pseudo_hash-2000-graph.csv';
+num_vars = 320;
+N = 1000;
+% input_file = 'sha256-16704-100.bits';
+% output_file = 'sha256-16704-100-graph.csv';
+input_file = 'pseudo_hash-320-1000.bits';
+output_file = 'pseudo_hash-320-1000-graph.csv';
 
 disp('TODO: not sure if Laplacian or pure adjacency matrix should be used');
 
@@ -72,8 +72,7 @@ disp('Sorting the eigenvectors and values ascending...');
 V = V(:, I);
 
 disp('Extracting highest-weighted eigenvector as centrality measure...');
-centrality_measure = V(:, end);
-centrality_measure(centrality_measure < 0) = 0;
+centrality_measure = abs(V(:, end));
 centrality_measure = centrality_measure / sum(centrality_measure);
 
 disp('Calculating edges per node...');
