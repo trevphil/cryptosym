@@ -8,8 +8,3 @@ EPSILON = 1e-4
 LBP_MAX_ITER = 10
 
 BIT_PRED = 256 + 0 # a.k.a. the first bit of the input message
-
-DATA_DIR = path.abspath('./data')
-
-def makeDataDirectoryIfNeeded():
-  Path(DATA_DIR).mkdir(parents=True, exist_ok=True)

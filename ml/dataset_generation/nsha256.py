@@ -9,6 +9,7 @@ SHA-256 hash has 32 bytes (64 hexadecimal characters, 256 bits)
 import copy
 import struct
 import binascii
+from BitVector import BitVector
 
 F32 = 0xFFFFFFFF
 
@@ -127,19 +128,18 @@ class SHA256:
     return b''.join(data)
 
 
-  def get_data(self):
+  def getData(self):
     """
-    Returns a tuple of strings of 1's and 0's:
-     - The first string is the 256-bit binary hash digest.
+    Returns a tuple of BitVectors:
+     - The first is the 256-bit binary hash digest.
      - The second represents the internal state of the algo at various points in the computation.
     """
+
     hexdigest = binascii.hexlify(self.digest()).decode('utf-8')
-    bindigest = bin(int(hexdigest, 16))[2:]
-    bindigest = ('0' * (256 - len(bindigest))) + bindigest
+    hash_output = BitVector(intVal=int(hexdigest, 16), size=256)
 
-    internals = ''
+    internals = BitVector(size=0)
     for state in self._saved_states:
-      binstate = bin(state)[2:]
-      internals += ('0' * (32 - len(binstate))) + binstate
+      internals += BitVector(intVal=state, size=32)
 
-    return bindigest, internals
+    return hash_output, internals

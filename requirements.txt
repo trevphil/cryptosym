@@ -1,5 +1,6 @@
 absl-py==0.9.0
 astor==0.8.1
+BitVector==3.4.9
 cachetools==4.0.0
 certifi==2018.8.24
 chardet==3.0.4
@@ -23,6 +24,7 @@ networkx==2.4
 numpy==1.18.2
 oauthlib==3.1.0
 opt-einsum==3.2.0
+osqp==0.4.0
 pandas==0.25.3
 protobuf==3.11.3
 pyasn1==0.4.8
@@ -42,6 +44,7 @@ tensorboard==2.1.1
 tensorflow==2.1.0
 tensorflow-estimator==2.1.0
 termcolor==1.1.0
+toolz==0.10.0
 urllib3==1.25.8
 Werkzeug==1.0.0
 wrapt==1.12.1
