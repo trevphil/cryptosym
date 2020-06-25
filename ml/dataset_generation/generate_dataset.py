@@ -5,6 +5,7 @@ import random
 import argparse
 import numpy as np
 from pathlib import Path
+from tqdm import tqdm
 from BitVector import BitVector
 
 from dataset_generation.hash_functions import hashFunc
@@ -60,17 +61,21 @@ def main():
   if os.path.exists(data_file):
     os.remove(data_file)
 
-  print('Allocating data matrix...')
-  data = np.zeros((n, N), dtype=bool)
+  print('Allocating data...')
+  data = BitVector(size=n * N)
 
-  print('Populating data matrix...')
-  for sample_idx in range(N):
+  print('Populating data...')
+  for sample_idx in tqdm(range(N)):
+    i = sample_idx * n
     hash_input = sample(num_input_bits)
     hash_output, internals = hashFunc(hash_input, algo)
-    data[:, sample_idx] = hash_output + hash_input + internals  # BitVectors will be concatenated
+    data[i:i + n] = hash_output + hash_input + internals  # BitVectors will be concatenated
 
-  print('Linearizing data to a BitVector...')
-  bv = BitVector(bitlist=data.reshape((1, -1)).squeeze().tolist())
+  print('Converting BitVector to numpy matrix...')
+  data = np.array(data, dtype=bool).reshape((N, n))
+  
+  print('Transposing matrix and converting back to BitVector...')
+  bv = BitVector(bitlist=data.T.reshape((1, -1)).squeeze().tolist())
 
   print('Saving to %s' % data_file)
   with open(data_file, 'wb') as f:

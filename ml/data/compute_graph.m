@@ -2,14 +2,14 @@ clear;
 clc;
 
 num_vars = 320;
-N = 504;
+N = 1008;
 num_hash_input_bits = 64;
 avg_edges_per_node = 6;
 
 % input_file = 'sha256-16704-100.bits';
 % output_file = 'sha256-16704-100-graph.csv';
-input_file = 'pseudo_hash-320-504-64.bits';
-output_file = 'pseudo_hash-320-504-64-graph.csv';
+input_file = 'pseudo_hash-320-1008-64.bits';
+output_file = 'pseudo_hash-320-1008-64-graph.csv';
 
 disp('TODO: not sure if Laplacian or pure adjacency matrix should be used');
 
