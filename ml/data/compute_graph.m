@@ -1,5 +1,9 @@
 input_file = 'sha256-30000.csv';
-output_file = 'sha256-30000-ihat.csv';
+output_file = 'sha256-30000-graph.csv';
+% input_file = 'pseudo_hash-2000.csv';
+% output_file = 'pseudo_hash-2000-graph.csv';
+
+disp('TODO: not sure if Laplacian or pure adjacency matrix should be used');
 
 disp('Loading samples...');
 samples = readmatrix(input_file);
@@ -46,12 +50,48 @@ r11 = compute_ihat(counts11, i1, j1, C);
 r11(isnan(r11)) = 0;
 r11(isinf(r11)) = 0;
 
-output = (r00 + r01 + r10 + r11) / N;
+disp('Adding case 00, 01, 10, and 11...');
+result = (r00 + r01 + r10 + r11) / N;
 
 disp('Removing self-connections in adjacency matrix...');
-output = output - diag(diag(output));
+result = result - diag(diag(result));
 
-writematrix(output, output_file);
+disp('Normalizing such that each row sums to 1.0...');
+result = result ./ sum(result, 2);
+
+disp('Calculating eig of the matrix...');
+[V, D] = eig(result);
+
+disp('Sorting the eigenvectors and values ascending...');
+[D, I] = sort(diag(D));
+V = V(:, I);
+
+disp('Extracting highest-weighted eigenvector as centrality measure...');
+centrality_measure = V(:, end);
+centrality_measure(centrality_measure < 0) = 0;
+centrality_measure = centrality_measure / sum(centrality_measure);
+
+disp('Calculating edges per node...');
+avg_edges_per_node = 6;
+total_edges = avg_edges_per_node * num_vars;
+edges_per_node = round(total_edges * centrality_measure);
+
+disp('Performing column-wise sort for each row...');
+[~, indices] = sort(result, 2);
+
+disp('Pruning graph...');
+for rv = 1:num_vars
+    desired_edges = edges_per_node(rv);
+    result(rv, indices(rv, 1:end - desired_edges)) = 0;
+end
+
+disp('Making simple graph (edge weights either 1 or 0)...');
+result(result > 0) = 1;
+
+disp('Saving data...');
+% save('sha256-matlab.mat', 'V', 'D', 'edges_per_node', 'result', '-v7.3');
+writematrix(result, output_file);
+
 disp('Done.');
 
 function ihat = compute_ihat(counts, i, j, C)

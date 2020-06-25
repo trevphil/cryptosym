@@ -85,7 +85,7 @@ class Factor(FactorGraphNode):
         if rv is not other_rv:
           prod *= tanh(other_rv.message(self) / 2.0)
 
-      if prod != 1.0:
+      if abs(prod) != 1.0:
         # TODO - Not sure if the algo still works with this condition.
         #        Factors with only 1 RV will never be updated.
         self.message_cache[rv.key] = 2.0 * atanh(prod)
@@ -96,7 +96,7 @@ class Factor(FactorGraphNode):
 
 class FactorGraph(object):
 
-  def __init__(self, prob_util, undirected_graph_yaml, config):
+  def __init__(self, prob_util, udg, config):
     self.logger = getLogger('factor_graph')
     self.config = config
     self.prob_util = prob_util
@@ -105,7 +105,7 @@ class FactorGraph(object):
     self.rvs = []
     self.factors = []
 
-    self.undirected_graph = nx.read_yaml(undirected_graph_yaml)
+    self.undirected_graph = udg.graph
 
     for rv in self.undirected_graph.nodes():
       self.bipartite_graph.add_node(rv, bipartite=0)

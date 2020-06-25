@@ -1,77 +1,30 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import networkx as nx
-from time import time
 import matplotlib.pyplot as plt
 
 from utils.log import getLogger
-from utils.constants import BIT_PRED, HASH_INPUT_NBITS, MAX_CONNECTIONS_PER_NODE
+from utils.constants import BIT_PRED
 
 
 class UndirectedGraph(object):
 
-  def __init__(self, prob, size, config, fc_graph=None,
-               max_connections=MAX_CONNECTIONS_PER_NODE):
+  def __init__(self, adjacency_matrix_file):
     self.logger = getLogger('undirected_graph')
-    self.prob = prob
-    self.config = config
-    self.max_connections = max_connections
-    self.N, self.n = size  # (number of samples, number of variables)
-    if fc_graph is None:
-      self.fc_graph = self.createFullyConnectedGraph()
-    else:
-      self.fc_graph = nx.read_yaml(fc_graph)
-    self.graph = self.pruneGraph(self.fc_graph)
-
-
-  def saveFullyConnectedGraph(self, filename):
-    self.logger.debug('Saving fully connected graph with {} edges as "{}"...'.format(
-      self.fc_graph.number_of_edges(), filename))
-    nx.write_yaml(self.fc_graph, filename)
-
-
-  def saveUndirectedGraph(self, filename):
-    self.logger.info('Saving undirected Bayesian network as "%s"...' % filename)
-    nx.write_yaml(self.graph, filename)
+    self.graph = nx.from_numpy_matrix(np.loadtxt(adjacency_matrix_file,
+                                                 dtype=bool, delimiter=','))
+    self.graph = self.postProcess(self.graph)
 
 
   def visualizeGraph(self, img_file):
     self.logger.info('Visualizing undirected Bayesian network...')
 
     plt.close()
-    nx.draw_spectral(self.graph, with_labels=True)
+    nx.draw_spectral(self.graph, with_labels=False, width=0.1, node_size=5)
     plt.savefig(img_file)
 
 
-  def createFullyConnectedGraph(self):
-    self.logger.info('Creating fully connected graph...')
-    start = time()
-
-    graph = nx.from_numpy_matrix(np.loadtxt(self.config.ihat_matrix))
-
-    self.logger.info('Finished creating FC graph in %.1f sec' % (time() - start))
-    self.logger.info('The fully connected graph has %d edges.' % graph.number_of_edges())
-    return graph
-
-
-  def pruneGraph(self, fc_graph):
-    graph = fc_graph.copy()
-
-    prune = True
-    while prune:
-      prune = False
-      for rv in graph.nodes():
-        num_neighbors = len(graph[rv])
-        if num_neighbors <= self.max_connections:
-          continue
-
-        # Prune away least negative edge
-        neighbors = [n for n in graph.edges(rv, data='weight')]
-        neighbors = list(sorted(neighbors, key=lambda n: n[2]))
-        to_remove = neighbors[0] # first one has smallest mutual info score
-        graph.remove_edge(to_remove[0], to_remove[1])
-        prune = True
-
+  def postProcess(self, graph):
     components = [graph.subgraph(c) for c in nx.connected_components(graph)]
     relevant_component = [g for g in components if BIT_PRED in g.nodes()][0]
 

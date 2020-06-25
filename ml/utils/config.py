@@ -12,15 +12,13 @@ class Config(object):
   def __init__(self):
     parser = argparse.ArgumentParser(description='SHA256 preimage attacks')
     parser.add_argument('dataset', type=str, help='Path to the CSV dataset file')
-    parser.add_argument('ihat_matrix', type=str, help='Path to CSV file with the iHat matrix')
-    parser.add_argument('--visualize', action='store_true', default=False,
-                        help='Visualize plots/graphs and save them to disk in the background')
+    parser.add_argument('graph', type=str, help='Path to CSV file with BN adjacency matrix')
 
     args = parser.parse_args()
 
     self.dataset = path.abspath(args.dataset)
-    self.ihat_matrix = path.abspath(args.ihat_matrix)
-    self.visualize = args.visualize
+    self.graph = path.abspath(args.graph)
+    self.visualize = True
 
     self.hash_algo = self.dataset.split('/')[-1].split('-')[0]
     self.experiment_dir = path.join(path.abspath('./experiments'),

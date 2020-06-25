@@ -46,24 +46,13 @@ if __name__ == '__main__':
     X_train.shape[0], X_test.shape[0], 256, constants.HASH_INPUT_NBITS, n - 256 - constants.HASH_INPUT_NBITS))
 
   prob = Probability(X_train)
+  udg = UndirectedGraph(config.graph)
 
-  if constants.ENTRY_POINT == 0:
-    # Need to calculate mutual information scores between all RVs and then build graph
-    udg = UndirectedGraph(prob, size=(N, n), config=config)
-    udg.saveFullyConnectedGraph(config.fcg_data_file)
-    udg.saveUndirectedGraph(constants.UDG_DATA_FILE)
-    if config.visualize:
-      udg.visualizeGraph(os.path.join(config.experiment_dir, 'graph_undirected.png'))
-
-  elif constants.ENTRY_POINT <= 1:
-    # Mutual information scores already calculated --> load them & build undirected graph
-    udg = UndirectedGraph(prob, size=(N, n), config=config, fc_graph=constants.FCG_DATA_FILE)
-    udg.saveUndirectedGraph(constants.UDG_DATA_FILE)
-    if config.visualize:
-      udg.visualizeGraph(os.path.join(config.experiment_dir, 'graph_undirected.png'))
+  if config.visualize:
+    udg.visualizeGraph(os.path.join(config.experiment_dir, 'graph_undirected.png'))
 
   # Need to build factor graph from the undirected graph
-  fg = FactorGraph(prob, constants.UDG_DATA_FILE, config=config)
+  fg = FactorGraph(prob, udg, config=config)
   if config.visualize:
     fg.visualizeGraph(os.path.join(config.experiment_dir, 'graph_factor.png'))
 
