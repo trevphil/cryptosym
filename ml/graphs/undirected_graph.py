@@ -4,16 +4,15 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 from utils.log import getLogger
-from utils.constants import BIT_PRED
 
 
 class UndirectedGraph(object):
 
-  def __init__(self, adjacency_matrix_file):
+  def __init__(self, config):
+    self.config = config
     self.logger = getLogger('undirected_graph')
     self.logger.info('Loading undirected graph...')
-    self.graph = nx.from_numpy_matrix(np.loadtxt(adjacency_matrix_file,
-                                                 dtype=bool, delimiter=','))
+    self.graph = nx.from_numpy_matrix(np.loadtxt(config.graph, dtype=bool, delimiter=','))
     self.logger.info('Finished loading undirected graph. Performing post-processing...')
     self.graph = self.postProcess(self.graph)
     self.logger.info('Finished post-processing of undirected graph.')
@@ -28,16 +27,17 @@ class UndirectedGraph(object):
 
 
   def postProcess(self, graph):
+    bit_pred = self.config.bit_pred
     components = [graph.subgraph(c) for c in nx.connected_components(graph)]
-    relevant_component = [g for g in components if BIT_PRED in g.nodes()][0]
+    relevant_component = [g for g in components if bit_pred in g.nodes()][0]
 
     msg = 'The optimized BN has %d edges.\n' % graph.number_of_edges()
     msg += '\tconnected = {}\n'.format(len(components) == 1)
     msg += '\tnum connected components = %d\n' % len(components)
     largest_cc = max(nx.connected_components(graph), key=len)
     msg += '\tlargest component has %d nodes\n' % len(largest_cc)
-    msg += '\tcomponent with bit %d has %d nodes\n' % (BIT_PRED, relevant_component.number_of_nodes())
-    msg += '\tbit %d is connected to %s' % (BIT_PRED, list(sorted(relevant_component[BIT_PRED].keys())))
+    msg += '\tcomponent with bit %d has %d nodes\n' % (bit_pred, relevant_component.number_of_nodes())
+    msg += '\tbit %d is connected to %s' % (bit_pred, list(sorted(relevant_component[bit_pred].keys())))
     self.logger.info(msg)
 
     return relevant_component

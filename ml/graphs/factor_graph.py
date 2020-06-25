@@ -6,7 +6,6 @@ import numpy as np
 from math import tanh, atanh, log
 
 from utils.log import getLogger
-from utils.constants import LBP_MAX_ITER, EPSILON
 
 ######################################################
 ################# FACTOR GRAPH NODE ##################
@@ -169,13 +168,14 @@ class FactorGraph(object):
       if total == 0:
         prob_rv_one = 0.5
       else:
-        # EPSILON affects the model such that no event can have 0.0 or 1.0 probability
-        prob_rv_one = max(EPSILON, min(1.0 - EPSILON, float(count1) / total))
+        # epsilon affects the model such that no event can have 0.0 or 1.0 probability
+        eps = self.config.epsilon
+        prob_rv_one = max(eps, min(1.0 - eps, float(count1) / total))
 
       rv.setInitialization(log((1.0 - prob_rv_one) / prob_rv_one))
 
 
-  def loopyBP(self, intermediate_pred=None, max_iterations=LBP_MAX_ITER):
+  def loopyBP(self, intermediate_pred=None):
     """
     https://arxiv.org/pdf/1301.6725.pdf
     https://www.ski.org/sites/default/files/publications/bptutorial.pdf
@@ -192,7 +192,7 @@ class FactorGraph(object):
 
     itr, log_likelihood_ratios = 0, []
     
-    while itr < max_iterations:
+    while itr < self.config.lbp_max_iter:
       try:
         _, llr = intermediate_pred()
         log_likelihood_ratios.append(llr)
@@ -209,7 +209,7 @@ class FactorGraph(object):
         break
       itr += 1
 
-    if itr >= max_iterations:
+    if itr >= self.config.lbp_max_iter:
       self.logger.warn('Loopy BP did not converge, max iterations reached')
     else:
       self.logger.info('Loopy BP converged in %d iterations.' % (itr + 1))

@@ -13,12 +13,17 @@ class Config(object):
     parser = argparse.ArgumentParser(description='SHA256 preimage attacks')
     parser.add_argument('dataset', type=str, help='Path to the CSV dataset file')
     parser.add_argument('graph', type=str, help='Path to CSV file with BN adjacency matrix')
+    parser.add_argument('--lbp-max-iter', type=int, default=10,
+                        help='Max number of iteratiosn for Loopy Belief Propagation')
 
     args = parser.parse_args()
 
     self.dataset = path.abspath(args.dataset)
     self.graph = path.abspath(args.graph)
+    self.lbp_max_iter = args.lbp_max_iter
     self.visualize = True
+    self.epsilon = 1e-4
+    self.bit_pred = 256 + 0 # a.k.a. the first bit of the input message
 
     self.hash_algo = self.dataset.split('/')[-1].split('-')[0]
     self.experiment_dir = path.join(path.abspath('./experiments'),

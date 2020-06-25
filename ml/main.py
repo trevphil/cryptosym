@@ -8,7 +8,6 @@ from graphs.undirected_graph import UndirectedGraph
 from graphs.factor_graph import FactorGraph
 from utils.probability import Probability
 from utils.config import Config
-from utils import constants
 from utils.log import initLogging, getLogger
 
 
@@ -50,7 +49,7 @@ if __name__ == '__main__':
     N_train, N_test, 256, num_input_bits, n - 256 - num_input_bits))
 
   prob = Probability(X_train)
-  udg = UndirectedGraph(config.graph)
+  udg = UndirectedGraph(config)
 
   if config.visualize:
     udg.visualizeGraph(os.path.join(config.experiment_dir, 'graph_undirected.png'))
@@ -76,13 +75,13 @@ if __name__ == '__main__':
   try:
     for i in range(N_test):
       hash_bits = [X_test[hash_bit][i] for hash_bit in range(256)]
-      true_hash_input_bit = X_test[constants.BIT_PRED][i]
+      true_hash_input_bit = X_test[config.bit_pred][i]
 
       observed = dict()
       for rv, hash_val in enumerate(hash_bits):
         observed[rv] = hash_val
 
-      prob_hash_input_bit_is_one, llr = fg.predict(constants.BIT_PRED, 1, observed=observed)
+      prob_hash_input_bit_is_one, llr = fg.predict(config.bit_pred, 1, observed=observed)
 
       guess = 1 if prob_hash_input_bit_is_one >= 0.5 else 0
       is_correct = int(guess == true_hash_input_bit)
