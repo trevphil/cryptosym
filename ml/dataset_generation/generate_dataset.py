@@ -26,7 +26,8 @@ The file format is `<HASH_ALGO>-<NUM_RANDOM_VARIABLES>-<NUM_SAMPLES>.bits`.
 
 def sample(nbits):
   """ Returns a BitVector with `nbits` initialized with a random value """
-  return BitVector(intVal=0).gen_random_bits(nbits)
+  num = random.randint(0, (2 ** nbits) - 1)
+  return BitVector(intVal=num, size=nbits)
 
 
 def main():
@@ -51,7 +52,7 @@ def main():
   tmp1, tmp2 = hashFunc(sample(num_input_bits), algo)
   n = (tmp1 + tmp2).length() + num_input_bits  # number of variables
 
-  data_file = '{}-{}-{}.bits'.format(algo, n, N)
+  data_file = '{}-{}-{}-{}.bits'.format(algo, n, N, num_input_bits)
   data_file = os.path.join(args.data_dir, data_file)
 
   Path(args.data_dir).mkdir(parents=True, exist_ok=True)

@@ -17,6 +17,7 @@ def loadDataset(config):
   parts = config.dataset.split('/')[-1].split('.')[0].split('-')
   num_rv = int(parts[1])
   N = int(parts[2])
+  num_input_bits = int(parts[3])
   N_train = int(N * 0.8)
 
   data = BitVector(filename=config.dataset)
@@ -25,7 +26,7 @@ def loadDataset(config):
     train.append(bv[:N_train])
     test.append(bv[N_train:])
   
-  return train, test, (num_rv, N, N_train)
+  return train, test, (num_rv, N, N_train, num_input_bits)
 
 
 if __name__ == '__main__':
@@ -41,13 +42,12 @@ if __name__ == '__main__':
   n = stats[0]  # number of random variables
   N = stats[1]  # number of samples
   N_train = stats[2]  # number of samples used for training
+  num_input_bits = stats[3]  # number of bits used in the hash input message
   N_test = N - N_train  # number of samples used for testing
   logger.info('Loaded dataset.')
-  
-  HASH_INPUT_NBITS = 64 # TODO - this should be stored in a config file with the dataset
 
   logger.info('train={},\ttest={},\tnum_hash_bits={},\tnum_hash_input_bits={},\tinternal_bits={}'.format(
-    N_train, N_test, 256, HASH_INPUT_NBITS, n - 256 - HASH_INPUT_NBITS))
+    N_train, N_test, 256, num_input_bits, n - 256 - num_input_bits))
 
   prob = Probability(X_train)
   udg = UndirectedGraph(config.graph)

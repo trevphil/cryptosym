@@ -1,9 +1,15 @@
+clear;
+clc;
+
 num_vars = 320;
 N = 504;
+num_hash_input_bits = 64;
+avg_edges_per_node = 6;
+
 % input_file = 'sha256-16704-100.bits';
 % output_file = 'sha256-16704-100-graph.csv';
-input_file = 'map_from_input-320-504.bits';
-output_file = 'map_from_input-320-504-graph.csv';
+input_file = 'pseudo_hash-320-504-64.bits';
+output_file = 'pseudo_hash-320-504-64-graph.csv';
 
 disp('TODO: not sure if Laplacian or pure adjacency matrix should be used');
 
@@ -61,6 +67,9 @@ result = (r00 + r01 + r10 + r11) / N;
 disp('Removing self-connections in adjacency matrix...');
 result = result - diag(diag(result));
 
+disp('Removing connections between hash input bits...');
+result(256+1:256+num_hash_input_bits, 256+1:256+num_hash_input_bits) = 0;
+
 disp('Normalizing such that each row sums to 1.0...');
 result = result ./ sum(result, 2);
 
@@ -76,7 +85,6 @@ centrality_measure = abs(V(:, end));
 centrality_measure = centrality_measure / sum(centrality_measure);
 
 disp('Calculating edges per node...');
-avg_edges_per_node = 6;
 total_edges = avg_edges_per_node * num_vars;
 edges_per_node = round(total_edges * centrality_measure);
 
