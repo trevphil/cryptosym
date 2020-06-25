@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-import networkx as nx
-from math import log
-from itertools import product
-from operator import mul
-from functools import reduce
 from BitVector import BitVector
 
 from utils.log import getLogger

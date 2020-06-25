@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
-import math
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
-from itertools import product
 from math import tanh, atanh, log
 
 from utils.log import getLogger
