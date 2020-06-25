@@ -1,9 +1,9 @@
 num_vars = 320;
-N = 1000;
+N = 504;
 % input_file = 'sha256-16704-100.bits';
 % output_file = 'sha256-16704-100-graph.csv';
-input_file = 'pseudo_hash-320-1000.bits';
-output_file = 'pseudo_hash-320-1000-graph.csv';
+input_file = 'map_from_input-320-504.bits';
+output_file = 'map_from_input-320-504-graph.csv';
 
 disp('TODO: not sure if Laplacian or pure adjacency matrix should be used');
 

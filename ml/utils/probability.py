@@ -5,6 +5,7 @@ from math import log
 from itertools import product
 from operator import mul
 from functools import reduce
+from BitVector import BitVector
 
 from utils.log import getLogger
 
@@ -14,17 +15,18 @@ from utils.log import getLogger
 
 class Probability(object):
 
-  def __init__(self, samples):
+  def __init__(self, data):
     """
     Parameters
-      - samples: a pandas dataframe where each row is a sample and each
-                 column a random variable index (hash bits + hash input + internals)
+      - data: an array of BitVectors where the i_th BitVector corresponds to
+              random variable "i" and has a list of all the values taken by
+              that random variable during dataset generation (column = sample index)
     """
 
-    self.samples = samples
+    self.data = data
     self.logger = getLogger('probability')
-    self.N = samples.shape[0]  # number of samples
-    self.n = samples.shape[1]  # number of variables
+    self.n = len(data)  # number of random variables
+    self.N = len(data[0])  # number of samples
 
     # phats[rv_idx, rv_val] = probability that the RV has that value (1 or 0)
     self.phats = np.zeros((self.n, 2))
@@ -41,13 +43,14 @@ class Probability(object):
     """
     assert len(random_variables) > 0
 
-    rv_index, rv_value = random_variables[0]
-    search = (self.samples.iloc[:, rv_index] == rv_value)
+    result = BitVector(bitstring='1' * self.N)
+    for rv_index, rv_value in random_variables:
+      samples = self.data[rv_index]
+      if rv_value == 0:
+        samples = ~samples
+      result = result & samples
 
-    for rv_index, rv_value in random_variables[1:]:
-      search = search & (self.samples.iloc[:, rv_index] == rv_value)
-
-    return self.samples.iloc[search.values].shape[0]
+    return result.count_bits()
 
 
   def pHat(self, random_variables):

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import numpy as np
-import pandas as pd
 from matplotlib import pyplot as plt
+from BitVector import BitVector
 
 from graphs.undirected_graph import UndirectedGraph
 from graphs.factor_graph import FactorGraph
@@ -13,12 +13,19 @@ from utils.log import initLogging, getLogger
 
 
 def loadDataset(config):
-  dataset_chunks = pd.read_csv(config.dataset, chunksize=500000,
-                               sep=',', dtype=bool, header=None)
-  dataset = None
-  for chunk in dataset_chunks:
-    dataset = chunk if dataset is None else pd.concat([dataset, chunk])
-  return dataset
+  train, test = [], []
+  parts = config.dataset.split('/')[-1].split('.')[0].split('-')
+  num_rv = int(parts[1])
+  N = int(parts[2])
+  N_train = int(N * 0.8)
+
+  data = BitVector(filename=config.dataset)
+  for rv in range(num_rv):
+    bv = data.read_bits_from_file(N)
+    train.append(bv[:N_train])
+    test.append(bv[N_train:])
+  
+  return train, test, (num_rv, N, N_train)
 
 
 if __name__ == '__main__':
@@ -30,20 +37,17 @@ if __name__ == '__main__':
   logger = getLogger('main')
 
   logger.info('Loading dataset...')
-  dataset = loadDataset(config)
+  X_train, X_test, stats = loadDataset(config)
+  n = stats[0]  # number of random variables
+  N = stats[1]  # number of samples
+  N_train = stats[2]  # number of samples used for training
+  N_test = N - N_train  # number of samples used for testing
   logger.info('Loaded dataset.')
-
-  train_cutoff = int(dataset.shape[0] * 0.8)
-  N = train_cutoff  # number of samples
-  n = dataset.shape[1]  # number of variables
-
-  X = dataset
-  X_train = X[:N]
-  X_test = X[N:]
-  X_test.reset_index(drop=True, inplace=True)
+  
+  HASH_INPUT_NBITS = 64 # TODO - this should be stored in a config file with the dataset
 
   logger.info('train={},\ttest={},\tnum_hash_bits={},\tnum_hash_input_bits={},\tinternal_bits={}'.format(
-    X_train.shape[0], X_test.shape[0], 256, constants.HASH_INPUT_NBITS, n - 256 - constants.HASH_INPUT_NBITS))
+    N_train, N_test, 256, HASH_INPUT_NBITS, n - 256 - HASH_INPUT_NBITS))
 
   prob = Probability(X_train)
   udg = UndirectedGraph(config.graph)
@@ -61,6 +65,8 @@ if __name__ == '__main__':
   Think about what would be a natural BN structure...
     -> Should all hash bits in a byte be fully connected?
     -> Stuff happens in groups of 32 bits, so it makes sense to use 32 connections per node
+  
+  Technically the test data is used in "training" in MATLAB
   """
 
   logger.info('Checking accuracy of single bit prediction on test data...')
@@ -68,9 +74,9 @@ if __name__ == '__main__':
   log_likelihood_ratios, accuracies = [], []
 
   try:
-    for i in range(X_test.shape[0]):
-      hash_bits = X_test.iloc[i, :256]
-      true_hash_input_bit = int(X_test.iat[i, constants.BIT_PRED])
+    for i in range(N_test):
+      hash_bits = [X_test[hash_bit][i] for hash_bit in range(256)]
+      true_hash_input_bit = X_test[constants.BIT_PRED][i]
 
       observed = dict()
       for rv, hash_val in enumerate(hash_bits):

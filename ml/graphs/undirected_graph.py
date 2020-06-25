@@ -11,9 +11,12 @@ class UndirectedGraph(object):
 
   def __init__(self, adjacency_matrix_file):
     self.logger = getLogger('undirected_graph')
+    self.logger.info('Loading undirected graph...')
     self.graph = nx.from_numpy_matrix(np.loadtxt(adjacency_matrix_file,
                                                  dtype=bool, delimiter=','))
+    self.logger.info('Finished loading undirected graph. Performing post-processing...')
     self.graph = self.postProcess(self.graph)
+    self.logger.info('Finished post-processing of undirected graph.')
 
 
   def visualizeGraph(self, img_file):
@@ -33,7 +36,8 @@ class UndirectedGraph(object):
     msg += '\tnum connected components = %d\n' % len(components)
     largest_cc = max(nx.connected_components(graph), key=len)
     msg += '\tlargest component has %d nodes\n' % len(largest_cc)
-    msg += '\tcomponent with bit %d has %d nodes' % (BIT_PRED, relevant_component.number_of_nodes())
+    msg += '\tcomponent with bit %d has %d nodes\n' % (BIT_PRED, relevant_component.number_of_nodes())
+    msg += '\tbit %d is connected to %s' % (BIT_PRED, list(sorted(relevant_component[BIT_PRED].keys())))
     self.logger.info(msg)
 
     return relevant_component
