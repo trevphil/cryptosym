@@ -20,7 +20,7 @@ and the number of samples is N. Data is ordered such that each row is a
 random variable, and each column is a sample.
 
 The data is written to a file as a single bit vector by concatenating rows.
-The file format is `HASH_ALGO-NUM_RANDOM_VARIABLES-NUM_SAMPLES.bits`
+The file format is `<HASH_ALGO>-<NUM_RANDOM_VARIABLES>-<NUM_SAMPLES>.bits`.
 """
 
 

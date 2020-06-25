@@ -1,4 +1,6 @@
-input_file = 'sha256-30000.csv';
+num_vars = 16704;
+N = 100;
+input_file = 'sha256-16704-100.bits';
 output_file = 'sha256-30000-graph.csv';
 % input_file = 'pseudo_hash-2000.csv';
 % output_file = 'pseudo_hash-2000-graph.csv';
@@ -6,11 +8,14 @@ output_file = 'sha256-30000-graph.csv';
 disp('TODO: not sure if Laplacian or pure adjacency matrix should be used');
 
 disp('Loading samples...');
-samples = readmatrix(input_file);
-[N, num_vars] = size(samples);
+fileID = fopen(input_file);
+samples = fread(fileID, num_vars * N, '*ubit1');
+samples = reshape(samples, [N, num_vars])';
+samples = cast(samples, 'double');
+fclose(fileID);
 
 disp('Computing matrix square...');
-counts11 = samples' * samples;
+counts11 = samples * samples';
 
 disp('Deriving 00, 01, and 10 cases from 11 case...');
 diag1 = diag(counts11);
