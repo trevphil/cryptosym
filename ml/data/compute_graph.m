@@ -1,15 +1,15 @@
 clear;
 clc;
 
-num_vars = 320;
-N = 1008;
+num_vars = 16704;
+N = 30008;
 num_hash_input_bits = 64;
-avg_edges_per_node = 6;
+avg_edges_per_node = 8;
 
 % input_file = 'sha256-16704-100.bits';
 % output_file = 'sha256-16704-100-graph.csv';
-input_file = 'pseudo_hash-320-1008-64.bits';
-output_file = 'pseudo_hash-320-1008-64-graph.csv';
+input_file = 'sha256-16704-30008-64.bits';
+output_file = 'sha256-16704-30008-64-graph.csv';
 
 disp('TODO: not sure if Laplacian or pure adjacency matrix should be used');
 
@@ -67,6 +67,9 @@ result = (r00 + r01 + r10 + r11) / N;
 disp('Removing self-connections in adjacency matrix...');
 result = result - diag(diag(result));
 
+disp('Saving raw ihat matrix...');
+save('sha256-matlab.mat', 'result', '-v7.3');
+
 disp('Removing connections between hash input bits...');
 result(256+1:256+num_hash_input_bits, 256+1:256+num_hash_input_bits) = 0;
 
@@ -101,7 +104,6 @@ disp('Making simple graph (edge weights either 1 or 0)...');
 result(result > 0) = 1;
 
 disp('Saving data...');
-% save('sha256-matlab.mat', 'V', 'D', 'edges_per_node', 'result', '-v7.3');
 writematrix(result, output_file);
 
 disp('Done.');

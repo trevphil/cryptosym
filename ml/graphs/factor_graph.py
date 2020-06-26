@@ -105,7 +105,6 @@ class FactorGraph(object):
     self.undirected_graph = udg.graph
 
     for rv in self.undirected_graph.nodes():
-      self.bipartite_graph.add_node(rv, bipartite=0)
       self.rvs.append(RandomVariable(rv))
     
     factor_keys = set()
@@ -118,23 +117,10 @@ class FactorGraph(object):
         factor_keys.add(new_factor.key)
 
     for factor in self.factors:
-      self.bipartite_graph.add_node(factor.key, bipartite=1)
       for rv in factor.rvs:
-        self.bipartite_graph.add_edge(factor.key, rv.key)
         rv.addNeighboringFactor(factor)
 
     self.logger.info('All %d factors initialized.' % len(self.factors))
-
-
-  def visualizeGraph(self, img_file):
-    self.logger.info('Visualizing factor graph...')
-
-    plt.close()
-    first_partition = [f.key for f in self.factors]
-    pos = nx.drawing.layout.bipartite_layout(self.bipartite_graph, first_partition)
-    nx.draw_networkx(self.bipartite_graph, pos=pos, with_labels=False,
-      width=0.1, node_size=5)
-    plt.savefig(img_file)
 
 
   def setup(self, observed):

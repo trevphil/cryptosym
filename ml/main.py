@@ -3,6 +3,7 @@ import os
 import numpy as np
 from matplotlib import pyplot as plt
 from BitVector import BitVector
+from tqdm import tqdm
 
 from graphs.undirected_graph import UndirectedGraph
 from graphs.factor_graph import FactorGraph
@@ -20,7 +21,7 @@ def loadDataset(config):
   N_train = int(N * 0.8)
 
   data = BitVector(filename=config.dataset)
-  for rv in range(num_rv):
+  for rv in tqdm(range(num_rv)):
     bv = data.read_bits_from_file(N)
     train.append(bv[:N_train])
     test.append(bv[N_train:])
@@ -56,8 +57,6 @@ if __name__ == '__main__':
 
   # Need to build factor graph from the undirected graph
   fg = FactorGraph(prob, udg, config=config)
-  if config.visualize:
-    fg.visualizeGraph(os.path.join(config.experiment_dir, 'graph_factor.png'))
 
   """
   TODO -

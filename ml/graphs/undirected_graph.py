@@ -22,7 +22,7 @@ class UndirectedGraph(object):
     self.logger.info('Visualizing undirected Bayesian network...')
 
     plt.close()
-    nx.draw_spectral(self.graph, with_labels=False, width=0.1, node_size=5)
+    nx.draw_graphviz(self.graph, with_labels=False, width=0.1, node_size=5)
     plt.savefig(img_file)
 
 
