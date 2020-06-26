@@ -18,15 +18,15 @@ def loadDataset(config):
   num_rv = int(parts[1])
   N = int(parts[2])
   num_input_bits = int(parts[3])
-  N_train = int(N * 0.8)
+  N_train = int(8 * round(N * 0.8 / 8))
+  N_test = N - N_train
 
   data = BitVector(filename=config.dataset)
   for rv in tqdm(range(num_rv)):
-    bv = data.read_bits_from_file(N)
-    train.append(bv[:N_train])
-    test.append(bv[N_train:])
+    train.append(data.read_bits_from_file(N_train))
+    test.append(data.read_bits_from_file(N_test))
   
-  return train, test, (num_rv, N, N_train, num_input_bits)
+  return train, test, (num_rv, N, N_train, N_test, num_input_bits)
 
 
 if __name__ == '__main__':
@@ -42,8 +42,8 @@ if __name__ == '__main__':
   n = stats[0]  # number of random variables
   N = stats[1]  # number of samples
   N_train = stats[2]  # number of samples used for training
-  num_input_bits = stats[3]  # number of bits used in the hash input message
-  N_test = N - N_train  # number of samples used for testing
+  N_test = stats[3]  # number of samples used for testing
+  num_input_bits = stats[4]  # number of bits used in the hash input message
   logger.info('Loaded dataset.')
 
   logger.info('train={},\ttest={},\tnum_hash_bits={},\tnum_hash_input_bits={},\tinternal_bits={}'.format(

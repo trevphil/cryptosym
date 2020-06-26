@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import numpy as np
+from tqdm import tqdm
 from BitVector import BitVector
 
 from utils.log import getLogger
@@ -24,10 +25,12 @@ class Probability(object):
     self.N = len(data[0])  # number of samples
 
     # phats[rv_idx, rv_val] = probability that the RV has that value (1 or 0)
+    self.logger.info('Initializing phats...')
     self.phats = np.zeros((self.n, 2))
-    for rv in range(self.n):
+    for rv in tqdm(range(self.n)):
       phat = self.pHat([(rv, 0)])
       self.phats[rv, :] = (phat, 1.0 - phat)
+    self.logger.info('Probability object was initialized.')
 
 
   def count(self, random_variables):

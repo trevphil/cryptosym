@@ -1,0 +1,6 @@
+build
+logs/*
+lib/*
+bin/*
+.DS_Store
+.vscode/*

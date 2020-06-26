@@ -49,7 +49,7 @@ def main():
 
   algo = args.hash_algo
   num_input_bits = args.num_input_bits
-  N = args.num_samples + (8 - args.num_samples % 8)  # number of samples
+  N = int(8 * round(args.num_samples / 8))  # number of samples
   tmp1, tmp2 = hashFunc(sample(num_input_bits), algo)
   n = (tmp1 + tmp2).length() + num_input_bits  # number of variables
 
