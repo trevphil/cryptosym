@@ -36,6 +36,7 @@ class Config {
   }
 
   size_t lbp_max_iter;
+  std::string hash_algo;
   std::string dataset_dir;
   std::string data_file;
   std::string graph_file;
@@ -143,6 +144,14 @@ class Config {
     YAML::Node data = YAML::LoadFile(dataset_params.string());
 
     std::string param;
+
+    param = "hash";
+    if (!data[param]) {
+      spdlog::error("Missing '{}'", param);
+    } else {
+      hash_algo = data[param].as<std::string>();
+      spdlog::info("{} --> {}", param, hash_algo);
+    }
 
     param = "num_rvs";
     if (!data[param]) {
