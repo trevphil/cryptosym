@@ -13,26 +13,27 @@
 #pragma once
 
 #include <map>
-#include <vector>
-#include <boost/dynamic_bitset.hpp>
+#include <Eigen/Dense>
 
 #include "utils/config.hpp"
 #include "utils/convenience.hpp"
+#include "hash_reversal/probability.hpp"
 
 namespace hash_reversal {
 
-class Dataset {
+class FactorGraph {
  public:
-	explicit Dataset(const utils::Config &config);
+  struct Prediction {
+    double prob_bit_is_one;
+    double log_likelihood_ratio;
+  };
 
-  std::map<size_t, bool> getHashBits(size_t test_sample_index) const;
+  explicit FactorGraph(const Probability &prob, const utils::Config &config);
 
-  bool getGroundTruth(size_t test_sample_index) const;
+  Prediction predict(size_t bit_index, bool bit_value, std::map<size_t, bool> observed);
 
  private:
-  utils::Config config_;
-  std::vector<boost::dynamic_bitset<>> train_;
-  std::vector<boost::dynamic_bitset<>> test_;
+  Eigen::MatrixXf adjacency_mat_;
 };
 
 }  // end namespace hash_reversal

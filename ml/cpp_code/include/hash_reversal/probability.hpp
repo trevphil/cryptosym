@@ -12,11 +12,13 @@
 
 #pragma once
 
+#include "hash_reversal/dataset.hpp"
+
 namespace hash_reversal {
 
-class UndirectedGraph {
+class Probability {
  public:
-	UndirectedGraph();
+	explicit Probability(const Dataset &dataset);
 };
 
 }  // end namespace hash_reversal

@@ -12,12 +12,12 @@
 
 #include "spdlog/spdlog.h"
 
-#include "hash_reversal/undirected_graph.hpp"
+#include "hash_reversal/probability.hpp"
 
 namespace hash_reversal {
 
-UndirectedGraph::UndirectedGraph() {
-	spdlog::info("Undirected graph was initialized!");
+Probability::Probability(const Dataset &dataset) {
+	spdlog::info("Probability was initialized!");
 }
 
 }  // end namespace hash_reversal

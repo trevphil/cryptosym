@@ -35,18 +35,19 @@ class Config {
     validateParameters();
   }
 
-  int lbp_max_iter;
+  size_t lbp_max_iter;
   std::string dataset_dir;
   std::string data_file;
   std::string graph_file;
   double epsilon;
-  int num_rvs;
-  int num_samples;
-  int num_train_samples;
-  int num_test_samples;
-  int num_hash_bits;
-  int num_input_bits;
-  int num_internal_bits;
+  size_t num_rvs;
+  size_t num_samples;
+  size_t num_train_samples;
+  size_t num_test_samples;
+  size_t num_hash_bits;
+  size_t num_input_bits;
+  size_t num_internal_bits;
+  size_t bit_to_predict;
 
  private:
   void configureLogging() {
@@ -85,7 +86,7 @@ class Config {
     if (!data[param]) {
       spdlog::error("Missing '{}'", param);
     } else {
-      lbp_max_iter = data[param].as<int>();
+      lbp_max_iter = data[param].as<size_t>();
       spdlog::info("{} --> {}", param, lbp_max_iter);
     }
 
@@ -103,6 +104,14 @@ class Config {
     } else {
       epsilon = data[param].as<double>();
       spdlog::info("{} --> {}", param, epsilon);
+    }
+
+    param = "bit_to_predict";
+    if (!data[param]) {
+      spdlog::error("Missing '{}'", param);
+    } else {
+      bit_to_predict = data[param].as<size_t>();
+      spdlog::info("{} --> {}", param, bit_to_predict);
     }
   }
 
@@ -139,7 +148,7 @@ class Config {
     if (!data[param]) {
       spdlog::error("Missing '{}'", param);
     } else {
-      num_rvs = data[param].as<int>();
+      num_rvs = data[param].as<size_t>();
       spdlog::info("{} --> {}", param, num_rvs);
     }
 
@@ -147,7 +156,7 @@ class Config {
     if (!data[param]) {
       spdlog::error("Missing '{}'", param);
     } else {
-      num_samples = data[param].as<int>();
+      num_samples = data[param].as<size_t>();
       spdlog::info("{} --> {}", param, num_samples);
     }
 
@@ -155,7 +164,7 @@ class Config {
     if (!data[param]) {
       spdlog::error("Missing '{}'", param);
     } else {
-      num_train_samples = data[param].as<int>();
+      num_train_samples = data[param].as<size_t>();
       spdlog::info("{} --> {}", param, num_train_samples);
     }
 
@@ -163,7 +172,7 @@ class Config {
     if (!data[param]) {
       spdlog::error("Missing '{}'", param);
     } else {
-      num_test_samples = data[param].as<int>();
+      num_test_samples = data[param].as<size_t>();
       spdlog::info("{} --> {}", param, num_test_samples);
     }
 
@@ -171,7 +180,7 @@ class Config {
     if (!data[param]) {
       spdlog::error("Missing '{}'", param);
     } else {
-      num_hash_bits = data[param].as<int>();
+      num_hash_bits = data[param].as<size_t>();
       spdlog::info("{} --> {}", param, num_hash_bits);
     }
 
@@ -179,7 +188,7 @@ class Config {
     if (!data[param]) {
       spdlog::error("Missing '{}'", param);
     } else {
-      num_input_bits = data[param].as<int>();
+      num_input_bits = data[param].as<size_t>();
       spdlog::info("{} --> {}", param, num_input_bits);
     }
 
@@ -187,7 +196,7 @@ class Config {
     if (!data[param]) {
       spdlog::error("Missing '{}'", param);
     } else {
-      num_internal_bits = data[param].as<int>();
+      num_internal_bits = data[param].as<size_t>();
       spdlog::info("{} --> {}", param, num_internal_bits);
     }
   }

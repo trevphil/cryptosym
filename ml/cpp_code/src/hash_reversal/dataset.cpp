@@ -11,15 +11,15 @@
  */
 
 #include <fstream>
-#include <iostream>
 #include <spdlog/spdlog.h>
 
 #include "hash_reversal/dataset.hpp"
 
 namespace hash_reversal {
 
-Dataset::Dataset(const utils::Config &config) {
+Dataset::Dataset(const utils::Config &config) : config_(config) {
   spdlog::info("Loading dataset...");
+  const auto start = utils::Convenience::time_since_epoch();
   train_.reserve(config.num_rvs);
   test_.reserve(config.num_rvs);
 
@@ -29,7 +29,7 @@ Dataset::Dataset(const utils::Config &config) {
   std::ifstream data(config.data_file, std::ios::in | std::ios::binary);
   char c;
 
-  for (int rv = 0; rv < config.num_rvs; ++rv) {
+  for (size_t rv = 0; rv < config.num_rvs; ++rv) {
     boost::dynamic_bitset<> train_bits(config.num_train_samples);
     boost::dynamic_bitset<> test_bits(config.num_test_samples);
 
@@ -55,13 +55,22 @@ Dataset::Dataset(const utils::Config &config) {
     spdlog::warn("Reading from data file did not reach EOF");
   }
 
-  for (size_t i = 0; i < 32; ++i) {
-    std::cout << test_[1][i] << " ";
-  }
-  std::cout << std::endl;
-
   data.close();
-  spdlog::info("Finished loading dataset.");
+
+  const auto end = utils::Convenience::time_since_epoch();
+  spdlog::info("Finished loading dataset in {} seconds.", end - start);
+}
+
+std::map<size_t, bool> Dataset::getHashBits(size_t test_sample_index) const {
+  std::map<size_t, bool> observed;
+  for (size_t hash_bit_idx = 0; hash_bit_idx < config_.num_hash_bits; ++hash_bit_idx) {
+    observed[hash_bit_idx] = test_[hash_bit_idx][test_sample_index];
+  }
+  return observed;
+}
+
+bool Dataset::getGroundTruth(size_t test_sample_index) const {
+  return test_[config_.bit_to_predict][test_sample_index];
 }
 
 }  // end namespace hash_reversal
