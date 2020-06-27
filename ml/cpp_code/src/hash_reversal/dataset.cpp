@@ -61,10 +61,11 @@ Dataset::Dataset(std::shared_ptr<utils::Config> config) : config_(config) {
   spdlog::info("Finished loading dataset in {} seconds.", end - start);
 }
 
-std::map<size_t, bool> Dataset::getHashBits(size_t test_sample_index) const {
-  std::map<size_t, bool> observed;
+std::vector<VariableAssignment> Dataset::getHashBits(size_t test_sample_index) const {
+  std::vector<VariableAssignment> observed;
   for (size_t hash_bit_idx = 0; hash_bit_idx < config_->num_hash_bits; ++hash_bit_idx) {
-    observed[hash_bit_idx] = test_.at(hash_bit_idx)[test_sample_index];
+    const auto bitval = test_.at(hash_bit_idx)[test_sample_index];
+    observed.push_back(VariableAssignment(hash_bit_idx, bitval));
   }
   return observed;
 }

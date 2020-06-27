@@ -18,6 +18,7 @@
 #include <boost/dynamic_bitset.hpp>
 
 #include "hash_reversal/dataset.hpp"
+#include "hash_reversal/variable_assignment.hpp"
 #include "utils/config.hpp"
 #include "utils/convenience.hpp"
 
@@ -25,12 +26,6 @@ namespace hash_reversal {
 
 class Probability {
  public:
-  struct VariableAssignment {
-		VariableAssignment(size_t rv_idx, bool v) : rv_index(rv_idx), value(v) { }
-		size_t rv_index;
-		bool value;
-	};
-
 	explicit Probability(std::shared_ptr<Dataset> dataset,
 											 std::shared_ptr<utils::Config> config);
 

@@ -12,13 +12,13 @@
 
 #pragma once
 
-#include <map>
 #include <memory>
 #include <vector>
 #include <boost/dynamic_bitset.hpp>
 
 #include "utils/config.hpp"
 #include "utils/convenience.hpp"
+#include "hash_reversal/variable_assignment.hpp"
 
 namespace hash_reversal {
 
@@ -26,7 +26,7 @@ class Dataset {
  public:
 	explicit Dataset(std::shared_ptr<utils::Config> config);
 
-  std::map<size_t, bool> getHashBits(size_t test_sample_index) const;
+  std::vector<VariableAssignment> getHashBits(size_t test_sample_index) const;
 
   bool getGroundTruth(size_t test_sample_index) const;
 

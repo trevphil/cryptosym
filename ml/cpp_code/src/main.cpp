@@ -54,12 +54,13 @@ int main(int argc, char** argv) {
 	for (size_t test_idx = 0; test_idx < config->num_test_samples; ++test_idx) {
 		const auto hash_bits = dataset->getHashBits(test_idx);
 		const bool true_hash_input_bit = dataset->getGroundTruth(test_idx);
-		const auto result = factor_graph.predict(config->bit_to_predict, 1, hash_bits);
+		const auto result = factor_graph.predict(config->bit_to_predict, hash_bits);
 		const bool guess = result.prob_bit_is_one > 0.5 ? true : false;
 		const bool is_correct = (guess == true_hash_input_bit);
 		correct_count += is_correct;
 		++total_count;
-		spdlog::info("\tGuessed {}, true value is {}", int(guess), int(true_hash_input_bit));
+		spdlog::info("\tGuessed {}, true value is {}, LLR {}",
+			int(guess), int(true_hash_input_bit), result.log_likelihood_ratio);
 
 		log_likelihood_ratios.push_back(result.log_likelihood_ratio);
 		accuracies.push_back(is_correct);

@@ -8,8 +8,8 @@ avg_edges_per_node = 6;
 
 % input_file = 'sha256-16704-100.bits';
 % output_file = 'sha256-16704-100-graph.csv';
-input_file = 'pseudo_hash-320-1000-64/data.bits';
-output_file = 'pseudo_hash-320-1000-64/graph.csv';
+input_file = 'conditioned_on_input_and_hash-320-1000-64/data.bits';
+output_file = 'conditioned_on_input_and_hash-320-1000-64/graph.csv';
 
 disp('TODO: not sure if Laplacian or pure adjacency matrix should be used');
 

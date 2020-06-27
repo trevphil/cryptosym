@@ -12,8 +12,8 @@
 
 #pragma once
 
-#include <map>
 #include <memory>
+#include <vector>
 #include <Eigen/Dense>
 
 #include "utils/config.hpp"
@@ -29,14 +29,32 @@ class FactorGraph {
     double log_likelihood_ratio;
   };
 
+  struct RandomVariable {
+    std::vector<size_t> factor_indices;
+  };
+
+  struct Factor {
+    std::vector<size_t> rv_indices;
+  };
+
   explicit FactorGraph(std::shared_ptr<Probability> prob,
                        std::shared_ptr<utils::Config> config);
 
-  Prediction predict(size_t bit_index, bool bit_value,
-                     const std::map<size_t, bool> &observed);
+  Prediction predict(size_t bit_index,
+                     const std::vector<VariableAssignment> &observed);
 
  private:
-  Eigen::MatrixXf adjacency_mat_;
+  void setupLBP(const std::vector<VariableAssignment> &observed);
+  void runLBP();
+
+  std::shared_ptr<Probability> prob_;
+  std::shared_ptr<utils::Config> config_;
+  std::vector<RandomVariable> rvs_;
+  std::vector<Factor> factors_;
+  Eigen::MatrixXd rv_messages_;
+  Eigen::MatrixXd factor_messages_;
+  Eigen::VectorXd rv_initialization_;
+  Eigen::VectorXd factor_initialization_;
 };
 
 }  // end namespace hash_reversal
