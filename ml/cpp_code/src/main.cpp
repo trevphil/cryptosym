@@ -10,10 +10,8 @@
  * Proprietary and confidential
  */
 
-#include "spdlog/spdlog.h"
-#include "spdlog/sinks/basic_file_sink.h"
-
 #include "utils/config.hpp"
+#include "hash_reversal/dataset.hpp"
 #include "hash_reversal/undirected_graph.hpp"
 
 int main(int argc, char** argv) {
@@ -22,8 +20,9 @@ int main(int argc, char** argv) {
 		return -1;
 	}
 
-	std::string config_file = argv[1];
-	utils::Config config = utils::Config(config_file);
+	const std::string config_file = argv[1];
+	const utils::Config config = utils::Config(config_file);
+	hash_reversal::Dataset dataset = hash_reversal::Dataset(config);
 
 	hash_reversal::UndirectedGraph udg;
 

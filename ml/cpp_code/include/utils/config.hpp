@@ -12,9 +12,9 @@
 
 #pragma once
 
-#include "spdlog/spdlog.h"
-#include "spdlog/sinks/basic_file_sink.h"
-#include "spdlog/sinks/stdout_sinks.h"
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_sinks.h>
 #include <yaml-cpp/yaml.h>
 
 #include <ctime>
@@ -31,7 +31,8 @@ class Config {
   explicit Config(std::string config_file) {
     configureLogging();
     loadYAML(config_file);
-    loadDatasetParams();
+    loadDatasetParameters();
+    validateParameters();
   }
 
   int lbp_max_iter;
@@ -41,6 +42,8 @@ class Config {
   double epsilon;
   int num_rvs;
   int num_samples;
+  int num_train_samples;
+  int num_test_samples;
   int num_hash_bits;
   int num_input_bits;
   int num_internal_bits;
@@ -103,7 +106,7 @@ class Config {
     }
   }
 
-  void loadDatasetParams() {
+  void loadDatasetParameters() {
     std::filesystem::path dataset_base = dataset_dir;
     std::filesystem::path dataset_params = dataset_base / "params.yaml";
     std::filesystem::path dataset_data = dataset_base / "data.bits";
@@ -148,6 +151,22 @@ class Config {
       spdlog::info("{} --> {}", param, num_samples);
     }
 
+    param = "num_train_samples";
+    if (!data[param]) {
+      spdlog::error("Missing '{}'", param);
+    } else {
+      num_train_samples = data[param].as<int>();
+      spdlog::info("{} --> {}", param, num_train_samples);
+    }
+
+    param = "num_test_samples";
+    if (!data[param]) {
+      spdlog::error("Missing '{}'", param);
+    } else {
+      num_test_samples = data[param].as<int>();
+      spdlog::info("{} --> {}", param, num_test_samples);
+    }
+
     param = "num_hash_bits";
     if (!data[param]) {
       spdlog::error("Missing '{}'", param);
@@ -171,6 +190,19 @@ class Config {
       num_internal_bits = data[param].as<int>();
       spdlog::info("{} --> {}", param, num_internal_bits);
     }
+  }
+
+  void validateParameters() {
+    if (num_samples != num_train_samples + num_test_samples)
+      spdlog::error("Total number of samples should equal # train + # test samples");
+    if (num_rvs != num_hash_bits + num_input_bits + num_internal_bits)
+      spdlog::error("Number of RVs should equal # hash bits + # input bits + # internals");
+    if (num_samples % 8 != 0)
+      spdlog::error("Number of samples is not a multiple of 8");
+    if (num_train_samples % 8 != 0)
+      spdlog::error("Number of train samples is not a multiple of 8");
+    if (num_test_samples % 8 != 0)
+      spdlog::error("Number of test samples is not a multiple of 8");
   }
 };
 
