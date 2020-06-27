@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
 	const std::string config_file = argv[1];
 	const utils::Config config = utils::Config(config_file);
 	hash_reversal::Dataset dataset = hash_reversal::Dataset(config);
-	hash_reversal::Probability prob(dataset);
+	hash_reversal::Probability prob(dataset, config);
 	hash_reversal::FactorGraph factor_graph(prob, config);
 
 	spdlog::info("Checking accuracy of single bit prediction on test data...");

@@ -64,13 +64,17 @@ Dataset::Dataset(const utils::Config &config) : config_(config) {
 std::map<size_t, bool> Dataset::getHashBits(size_t test_sample_index) const {
   std::map<size_t, bool> observed;
   for (size_t hash_bit_idx = 0; hash_bit_idx < config_.num_hash_bits; ++hash_bit_idx) {
-    observed[hash_bit_idx] = test_[hash_bit_idx][test_sample_index];
+    observed[hash_bit_idx] = test_.at(hash_bit_idx)[test_sample_index];
   }
   return observed;
 }
 
 bool Dataset::getGroundTruth(size_t test_sample_index) const {
-  return test_[config_.bit_to_predict][test_sample_index];
+  return test_.at(config_.bit_to_predict)[test_sample_index];
+}
+
+boost::dynamic_bitset<> Dataset::getTrainSamples(size_t rv_index) const {
+  return train_.at(rv_index);
 }
 
 }  // end namespace hash_reversal

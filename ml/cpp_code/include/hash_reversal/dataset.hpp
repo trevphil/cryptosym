@@ -29,6 +29,8 @@ class Dataset {
 
   bool getGroundTruth(size_t test_sample_index) const;
 
+  boost::dynamic_bitset<> getTrainSamples(size_t rv_index) const;
+
  private:
   utils::Config config_;
   std::vector<boost::dynamic_bitset<>> train_;
