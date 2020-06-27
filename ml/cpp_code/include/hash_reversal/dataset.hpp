@@ -13,6 +13,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <vector>
 #include <boost/dynamic_bitset.hpp>
 
@@ -23,7 +24,7 @@ namespace hash_reversal {
 
 class Dataset {
  public:
-	explicit Dataset(const utils::Config &config);
+	explicit Dataset(std::shared_ptr<utils::Config> config);
 
   std::map<size_t, bool> getHashBits(size_t test_sample_index) const;
 
@@ -32,7 +33,7 @@ class Dataset {
   boost::dynamic_bitset<> getTrainSamples(size_t rv_index) const;
 
  private:
-  utils::Config config_;
+  std::shared_ptr<utils::Config> config_;
   std::vector<boost::dynamic_bitset<>> train_;
   std::vector<boost::dynamic_bitset<>> test_;
 };

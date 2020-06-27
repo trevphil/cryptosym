@@ -13,6 +13,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include <Eigen/Dense>
 #include <boost/dynamic_bitset.hpp>
 
@@ -30,12 +31,13 @@ class Probability {
 		bool value;
 	};
 
-	explicit Probability(const Dataset &dataset, const utils::Config &config);
+	explicit Probability(std::shared_ptr<Dataset> dataset,
+											 std::shared_ptr<utils::Config> config);
 
 	size_t count(const std::vector<VariableAssignment> &rv_assignments) const;
 
  private:
-  Dataset dataset_;
+  std::shared_ptr<Dataset> dataset_;
 	Eigen::MatrixXd phats_;
 };
 

@@ -17,13 +17,14 @@
 
 namespace hash_reversal {
 
-FactorGraph::FactorGraph(const Probability &prob, const utils::Config &config) {
+FactorGraph::FactorGraph(std::shared_ptr<Probability> prob,
+                         std::shared_ptr<utils::Config> config) {
   spdlog::info("Loading adjacency matrix from CSV...");
   const auto start = utils::Convenience::time_since_epoch();
 
-  const size_t n = config.num_rvs;
+  const size_t n = config->num_rvs;
   std::ifstream data;
-  data.open(config.graph_file);
+  data.open(config->graph_file);
   std::string line;
   adjacency_mat_ = Eigen::MatrixXf(n, n);
 
@@ -44,9 +45,8 @@ FactorGraph::FactorGraph(const Probability &prob, const utils::Config &config) {
   spdlog::info("Finished loading adjacency matrix in {} seconds.", end - start);
 }
 
-FactorGraph::Prediction FactorGraph::predict(size_t bit_index,
-                                             bool bit_value,
-                                             std::map<size_t, bool> observed) {
+FactorGraph::Prediction FactorGraph::predict(size_t bit_index, bool bit_value,
+                                             const std::map<size_t, bool> &observed) {
   FactorGraph::Prediction prediction;
   prediction.log_likelihood_ratio = 0.1;
   prediction.prob_bit_is_one = 0.6;

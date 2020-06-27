@@ -13,6 +13,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <Eigen/Dense>
 
 #include "utils/config.hpp"
@@ -28,9 +29,11 @@ class FactorGraph {
     double log_likelihood_ratio;
   };
 
-  explicit FactorGraph(const Probability &prob, const utils::Config &config);
+  explicit FactorGraph(std::shared_ptr<Probability> prob,
+                       std::shared_ptr<utils::Config> config);
 
-  Prediction predict(size_t bit_index, bool bit_value, std::map<size_t, bool> observed);
+  Prediction predict(size_t bit_index, bool bit_value,
+                     const std::map<size_t, bool> &observed);
 
  private:
   Eigen::MatrixXf adjacency_mat_;

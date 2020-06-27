@@ -17,21 +17,21 @@
 
 namespace hash_reversal {
 
-Dataset::Dataset(const utils::Config &config) : config_(config) {
+Dataset::Dataset(std::shared_ptr<utils::Config> config) : config_(config) {
   spdlog::info("Loading dataset...");
   const auto start = utils::Convenience::time_since_epoch();
-  train_.reserve(config.num_rvs);
-  test_.reserve(config.num_rvs);
+  train_.reserve(config->num_rvs);
+  test_.reserve(config->num_rvs);
 
-  const size_t num_train_bytes = config.num_train_samples / 8;
-  const size_t num_test_bytes = config.num_test_samples / 8;
+  const size_t num_train_bytes = config->num_train_samples / 8;
+  const size_t num_test_bytes = config->num_test_samples / 8;
 
-  std::ifstream data(config.data_file, std::ios::in | std::ios::binary);
+  std::ifstream data(config->data_file, std::ios::in | std::ios::binary);
   char c;
 
-  for (size_t rv = 0; rv < config.num_rvs; ++rv) {
-    boost::dynamic_bitset<> train_bits(config.num_train_samples);
-    boost::dynamic_bitset<> test_bits(config.num_test_samples);
+  for (size_t rv = 0; rv < config->num_rvs; ++rv) {
+    boost::dynamic_bitset<> train_bits(config->num_train_samples);
+    boost::dynamic_bitset<> test_bits(config->num_test_samples);
 
     // Note that the order of placing bits into `train_bits` and `test_bits`
     // really doesn't matter since the samples are unordered
@@ -63,14 +63,14 @@ Dataset::Dataset(const utils::Config &config) : config_(config) {
 
 std::map<size_t, bool> Dataset::getHashBits(size_t test_sample_index) const {
   std::map<size_t, bool> observed;
-  for (size_t hash_bit_idx = 0; hash_bit_idx < config_.num_hash_bits; ++hash_bit_idx) {
+  for (size_t hash_bit_idx = 0; hash_bit_idx < config_->num_hash_bits; ++hash_bit_idx) {
     observed[hash_bit_idx] = test_.at(hash_bit_idx)[test_sample_index];
   }
   return observed;
 }
 
 bool Dataset::getGroundTruth(size_t test_sample_index) const {
-  return test_.at(config_.bit_to_predict)[test_sample_index];
+  return test_.at(config_->bit_to_predict)[test_sample_index];
 }
 
 boost::dynamic_bitset<> Dataset::getTrainSamples(size_t rv_index) const {

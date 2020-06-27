@@ -1,0 +1,4 @@
+lbp_max_iter: 10
+dataset_dir: "../data/pseudo_hash-320-1000-64"
+epsilon: 0.0001
+bit_to_predict: 256  # first bit of hash input message
