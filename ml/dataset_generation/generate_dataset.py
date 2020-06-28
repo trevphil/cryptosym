@@ -3,6 +3,7 @@ import os
 import sys
 import random
 import argparse
+import yaml
 import numpy as np
 from pathlib import Path
 from tqdm import tqdm
@@ -42,6 +43,8 @@ def main():
                       help='Number of samples to use in the dataset')
   parser.add_argument('--num-input-bits', type=int, default=64,
                       help='Number of bits in each input message to the hash function')
+  parser.add_argument('--pct-train', type=float, default=0.8,
+                      help='Percent of samples which will be used in the "train" section of the dataset')
   parser.add_argument('--hash-algo', type=str, default='sha256',
                       choices=['sha256', 'md5', 'map_from_input', 'conditioned_on_input_and_hash', 'pseudo_hash'],
                       help='Choose the hashing algorithm to apply to the input data')
@@ -50,13 +53,17 @@ def main():
   algo = args.hash_algo
   num_input_bits = args.num_input_bits
   N = int(8 * round(args.num_samples / 8))  # number of samples
+  N_train = int(8 * round((N * args.pct_train) / 8))
+  N_test = N - N_train
   tmp1, tmp2 = hashFunc(sample(num_input_bits), algo)
   n = (tmp1 + tmp2).length() + num_input_bits  # number of variables
 
-  data_file = '{}-{}-{}-{}.bits'.format(algo, n, N, num_input_bits)
-  data_file = os.path.join(args.data_dir, data_file)
+  dataset_dir = '{}-{}-{}-{}'.format(algo, n, N, num_input_bits)
+  dataset_dir = os.path.join(args.data_dir, dataset_dir)
+  data_file = os.path.join(dataset_dir, 'data.bits')
+  params_file = os.path.join(dataset_dir, 'params.yaml')
 
-  Path(args.data_dir).mkdir(parents=True, exist_ok=True)
+  Path(dataset_dir).mkdir(parents=True, exist_ok=True)
 
   if os.path.exists(data_file):
     os.remove(data_file)
@@ -69,17 +76,38 @@ def main():
     i = sample_idx * n
     hash_input = sample(num_input_bits)
     hash_output, internals = hashFunc(hash_input, algo)
-    data[i:i + n] = hash_output + hash_input + internals  # BitVectors will be concatenated
+    j = len(hash_output)
+    data[i:i + j] = hash_output
+    i += j
+    j = len(hash_input)
+    data[i:i + j] = hash_input
+    i += j
+    j = len(internals)
+    data[i:i + j] = internals
 
   print('Converting BitVector to numpy matrix...')
   data = np.array(data, dtype=bool).reshape((N, n))
-  
+
   print('Transposing matrix and converting back to BitVector...')
   bv = BitVector(bitlist=data.T.reshape((1, -1)).squeeze().tolist())
 
   print('Saving to %s' % data_file)
   with open(data_file, 'wb') as f:
     bv.write_to_file(f)
+
+  params = {
+    'hash': algo,
+    'num_rvs': n,
+    'num_samples': N,
+    'num_train_samples': N_train,
+    'num_test_samples': N_test,
+    'num_hash_bits': tmp1.length(),
+    'num_input_bits': num_input_bits,
+    'num_internal_bits': tmp2.length()
+  }
+
+  with open(params_file, 'w') as f:
+    yaml.dump(params, f)
 
   print('Generated dataset with %d samples (hash=%s, %d input bits).' % (N, algo, num_input_bits))
 

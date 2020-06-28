@@ -1,17 +1,17 @@
 clear;
 clc;
 
-num_vars = 16704;
-N = 30008;
-num_hash_input_bits = 64;
-avg_edges_per_node = 8;
-directory = 'sha256-16704-30008-64';
-
-% num_vars = 320;
-% N = 1000;
+% num_vars = 16704;
+% N = 30008;
 % num_hash_input_bits = 64;
-% avg_edges_per_node = 6;
-% directory = 'pseudo_hash-320-1000-64';
+% avg_edges_per_node = 8;
+% directory = 'sha256-16704-30008-64';
+
+num_vars = 320;
+N = 1000;
+num_hash_input_bits = 64;
+avg_edges_per_node = 6;
+directory = 'pseudo_hash-320-1000-64';
 
 input_file = sprintf('%s/data.bits', directory);
 output_file = sprintf('%s/graph.csv', directory);
