@@ -10,9 +10,11 @@
  * Proprietary and confidential
  */
 
-#include <cmath>
 #include <set>
+#include <cmath>
+#include <string>
 #include <fstream>
+#include <algorithm>
 #include <spdlog/spdlog.h>
 
 #include "hash_reversal/factor_graph.hpp"
@@ -56,6 +58,7 @@ FactorGraph::FactorGraph(std::shared_ptr<Probability> prob,
 
   const auto end = utils::Convenience::time_since_epoch();
   spdlog::info("Finished loading adjacency matrix in {} seconds.", end - start);
+  printConnections();
 }
 
 FactorGraph::Prediction FactorGraph::predict(size_t bit_index,
@@ -147,6 +150,16 @@ void FactorGraph::runLBP() {
 
   const auto end = utils::Convenience::time_since_epoch();
   spdlog::info("\tLBP finished in {} seconds.", end - start);
+}
+
+void FactorGraph::printConnections() const {
+  const size_t n = config_->num_rvs;
+  for (size_t i = 0; i < n; ++i) {
+    auto neighbors = factors_.at(i).rv_indices;
+    std::sort(neighbors.begin(), neighbors.end());
+    const std::string neighbors_str = utils::Convenience::vec2str<size_t>(neighbors);
+    spdlog::info("\tRV {} is connected to {}", i, neighbors_str);
+  }
 }
 
 }  // end namespace hash_reversal

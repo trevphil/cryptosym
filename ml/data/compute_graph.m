@@ -1,17 +1,23 @@
 clear;
 clc;
 
-num_vars = 320;
-N = 1000;
+num_vars = 16704;
+N = 30008;
 num_hash_input_bits = 64;
-avg_edges_per_node = 6;
+avg_edges_per_node = 8;
+directory = 'sha256-16704-30008-64';
 
-% input_file = 'sha256-16704-100.bits';
-% output_file = 'sha256-16704-100-graph.csv';
-input_file = 'conditioned_on_input_and_hash-320-1000-64/data.bits';
-output_file = 'conditioned_on_input_and_hash-320-1000-64/graph.csv';
+% num_vars = 320;
+% N = 1000;
+% num_hash_input_bits = 64;
+% avg_edges_per_node = 6;
+% directory = 'pseudo_hash-320-1000-64';
 
-disp('TODO: not sure if Laplacian or pure adjacency matrix should be used');
+input_file = sprintf('%s/data.bits', directory);
+output_file = sprintf('%s/graph.csv', directory);
+
+warning('TODO: not sure if Laplacian or pure adjacency matrix should be used');
+warning('TODO: graph pruning algorithm is questionable');
 
 disp('Loading samples...');
 fileID = fopen(input_file);
@@ -67,8 +73,8 @@ result = (r00 + r01 + r10 + r11) / N;
 disp('Removing self-connections in adjacency matrix...');
 result = result - diag(diag(result));
 
-disp('Saving raw ihat matrix...');
-save('sha256-matlab.mat', 'result', '-v7.3');
+% disp('Saving raw ihat matrix...');
+% save('sha256-matlab.mat', 'result', '-v7.3');
 
 disp('Removing connections between hash input bits...');
 result(256+1:256+num_hash_input_bits, 256+1:256+num_hash_input_bits) = 0;
@@ -95,13 +101,23 @@ disp('Performing column-wise sort for each row...');
 [~, indices] = sort(result, 2);
 
 disp('Pruning graph...');
-for rv = 1:num_vars
-    desired_edges = edges_per_node(rv);
+[~, ordering] = sort(edges_per_node);
+for rv = ordering(:)'
+    desired_edges = min(edges_per_node(rv), num_vars - 1);
     result(rv, indices(rv, 1:end - desired_edges)) = 0;
+    result(rv, indices(rv, end - desired_edges + 1:end)) = 1;
+    result(:, rv) = result(rv, :);
 end
 
-disp('Making simple graph (edge weights either 1 or 0)...');
-result(result > 0) = 1;
+if ~isequal(result, result.')
+    warning('Adjacency matrix is not symmetric, something is wrong!');
+end
+
+min_connections = min(sum(result, 2));
+max_connections = max(sum(result, 2));
+avg_connections = round(mean(sum(result, 2)));
+fprintf('Max connections: %d, min connections: %d, avg: %d\n',...
+        max_connections, min_connections, avg_connections);
 
 disp('Saving data...');
 writematrix(result, output_file);

@@ -46,6 +46,7 @@ class FactorGraph {
  private:
   void setupLBP(const std::vector<VariableAssignment> &observed);
   void runLBP();
+  void printConnections() const;
 
   std::shared_ptr<Probability> prob_;
   std::shared_ptr<utils::Config> config_;

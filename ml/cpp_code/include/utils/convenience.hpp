@@ -13,6 +13,7 @@
 #pragma once
 
 #include <chrono>
+#include <string>
 #include <type_traits>
 
 namespace utils {
@@ -26,6 +27,22 @@ class Convenience {
 
     const auto now = std::chrono::system_clock::now().time_since_epoch();
     return std::chrono::duration_cast<std::chrono::seconds>(now).count();
+  }
+
+  template<typename T>
+  static std::string vec2str(const std::vector<T> &vec) {
+    auto begin = vec.begin();
+    auto end = vec.end();
+    std::stringstream ss;
+    ss << "[";
+    bool first = true;
+    for (; begin != end; ++begin) {
+      if (!first) ss << ", ";
+      ss << *begin;
+      first = false;
+    }
+    ss << "]";
+    return ss.str();
   }
 };
 
