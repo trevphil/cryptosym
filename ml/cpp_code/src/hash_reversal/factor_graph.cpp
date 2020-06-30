@@ -58,13 +58,10 @@ FactorGraph::FactorGraph(std::shared_ptr<Probability> prob,
 
   const auto end = utils::Convenience::time_since_epoch();
   spdlog::info("Finished loading adjacency matrix in {} seconds.", end - start);
-  printConnections();
+  // printConnections();
 }
 
-FactorGraph::Prediction FactorGraph::predict(size_t bit_index,
-                                             const std::vector<VariableAssignment> &observed) {
-  setupLBP(observed);
-  runLBP();
+FactorGraph::Prediction FactorGraph::predict(size_t bit_index) {
   FactorGraph::Prediction prediction;
   double x = rv_initialization_(bit_index) + factor_messages_.col(bit_index).sum();
   prediction.log_likelihood_ratio = x;
@@ -108,7 +105,9 @@ void FactorGraph::setupLBP(const std::vector<VariableAssignment> &observed) {
   }
 }
 
-void FactorGraph::runLBP() {
+void FactorGraph::runLBP(const std::vector<VariableAssignment> &observed) {
+  setupLBP(observed);
+
   spdlog::info("Starting loopy BP...");
   const auto start = utils::Convenience::time_since_epoch();
   // TODO - Add convergence criteria

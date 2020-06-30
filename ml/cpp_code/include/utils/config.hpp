@@ -43,7 +43,6 @@ class Config {
   size_t num_hash_bits;
   size_t num_input_bits;
   size_t num_internal_bits;
-  size_t bit_to_predict;
 
  private:
   void configureLogging() const;

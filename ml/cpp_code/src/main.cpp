@@ -10,6 +10,7 @@
  * Proprietary and confidential
  */
 
+#include <cmath>
 #include <memory>
 #include <vector>
 #include <boost/dynamic_bitset.hpp>
@@ -45,28 +46,38 @@ int main(int argc, char** argv) {
 		new hash_reversal::Probability(dataset, config));
 	hash_reversal::FactorGraph factor_graph(prob, config);
 
-	spdlog::info("Checking accuracy of single bit prediction on test data...");
-	int correct_count = 0;
+	spdlog::info("Checking accuracy on test data...");
+	int total_correct = 0;
 	int total_count = 0;
 	std::vector<double> log_likelihood_ratios;
 	std::vector<bool> accuracies;
 
 	for (size_t test_idx = 0; test_idx < config->num_test_samples; ++test_idx) {
-		const auto hash_bits = dataset->getHashBits(test_idx);
-		const bool true_hash_input_bit = dataset->getGroundTruth(test_idx);
-		const auto result = factor_graph.predict(config->bit_to_predict, hash_bits);
-		const bool guess = result.prob_bit_is_one > 0.5 ? true : false;
-		const bool is_correct = (guess == true_hash_input_bit);
-		correct_count += is_correct;
-		++total_count;
-		spdlog::info("\tGuessed {}, true value is {}, LLR {}",
-			int(guess), int(true_hash_input_bit), result.log_likelihood_ratio);
+		const auto observed_hash_bits = dataset->getHashBits(test_idx);
+		factor_graph.runLBP(observed_hash_bits);
 
-		log_likelihood_ratios.push_back(result.log_likelihood_ratio);
-		accuracies.push_back(is_correct);
+		const auto hash_input = dataset->getGroundTruth(test_idx);
+		const size_t n = hash_input.size();
+		int local_correct = 0;
+		double sum_abs_llr = 0;
 
-		spdlog::info("\tAccuracy: {0}/{1} ({2:.3f}%)",
-			correct_count, total_count, 100.0 * correct_count / total_count);
+		for (size_t i = 0; i < n; ++i) {
+			const size_t bit_index = config->num_hash_bits + i;
+			const auto result = factor_graph.predict(bit_index);
+			const bool guess = result.prob_bit_is_one > 0.5 ? true : false;
+			const bool is_correct = (guess == hash_input[i]);
+			total_correct += is_correct;
+			local_correct += is_correct;
+			++total_count;
+			sum_abs_llr += std::abs(result.log_likelihood_ratio);
+			log_likelihood_ratios.push_back(result.log_likelihood_ratio);
+			accuracies.push_back(is_correct);
+		}
+
+		spdlog::info("\tGot {0}/{1} ({2:.2f}%), average abs(LLR) is {3:.3f}",
+			local_correct, n, 100.0 * local_correct / n, sum_abs_llr / n);
+		spdlog::info("\tTotal accuracy: {0}/{1} ({2:.2f}%)",
+			total_correct, total_count, 100.0 * total_correct / total_count);
 	}
 
 	spdlog::info("Done.");

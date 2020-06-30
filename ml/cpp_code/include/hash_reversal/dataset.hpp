@@ -28,7 +28,7 @@ class Dataset {
 
   std::vector<VariableAssignment> getHashBits(size_t test_sample_index) const;
 
-  bool getGroundTruth(size_t test_sample_index) const;
+  boost::dynamic_bitset<> getGroundTruth(size_t test_sample_index) const;
 
   boost::dynamic_bitset<> getTrainSamples(size_t rv_index) const;
 

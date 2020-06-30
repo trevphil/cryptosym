@@ -40,12 +40,12 @@ class FactorGraph {
   explicit FactorGraph(std::shared_ptr<Probability> prob,
                        std::shared_ptr<utils::Config> config);
 
-  Prediction predict(size_t bit_index,
-                     const std::vector<VariableAssignment> &observed);
+  void runLBP(const std::vector<VariableAssignment> &observed);
+
+  Prediction predict(size_t bit_index);
 
  private:
   void setupLBP(const std::vector<VariableAssignment> &observed);
-  void runLBP();
   void printConnections() const;
 
   std::shared_ptr<Probability> prob_;

@@ -76,14 +76,6 @@ void Config::loadYAML(const std::string &config_file) {
     epsilon = data[param].as<double>();
     spdlog::info("{} --> {}", param, epsilon);
   }
-
-  param = "bit_to_predict";
-  if (!data[param]) {
-    spdlog::error("Missing '{}'", param);
-  } else {
-    bit_to_predict = data[param].as<size_t>();
-    spdlog::info("{} --> {}", param, bit_to_predict);
-  }
 }
 
 void Config::loadDatasetParameters() {

@@ -70,8 +70,12 @@ std::vector<VariableAssignment> Dataset::getHashBits(size_t test_sample_index) c
   return observed;
 }
 
-bool Dataset::getGroundTruth(size_t test_sample_index) const {
-  return test_.at(config_->bit_to_predict)[test_sample_index];
+boost::dynamic_bitset<> Dataset::getGroundTruth(size_t test_sample_index) const {
+  boost::dynamic_bitset<> hash_input(config_->num_input_bits);
+  for (size_t i = 0; i < hash_input.size(); ++i) {
+    hash_input[i] = test_.at(config_->num_hash_bits + i)[test_sample_index];
+  }
+  return hash_input;
 }
 
 boost::dynamic_bitset<> Dataset::getTrainSamples(size_t rv_index) const {
