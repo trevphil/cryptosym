@@ -12,14 +12,14 @@
 
 #include <iostream>
 
-#include "spdlog/spdlog.h"
+#include <spdlog/spdlog.h>
 
 #include "hash_reversal/probability.hpp"
 
 namespace hash_reversal {
 
 Probability::Probability(std::shared_ptr<Dataset> dataset,
-												 std::shared_ptr<utils::Config> config) : dataset_(dataset) {
+												 std::shared_ptr<utils::Config> config) : dataset_(dataset), config_(config) {
 	spdlog::info("Initializing marginals...");
 	const auto start = utils::Convenience::time_since_epoch();
 
@@ -33,6 +33,30 @@ Probability::Probability(std::shared_ptr<Dataset> dataset,
 
 	const auto end = utils::Convenience::time_since_epoch();
 	spdlog::info("Marginals initialized in {} seconds.", end - start);
+}
+
+double Probability::probOne(size_t rv_index,
+														const std::vector<VariableAssignment> &observed_neighbors,
+														const std::string &algorithm) const {
+	double prob_one = 0.5;
+
+	if (algorithm == "cpd") {
+		std::vector<VariableAssignment> rv_assignments = observed_neighbors;
+		rv_assignments.push_back(VariableAssignment(rv_index, 0));
+    const size_t count0 = count(rv_assignments);
+    rv_assignments.pop_back();
+    rv_assignments.push_back(VariableAssignment(rv_index, 1));
+    const size_t count1 = count(rv_assignments);
+    const size_t total = count0 + count1;
+		if (total > 0) prob_one = double(count1) / total;
+	} else if (algorithm == "noisy-or") {
+
+	} else {
+		spdlog::error("Probability algorithm '{}' is not implemented!", algorithm);
+	}
+
+	const double eps = config_->epsilon;
+	return std::max(eps, std::min(1.0 - eps, prob_one));
 }
 
 size_t Probability::count(const std::vector<VariableAssignment> &rv_assignments) const {

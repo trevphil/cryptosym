@@ -29,10 +29,15 @@ class Probability {
 	explicit Probability(std::shared_ptr<Dataset> dataset,
 											 std::shared_ptr<utils::Config> config);
 
+	double probOne(size_t rv_index,
+								 const std::vector<VariableAssignment> &observed_neighbors,
+								 const std::string &algorithm) const;
+
 	size_t count(const std::vector<VariableAssignment> &rv_assignments) const;
 
  private:
   std::shared_ptr<Dataset> dataset_;
+	std::shared_ptr<utils::Config> config_;
 	Eigen::MatrixXd phats_;
 };
 
