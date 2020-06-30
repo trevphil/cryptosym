@@ -1,28 +1,28 @@
 clear;
 clc;
 
+%% ihat computation
 % num_vars = 16704;
 % N = 30008;
 % num_hash_input_bits = 64;
 % avg_edges_per_node = 8;
 % directory = 'sha256-16704-30008-64';
 
-num_vars = 320;
-N = 1000;
+num_vars = 1216;
+N = 10000;
 num_hash_input_bits = 64;
-avg_edges_per_node = 6;
-directory = 'pseudo_hash-320-1000-64';
+avg_edges_per_node = 8;
+directory = 'sha256-1216-10000-64';
 
 input_file = sprintf('%s/data.bits', directory);
 output_file = sprintf('%s/graph.csv', directory);
 
 warning('TODO: not sure if Laplacian or pure adjacency matrix should be used');
-warning('TODO: graph pruning algorithm is questionable');
 
 disp('Loading samples...');
 fileID = fopen(input_file);
 samples = fread(fileID, num_vars * N, '*ubit1');
-samples = reshape(samples, [N, num_vars])';
+samples = reshape(samples, [num_vars, N]);
 samples = cast(samples, 'double');
 fclose(fileID);
 
@@ -39,36 +39,64 @@ j1 = i1';
 i0 = repmat(diag0', num_vars, 1);
 j0 = i0';
 
-counts01 = N - counts11 - j0;
-counts10 = N - counts11 - i0;
+counts01 = N - counts11 - i0;
+counts10 = N - counts11 - j0;
 counts00 = N - counts11 - counts01 - counts10;
+
+if ~isequal(counts00, counts00.')
+    warning('counts00 is not symmetric!');
+    return;
+end
+
+tmp = counts01 + counts10;
+if ~isequal(tmp, tmp.')
+    warning('counts01 + counts10 is not symmetric!');
+    return;
+end
+
+if ~isequal(counts11, counts11.')
+    warning('counts11 is not symmetric!');
+    return;
+end
 
 disp('Computing ihats...');
 
-C = log(N) * ones(size(counts11));
-
 disp('Computing case 00');
-r00 = compute_ihat(counts00, i0, j0, C);
+r00 = compute_ihat(counts00, i0, j0, N);
 r00(isnan(r00)) = 0;
 r00(isinf(r00)) = 0;
+if ~isequal(r00, r00.')
+    warning('r00 is not symmetric!');
+    return;
+end
 
 disp('Computing case 01');
-r01 = compute_ihat(counts01, i0, j1, C);
+r01 = compute_ihat(counts01, i0, j1, N);
 r01(isnan(r01)) = 0;
 r01(isinf(r01)) = 0;
 
 disp('Computing case 10');
-r10 = compute_ihat(counts10, i1, j0, C);
+r10 = compute_ihat(counts10, i1, j0, N);
 r10(isnan(r10)) = 0;
 r10(isinf(r10)) = 0;
 
+tmp = r01 + r10;
+if ~isequal(tmp, tmp.')
+    warning('r01 + r10 is not symmetric!');
+    return;
+end
+
 disp('Computing case 11');
-r11 = compute_ihat(counts11, i1, j1, C);
+r11 = compute_ihat(counts11, i1, j1, N);
 r11(isnan(r11)) = 0;
 r11(isinf(r11)) = 0;
+if ~isequal(r11, r11.')
+    warning('r11 is not symmetric!');
+    return;
+end
 
 disp('Adding case 00, 01, 10, and 11...');
-result = (r00 + r01 + r10 + r11) / N;
+result = r00 + r01 + r10 + r11;
 
 disp('Removing self-connections in adjacency matrix...');
 result = result - diag(diag(result));
@@ -79,65 +107,84 @@ result = result - diag(diag(result));
 disp('Removing connections between hash input bits...');
 result(256+1:256+num_hash_input_bits, 256+1:256+num_hash_input_bits) = 0;
 
-disp('Normalizing such that each row sums to 1.0...');
-result = result ./ sum(result, 2);
+if max(max(abs(result - result.'))) > 1e-14
+    warning('ihat matrix is not symmetric!');
+    return;
+end
 
-disp('Calculating eig of the matrix...');
-[V, D] = eig(result);
+tmp = result(:);
+if sum(tmp < 0) > 0
+    warning('ihat should be positive-only!');
+    return;
+end
 
-disp('Sorting the eigenvectors and values ascending...');
-[D, I] = sort(diag(D));
-V = V(:, I);
+figure;
+histogram(result(:), 50, 'BinLimits', [0.09, 0.2],...
+          'Normalization', 'probability');
 
-disp('Extracting highest-weighted eigenvector as centrality measure...');
-centrality_measure = abs(V(:, end));
-centrality_measure = centrality_measure / sum(centrality_measure);
+figure;
+colormap('hot');
+imagesc(log(result));
+colorbar;
 
-disp('Calculating edges per node...');
-total_edges = avg_edges_per_node * num_vars;
-edges_per_node = round(total_edges * centrality_measure);
-
-disp('Performing column-wise sort for each row...');
-[~, indices] = sort(result, 2);
+%% Graph pruning
 
 disp('Pruning graph...');
-[~, ordering] = sort(edges_per_node);
-for rv = ordering(:)'
-    desired_edges = min(edges_per_node(rv), num_vars - 1);
-    result(rv, indices(rv, 1:end - desired_edges)) = 0;
-    result(rv, indices(rv, end - desired_edges + 1:end)) = 1;
-    result(:, rv) = result(rv, :);
+result(result < 0.1525) = 0;
+result(result > 0) = 1;
+adjacency_mat = result;
+
+g = graph(adjacency_mat);
+figure;
+plot(g, 'NodeColor', 'r');
+
+if 0
+    g = graph(-result, 'omitselfloops', 'upper');
+    % g.Nodes.Centrality = centrality(g, 'closeness', 'Cost', g.Edges.Weight);
+    % g.Nodes.Centrality = centrality(g, 'pagerank');
+
+    disp('Extracting maximum spanning tree...');
+    g = minspantree(g);
+
+    % Reset edges to positive values
+    g.Edges.Weight = -g.Edges.Weight;
+
+    [~, indices] = sort(result, 2, 'descend');
+    for rv = 1:num_vars
+        nb = numel(neighbors(g, rv));
+        num_to_add = avg_edges_per_node - nb;
+        if num_to_add > 0
+            for i = 1:num_to_add
+                j = indices(rv, i);
+                g = addedge(g, rv, j, result(rv, j));
+            end
+        end
+    end
+
+    disp(sum(g.Edges.Weight));
+    g = simplify(g);
+    plot(g, 'NodeColor', 'r');
+
+    adjacency_mat = full(g.adjacency);
 end
 
-if ~isequal(result, result.')
-    warning('Adjacency matrix is not symmetric, something is wrong!');
-end
-
-min_connections = min(sum(result, 2));
-max_connections = max(sum(result, 2));
-avg_connections = round(mean(sum(result, 2)));
+min_connections = min(sum(adjacency_mat, 2));
+max_connections = max(sum(adjacency_mat, 2));
+avg_connections = round(mean(sum(adjacency_mat, 2)));
 fprintf('Max connections: %d, min connections: %d, avg: %d\n',...
         max_connections, min_connections, avg_connections);
 
-disp('Saving data...');
-writematrix(result, output_file);
+fprintf('Saving data to %s\n', output_file);
+writematrix(adjacency_mat, output_file);
 
 disp('Done.');
 
-function ihat = compute_ihat(counts, i, j, C)
+%% Helper function
+
+function ihat = compute_ihat(counts, i, j, N)
     % Mutual information score between two RVs i and j is:
     %   score(i, j) = sum over all assignments of i=X and j=Y
     %                 of P(i=X, j=Y) * log[P(i=X, j=Y) / P(i=X)P(j=Y)]
-    %
-    % Can be approximated: P(i=X) = Count(i=X) / N
-    %                      P(i=X, j=Y) = Count(i=X, j=Y) / N
-    %
-    % Thus the score simplifies to:
-    %   score(i, j) = Count(i=X, j=Y) / N * (log N
-    %                                        + log(Count(i=X, j=Y))
-    %                                        - log(Count(i=X)Count(j=Y)))
-    %
-    % The division by N is done at the very end (not in this function).
-
-    ihat = counts .* (C + log(counts) - log(i) - log(j));
+    joint_prob = counts / N;
+    ihat = joint_prob .* log(joint_prob ./ ( (i/N) .* (j/N) ));
 end

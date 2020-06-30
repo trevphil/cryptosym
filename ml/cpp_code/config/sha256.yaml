@@ -1,0 +1,4 @@
+lbp_max_iter: 20
+dataset_dir: "../data/sha256-1216-10000-64"
+epsilon: 0.0001
+bit_to_predict: 256  # first bit of hash input message
