@@ -74,8 +74,9 @@ int main(int argc, char** argv) {
 			accuracies.push_back(is_correct);
 		}
 
+		const double local_pct_correct = 100.0 * local_correct / n;
 		spdlog::info("\tGot {0}/{1} ({2:.2f}%), average abs(LLR) is {3:.3f}",
-			local_correct, n, 100.0 * local_correct / n, sum_abs_llr / n);
+			local_correct, n, local_pct_correct, sum_abs_llr / n);
 		spdlog::info("\tTotal accuracy: {0}/{1} ({2:.2f}%)",
 			total_correct, total_count, 100.0 * total_correct / total_count);
 	}

@@ -88,7 +88,7 @@ void FactorGraph::setupLBP(const std::vector<VariableAssignment> &observed) {
     for (const auto &o : observed)
       if (neighbor_indices.count(o.rv_index) > 0) relevant.push_back(o);
 
-    const double prob_rv_one = prob_->probOne(i, relevant, "cpd");
+    const double prob_rv_one = prob_->probOne(i, relevant, "auto-select");
     rv_initialization_(i) = std::log((1.0 - prob_rv_one) / prob_rv_one);
   }
 }

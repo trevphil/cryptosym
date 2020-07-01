@@ -50,7 +50,21 @@ double Probability::probOne(size_t rv_index,
     const size_t total = count0 + count1;
 		if (total > 0) prob_one = double(count1) / total;
 	} else if (algorithm == "noisy-or") {
-
+		spdlog::warn("Noisy-OR model does not work well as an approximation in this case!");
+		const double N = double(config_->num_train_samples);
+		const auto rv_assignment = VariableAssignment(rv_index, 1);
+		const double leak = 0.1;
+		double product = 1.0 - leak;
+		for (const auto &observed : observed_neighbors) {
+			product *= 1.0 - count({rv_assignment, observed}) / N;
+		}
+		prob_one = 1.0 - product;
+	} else if (algorithm == "random-subset") {
+		const auto partial_observed = utils::Convenience::randomSubset(observed_neighbors, 8);
+		return probOne(rv_index, partial_observed, "cpd");
+	} else if (algorithm == "auto-select") {
+		const std::string algo = observed_neighbors.size() >= 32 ? "random-subset" : "cpd";
+		return probOne(rv_index, observed_neighbors, algo);
 	} else {
 		spdlog::error("Probability algorithm '{}' is not implemented!", algorithm);
 	}
