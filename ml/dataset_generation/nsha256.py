@@ -62,7 +62,8 @@ def _ch(x, y, z):
 
 class SHA256:
 
-  def __init__(self, input_bytes=None):
+  def __init__(self, input_bytes, difficulty=64):
+    self._difficulty = difficulty
     self._output_size = 8
     self._counter = 0
     self._cache = b''
@@ -77,19 +78,17 @@ class SHA256:
     w = [0 for _ in range(64)]
     # Format code = big-endian, repeat count of 16, 4 bytes (16 * 4 = 64 bytes)
     w[0:16] = struct.unpack('!16L', c)
-    
-    DIFFICULTY = 2 # 64 = true hash function
 
     for i in range(16, 64):
       s0 = _rotr(w[i-15], 7) ^ _rotr(w[i-15], 18) ^ (w[i-15] >> 3)
       s1 = _rotr(w[i-2], 17) ^ _rotr(w[i-2], 19) ^ (w[i-2] >> 10)
       w[i] = (w[i-16] + s0 + w[i-7] + s1) & F32
 
-    self._saved_states += w[:DIFFICULTY]
+    self._saved_states += w[:self._difficulty]
 
     a, b, c, d, e, f, g, h = self._h
 
-    for i in range(DIFFICULTY):
+    for i in range(self._difficulty):
       s0 = _rotr(a, 2) ^ _rotr(a, 13) ^ _rotr(a, 22)
       t2 = s0 + _maj(a, b, c)
       s1 = _rotr(e, 6) ^ _rotr(e, 11) ^ _rotr(e, 25)

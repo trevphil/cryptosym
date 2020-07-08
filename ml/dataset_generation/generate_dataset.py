@@ -48,6 +48,8 @@ def main():
   parser.add_argument('--hash-algo', type=str, default='sha256',
                       choices=['sha256', 'md5', 'map_from_input', 'conditioned_on_input_and_hash', 'pseudo_hash'],
                       help='Choose the hashing algorithm to apply to the input data')
+  parser.add_argument('--difficulty', type=int, default=64,
+                      help='SHA-256 difficulty (an interger between 1 and 64 inclusive)')
   args = parser.parse_args()
 
   algo = args.hash_algo
@@ -55,7 +57,7 @@ def main():
   N = int(8 * round(args.num_samples / 8))  # number of samples
   N_train = int(8 * round((N * args.pct_train) / 8))
   N_test = N - N_train
-  tmp1, tmp2 = hashFunc(sample(num_input_bits), algo)
+  tmp1, tmp2 = hashFunc(sample(num_input_bits), algo, args.difficulty)
   n = (tmp1 + tmp2).length() + num_input_bits  # number of variables
 
   dataset_dir = '{}-{}-{}-{}'.format(algo, n, N, num_input_bits)
@@ -75,7 +77,7 @@ def main():
   for sample_idx in tqdm(range(N)):
     i = sample_idx * n
     hash_input = sample(num_input_bits)
-    hash_output, internals = hashFunc(hash_input, algo)
+    hash_output, internals = hashFunc(hash_input, algo, args.difficulty)
     j = len(hash_output)
     data[i:i + j] = hash_output
     i += j
@@ -105,6 +107,9 @@ def main():
     'num_input_bits': num_input_bits,
     'num_internal_bits': tmp2.length()
   }
+  
+  if algo == 'sha256':
+    params.update({'difficulty': args.difficulty})
 
   with open(params_file, 'w') as f:
     yaml.dump(params, f)

@@ -27,11 +27,12 @@ def int2bytes(val):
   return unhexlify(s)
 
 
-def hashFunc(hash_input, hash_mode):
+def hashFunc(hash_input, hash_mode, difficulty):
   """
   Parameters:
    - hash_input: a BitVector input which will be hashed
    - hash_mode: control which hash function is used (real SHA-256 or something for testing)
+   - difficulty: a parameter specifically for SHA-256, controlling how many rounds (normal=64)
   Returns:
    - A tuple where the first element is a 256-bit BitVector representing the hash of the input,
      and the second element is another BitVector for additional, optional random variables from
@@ -44,7 +45,7 @@ def hashFunc(hash_input, hash_mode):
   if hash_mode == 'sha256':
     assert num_input_bits % 8 == 0, 'num_input_bits must be a multiple of 8'
     asbytes = (int(hash_input)).to_bytes(num_input_bits // 8, byteorder='big')
-    return SHA256(asbytes).getData()
+    return SHA256(asbytes, difficulty=difficulty).getData()
 
   elif hash_mode == 'md5':
     hash_val = hashlib.md5(int2bytes(int(hash_input))).hexdigest()
