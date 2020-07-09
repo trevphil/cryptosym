@@ -41,29 +41,31 @@ int main(int argc, char** argv) {
 	int total_count = 0;
 	std::vector<double> log_likelihood_ratios;
 	std::vector<bool> accuracies;
+	std::vector<double> num_correct_per_bit(config->num_rvs, 0);
 
-	const size_t num_test = std::min<size_t>(1, config->num_test_samples);
+	const size_t num_test = std::min<size_t>(10, config->num_test_samples);
 
 	for (size_t test_idx = 0; test_idx < num_test; ++test_idx) {
+		spdlog::info("Test case {}/{}", test_idx + 1, num_test);
 		const auto observed_hash_bits = dataset->getHashBits(test_idx);
 		factor_graph.runLBP(observed_hash_bits);
 
-		const auto hash_input = dataset->getGroundTruth(test_idx);
-		const size_t n = hash_input.size();
+		const auto ground_truth = dataset->getGroundTruth(test_idx);
+		const size_t n = ground_truth.size();
 		int local_correct = 0;
 		double sum_abs_llr = 0;
 
-		for (size_t i = 0; i < n; ++i) {
-			const size_t bit_index = config->num_hash_bits + i;
+		for (size_t bit_index = 0; bit_index < n; ++bit_index) {
 			const auto result = factor_graph.predict(bit_index);
 			const bool guess = result.prob_bit_is_one > 0.5 ? true : false;
-			const bool is_correct = (guess == hash_input[i]);
+			const bool is_correct = (guess == ground_truth[bit_index]);
 			total_correct += is_correct;
 			local_correct += is_correct;
-			++total_count;
+			num_correct_per_bit[bit_index] += is_correct;
 			sum_abs_llr += std::abs(result.log_likelihood_ratio);
 			log_likelihood_ratios.push_back(result.log_likelihood_ratio);
 			accuracies.push_back(is_correct);
+			++total_count;
 		}
 
 		const double local_pct_correct = 100.0 * local_correct / n;
@@ -71,6 +73,11 @@ int main(int argc, char** argv) {
 			local_correct, n, local_pct_correct, sum_abs_llr / n);
 		spdlog::info("\tTotal accuracy: {0}/{1} ({2:.2f}%)",
 			total_correct, total_count, 100.0 * total_correct / total_count);
+	}
+
+	for (size_t bit_index = 0; bit_index < config->num_rvs; ++bit_index) {
+		spdlog::info("Accuracy for bit {0}: {1:.2f}%", bit_index + 1,
+								 100.0 * num_correct_per_bit[bit_index] / num_test);
 	}
 
 	spdlog::info("Done.");

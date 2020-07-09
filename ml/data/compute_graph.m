@@ -5,10 +5,10 @@ clc;
 tiledlayout(3, 2);
 
 %% ihat computation
-num_vars = 928;
+num_vars = 1216;
 N = 5000;
 num_hash_input_bits = 64;
-directory = 'sha256-928-5000-64';
+directory = 'sha256-1216-5000-64';
 
 input_file = sprintf('%s/data.bits', directory);
 output_file = sprintf('%s/graph.csv', directory);

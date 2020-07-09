@@ -73,7 +73,7 @@ FactorGraph::Prediction FactorGraph::predict(size_t bit_index) {
 }
 
 void FactorGraph::setupLBP(const std::vector<VariableAssignment> &observed) {
-  spdlog::info("Setting up loopy BP...");
+  spdlog::info("\tSetting up loopy BP...");
   const size_t n = config_->num_rvs;
   rv_messages_ = Eigen::MatrixXd::Zero(n, n);
   factor_messages_ = Eigen::MatrixXd::Zero(n, n);
@@ -103,7 +103,7 @@ void FactorGraph::runLBP(const std::vector<VariableAssignment> &observed) {
   // Visualize the weight of all nodes in the undirected graph before LBP
   if (config_->graphviz) saveGraphViz();
 
-  spdlog::info("Starting loopy BP...");
+  spdlog::info("\tStarting loopy BP...");
   const auto start = utils::Convenience::time_since_epoch();
   // TODO - Add convergence criteria
 
@@ -140,9 +140,9 @@ void FactorGraph::runLBP(const std::vector<VariableAssignment> &observed) {
   }
 
   if (itr >= config_->lbp_max_iter) {
-    spdlog::warn("Loopy BP did not converge, max iterations reached.");
+    spdlog::warn("\tLoopy BP did not converge, max iterations reached.");
   } else {
-    spdlog::info("Loopy BP converged in {} iterations", itr + 1);
+    spdlog::info("\tLoopy BP converged in {} iterations", itr + 1);
   }
 
   const auto end = utils::Convenience::time_since_epoch();

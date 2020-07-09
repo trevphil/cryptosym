@@ -1,5 +1,5 @@
 lbp_max_iter: 30
-dataset_dir: "data/sha256-928-5000-64"
+dataset_dir: "data/sha256-1216-5000-64"
 epsilon: 0.0001
 print_connections: false
 graphviz: false
