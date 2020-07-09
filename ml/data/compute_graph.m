@@ -2,31 +2,16 @@ close all;
 clear;
 clc;
 
-should_plot = 1; % str2num(getenv('MATLAB_PLOT'));
-edges_per_node = 6; % str2num(getenv('EDGES_PER_NODE'));
-fprintf('edges per node: %d\n', edges_per_node);
-
-if should_plot
-    tiledlayout(1, 3);
-    figure('Renderer', 'painters', 'Position', [10 10 1200 400])
-end
+tiledlayout(3, 2);
 
 %% ihat computation
-% num_vars = 16704;
-% N = 30008;
-% num_hash_input_bits = 64;
-% avg_edges_per_node = 8;
-% directory = 'sha256-16704-30008-64';
-
-num_vars = 320;
-N = 1000;
+num_vars = 928;
+N = 5000;
 num_hash_input_bits = 64;
-directory = 'conditioned_on_input_and_hash-320-1000-64';
+directory = 'sha256-928-5000-64';
 
 input_file = sprintf('%s/data.bits', directory);
 output_file = sprintf('%s/graph.csv', directory);
-
-warning('TODO: not sure if Laplacian or pure adjacency matrix should be used');
 
 disp('Loading samples...');
 fileID = fopen(input_file);
@@ -127,58 +112,66 @@ if sum(result(:) < 0) > 0
 end
 
 %% Plotting
-if should_plot
-    nexttile
-    histogram(result(:), 50, 'Normalization', 'probability');
+nexttile
+histogram(result(:), 50, 'Normalization', 'probability')
+title('ihat distribution')
+nexttile
+log_result = log(result(:));
+log_result = log_result( (~isinf(log_result)) & (~isnan(log_result)) );
+thresh = mean(log_result) + 2 * std(log_result);
+histogram(log_result, 50, 'Normalization', 'probability')
+xline(thresh)
+title('log(ihat) distribution')
 
-    nexttile
-    imagesc(log(result))
-    colormap('winter')
-    colorbar
-end
- 
+nexttile
+imagesc(result)
+title('ihat matrix')
+colormap('winter')
+colorbar
+
+nexttile
+imagesc(log(result))
+title('log(ihat) matrix')
+colormap('winter')
+colorbar
+
 %% Graph pruning
 disp('Pruning graph...');
 
-adjacency_mat = result;
-thresh = prctile(adjacency_mat(:), 80);
-adjacency_mat(adjacency_mat < thresh) = 0;
-adjacency_mat(adjacency_mat > 0) = 1;
+adjacency_mat = log(result) > thresh;
+g = graph(adjacency_mat, 'upper');
 
-prune = 1;
-while prune
-    prune = 0;
-    for rv = 1:num_vars
-        deg = sum(adjacency_mat, 1);
-        if deg(rv) <= edges_per_node
-            continue
-        end
+weights = result(:);
+weights_cum_sum = cumsum(weights / sum(weights));
+itr = 0;
 
-        indices_of_nonzero_nbrs = find(adjacency_mat(rv, :) > 0);
-        ihats_of_nonzero_nbrs = result(rv, indices_of_nonzero_nbrs);
-        [~, ascending_indices] = sort(ihats_of_nonzero_nbrs);
-        for i = ascending_indices
-            nbr = indices_of_nonzero_nbrs(i);
-            if deg(nbr) > 1
-                adjacency_mat(rv, nbr) = 0;
-                adjacency_mat(nbr, rv) = 0;
-                prune = 1;
-                break;
-            end
-        end
-    end
+while sum(conncomp(g)) ~= num_vars && itr < 3000
+   % r = randperm(num_vars, 2);
+   % row = r(1);
+   % col = r(2);
+   ind = find(weights_cum_sum >= rand, 1, 'first');
+   [row, col] = ind2sub(size(adjacency_mat), ind);
+   g = addedge(g, row, col);
+   itr = itr + 1;
 end
+
+adjacency_mat = full(simplify(g).adjacency);
+
+mst = minspantree(graph(-result, 'upper'));
+adjacency_mat = adjacency_mat + full(simplify(mst).adjacency);
+adjacency_mat(adjacency_mat ~= 0) = 1;
 
 %% Calculate statistics
 
-if should_plot
-    nexttile
-    colormap('hot');
-    imagesc(adjacency_mat);
+nexttile
+imagesc(adjacency_mat)
+title('Pruned graph adjacency matrix')
 
-    figure;
-    plot(graph(adjacency_mat), 'NodeColor', 'r');
-end
+nexttile
+h = plot(graph(adjacency_mat, 'upper'));
+title('Pruned graph')
+highlight(h, 1:256, 'NodeColor', 'r');
+highlight(h, 256:256+num_hash_input_bits, 'NodeColor', 'g');
 
 min_connections = min(sum(adjacency_mat, 2));
 max_connections = max(sum(adjacency_mat, 2));

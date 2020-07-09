@@ -1,3 +1,10 @@
 data/*
-experiments
+experiments/*
 !data/compute_graph.m
+build
+logs/*
+lib/*
+bin/*
+.DS_Store
+.vscode/*
+main

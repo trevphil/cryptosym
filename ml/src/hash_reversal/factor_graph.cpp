@@ -15,6 +15,7 @@
 #include <string>
 #include <fstream>
 #include <algorithm>
+
 #include <spdlog/spdlog.h>
 
 #include "hash_reversal/factor_graph.hpp"
@@ -43,6 +44,7 @@ FactorGraph::FactorGraph(std::shared_ptr<Probability> prob,
       if (std::stod(cell) != 0) {
         factors_[col].rv_indices.push_back(row);
         rvs_[row].factor_indices.push_back(col);
+        boost::add_edge(row, col, udg_);
       }
       ++col;
     }
@@ -58,7 +60,8 @@ FactorGraph::FactorGraph(std::shared_ptr<Probability> prob,
 
   const auto end = utils::Convenience::time_since_epoch();
   spdlog::info("Finished loading adjacency matrix in {} seconds.", end - start);
-  // printConnections();
+
+  if (config_->print_connections) printConnections();
 }
 
 FactorGraph::Prediction FactorGraph::predict(size_t bit_index) {
@@ -76,6 +79,7 @@ void FactorGraph::setupLBP(const std::vector<VariableAssignment> &observed) {
   factor_messages_ = Eigen::MatrixXd::Zero(n, n);
   rv_initialization_ = Eigen::VectorXd::Zero(n);
   factor_initialization_ = Eigen::VectorXd::Zero(n);
+  graph_viz_counter_ = 0;
 
   for (size_t i = 0; i < n; ++i) {
     std::vector<VariableAssignment> relevant;
@@ -95,6 +99,9 @@ void FactorGraph::setupLBP(const std::vector<VariableAssignment> &observed) {
 
 void FactorGraph::runLBP(const std::vector<VariableAssignment> &observed) {
   setupLBP(observed);
+
+  // Visualize the weight of all nodes in the undirected graph before LBP
+  if (config_->graphviz) saveGraphViz();
 
   spdlog::info("Starting loopy BP...");
   const auto start = utils::Convenience::time_since_epoch();
@@ -127,6 +134,9 @@ void FactorGraph::runLBP(const std::vector<VariableAssignment> &observed) {
         rv_messages_(rv_index, factor_index) = total;
       }
     }
+
+    // Visualize the weight of all nodes in the undirected graph after each iteration
+    if (config_->graphviz) saveGraphViz();
   }
 
   if (itr >= config_->lbp_max_iter) {
@@ -140,13 +150,30 @@ void FactorGraph::runLBP(const std::vector<VariableAssignment> &observed) {
 }
 
 void FactorGraph::printConnections() const {
-  const size_t n = config_->num_rvs;
-  for (size_t i = 0; i < n; ++i) {
+  for (size_t i = 0; i < config_->num_rvs; ++i) {
     auto neighbors = factors_.at(i).rv_indices;
     std::sort(neighbors.begin(), neighbors.end());
     const std::string neighbors_str = utils::Convenience::vec2str<size_t>(neighbors);
     spdlog::info("\tRV {} is connected to {}", i, neighbors_str);
   }
+}
+
+void FactorGraph::saveGraphViz() {
+  for (size_t i = 0; i < config_->num_rvs; ++i) {
+    udg_[i].weight = predict(i).log_likelihood_ratio;
+  }
+
+  auto w_map = boost::get(&VertexInfo::weight, udg_);
+  boost::dynamic_properties dp;
+  dp.property("weight", w_map);
+
+  const std::string filename = config_->graphVizFile(graph_viz_counter_);
+  std::ofstream viz_file;
+  viz_file.open(filename);
+  boost::write_graphml(viz_file, udg_, dp, true);
+  viz_file.close();
+
+  ++graph_viz_counter_;
 }
 
 }  // end namespace hash_reversal

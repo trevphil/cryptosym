@@ -12,9 +12,12 @@
 
 #pragma once
 
+#include <Eigen/Dense>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/graphml.hpp>
+
 #include <memory>
 #include <vector>
-#include <Eigen/Dense>
 
 #include "utils/config.hpp"
 #include "utils/convenience.hpp"
@@ -47,7 +50,9 @@ class FactorGraph {
  private:
   void setupLBP(const std::vector<VariableAssignment> &observed);
   void printConnections() const;
+  void saveGraphViz();
 
+  size_t graph_viz_counter_;
   std::shared_ptr<Probability> prob_;
   std::shared_ptr<utils::Config> config_;
   std::vector<RandomVariable> rvs_;
@@ -56,6 +61,14 @@ class FactorGraph {
   Eigen::MatrixXd factor_messages_;
   Eigen::VectorXd rv_initialization_;
   Eigen::VectorXd factor_initialization_;
+
+  struct VertexInfo {
+    double weight;
+  };
+
+  typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS,
+                                VertexInfo> UndirectedGraph;
+  UndirectedGraph udg_;
 };
 
 }  // end namespace hash_reversal

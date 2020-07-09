@@ -37,6 +37,12 @@ void Config::configureLogging() const {
   spdlog::set_level(spdlog::level::debug);
 }
 
+std::string Config::graphVizFile(size_t count) const {
+  std::ostringstream oss;
+  oss << "./viz/grap_viz_" << count << ".xml";
+  return oss.str();
+}
+
 void Config::loadYAML(const std::string &config_file) {
   std::filesystem::path config_path = config_file;
   if (config_path.is_relative()) {
@@ -75,6 +81,22 @@ void Config::loadYAML(const std::string &config_file) {
   } else {
     epsilon = data[param].as<double>();
     spdlog::info("{} --> {}", param, epsilon);
+  }
+
+  param = "print_connections";
+  if (!data[param]) {
+    spdlog::error("Missing '{}'", param);
+  } else {
+    print_connections = data[param].as<bool>();
+    spdlog::info("{} --> {}", param, print_connections);
+  }
+
+  param = "graphviz";
+  if (!data[param]) {
+    spdlog::error("Missing '{}'", param);
+  } else {
+    graphviz = data[param].as<bool>();
+    spdlog::info("{} --> {}", param, graphviz);
   }
 }
 

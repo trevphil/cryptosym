@@ -30,6 +30,8 @@ class Config {
  public:
   explicit Config(std::string config_file);
 
+  std::string graphVizFile(size_t count) const;
+
   size_t lbp_max_iter;
   std::string hash_algo;
   std::string dataset_dir;
@@ -43,6 +45,8 @@ class Config {
   size_t num_hash_bits;
   size_t num_input_bits;
   size_t num_internal_bits;
+  bool print_connections;
+  bool graphviz;
 
  private:
   void configureLogging() const;

@@ -1,3 +1,0 @@
-lbp_max_iter: 10
-dataset_dir: "../data/conditioned_on_input_and_hash-320-1000-64"
-epsilon: 0.0001

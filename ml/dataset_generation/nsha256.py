@@ -89,10 +89,10 @@ class SHA256:
     a, b, c, d, e, f, g, h = self._h
 
     for i in range(self._difficulty):
-      s0 = _rotr(a, 2) ^ _rotr(a, 13) ^ _rotr(a, 22)
-      t2 = s0 + _maj(a, b, c)
-      s1 = _rotr(e, 6) ^ _rotr(e, 11) ^ _rotr(e, 25)
-      t1 = h + s1 + _ch(e, f, g) + self._k[i] + w[i]
+      s0 = _rotr(a, 2) ^ _rotr(a, 13) ^ _rotr(a, 22)  # a
+      t2 = s0 + _maj(a, b, c)  # a, b, c
+      s1 = _rotr(e, 6) ^ _rotr(e, 11) ^ _rotr(e, 25)  # e
+      t1 = h + s1 + _ch(e, f, g) + self._k[i] + w[i]  # h, e, f, g, (const), w[i]
 
       h = g
       g = f
@@ -102,7 +102,7 @@ class SHA256:
       c = b
       b = a
       a = (t1 + t2) & F32
-      
+
       self._saved_states += [a, b, c, d, e, f, g, h]
 
     for i, (x, y) in enumerate(zip(self._h, [a, b, c, d, e, f, g, h])):
@@ -116,7 +116,6 @@ class SHA256:
       return
 
     self._counter += len(m)
-    self._saved_states.append(self._counter)
     m = self._cache + m
 
     for i in range(0, len(m) // 64):

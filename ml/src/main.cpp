@@ -13,23 +13,13 @@
 #include <cmath>
 #include <memory>
 #include <vector>
+#include <algorithm>
 #include <boost/dynamic_bitset.hpp>
 
 #include "utils/config.hpp"
 #include "hash_reversal/dataset.hpp"
 #include "hash_reversal/probability.hpp"
 #include "hash_reversal/factor_graph.hpp"
-
-/*
-TODO -
-  Plot accuracies and LLR
-
-  Think about what would be a natural BN structure...
-    -> Should all hash bits in a byte be fully connected?
-    -> Stuff happens in groups of 32 bits, so it makes sense to use 32 connections per node
-
-  Technically the test data is used in "training" in MATLAB
-*/
 
 int main(int argc, char** argv) {
 	if (argc < 2) {
@@ -52,7 +42,9 @@ int main(int argc, char** argv) {
 	std::vector<double> log_likelihood_ratios;
 	std::vector<bool> accuracies;
 
-	for (size_t test_idx = 0; test_idx < config->num_test_samples; ++test_idx) {
+	const size_t num_test = std::min<size_t>(1, config->num_test_samples);
+
+	for (size_t test_idx = 0; test_idx < num_test; ++test_idx) {
 		const auto observed_hash_bits = dataset->getHashBits(test_idx);
 		factor_graph.runLBP(observed_hash_bits);
 
