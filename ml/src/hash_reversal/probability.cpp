@@ -38,7 +38,7 @@ Probability::Probability(std::shared_ptr<Dataset> dataset,
 double Probability::probOne(size_t rv_index,
 														const std::vector<VariableAssignment> &observed_neighbors,
 														const std::string &algorithm) const {
-	double prob_one = 0.5;
+	double prob_one = -1;
 
 	if (algorithm == "cpd") {
 		std::vector<VariableAssignment> rv_assignments = observed_neighbors;
@@ -50,7 +50,7 @@ double Probability::probOne(size_t rv_index,
     const size_t total = count0 + count1;
 		if (total > 0) prob_one = double(count1) / total;
 	} else if (algorithm == "noisy-or") {
-		spdlog::warn("Noisy-OR model does not work well as an approximation in this case!");
+		spdlog::warn("Noisy-OR model does not work well as an approximation for this problem!");
 		const double N = double(config_->num_train_samples);
 		const auto rv_assignment = VariableAssignment(rv_index, 1);
 		const double leak = 0.1;
@@ -59,18 +59,19 @@ double Probability::probOne(size_t rv_index,
 			product *= 1.0 - count({rv_assignment, observed}) / N;
 		}
 		prob_one = 1.0 - product;
-	} else if (algorithm == "random-subset") {
-		const auto partial_observed = utils::Convenience::randomSubset(observed_neighbors, 8);
-		return probOne(rv_index, partial_observed, "cpd");
 	} else if (algorithm == "auto-select") {
-		const std::string algo = observed_neighbors.size() >= 32 ? "random-subset" : "cpd";
-		return probOne(rv_index, observed_neighbors, algo);
+		size_t num_observed = observed_neighbors.size();
+		while (prob_one == -1) {
+			const auto subset = utils::Convenience::randomSubset(observed_neighbors, num_observed);
+			prob_one = probOne(rv_index, subset, "cpd");
+			num_observed--;
+		}
 	} else {
 		spdlog::error("Probability algorithm '{}' is not implemented!", algorithm);
 	}
 
 	const double eps = config_->epsilon;
-	return std::max(eps, std::min(1.0 - eps, prob_one));
+	return prob_one == -1 ? -1 : std::max(eps, std::min(1.0 - eps, prob_one));
 }
 
 size_t Probability::count(const std::vector<VariableAssignment> &rv_assignments) const {
