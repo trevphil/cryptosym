@@ -136,26 +136,17 @@ colormap('winter')
 colorbar
 
 %% Graph pruning
+disp('Performing column-wise sort for each row...');
+edges_per_node = 8;
+adjacency_mat = result;
+[~, indices] = sort(adjacency_mat, 2, 'descend');
+
 disp('Pruning graph...');
-
-adjacency_mat = log(result) > thresh;
-g = graph(adjacency_mat, 'upper');
-
-weights = result(:);
-weights_cum_sum = cumsum(weights / sum(weights));
-itr = 0;
-max_itr = 50000;
-
-while itr < max_itr
-   ind = find(weights_cum_sum >= rand, 1, 'first');
-   [row, col] = ind2sub(size(adjacency_mat), ind);
-   if degree(g, row) < 6 && degree(g, col) < 6
-      g = addedge(g, row, col, 1);
-   end
-   itr = itr + 1;
+for rv = 1:num_vars
+    adjacency_mat(rv, indices(rv, edges_per_node + 1:end)) = 0;
 end
 
-adjacency_mat = full(simplify(g).adjacency);
+disp('Making simple graph (edge weights either 1 or 0)...');
 adjacency_mat(adjacency_mat ~= 0) = 1;
 
 %% Calculate statistics
