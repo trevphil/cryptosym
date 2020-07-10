@@ -5,10 +5,10 @@ clc;
 tiledlayout(3, 2);
 
 %% ihat computation
-num_vars = 1216;
-N = 5000;
+num_vars = 320;
+N = 1000;
 num_hash_input_bits = 64;
-directory = 'sha256-1216-5000-64';
+directory = 'pseudo_hash-320-1000-64';
 
 input_file = sprintf('%s/data.bits', directory);
 output_file = sprintf('%s/graph.csv', directory);
@@ -144,21 +144,18 @@ g = graph(adjacency_mat, 'upper');
 weights = result(:);
 weights_cum_sum = cumsum(weights / sum(weights));
 itr = 0;
+max_itr = 50000;
 
-while sum(conncomp(g)) ~= num_vars && itr < 3000
-   % r = randperm(num_vars, 2);
-   % row = r(1);
-   % col = r(2);
+while itr < max_itr
    ind = find(weights_cum_sum >= rand, 1, 'first');
    [row, col] = ind2sub(size(adjacency_mat), ind);
-   g = addedge(g, row, col);
+   if degree(g, row) < 6 && degree(g, col) < 6
+      g = addedge(g, row, col, 1);
+   end
    itr = itr + 1;
 end
 
 adjacency_mat = full(simplify(g).adjacency);
-
-mst = minspantree(graph(-result, 'upper'));
-adjacency_mat = adjacency_mat + full(simplify(mst).adjacency);
 adjacency_mat(adjacency_mat ~= 0) = 1;
 
 %% Calculate statistics
