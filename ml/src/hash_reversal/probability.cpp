@@ -71,6 +71,10 @@ double Probability::probOne(size_t rv_index,
 		size_t num_observed = observed_neighbors.size();
 		while (prob_one == -1) {
 			const auto subset = utils::Convenience::randomSubset(observed_neighbors, num_observed);
+			if (num_observed < observed_neighbors.size()) {
+				spdlog::warn("Taking subset of {}/{} observed neighbors",
+										 num_observed, observed_neighbors.size());
+			}
 			prob_one = probOne(rv_index, subset, "cpd");
 			num_observed--;
 		}
