@@ -39,9 +39,10 @@ int main(int argc, char** argv) {
 	spdlog::info("Checking accuracy on test data...");
 	int total_correct = 0;
 	int total_count = 0;
-	std::vector<double> log_likelihood_ratios;
-	std::vector<bool> accuracies;
-	std::vector<double> num_correct_per_bit(config->num_rvs, 0);
+	const size_t hash_input_lb = config->num_hash_bits;
+	const size_t hash_input_ub = config->num_hash_bits + config->num_input_bits;
+	std::vector<double> num_correct_per_rv(config->num_rvs, 0);
+	std::vector<double> count_per_rv(config->num_rvs, 0);
 
 	const size_t num_test = std::min<size_t>(10, config->num_test_samples);
 
@@ -53,33 +54,42 @@ int main(int argc, char** argv) {
 		const auto ground_truth = dataset->getGroundTruth(test_idx);
 		const size_t n = ground_truth.size();
 		int local_correct = 0;
+		int local_correct_hash_input = 0;
 		double sum_abs_llr = 0;
 
-		for (size_t bit_index = 0; bit_index < n; ++bit_index) {
-			const auto result = factor_graph.predict(bit_index);
+		for (size_t rv = 0; rv < n; ++rv) {
+			const auto result = factor_graph.predict(rv);
 			const bool guess = result.prob_bit_is_one > 0.5 ? true : false;
-			const bool is_correct = (guess == ground_truth[bit_index]);
+			const bool true_val = ground_truth[rv];
+			const bool is_correct = (guess == true_val);
 			total_correct += is_correct;
 			local_correct += is_correct;
-			num_correct_per_bit[bit_index] += is_correct;
+			if (rv >= hash_input_lb && rv < hash_input_ub) {
+				local_correct_hash_input += is_correct;
+			}
+			num_correct_per_rv[rv] += is_correct;
+			count_per_rv[rv] += true_val;
 			sum_abs_llr += std::abs(result.log_likelihood_ratio);
-			log_likelihood_ratios.push_back(result.log_likelihood_ratio);
-			accuracies.push_back(is_correct);
-			++total_count;
+			total_count++;
 		}
 
-		const double local_pct_correct = 100.0 * local_correct / n;
 		spdlog::info("\tGot {0}/{1} ({2:.2f}%), average abs(LLR) is {3:.3f}",
-			local_correct, n, local_pct_correct, sum_abs_llr / n);
-		spdlog::info("\tTotal accuracy: {0}/{1} ({2:.2f}%)",
-			total_correct, total_count, 100.0 * total_correct / total_count);
+								 local_correct, n, 100.0 * local_correct / n, sum_abs_llr / n);
+		spdlog::info("\tGot {0}/{1} ({2:.2f}%) hash input bits",
+								 local_correct_hash_input, config->num_input_bits,
+								 100.0 * local_correct_hash_input / config->num_input_bits);
 	}
 
-	for (size_t bit_index = 0; bit_index < config->num_rvs; ++bit_index) {
-		spdlog::info("Accuracy for bit {0}: {1:.2f}%", bit_index + 1,
-								 100.0 * num_correct_per_bit[bit_index] / num_test);
+	for (size_t rv = 0; rv < config->num_rvs; ++rv) {
+		if (rv % 32 == 0 && rv != 0)
+			spdlog::info("-----------------------------");
+		spdlog::info("RV {0}:\taccuracy {1:.2f}%,\tmean {2:.2f}",
+								 rv + 1, 100.0 * num_correct_per_rv[rv] / num_test,
+								 count_per_rv[rv] / num_test);
 	}
 
+	spdlog::info("Total accuracy: {0}/{1} ({2:.2f}%)",
+		total_correct, total_count, 100.0 * total_correct / total_count);
 	spdlog::info("Done.");
 	return 0;
 }

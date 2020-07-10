@@ -38,6 +38,14 @@ Probability::Probability(std::shared_ptr<Dataset> dataset,
 double Probability::probOne(size_t rv_index,
 														const std::vector<VariableAssignment> &observed_neighbors,
 														const std::string &algorithm) const {
+	// First check if the desired RV is already observed. If yes, we have our answer easy!
+	const double eps = config_->epsilon;
+	for (const auto &observed : observed_neighbors) {
+		if (observed.rv_index == rv_index) {
+			return observed.value ? 1.0 - eps : eps;
+		}
+	}
+
 	double prob_one = -1;
 
 	if (algorithm == "cpd") {
@@ -70,7 +78,6 @@ double Probability::probOne(size_t rv_index,
 		spdlog::error("Probability algorithm '{}' is not implemented!", algorithm);
 	}
 
-	const double eps = config_->epsilon;
 	return prob_one == -1 ? -1 : std::max(eps, std::min(1.0 - eps, prob_one));
 }
 

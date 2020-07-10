@@ -86,8 +86,9 @@ void FactorGraph::setupLBP(const std::vector<VariableAssignment> &observed) {
     const auto &factor = factors_.at(i);
 
     std::set<size_t> neighbor_indices;
+    neighbor_indices.insert(i);
     for (size_t neighbor_rv_index : factor.rv_indices)
-      if (i != neighbor_rv_index) neighbor_indices.insert(neighbor_rv_index);
+      neighbor_indices.insert(neighbor_rv_index);
 
     for (const auto &o : observed)
       if (neighbor_indices.count(o.rv_index) > 0) relevant.push_back(o);
