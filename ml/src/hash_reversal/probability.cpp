@@ -68,15 +68,15 @@ double Probability::probOne(size_t rv_index,
 		}
 		prob_one = 1.0 - product;
 	} else if (algorithm == "auto-select") {
-		size_t num_observed = observed_neighbors.size();
+		size_t num_observed = observed_neighbors.size() + 1;
 		while (prob_one == -1) {
-			const auto subset = utils::Convenience::randomSubset(observed_neighbors, num_observed);
-			if (num_observed < observed_neighbors.size()) {
-				spdlog::warn("Taking subset of {}/{} observed neighbors",
-										 num_observed, observed_neighbors.size());
-			}
-			prob_one = probOne(rv_index, subset, "cpd");
 			num_observed--;
+			const auto subset = utils::Convenience::randomSubset(observed_neighbors, num_observed);
+			prob_one = probOne(rv_index, subset, "cpd");
+		}
+		if (num_observed < observed_neighbors.size()) {
+			spdlog::warn("Took subset of {}/{} observed neighbors",
+									 num_observed, observed_neighbors.size());
 		}
 	} else {
 		spdlog::error("Probability algorithm '{}' is not implemented!", algorithm);
