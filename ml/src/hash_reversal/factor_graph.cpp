@@ -42,7 +42,7 @@ FactorGraph::FactorGraph(std::shared_ptr<Probability> prob,
     int col = 0;
     while (std::getline(line_stream, cell, ',')) {
       if (std::stod(cell) != 0) {
-        factors_[col].rv_indices.push_back(row);
+        factors_[row].rv_indices.push_back(col);
         rvs_[row].factor_indices.push_back(col);
         boost::add_edge(row, col, udg_);
       }
@@ -152,10 +152,14 @@ void FactorGraph::runLBP(const std::vector<VariableAssignment> &observed) {
 
 void FactorGraph::printConnections() const {
   for (size_t i = 0; i < config_->num_rvs; ++i) {
-    auto neighbors = factors_.at(i).rv_indices;
-    std::sort(neighbors.begin(), neighbors.end());
-    const std::string neighbors_str = utils::Convenience::vec2str<size_t>(neighbors);
-    spdlog::info("\tRV {} is connected to {}", i, neighbors_str);
+    auto fac_neighbors = factors_.at(i).rv_indices;
+    std::sort(fac_neighbors.begin(), fac_neighbors.end());
+    const std::string fac_nb_str = utils::Convenience::vec2str<size_t>(fac_neighbors);
+    auto rv_neighbors = rvs_.at(i).factor_indices;
+    std::sort(rv_neighbors.begin(), rv_neighbors.end());
+    const std::string rv_nb_str = utils::Convenience::vec2str<size_t>(rv_neighbors);
+    spdlog::info("\tRV {} is connected to factors {}", i, rv_nb_str);
+    spdlog::info("\tFactor {} is connected to RVs {}", i, fac_nb_str);
   }
 }
 
