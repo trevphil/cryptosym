@@ -26,6 +26,8 @@ class Dataset {
  public:
 	explicit Dataset(std::shared_ptr<utils::Config> config);
 
+  bool isHashInputBit(size_t bit_index) const;
+
   std::vector<VariableAssignment> getHashBits(size_t test_sample_index) const;
 
   boost::dynamic_bitset<> getGroundTruth(size_t test_sample_index) const;

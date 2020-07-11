@@ -22,6 +22,7 @@
 #include "utils/config.hpp"
 #include "utils/convenience.hpp"
 #include "hash_reversal/probability.hpp"
+#include "hash_reversal/dataset.hpp"
 
 namespace hash_reversal {
 
@@ -41,6 +42,7 @@ class FactorGraph {
   };
 
   explicit FactorGraph(std::shared_ptr<Probability> prob,
+                       std::shared_ptr<Dataset> dataset,
                        std::shared_ptr<utils::Config> config);
 
   void runLBP(const std::vector<VariableAssignment> &observed);
@@ -54,6 +56,7 @@ class FactorGraph {
 
   size_t graph_viz_counter_;
   std::shared_ptr<Probability> prob_;
+  std::shared_ptr<Dataset> dataset_;
   std::shared_ptr<utils::Config> config_;
   std::vector<RandomVariable> rvs_;
   std::vector<Factor> factors_;

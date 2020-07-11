@@ -75,8 +75,8 @@ double Probability::probOne(size_t rv_index,
 			prob_one = probOne(rv_index, subset, "cpd");
 		}
 		if (num_observed < observed_neighbors.size()) {
-			spdlog::warn("Took subset of {}/{} observed neighbors",
-									 num_observed, observed_neighbors.size());
+			spdlog::warn("Took subset of {}/{} observed neighbors for RV {}",
+									 num_observed, observed_neighbors.size(), rv_index);
 		}
 	} else {
 		spdlog::error("Probability algorithm '{}' is not implemented!", algorithm);

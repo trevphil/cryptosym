@@ -8,7 +8,7 @@ tiledlayout(3, 2);
 num_vars = 320;
 N = 1000;
 num_hash_input_bits = 64;
-directory = 'pseudo_hash-320-1000-64';
+directory = 'map_from_input-320-1000-64';
 
 input_file = sprintf('%s/data.bits', directory);
 output_file = sprintf('%s/graph.csv', directory);
@@ -138,12 +138,12 @@ colorbar
 %% Graph pruning
 disp('Performing column-wise sort for each row...');
 edges_per_node = 8;
-adjacency_mat = result;
-[~, indices] = sort(adjacency_mat, 2, 'descend');
+adjacency_mat = zeros(size(result));
+[~, indices] = sort(result, 2, 'descend');
 
 disp('Pruning graph...');
 for rv = 1:num_vars
-    adjacency_mat(rv, indices(rv, edges_per_node + 1:end)) = 0;
+    adjacency_mat(rv, indices(rv, 1:edges_per_node)) = 1;
 end
 
 disp('Making simple graph (edge weights either 1 or 0)...');

@@ -23,7 +23,9 @@
 namespace hash_reversal {
 
 FactorGraph::FactorGraph(std::shared_ptr<Probability> prob,
-                         std::shared_ptr<utils::Config> config) : prob_(prob), config_(config) {
+                         std::shared_ptr<Dataset> dataset,
+                         std::shared_ptr<utils::Config> config)
+  : prob_(prob), dataset_(dataset), config_(config) {
   spdlog::info("Loading adjacency matrix from CSV...");
   const auto start = utils::Convenience::time_since_epoch();
 
@@ -35,20 +37,25 @@ FactorGraph::FactorGraph(std::shared_ptr<Probability> prob,
   rvs_ = std::vector<RandomVariable>(n);
   factors_ = std::vector<Factor>(n);
 
-  int row = 0;
+  int fac_idx = 0;
   while (std::getline(data, line)) {
     std::stringstream line_stream(line);
     std::string cell;
-    int col = 0;
+    int rv_idx = 0;
     while (std::getline(line_stream, cell, ',')) {
-      if (std::stod(cell) != 0) {
-        factors_[row].rv_indices.push_back(col);
-        rvs_[row].factor_indices.push_back(col);
-        boost::add_edge(row, col, udg_);
+      const bool nonzero = std::stod(cell) != 0;
+      const bool make_connection = fac_idx == rv_idx ||
+                                   (!dataset_->isHashInputBit(fac_idx) && nonzero);
+
+      if (make_connection) {
+        factors_[fac_idx].rv_indices.push_back(rv_idx);
+        rvs_[rv_idx].factor_indices.push_back(fac_idx);
       }
-      ++col;
+
+      if (nonzero) boost::add_edge(fac_idx, rv_idx, udg_);
+      ++rv_idx;
     }
-    ++row;
+    ++fac_idx;
   }
 
   rv_messages_ = Eigen::MatrixXd::Zero(n, n);
@@ -86,7 +93,6 @@ void FactorGraph::setupLBP(const std::vector<VariableAssignment> &observed) {
     const auto &factor = factors_.at(i);
 
     std::set<size_t> neighbor_indices;
-    neighbor_indices.insert(i);
     for (size_t neighbor_rv_index : factor.rv_indices)
       neighbor_indices.insert(neighbor_rv_index);
 

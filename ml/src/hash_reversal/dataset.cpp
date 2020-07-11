@@ -61,6 +61,12 @@ Dataset::Dataset(std::shared_ptr<utils::Config> config) : config_(config) {
   spdlog::info("Finished loading dataset in {} seconds.", end - start);
 }
 
+bool Dataset::isHashInputBit(size_t bit_index) const {
+  const size_t hash_input_lb = config_->num_hash_bits;
+	const size_t hash_input_ub = config_->num_hash_bits + config_->num_input_bits;
+  return bit_index >= hash_input_lb && bit_index < hash_input_ub;
+}
+
 std::vector<VariableAssignment> Dataset::getHashBits(size_t test_sample_index) const {
   std::vector<VariableAssignment> observed;
   for (size_t hash_bit_idx = 0; hash_bit_idx < config_->num_hash_bits; ++hash_bit_idx) {

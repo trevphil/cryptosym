@@ -34,17 +34,15 @@ int main(int argc, char** argv) {
 		new hash_reversal::Dataset(config));
 	const std::shared_ptr<hash_reversal::Probability> prob(
 		new hash_reversal::Probability(dataset, config));
-	hash_reversal::FactorGraph factor_graph(prob, config);
+	hash_reversal::FactorGraph factor_graph(prob, dataset, config);
 
 	spdlog::info("Checking accuracy on test data...");
 	int total_correct = 0;
 	int total_count = 0;
-	const size_t hash_input_lb = config->num_hash_bits;
-	const size_t hash_input_ub = config->num_hash_bits + config->num_input_bits;
 	std::vector<double> num_correct_per_rv(config->num_rvs, 0);
 	std::vector<double> count_per_rv(config->num_rvs, 0);
 
-	const size_t num_test = std::min<size_t>(10, config->num_test_samples);
+	const size_t num_test = std::min<size_t>(50, config->num_test_samples);
 
 	for (size_t test_idx = 0; test_idx < num_test; ++test_idx) {
 		spdlog::info("Test case {}/{}", test_idx + 1, num_test);
@@ -64,7 +62,7 @@ int main(int argc, char** argv) {
 			const bool is_correct = (guess == true_val);
 			total_correct += is_correct;
 			local_correct += is_correct;
-			if (rv >= hash_input_lb && rv < hash_input_ub) {
+			if (dataset->isHashInputBit(rv)) {
 				local_correct_hash_input += is_correct;
 			}
 			num_correct_per_rv[rv] += is_correct;
@@ -81,8 +79,7 @@ int main(int argc, char** argv) {
 	}
 
 	for (size_t rv = 0; rv < config->num_rvs; ++rv) {
-		if (rv % 32 == 0 && rv != 0)
-			spdlog::info("-----------------------------");
+		if (rv % 32 == 0 && rv != 0) spdlog::info("-----------------------------");
 		spdlog::info("RV {0}:\taccuracy {1:.2f}%,\tmean {2:.2f}",
 								 rv + 1, 100.0 * num_correct_per_rv[rv] / num_test,
 								 count_per_rv[rv] / num_test);
