@@ -13,9 +13,9 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/graphml.hpp>
 
+#include <set>
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -34,11 +34,11 @@ class FactorGraph {
   };
 
   struct RandomVariable {
-    std::vector<size_t> factor_indices;
+    std::set<size_t> factor_indices;
   };
 
   struct Factor {
-    std::vector<size_t> rv_indices;
+    std::set<size_t> rv_indices;
   };
 
   explicit FactorGraph(std::shared_ptr<Probability> prob,
@@ -47,14 +47,17 @@ class FactorGraph {
 
   void runLBP(const std::vector<VariableAssignment> &observed);
 
-  Prediction predict(size_t bit_index);
+  Prediction predict(size_t rv_index);
 
  private:
+  void setupUndirectedGraph();
+  void setupDirectedGraph();
+  void setupFactors();
   void setupLBP(const std::vector<VariableAssignment> &observed);
+  void updateFactorMessages();
+  void updateRandomVariableMessages();
   void printConnections() const;
-  void saveGraphViz();
 
-  size_t graph_viz_counter_;
   std::shared_ptr<Probability> prob_;
   std::shared_ptr<Dataset> dataset_;
   std::shared_ptr<utils::Config> config_;
@@ -65,13 +68,9 @@ class FactorGraph {
   Eigen::VectorXd rv_initialization_;
   Eigen::VectorXd factor_initialization_;
 
-  struct VertexInfo {
-    double weight;
-  };
-
-  typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS,
-                                VertexInfo> UndirectedGraph;
-  UndirectedGraph udg_;
+  std::map<size_t, std::set<size_t>> udg_;
+  std::map<size_t, std::set<size_t>> dg_;
+  std::map<size_t, std::set<size_t>> reversed_dg_;
 };
 
 }  // end namespace hash_reversal

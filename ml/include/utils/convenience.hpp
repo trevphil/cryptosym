@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <set>
+#include <vector>
 #include <chrono>
 #include <string>
 #include <algorithm>
@@ -32,9 +34,9 @@ class Convenience {
   }
 
   template<typename T>
-  static std::string vec2str(const std::vector<T> &vec) {
-    auto begin = vec.begin();
-    auto end = vec.end();
+  static std::string set2str(const std::set<T> &s) {
+    auto begin = s.begin();
+    auto end = s.end();
     std::stringstream ss;
     ss << "[";
     bool first = true;

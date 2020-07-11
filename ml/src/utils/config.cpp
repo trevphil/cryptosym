@@ -90,14 +90,6 @@ void Config::loadYAML(const std::string &config_file) {
     print_connections = data[param].as<bool>();
     spdlog::info("{} --> {}", param, print_connections);
   }
-
-  param = "graphviz";
-  if (!data[param]) {
-    spdlog::error("Missing '{}'", param);
-  } else {
-    graphviz = data[param].as<bool>();
-    spdlog::info("{} --> {}", param, graphviz);
-  }
 }
 
 void Config::loadDatasetParameters() {

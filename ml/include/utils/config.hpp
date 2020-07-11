@@ -46,7 +46,6 @@ class Config {
   size_t num_input_bits;
   size_t num_internal_bits;
   bool print_connections;
-  bool graphviz;
 
  private:
   void configureLogging() const;

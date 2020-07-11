@@ -137,7 +137,7 @@ colorbar
 
 %% Graph pruning
 disp('Performing column-wise sort for each row...');
-edges_per_node = 8;
+edges_per_node = 4;
 adjacency_mat = zeros(size(result));
 [~, indices] = sort(result, 2, 'descend');
 
