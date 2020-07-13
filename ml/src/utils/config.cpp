@@ -119,22 +119,13 @@ void Config::loadYAML(const std::string &config_file) {
     test_mode = data[param].as<bool>();
     spdlog::info("{} --> {}", param, test_mode);
   }
-
-  param = "num_trials";
-  if (!data[param]) {
-    valid_ = false;
-    spdlog::error("Missing '{}'", param);
-  } else {
-    num_trials = data[param].as<size_t>();
-    spdlog::info("{} --> {}", param, num_trials);
-  }
 }
 
 void Config::loadDatasetParameters() {
   std::filesystem::path dataset_base = dataset_dir;
   std::filesystem::path dataset_params = dataset_base / "params.yaml";
   std::filesystem::path dataset_data = dataset_base / "data.bits";
-  std::filesystem::path dataset_graph = dataset_base / "graph.csv";
+  std::filesystem::path dataset_graph = dataset_base / "factors.txt";
   std::vector<std::filesystem::path> paths = {dataset_params, dataset_data, dataset_graph};
 
   for (auto &p : paths) {
@@ -153,7 +144,7 @@ void Config::loadDatasetParameters() {
   graph_file = dataset_graph.string();
   spdlog::info("dataset params --> {}", dataset_params.string());
   spdlog::info("dataset bits --> {}", data_file);
-  spdlog::info("dataset graph --> {}", graph_file);
+  spdlog::info("dataset factor graph --> {}", graph_file);
 
   YAML::Node data = YAML::LoadFile(dataset_params.string());
 
@@ -186,24 +177,6 @@ void Config::loadDatasetParameters() {
     spdlog::info("{} --> {}", param, num_samples);
   }
 
-  param = "num_train_samples";
-  if (!data[param]) {
-    valid_ = false;
-    spdlog::error("Missing '{}'", param);
-  } else {
-    num_train_samples = data[param].as<size_t>();
-    spdlog::info("{} --> {}", param, num_train_samples);
-  }
-
-  param = "num_test_samples";
-  if (!data[param]) {
-    valid_ = false;
-    spdlog::error("Missing '{}'", param);
-  } else {
-    num_test_samples = data[param].as<size_t>();
-    spdlog::info("{} --> {}", param, num_test_samples);
-  }
-
   param = "num_hash_bits";
   if (!data[param]) {
     valid_ = false;
@@ -233,10 +206,6 @@ void Config::loadDatasetParameters() {
 }
 
 void Config::validateParameters() {
-  if (num_samples != num_train_samples + num_test_samples) {
-    valid_ = false;
-    spdlog::error("Total number of samples should equal # train + # test samples");
-  }
   if (num_rvs != num_hash_bits + num_input_bits + num_internal_bits) {
     valid_ = false;
     spdlog::error("Number of RVs should equal # hash bits + # input bits + # internals");
@@ -244,14 +213,6 @@ void Config::validateParameters() {
   if (num_samples % 8 != 0) {
     valid_ = false;
     spdlog::error("Number of samples is not a multiple of 8");
-  }
-  if (num_train_samples % 8 != 0) {
-    valid_ = false;
-    spdlog::error("Number of train samples is not a multiple of 8");
-  }
-  if (num_test_samples % 8 != 0) {
-    valid_ = false;
-    spdlog::error("Number of test samples is not a multiple of 8");
   }
 }
 

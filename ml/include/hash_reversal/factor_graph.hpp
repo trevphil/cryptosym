@@ -18,10 +18,10 @@
 #include <set>
 #include <vector>
 
-#include "hash_reversal/dataset.hpp"
-#include "hash_reversal/probability.hpp"
 #include "utils/config.hpp"
 #include "utils/convenience.hpp"
+#include "hash_reversal/factor.hpp"
+#include "hash_reversal/probability.hpp"
 
 namespace hash_reversal {
 
@@ -32,22 +32,7 @@ class FactorGraph {
     double log_likelihood_ratio;
   };
 
-  struct RandomVariable {
-    std::set<size_t> factor_indices;
-  };
-
-  struct Factor {
-    size_t primary_rv;
-    std::set<size_t> rv_dependencies;
-
-    std::set<size_t> referencedRVs() const {
-      std::set<size_t> referenced = rv_dependencies;
-      referenced.insert(primary_rv);
-      return referenced;
-    }
-  };
-
-  explicit FactorGraph(std::shared_ptr<Probability> prob, std::shared_ptr<Dataset> dataset,
+  explicit FactorGraph(std::shared_ptr<Probability> prob,
                        std::shared_ptr<utils::Config> config);
 
   void runLBP(const std::vector<VariableAssignment> &observed);
@@ -57,17 +42,16 @@ class FactorGraph {
   std::vector<Prediction> marginals() const;
 
  private:
-  void setupUndirectedGraph();
   void setupFactors();
   void setupLBP(const std::vector<VariableAssignment> &observed);
   void updateFactorMessages();
   void updateRandomVariableMessages();
   void printConnections() const;
-  bool equal(const std::vector<Prediction> &marginals1, const std::vector<Prediction> &marginals2,
+  bool equal(const std::vector<Prediction> &marginals1,
+             const std::vector<Prediction> &marginals2,
              double tol = 1e-4) const;
 
   std::shared_ptr<Probability> prob_;
-  std::shared_ptr<Dataset> dataset_;
   std::shared_ptr<utils::Config> config_;
   std::vector<RandomVariable> rvs_;
   std::vector<Factor> factors_;
@@ -75,7 +59,6 @@ class FactorGraph {
   Eigen::MatrixXd factor_messages_;
   Eigen::VectorXd rv_initialization_;
   Eigen::VectorXd factor_initialization_;
-  std::map<size_t, std::set<size_t>> udg_;
   std::vector<Prediction> previous_marginals_;
 };
 

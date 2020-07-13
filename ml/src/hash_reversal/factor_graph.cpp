@@ -22,13 +22,12 @@
 
 namespace hash_reversal {
 
-FactorGraph::FactorGraph(std::shared_ptr<Probability> prob, std::shared_ptr<Dataset> dataset,
+FactorGraph::FactorGraph(std::shared_ptr<Probability> prob,
                          std::shared_ptr<utils::Config> config)
-    : prob_(prob), dataset_(dataset), config_(config) {
+    : prob_(prob), config_(config) {
   spdlog::info("Initializing factor graph...");
   const auto start = utils::Convenience::time_since_epoch();
 
-  setupUndirectedGraph();
   setupFactors();
 
   const size_t n = config_->num_rvs;
@@ -43,47 +42,42 @@ FactorGraph::FactorGraph(std::shared_ptr<Probability> prob, std::shared_ptr<Data
   if (config_->print_connections) printConnections();
 }
 
-void FactorGraph::setupUndirectedGraph() {
+void FactorGraph::setupFactors() {
   std::ifstream data;
   data.open(config_->graph_file);
   std::string line;
 
-  int i = 0;
+  factors_ = {};
+  std::map<size_t, RandomVariable> rvs;
+
   while (std::getline(data, line)) {
     std::stringstream line_stream(line);
-    std::string cell;
-    int j = 0;
-    while (std::getline(line_stream, cell, ',')) {
-      const bool nonzero = std::stod(cell) != 0;
-      const bool both_inputs = dataset_->isHashInputBit(i) && dataset_->isHashInputBit(j);
-      // Do not add self-loops or connections btwn. hash input bits
-      if (nonzero && i != j && !both_inputs) {
-        udg_[i].insert(j);
-        udg_[j].insert(i);
-      }
-      ++j;
+    std::string tmp;
+    Factor fac;
+
+    std::getline(line_stream, tmp, ';');
+    fac.factor_type = tmp;
+
+    std::getline(line_stream, tmp, ';');
+    fac.primary_rv = std::stoul(tmp);
+    rvs[fac.primary_rv].factor_indices.insert(factors_.size());
+
+    while (std::getline(line_stream, tmp, ';')) {
+      const size_t rv_idx = std::stoul(tmp);
+      fac.rv_dependencies.insert(rv_idx);
+      rvs[rv_idx].factor_indices.insert(factors_.size());
     }
-    ++i;
+
+    factors_.push_back(fac);
   }
 
   data.close();
-  spdlog::info("\tFinished creating undirected graph.");
-}
 
-void FactorGraph::setupFactors() {
-  const size_t n = config_->num_rvs;
-  rvs_ = std::vector<RandomVariable>(n);
-  factors_ = std::vector<Factor>(n);
+  rvs_ = {};
+  rvs_.reserve(rvs.size());
+  for (auto it : rvs) rvs_.push_back(it.second);
 
-  for (size_t rv = 0; rv < n; ++rv) {
-    factors_[rv].primary_rv = rv;
-    for (size_t dependency : udg_[rv]) {
-      factors_[rv].rv_dependencies.insert(dependency);
-      rvs_[dependency].factor_indices.insert(rv);
-    }
-  }
-
-  spdlog::info("\tFinished creating factors.");
+  spdlog::info("\tFinished loading factors and random variables.");
 }
 
 FactorGraph::Prediction FactorGraph::predict(size_t rv_index) const {
@@ -118,7 +112,7 @@ void FactorGraph::setupLBP(const std::vector<VariableAssignment> &observed) {
     for (const auto &o : observed)
       if (referenced_rvs.count(o.rv_index) > 0) relevant.push_back(o);
 
-    const double prob_rv_one = prob_->probOne(i, relevant, "auto-select");
+    const double prob_rv_one = prob_->probOne(factor, relevant);
     rv_initialization_(i) = std::log((1.0 - prob_rv_one) / prob_rv_one);
   }
 }
@@ -154,10 +148,9 @@ bool FactorGraph::equal(const std::vector<FactorGraph::Prediction> &marginals1,
   if (n != marginals2.size()) return false;
 
   for (size_t i = 0; i < n; ++i) {
-    if (std::abs(marginals1.at(i).log_likelihood_ratio - marginals2.at(i).log_likelihood_ratio) >
-        tol) {
-      return false;
-    }
+    const double llr1 = marginals1.at(i).log_likelihood_ratio;
+    const double llr2 = marginals2.at(i).log_likelihood_ratio;
+    if (std::abs(llr1 - llr2) > tol) return false;
   }
 
   return true;
@@ -202,7 +195,8 @@ void FactorGraph::updateRandomVariableMessages() {
 }
 
 void FactorGraph::printConnections() const {
-  for (size_t i = 0; i < config_->num_rvs; ++i) {
+  const size_t n = config_->num_rvs;
+  for (size_t i = 0; i < n; ++i) {
     const auto &rv_neighbors = rvs_.at(i).factor_indices;
     const std::string rv_nb_str = utils::Convenience::set2str<size_t>(rv_neighbors);
     spdlog::info("\tRV {} is referenced by factors {}", i, rv_nb_str);

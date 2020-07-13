@@ -40,16 +40,13 @@ class Config {
   std::string graph_file;
   double epsilon;
   size_t num_rvs;
-  size_t num_samples;
-  size_t num_train_samples;
-  size_t num_test_samples;
   size_t num_hash_bits;
   size_t num_input_bits;
   size_t num_internal_bits;
   bool print_connections;
   bool print_bit_accuracies;
   bool test_mode;
-  size_t num_trials;
+  size_t num_samples;
 
  private:
   bool valid_;

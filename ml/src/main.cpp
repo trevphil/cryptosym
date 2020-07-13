@@ -16,9 +16,9 @@
 #include <memory>
 #include <vector>
 
-#include "hash_reversal/dataset.hpp"
 #include "hash_reversal/factor_graph.hpp"
 #include "hash_reversal/probability.hpp"
+#include "hash_reversal/dataset.hpp"
 #include "utils/config.hpp"
 
 int main(int argc, char** argv) {
@@ -34,10 +34,11 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  const std::shared_ptr<hash_reversal::Dataset> dataset(new hash_reversal::Dataset(config));
+  const std::shared_ptr<hash_reversal::Dataset> dataset(
+			new hash_reversal::Dataset(config));
   const std::shared_ptr<hash_reversal::Probability> prob(
-      new hash_reversal::Probability(dataset, config));
-  hash_reversal::FactorGraph factor_graph(prob, dataset, config);
+    	new hash_reversal::Probability(config));
+  hash_reversal::FactorGraph factor_graph(prob, config);
 
   spdlog::info("Checking accuracy on test data...");
   int total_correct = 0;
@@ -45,7 +46,7 @@ int main(int argc, char** argv) {
   std::vector<double> num_correct_per_rv(config->num_rvs, 0);
   std::vector<double> count_per_rv(config->num_rvs, 0);
 
-  const size_t num_test = std::min<size_t>(config->num_trials, config->num_test_samples);
+  const size_t num_test = config->num_samples;
 
   for (size_t test_idx = 0; test_idx < num_test; ++test_idx) {
     spdlog::info("Test case {}/{}", test_idx + 1, num_test);

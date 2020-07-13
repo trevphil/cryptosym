@@ -9,7 +9,8 @@ from pathlib import Path
 from tqdm import tqdm
 from BitVector import BitVector
 
-from hash_functions import hashFunc
+from dataset_generation import pseudo_hashes
+
 
 """
 This generates a binary file representation of the dataset.
@@ -32,43 +33,56 @@ def sample(nbits):
   return BitVector(intVal=num, size=nbits)
 
 
+def hashAlgos():
+  return {
+    'pseudoHash': pseudo_hashes.PseudoHash(),
+    'xorHashConst': pseudo_hashes.XorHashConst(),
+    'shiftLeft': pseudo_hashes.ShiftLeft(),
+    'shiftRight': pseudo_hashes.ShiftRight()
+  }
+
+
 def main():
   random.seed(0)
   np.random.seed(0)
+  
+  hash_algos = hashAlgos()
 
   parser = argparse.ArgumentParser(description='Hash reversal dataset generator')
   parser.add_argument('--data-dir', type=str, default=os.path.abspath('./data'),
                       help='Path to the directory where the dataset should be stored')
-  parser.add_argument('--num-samples', type=int, default=20000,
+  parser.add_argument('--num-samples', type=int, default=10,
                       help='Number of samples to use in the dataset')
   parser.add_argument('--num-input-bits', type=int, default=64,
                       help='Number of bits in each input message to the hash function')
-  parser.add_argument('--pct-train', type=float, default=0.8,
-                      help='Percent of samples which will be used in the "train" section of the dataset')
   parser.add_argument('--hash-algo', type=str, default='sha256',
-                      choices=['sha256', 'md5', 'map_from_input', 'conditioned_on_input_and_hash', 'pseudo_hash'],
+                      choices=list(sorted(hashAlgos().keys())),
                       help='Choose the hashing algorithm to apply to the input data')
   parser.add_argument('--difficulty', type=int, default=64,
                       help='SHA-256 difficulty (an interger between 1 and 64 inclusive)')
   args = parser.parse_args()
 
-  algo = args.hash_algo
   num_input_bits = args.num_input_bits
   N = int(8 * round(args.num_samples / 8))  # number of samples
-  N_train = int(8 * round((N * args.pct_train) / 8))
-  N_test = N - N_train
-  tmp1, tmp2 = hashFunc(sample(num_input_bits), algo, args.difficulty)
-  n = (tmp1 + tmp2).length() + num_input_bits  # number of variables
 
-  dataset_dir = '{}-{}-{}-{}'.format(algo, n, N, num_input_bits)
-  dataset_dir = os.path.join(args.data_dir, dataset_dir)
+  dataset_dir = os.path.join(args.data_dir, args.hash_algo)
   data_file = os.path.join(dataset_dir, 'data.bits')
   params_file = os.path.join(dataset_dir, 'params.yaml')
+  graph_file = os.path.join(dataset_dir, 'factors.txt')
 
   Path(dataset_dir).mkdir(parents=True, exist_ok=True)
 
-  if os.path.exists(data_file):
-    os.remove(data_file)
+  for f in [data_file, params_file, params_file]:
+    if os.path.exists(f):
+      os.remove(f)
+
+  # Generate symbolic dependencies as factors
+  algo = hash_algos[args.hash_algo]
+  algo(sample(num_input_bits), difficulty=args.difficulty)
+  n = algo.numVars()
+
+  print('Saving hash function symbolically as a factor graph...')
+  algo.saveFactors(graph_file)
 
   print('Allocating data...')
   data = BitVector(size=n * N)
@@ -77,15 +91,8 @@ def main():
   for sample_idx in tqdm(range(N)):
     i = sample_idx * n
     hash_input = sample(num_input_bits)
-    hash_output, internals = hashFunc(hash_input, algo, args.difficulty)
-    j = len(hash_output)
-    data[i:i + j] = hash_output
-    i += j
-    j = len(hash_input)
-    data[i:i + j] = hash_input
-    i += j
-    j = len(internals)
-    data[i:i + j] = internals
+    algo(hash_input, difficulty=args.difficulty)
+    data[i:i + n] = algo.bits()
 
   print('Converting BitVector to numpy matrix...')
   data = np.array(data, dtype=bool).reshape((N, n))
@@ -93,19 +100,17 @@ def main():
   print('Transposing matrix and converting back to BitVector...')
   bv = BitVector(bitlist=data.T.reshape((1, -1)).squeeze().tolist())
 
-  print('Saving to %s' % data_file)
+  print('Saving samples to %s' % data_file)
   with open(data_file, 'wb') as f:
     bv.write_to_file(f)
 
   params = {
-    'hash': algo,
+    'hash': args.hash_algo,
     'num_rvs': n,
     'num_samples': N,
-    'num_train_samples': N_train,
-    'num_test_samples': N_test,
-    'num_hash_bits': tmp1.length(),
+    'num_hash_bits': algo.numHashBits(),
     'num_input_bits': num_input_bits,
-    'num_internal_bits': tmp2.length()
+    'num_internal_bits': n - num_input_bits - algo.numHashBits()
   }
   
   if algo == 'sha256':
@@ -114,7 +119,8 @@ def main():
   with open(params_file, 'w') as f:
     yaml.dump(params, f)
 
-  print('Generated dataset with %d samples (hash=%s, %d input bits).' % (N, algo, num_input_bits))
+  print('Generated dataset with {} samples (hash={}, {} input bits).'.format(
+    N, args.hash_algo, num_input_bits))
 
 
 if __name__ == '__main__':
