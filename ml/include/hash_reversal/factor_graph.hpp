@@ -38,7 +38,14 @@ class FactorGraph {
   };
 
   struct Factor {
-    std::set<size_t> rv_indices;
+    size_t primary_rv;
+    std::set<size_t> rv_dependencies;
+
+    std::set<size_t> referencedRVs() const {
+      std::set<size_t> referenced = rv_dependencies;
+      referenced.insert(primary_rv);
+      return referenced;
+    }
   };
 
   explicit FactorGraph(std::shared_ptr<Probability> prob,
@@ -47,16 +54,20 @@ class FactorGraph {
 
   void runLBP(const std::vector<VariableAssignment> &observed);
 
-  Prediction predict(size_t rv_index);
+  Prediction predict(size_t rv_index) const;
+
+  std::vector<Prediction> marginals() const;
 
  private:
   void setupUndirectedGraph();
-  void setupDirectedGraph();
   void setupFactors();
   void setupLBP(const std::vector<VariableAssignment> &observed);
   void updateFactorMessages();
   void updateRandomVariableMessages();
   void printConnections() const;
+  bool equal(const std::vector<Prediction> &marginals1,
+             const std::vector<Prediction> &marginals2,
+             double tol = 1e-4) const;
 
   std::shared_ptr<Probability> prob_;
   std::shared_ptr<Dataset> dataset_;
@@ -67,10 +78,8 @@ class FactorGraph {
   Eigen::MatrixXd factor_messages_;
   Eigen::VectorXd rv_initialization_;
   Eigen::VectorXd factor_initialization_;
-
   std::map<size_t, std::set<size_t>> udg_;
-  std::map<size_t, std::set<size_t>> dg_;
-  std::map<size_t, std::set<size_t>> reversed_dg_;
+  std::vector<Prediction> previous_marginals_;
 };
 
 }  // end namespace hash_reversal

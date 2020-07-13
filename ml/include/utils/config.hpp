@@ -30,9 +30,10 @@ class Config {
  public:
   explicit Config(std::string config_file);
 
-  std::string graphVizFile(size_t count) const;
+  bool valid() const;
 
   size_t lbp_max_iter;
+  double lbp_damping;
   std::string hash_algo;
   std::string dataset_dir;
   std::string data_file;
@@ -46,15 +47,20 @@ class Config {
   size_t num_input_bits;
   size_t num_internal_bits;
   bool print_connections;
+  bool print_bit_accuracies;
+  bool test_mode;
+  size_t num_trials;
 
  private:
+  bool valid_;
+
   void configureLogging() const;
 
   void loadYAML(const std::string &config_file);
 
   void loadDatasetParameters();
 
-  void validateParameters() const;
+  void validateParameters();
 };
 
 }  // end namespace utils

@@ -14,11 +14,16 @@
 
 namespace utils {
 
-Config::Config(std::string config_file) {
+Config::Config(std::string config_file) : valid_(true) {
   configureLogging();
   loadYAML(config_file);
-  loadDatasetParameters();
-  validateParameters();
+  if (valid_) loadDatasetParameters();
+  if (valid_) validateParameters();
+  if (test_mode) spdlog::set_level(spdlog::level::err);
+}
+
+bool Config::valid() const {
+  return valid_;
 }
 
 void Config::configureLogging() const {
@@ -37,12 +42,6 @@ void Config::configureLogging() const {
   spdlog::set_level(spdlog::level::debug);
 }
 
-std::string Config::graphVizFile(size_t count) const {
-  std::ostringstream oss;
-  oss << "./viz/grap_viz_" << count << ".xml";
-  return oss.str();
-}
-
 void Config::loadYAML(const std::string &config_file) {
   std::filesystem::path config_path = config_file;
   if (config_path.is_relative()) {
@@ -51,6 +50,7 @@ void Config::loadYAML(const std::string &config_file) {
 
   if (!std::filesystem::exists(config_path)) {
     spdlog::error("Config file '{}' does not exist", config_path.string());
+    valid_ = false;
     return;
   }
 
@@ -61,14 +61,25 @@ void Config::loadYAML(const std::string &config_file) {
 
   param = "lbp_max_iter";
   if (!data[param]) {
+    valid_ = false;
     spdlog::error("Missing '{}'", param);
   } else {
     lbp_max_iter = data[param].as<size_t>();
     spdlog::info("{} --> {}", param, lbp_max_iter);
   }
 
+  param = "lbp_damping";
+  if (!data[param]) {
+    valid_ = false;
+    spdlog::error("Missing '{}'", param);
+  } else {
+    lbp_damping = data[param].as<double>();
+    spdlog::info("{} --> {}", param, lbp_damping);
+  }
+
   param = "dataset_dir";
   if (!data[param]) {
+    valid_ = false;
     spdlog::error("Missing '{}'", param);
   } else {
     dataset_dir = data[param].as<std::string>();
@@ -77,6 +88,7 @@ void Config::loadYAML(const std::string &config_file) {
 
   param = "epsilon";
   if (!data[param]) {
+    valid_ = false;
     spdlog::error("Missing '{}'", param);
   } else {
     epsilon = data[param].as<double>();
@@ -85,10 +97,38 @@ void Config::loadYAML(const std::string &config_file) {
 
   param = "print_connections";
   if (!data[param]) {
+    valid_ = false;
     spdlog::error("Missing '{}'", param);
   } else {
     print_connections = data[param].as<bool>();
     spdlog::info("{} --> {}", param, print_connections);
+  }
+
+  param = "print_bit_accuracies";
+  if (!data[param]) {
+    valid_ = false;
+    spdlog::error("Missing '{}'", param);
+  } else {
+    print_bit_accuracies = data[param].as<bool>();
+    spdlog::info("{} --> {}", param, print_bit_accuracies);
+  }
+
+  param = "test_mode";
+  if (!data[param]) {
+    valid_ = false;
+    spdlog::error("Missing '{}'", param);
+  } else {
+    test_mode = data[param].as<bool>();
+    spdlog::info("{} --> {}", param, test_mode);
+  }
+
+  param = "num_trials";
+  if (!data[param]) {
+    valid_ = false;
+    spdlog::error("Missing '{}'", param);
+  } else {
+    num_trials = data[param].as<size_t>();
+    spdlog::info("{} --> {}", param, num_trials);
   }
 }
 
@@ -107,6 +147,7 @@ void Config::loadDatasetParameters() {
 
     if (!std::filesystem::exists(p)) {
       spdlog::error("'{}' does not exist", p.string());
+      valid_ = false;
       return;
     }
   }
@@ -123,6 +164,7 @@ void Config::loadDatasetParameters() {
 
   param = "hash";
   if (!data[param]) {
+    valid_ = false;
     spdlog::error("Missing '{}'", param);
   } else {
     hash_algo = data[param].as<std::string>();
@@ -131,6 +173,7 @@ void Config::loadDatasetParameters() {
 
   param = "num_rvs";
   if (!data[param]) {
+    valid_ = false;
     spdlog::error("Missing '{}'", param);
   } else {
     num_rvs = data[param].as<size_t>();
@@ -139,6 +182,7 @@ void Config::loadDatasetParameters() {
 
   param = "num_samples";
   if (!data[param]) {
+    valid_ = false;
     spdlog::error("Missing '{}'", param);
   } else {
     num_samples = data[param].as<size_t>();
@@ -147,6 +191,7 @@ void Config::loadDatasetParameters() {
 
   param = "num_train_samples";
   if (!data[param]) {
+    valid_ = false;
     spdlog::error("Missing '{}'", param);
   } else {
     num_train_samples = data[param].as<size_t>();
@@ -155,6 +200,7 @@ void Config::loadDatasetParameters() {
 
   param = "num_test_samples";
   if (!data[param]) {
+    valid_ = false;
     spdlog::error("Missing '{}'", param);
   } else {
     num_test_samples = data[param].as<size_t>();
@@ -163,6 +209,7 @@ void Config::loadDatasetParameters() {
 
   param = "num_hash_bits";
   if (!data[param]) {
+    valid_ = false;
     spdlog::error("Missing '{}'", param);
   } else {
     num_hash_bits = data[param].as<size_t>();
@@ -171,6 +218,7 @@ void Config::loadDatasetParameters() {
 
   param = "num_input_bits";
   if (!data[param]) {
+    valid_ = false;
     spdlog::error("Missing '{}'", param);
   } else {
     num_input_bits = data[param].as<size_t>();
@@ -179,6 +227,7 @@ void Config::loadDatasetParameters() {
 
   param = "num_internal_bits";
   if (!data[param]) {
+    valid_ = false;
     spdlog::error("Missing '{}'", param);
   } else {
     num_internal_bits = data[param].as<size_t>();
@@ -186,17 +235,27 @@ void Config::loadDatasetParameters() {
   }
 }
 
-void Config::validateParameters() const {
-  if (num_samples != num_train_samples + num_test_samples)
+void Config::validateParameters() {
+  if (num_samples != num_train_samples + num_test_samples) {
+    valid_ = false;
     spdlog::error("Total number of samples should equal # train + # test samples");
-  if (num_rvs != num_hash_bits + num_input_bits + num_internal_bits)
+  }
+  if (num_rvs != num_hash_bits + num_input_bits + num_internal_bits) {
+    valid_ = false;
     spdlog::error("Number of RVs should equal # hash bits + # input bits + # internals");
-  if (num_samples % 8 != 0)
+  }
+  if (num_samples % 8 != 0) {
+    valid_ = false;
     spdlog::error("Number of samples is not a multiple of 8");
-  if (num_train_samples % 8 != 0)
+  }
+  if (num_train_samples % 8 != 0) {
+    valid_ = false;
     spdlog::error("Number of train samples is not a multiple of 8");
-  if (num_test_samples % 8 != 0)
+  }
+  if (num_test_samples % 8 != 0) {
+    valid_ = false;
     spdlog::error("Number of test samples is not a multiple of 8");
+  }
 }
 
 }  // end namespace utils
