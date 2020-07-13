@@ -9,7 +9,7 @@ from pathlib import Path
 from tqdm import tqdm
 from BitVector import BitVector
 
-from dataset_generation.hash_functions import hashFunc
+from hash_functions import hashFunc
 
 """
 This generates a binary file representation of the dataset.

@@ -3,7 +3,7 @@ import hashlib
 from binascii import unhexlify
 from BitVector import BitVector
 
-from dataset_generation.nsha256 import SHA256
+from nsha256 import SHA256
 
 
 def int2bytes(val):
