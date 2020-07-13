@@ -80,11 +80,12 @@ int main(int argc, char** argv) {
 
 		spdlog::info("\tGot {0}/{1} ({2:.2f}%), average abs(LLR) is {3:.3f}",
 								 local_correct, n, 100.0 * local_correct / n, sum_abs_llr / n);
-		spdlog::info("\tGot {0}/{1} ({2:.2f}%) hash input bits",
-								 local_correct_hash_input, n_input,
-								 100.0 * local_correct_hash_input / n_input);
 
-		if (config->test_mode && local_correct_hash_input != n_input) {
+		const double hash_pct_correct = local_correct_hash_input / n_input;
+		spdlog::info("\tGot {0}/{1} ({2:.2f}%) hash input bits",
+								 local_correct_hash_input, n_input, 100.0 * hash_pct_correct);
+
+		if (config->test_mode && hash_pct_correct < 0.9) {
 			spdlog::error("Test case '{}': only {}/{} hash input bits predicted correctly",
 										config->hash_algo, local_correct_hash_input, n_input);
 			return 1;

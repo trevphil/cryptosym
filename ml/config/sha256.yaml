@@ -5,4 +5,4 @@ epsilon: 0.0001
 print_connections: false
 print_bit_accuracies: true
 test_mode: false
-num_trials: 10000000000000
+num_trials: 20

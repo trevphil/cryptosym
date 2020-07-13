@@ -5,8 +5,8 @@ clc;
 tiledlayout(3, 2);
 
 %% ihat computation
-hash = 'conditioned_on_input_and_hash';
-edges_per_node = 6;
+hash = 'pseudo_hash';
+edges_per_node = 8;
 num_vars = 320;
 N = 1000;
 num_hash_input_bits = 64;
@@ -138,13 +138,13 @@ colorbar
 
 %% Graph pruning
 disp('Performing column-wise sort for each row...');
-adjacency_mat = ones(size(result));
-[~, indices] = sort(result, 2, 'descend');
+adjacency_mat = result;
+[~, indices] = sort(adjacency_mat, 2, 'descend');
 
 disp('Pruning graph...');
 for rv = 1:num_vars
-    adjacency_mat(rv, indices(rv, edges_per_node+1:end)) = 0;
-    % adjacency_mat(rv, indices(rv, 1:edges_per_node)) = 1;
+    adjacency_mat(rv, indices(rv, 1:edges_per_node)) = 1;
+    adjacency_mat(rv, indices(rv, edges_per_node + 1:end)) = 0;
     adjacency_mat(:, rv) = adjacency_mat(rv, :);
 end
 
