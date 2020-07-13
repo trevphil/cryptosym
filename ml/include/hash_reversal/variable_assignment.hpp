@@ -15,7 +15,7 @@
 namespace hash_reversal {
 
 struct VariableAssignment {
-  VariableAssignment(size_t rv_idx, bool v) : rv_index(rv_idx), value(v) { }
+  VariableAssignment(size_t rv_idx, bool v) : rv_index(rv_idx), value(v) {}
   size_t rv_index;
   bool value;
 };

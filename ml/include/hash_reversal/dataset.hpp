@@ -12,19 +12,19 @@
 
 #pragma once
 
+#include <boost/dynamic_bitset.hpp>
 #include <memory>
 #include <vector>
-#include <boost/dynamic_bitset.hpp>
 
+#include "hash_reversal/variable_assignment.hpp"
 #include "utils/config.hpp"
 #include "utils/convenience.hpp"
-#include "hash_reversal/variable_assignment.hpp"
 
 namespace hash_reversal {
 
 class Dataset {
  public:
-	explicit Dataset(std::shared_ptr<utils::Config> config);
+  explicit Dataset(std::shared_ptr<utils::Config> config);
 
   std::vector<size_t> hashInputBitIndices() const;
 

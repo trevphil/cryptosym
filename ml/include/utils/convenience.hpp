@@ -12,28 +12,27 @@
 
 #pragma once
 
-#include <set>
-#include <vector>
-#include <chrono>
-#include <string>
 #include <algorithm>
+#include <chrono>
 #include <random>
+#include <set>
+#include <string>
 #include <type_traits>
+#include <vector>
 
 namespace utils {
 
 class Convenience {
  public:
   static std::chrono::system_clock::rep time_since_epoch() {
-    static_assert(
-      std::is_integral<std::chrono::system_clock::rep>::value,
-      "Representation of ticks isn't an integral value.");
+    static_assert(std::is_integral<std::chrono::system_clock::rep>::value,
+                  "Representation of ticks isn't an integral value.");
 
     const auto now = std::chrono::system_clock::now().time_since_epoch();
     return std::chrono::duration_cast<std::chrono::seconds>(now).count();
   }
 
-  template<typename T>
+  template <typename T>
   static std::string set2str(const std::set<T> &s) {
     auto begin = s.begin();
     auto end = s.end();
@@ -49,7 +48,7 @@ class Convenience {
     return ss.str();
   }
 
-  template<typename T>
+  template <typename T>
   static std::vector<T> randomSubset(const std::vector<T> &input_vec, size_t k) {
     if (k < 0 || k >= input_vec.size()) return input_vec;
     std::vector<unsigned int> indices(input_vec.size());

@@ -22,9 +22,7 @@ Config::Config(std::string config_file) : valid_(true) {
   if (test_mode) spdlog::set_level(spdlog::level::err);
 }
 
-bool Config::valid() const {
-  return valid_;
-}
+bool Config::valid() const { return valid_; }
 
 void Config::configureLogging() const {
   auto t = std::time(nullptr);
@@ -137,8 +135,7 @@ void Config::loadDatasetParameters() {
   std::filesystem::path dataset_params = dataset_base / "params.yaml";
   std::filesystem::path dataset_data = dataset_base / "data.bits";
   std::filesystem::path dataset_graph = dataset_base / "graph.csv";
-  std::vector<std::filesystem::path> paths = {
-    dataset_params, dataset_data, dataset_graph };
+  std::vector<std::filesystem::path> paths = {dataset_params, dataset_data, dataset_graph};
 
   for (auto &p : paths) {
     if (p.is_relative()) {

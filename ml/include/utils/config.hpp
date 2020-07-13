@@ -12,17 +12,17 @@
 
 #pragma once
 
-#include <spdlog/spdlog.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_sinks.h>
+#include <spdlog/spdlog.h>
 #include <yaml-cpp/yaml.h>
 
 #include <ctime>
-#include <string>
-#include <iostream>
 #include <filesystem>
-#include <vector>
+#include <iostream>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace utils {
 

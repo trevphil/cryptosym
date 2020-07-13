@@ -13,16 +13,15 @@
 #pragma once
 
 #include <Eigen/Dense>
-
-#include <set>
 #include <map>
 #include <memory>
+#include <set>
 #include <vector>
 
+#include "hash_reversal/dataset.hpp"
+#include "hash_reversal/probability.hpp"
 #include "utils/config.hpp"
 #include "utils/convenience.hpp"
-#include "hash_reversal/probability.hpp"
-#include "hash_reversal/dataset.hpp"
 
 namespace hash_reversal {
 
@@ -48,8 +47,7 @@ class FactorGraph {
     }
   };
 
-  explicit FactorGraph(std::shared_ptr<Probability> prob,
-                       std::shared_ptr<Dataset> dataset,
+  explicit FactorGraph(std::shared_ptr<Probability> prob, std::shared_ptr<Dataset> dataset,
                        std::shared_ptr<utils::Config> config);
 
   void runLBP(const std::vector<VariableAssignment> &observed);
@@ -65,8 +63,7 @@ class FactorGraph {
   void updateFactorMessages();
   void updateRandomVariableMessages();
   void printConnections() const;
-  bool equal(const std::vector<Prediction> &marginals1,
-             const std::vector<Prediction> &marginals2,
+  bool equal(const std::vector<Prediction> &marginals1, const std::vector<Prediction> &marginals2,
              double tol = 1e-4) const;
 
   std::shared_ptr<Probability> prob_;

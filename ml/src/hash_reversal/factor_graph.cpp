@@ -10,22 +10,21 @@
  * Proprietary and confidential
  */
 
-#include <cmath>
-#include <string>
-#include <deque>
-#include <fstream>
-#include <algorithm>
+#include "hash_reversal/factor_graph.hpp"
 
 #include <spdlog/spdlog.h>
 
-#include "hash_reversal/factor_graph.hpp"
+#include <algorithm>
+#include <cmath>
+#include <deque>
+#include <fstream>
+#include <string>
 
 namespace hash_reversal {
 
-FactorGraph::FactorGraph(std::shared_ptr<Probability> prob,
-                         std::shared_ptr<Dataset> dataset,
+FactorGraph::FactorGraph(std::shared_ptr<Probability> prob, std::shared_ptr<Dataset> dataset,
                          std::shared_ptr<utils::Config> config)
-  : prob_(prob), dataset_(dataset), config_(config) {
+    : prob_(prob), dataset_(dataset), config_(config) {
   spdlog::info("Initializing factor graph...");
   const auto start = utils::Convenience::time_since_epoch();
 
@@ -56,8 +55,7 @@ void FactorGraph::setupUndirectedGraph() {
     int j = 0;
     while (std::getline(line_stream, cell, ',')) {
       const bool nonzero = std::stod(cell) != 0;
-      const bool both_inputs = dataset_->isHashInputBit(i) &&
-                               dataset_->isHashInputBit(j);
+      const bool both_inputs = dataset_->isHashInputBit(i) && dataset_->isHashInputBit(j);
       // Do not add self-loops or connections btwn. hash input bits
       if (nonzero && i != j && !both_inputs) {
         udg_[i].insert(j);
@@ -151,14 +149,13 @@ void FactorGraph::runLBP(const std::vector<VariableAssignment> &observed) {
 }
 
 bool FactorGraph::equal(const std::vector<FactorGraph::Prediction> &marginals1,
-                        const std::vector<FactorGraph::Prediction> &marginals2,
-                        double tol) const {
+                        const std::vector<FactorGraph::Prediction> &marginals2, double tol) const {
   const size_t n = marginals1.size();
   if (n != marginals2.size()) return false;
 
   for (size_t i = 0; i < n; ++i) {
-    if (std::abs(marginals1.at(i).log_likelihood_ratio -
-                 marginals2.at(i).log_likelihood_ratio) > tol) {
+    if (std::abs(marginals1.at(i).log_likelihood_ratio - marginals2.at(i).log_likelihood_ratio) >
+        tol) {
       return false;
     }
   }

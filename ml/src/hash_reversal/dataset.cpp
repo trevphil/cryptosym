@@ -10,10 +10,11 @@
  * Proprietary and confidential
  */
 
-#include <fstream>
+#include "hash_reversal/dataset.hpp"
+
 #include <spdlog/spdlog.h>
 
-#include "hash_reversal/dataset.hpp"
+#include <fstream>
 
 namespace hash_reversal {
 
@@ -71,7 +72,7 @@ std::vector<size_t> Dataset::hashInputBitIndices() const {
 
 bool Dataset::isHashInputBit(size_t bit_index) const {
   const size_t hash_input_lb = config_->num_hash_bits;
-	const size_t hash_input_ub = config_->num_hash_bits + config_->num_input_bits;
+  const size_t hash_input_ub = config_->num_hash_bits + config_->num_input_bits;
   return bit_index >= hash_input_lb && bit_index < hash_input_ub;
 }
 
