@@ -6,7 +6,6 @@ import argparse
 import yaml
 import numpy as np
 from pathlib import Path
-from tqdm import tqdm
 from BitVector import BitVector
 
 from dataset_generation import pseudo_hashes
@@ -80,22 +79,26 @@ def main():
   algo = hash_algos[args.hash_algo]
   algo(sample(num_input_bits), difficulty=args.difficulty)
   n = algo.numVars()
+  nhash = algo.numHashBits()
 
   print('Saving hash function symbolically as a factor graph...')
   algo.saveFactors(graph_file)
 
   print('Allocating data...')
-  data = BitVector(size=n * N)
+  data = np.zeros((N, n), dtype=bool)
+  hash3 = None
+  sample3 = None
 
   print('Populating data...')
-  for sample_idx in tqdm(range(N)):
-    i = sample_idx * n
+  for sample_idx in range(N):
     hash_input = sample(num_input_bits)
     algo(hash_input, difficulty=args.difficulty)
-    data[i:i + n] = algo.bits()
-
-  print('Converting BitVector to numpy matrix...')
-  data = np.array(data, dtype=bool).reshape((N, n))
+    bitvec = algo.bits()
+    if sample_idx == 3:
+      sample3 = hex(int(bitvec))[2:].upper()
+      hash3 = hex(int(bitvec[-nhash:]))[2:].upper()
+    # The MSB (left-most) of the BitVector will go in the left-most column of `data`
+    data[N - sample_idx - 1, :] = bitvec
 
   print('Transposing matrix and converting back to BitVector...')
   bv = BitVector(bitlist=data.T.reshape((1, -1)).squeeze().tolist())
@@ -108,9 +111,11 @@ def main():
     'hash': args.hash_algo,
     'num_rvs': n,
     'num_samples': N,
-    'num_hash_bits': algo.numHashBits(),
+    'num_hash_bits': nhash,
     'num_input_bits': num_input_bits,
-    'num_internal_bits': n - num_input_bits - algo.numHashBits()
+    'num_internal_bits': n - num_input_bits - nhash,
+    'hash3_hex': hash3,
+    'sample3_hex': sample3
   }
   
   if algo == 'sha256':

@@ -203,6 +203,24 @@ void Config::loadDatasetParameters() {
     num_internal_bits = data[param].as<size_t>();
     spdlog::info("{} --> {}", param, num_internal_bits);
   }
+
+  param = "hash3_hex";
+  if (!data[param]) {
+    valid_ = false;
+    spdlog::error("Missing '{}'", param);
+  } else {
+    hash3_hex = data[param].as<std::string>();
+    spdlog::info("{} --> {}", param, hash3_hex);
+  }
+
+  param = "sample3_hex";
+  if (!data[param]) {
+    valid_ = false;
+    spdlog::error("Missing '{}'", param);
+  } else {
+    sample3_hex = data[param].as<std::string>();
+    spdlog::info("{} --> {}", param, sample3_hex);
+  }
 }
 
 void Config::validateParameters() {

@@ -47,37 +47,33 @@ void FactorGraph::setupFactors() {
   data.open(config_->graph_file);
   std::string line;
 
-  factors_ = {};
-  std::map<size_t, RandomVariable> rvs;
+  const size_t n = config_->num_rvs;
+  rvs_ = std::vector<RandomVariable>(n);
+  factors_ = std::vector<Factor>(n);
+  for (size_t i = 0; i < n; ++i) factors_[i].primary_rv = i;
 
   while (std::getline(data, line)) {
     std::stringstream line_stream(line);
     std::string tmp;
-    Factor fac;
 
     std::getline(line_stream, tmp, ';');
-    fac.factor_type = tmp;
+    std::string factor_type = tmp;
 
     std::getline(line_stream, tmp, ';');
-    fac.primary_rv = std::stoul(tmp);
-    rvs[fac.primary_rv].factor_indices.insert(factors_.size());
+    const size_t rv_index = std::stoul(tmp);
+    factors_[rv_index].factor_type = factor_type;
+    rvs_[rv_index].factor_indices.insert(rv_index);
 
     while (std::getline(line_stream, tmp, ';')) {
-      const size_t rv_idx = std::stoul(tmp);
-      fac.rv_dependencies.insert(rv_idx);
-      rvs[rv_idx].factor_indices.insert(factors_.size());
+      const size_t rv_dependency = std::stoul(tmp);
+      factors_[rv_index].rv_dependencies.insert(rv_dependency);
+      rvs_[rv_dependency].factor_indices.insert(rv_index);
     }
-
-    factors_.push_back(fac);
   }
 
   data.close();
 
-  rvs_ = {};
-  rvs_.reserve(rvs.size());
-  for (auto it : rvs) rvs_.push_back(it.second);
-
-  spdlog::info("\tFinished loading factors and random variables.");
+  spdlog::info("\tCreated {} factors and {} RVs.", factors_.size(), rvs_.size());
 }
 
 FactorGraph::Prediction FactorGraph::predict(size_t rv_index) const {

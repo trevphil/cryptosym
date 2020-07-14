@@ -30,9 +30,13 @@ class Dataset {
 
   bool isHashInputBit(size_t bit_index) const;
 
-  std::vector<VariableAssignment> getHashBits(size_t sample_index) const;
+  typedef std::pair<std::vector<VariableAssignment>,
+                    boost::dynamic_bitset<>> Hash;
+  Hash getHashBits(size_t sample_index) const;
 
-  boost::dynamic_bitset<> getGroundTruth(size_t sample_index) const;
+  boost::dynamic_bitset<> getFullSample(size_t sample_index) const;
+
+  bool verifyDataset() const;
 
  private:
   std::shared_ptr<utils::Config> config_;

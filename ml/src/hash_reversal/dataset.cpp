@@ -55,31 +55,61 @@ std::vector<size_t> Dataset::hashInputBitIndices() const {
   std::vector<size_t> indices;
   indices.reserve(config_->num_input_bits);
   for (size_t i = 0; i < config_->num_input_bits; ++i)
-    indices.push_back(config_->num_hash_bits + i);
+    indices.push_back(i);
   return indices;
 }
 
 bool Dataset::isHashInputBit(size_t bit_index) const {
-  const size_t hash_input_lb = config_->num_hash_bits;
-  const size_t hash_input_ub = config_->num_hash_bits + config_->num_input_bits;
+  const size_t hash_input_lb = 0;
+  const size_t hash_input_ub = config_->num_input_bits;
   return bit_index >= hash_input_lb && bit_index < hash_input_ub;
 }
 
-std::vector<VariableAssignment> Dataset::getHashBits(size_t sample_index) const {
+Dataset::Hash Dataset::getHashBits(size_t sample_index) const {
+  boost::dynamic_bitset<> hash_bits(config_->num_hash_bits);
   std::vector<VariableAssignment> observed;
-  for (size_t hash_bit_idx = 0; hash_bit_idx < config_->num_hash_bits; ++hash_bit_idx) {
-    const auto bitval = samples_.at(hash_bit_idx)[sample_index];
-    observed.push_back(VariableAssignment(hash_bit_idx, bitval));
+
+  const size_t n = config_->num_rvs;
+  const size_t nhash = config_->num_hash_bits;
+  size_t i = nhash - 1;
+
+  for (size_t bit_idx = n - nhash; bit_idx < n; ++bit_idx) {
+    const auto bitval = samples_.at(bit_idx)[sample_index];
+    observed.push_back(VariableAssignment(bit_idx, bitval));
+    hash_bits[i--] = bitval;
   }
-  return observed;
+  return {observed, hash_bits};
 }
 
-boost::dynamic_bitset<> Dataset::getGroundTruth(size_t sample_index) const {
-  boost::dynamic_bitset<> all_bits(config_->num_rvs);
-  for (size_t i = 0; i < all_bits.size(); ++i) {
-    all_bits[i] = samples_.at(i)[sample_index];
+boost::dynamic_bitset<> Dataset::getFullSample(size_t sample_index) const {
+  const size_t n = config_->num_rvs;
+  boost::dynamic_bitset<> all_bits(n);
+  for (size_t i = 0; i < n; ++i) {
+    all_bits[n - i - 1] = samples_.at(i)[sample_index];
   }
   return all_bits;
+}
+
+bool Dataset::verifyDataset() const {
+  const std::string expected_hash3 = config_->hash3_hex;
+  const auto hash3 = getHashBits(3).second;
+  const auto hash3_hex = utils::Convenience::bitset2hex(hash3);
+  if (expected_hash3 != hash3_hex) {
+    spdlog::error("Dataset verification:\n\tExpected {}\n\tGot {}",
+                  expected_hash3, hash3_hex);
+    return false;
+  }
+
+  const std::string expected_sample3 = config_->sample3_hex;
+  const auto sample3 = getFullSample(3);
+  const auto sample3_hex = utils::Convenience::bitset2hex(sample3);
+  if (expected_sample3 != sample3_hex) {
+    spdlog::error("Dataset verification:\n\tExpected {}\n\tGot {}",
+                  expected_sample3, sample3_hex);
+    return false;
+  }
+
+  return true;
 }
 
 }  // end namespace hash_reversal

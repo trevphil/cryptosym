@@ -51,6 +51,7 @@ class PseudoHash(SymbolicHash):
     b = (b & c)
     c = (c ^ d)
     h = a | (b << 16) | (c << 32) | (d << 48)
+    
     self.num_hash_bits = len(h)
 
 

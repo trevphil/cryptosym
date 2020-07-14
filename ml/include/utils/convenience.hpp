@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <boost/dynamic_bitset.hpp>
+
 #include <algorithm>
 #include <chrono>
 #include <set>
@@ -43,6 +45,25 @@ class Convenience {
     }
     ss << "]";
     return ss.str();
+  }
+
+  static std::string bitset2hex(const boost::dynamic_bitset<> &bs) {
+    std::string b;
+    boost::to_string(bs, b);
+    std::string out;
+
+    for (size_t i = 0; i < b.size(); i += 4) {
+      int8_t n = 0;
+      for (size_t j = i; j < i + 4; ++j) {
+        n <<= 1;
+        if (b[j] == '1') n |= 1;
+      }
+
+      if (n <= 9) out.push_back('0' + n);
+      else out.push_back('A' + n - 10);
+    }
+
+    return out;
   }
 };
 

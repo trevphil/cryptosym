@@ -19,6 +19,7 @@
 #include "hash_reversal/factor_graph.hpp"
 #include "hash_reversal/probability.hpp"
 #include "hash_reversal/dataset.hpp"
+#include "utils/convenience.hpp"
 #include "utils/config.hpp"
 
 int main(int argc, char** argv) {
@@ -36,6 +37,11 @@ int main(int argc, char** argv) {
 
   const std::shared_ptr<hash_reversal::Dataset> dataset(
 			new hash_reversal::Dataset(config));
+  if (!dataset->verifyDataset()) {
+    spdlog::error("The dataset does not represent bits correctly, exiting.");
+    return 1;
+  }
+
   const std::shared_ptr<hash_reversal::Probability> prob(
     	new hash_reversal::Probability(config));
   hash_reversal::FactorGraph factor_graph(prob, config);
@@ -48,14 +54,17 @@ int main(int argc, char** argv) {
 
   const size_t num_test = config->num_samples;
 
-  for (size_t test_idx = 0; test_idx < num_test; ++test_idx) {
-    spdlog::info("Test case {}/{}", test_idx + 1, num_test);
+  for (size_t sample_idx = 0; sample_idx < num_test; ++sample_idx) {
+    spdlog::info("Test case {}/{}", sample_idx + 1, num_test);
 
-    const auto observed_hash_bits = dataset->getHashBits(test_idx);
-    factor_graph.runLBP(observed_hash_bits);
+    const auto hash_bits = dataset->getHashBits(sample_idx);
+    const auto hash_str = utils::Convenience::bitset2hex(hash_bits.second);
+    spdlog::info("\tExpected hash: {}", hash_str);
+
+    factor_graph.runLBP(hash_bits.first);
     const auto marginals = factor_graph.marginals();
 
-    const auto ground_truth = dataset->getGroundTruth(test_idx);
+    const auto ground_truth = dataset->getFullSample(sample_idx);
     const size_t n = config->num_rvs;
     const size_t n_input = config->num_input_bits;
     size_t local_correct = 0, local_correct_hash_input = 0;

@@ -47,6 +47,8 @@ class Config {
   bool print_bit_accuracies;
   bool test_mode;
   size_t num_samples;
+  std::string hash3_hex;
+  std::string sample3_hex;
 
  private:
   bool valid_;
