@@ -24,13 +24,19 @@ class SymBitVec(object):
     return self.bits[i]
   
   def __invert__(a):
-    output_bits = [~a[i] for i in range(len(a))]
-    return SymBitVec(output_bits)
+    return SymBitVec([~a[i] for i in range(len(a))])
 
   def __xor__(a, b):
     assert len(a) == len(b)
-    output_bits = [a[i] ^ b[i] for i in range(len(a))]
-    return SymBitVec(output_bits)
+    return SymBitVec([a[i] ^ b[i] for i in range(len(a))])
+  
+  def __and__(a, b):
+    assert len(a) == len(b)
+    return SymBitVec([a[i] & b[i] for i in range(len(a))])
+  
+  def __or__(a, b):
+    assert len(a) == len(b)
+    return SymBitVec([a[i] | b[i] for i in range(len(a))])
   
   def __lshift__(a, n):
     if n == 0:

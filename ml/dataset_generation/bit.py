@@ -54,6 +54,40 @@ class Bit(object):
       Bit.factors.append(Factor(f_type, result, [b]))
 
     return result
+  
+  def __or__(a, b):
+    result_val = a.val | b.val
+    is_rv = a.is_rv or b.is_rv
+    result = Bit(result_val, is_rv)
+
+    if a.is_rv and b.is_rv:
+      f_type = FactorType.OR
+      Bit.factors.append(Factor(f_type, result, [a, b]))
+    elif a.is_rv:
+      f_type = FactorType.OR_C1 if b.val is True else FactorType.OR_C0
+      Bit.factors.append(Factor(f_type, result, [a]))
+    elif b.is_rv:
+      f_type = FactorType.OR_C1 if a.val is True else FactorType.OR_C0
+      Bit.factors.append(Factor(f_type, result, [b]))
+
+    return result
+  
+  def __and__(a, b):
+    result_val = a.val & b.val
+    is_rv = a.is_rv or b.is_rv
+    result = Bit(result_val, is_rv)
+
+    if a.is_rv and b.is_rv:
+      f_type = FactorType.AND
+      Bit.factors.append(Factor(f_type, result, [a, b]))
+    elif a.is_rv:
+      f_type = FactorType.AND_C1 if b.val is True else FactorType.AND_C0
+      Bit.factors.append(Factor(f_type, result, [a]))
+    elif b.is_rv:
+      f_type = FactorType.AND_C1 if a.val is True else FactorType.AND_C0
+      Bit.factors.append(Factor(f_type, result, [b]))
+
+    return result
 
 
 def saveFactors(filename):

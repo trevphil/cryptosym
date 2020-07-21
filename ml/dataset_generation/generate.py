@@ -37,11 +37,13 @@ def sample(nbits):
 
 def hashAlgos():
   return {
-    # 'pseudoHash': pseudo_hashes.PseudoHash(),
+    'pseudoHash': pseudo_hashes.PseudoHash(),
     'xorConst': pseudo_hashes.XorConst(),
     'shiftLeft': pseudo_hashes.ShiftLeft(),
     'shiftRight': pseudo_hashes.ShiftRight(),
-    'invert': pseudo_hashes.Invert()
+    'invert': pseudo_hashes.Invert(),
+    'andConst': pseudo_hashes.AndConst(),
+    'orConst': pseudo_hashes.OrConst()
   }
 
 

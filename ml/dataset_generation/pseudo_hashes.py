@@ -18,6 +18,9 @@ class SymbolicHash(object):
 
   def saveFactors(self, filename):
     saveFactors(filename)
+  
+  def hash(self, hash_input, difficulty):
+    raise NotImplementedError  # Override in sub-classes
 
   def __call__(self, hash_input, difficulty=None):
     """
@@ -27,15 +30,17 @@ class SymbolicHash(object):
     @return
      - The hashed input, as a BitVector
     """
-
-    raise NotImplementedError
-
-"""
-class PseudoHash(SymbolicHash):
-  def __call__(self, hash_input, difficulty=None):
+    
     Bit.reset()
-    hash_input = SymBitVec(hash_input)
+    hash_input = SymBitVec(hash_input, unknown=True)
+    self.input_rv_indices = hash_input.rvIndices()
+    h = self.hash(hash_input, difficulty)
+    self.hash_rv_indices = h.rvIndices()
+    return h
 
+
+class PseudoHash(SymbolicHash):
+  def hash(self, hash_input, difficulty):
     n = len(hash_input)
     A = SymBitVec(BitVector(intVal=0xAC32, size=n))
     B = SymBitVec(BitVector(intVal=0xFFE1, size=n))
@@ -50,46 +55,43 @@ class PseudoHash(SymbolicHash):
     b = (b & c)
     c = (c ^ d)
     h = a | (b << 16) | (c << 32) | (d << 48)
-    
-    self.num_hash_bits = len(h)
-"""
+    return h
+
 
 class XorConst(SymbolicHash):
-  def __call__(self, hash_input, difficulty=None):
-    Bit.reset()
-    hash_input = SymBitVec(hash_input, unknown=True)
-    self.input_rv_indices = hash_input.rvIndices()
-
+  def hash(self, hash_input, difficulty):
     n = len(hash_input)    
     A = BitVector(intVal=0x4F65D4D99B70EF1B, size=n)
     A = SymBitVec(A)
+    return hash_input ^ A
 
-    h = hash_input ^ A
-    self.hash_rv_indices = h.rvIndices()
+
+class AndConst(SymbolicHash):
+  def hash(self, hash_input, difficulty):
+    n = len(hash_input)    
+    A = BitVector(intVal=0x4F65D4D99B70EF1B, size=n)
+    A = SymBitVec(A)
+    return hash_input & A
+
+
+class OrConst(SymbolicHash):
+  def hash(self, hash_input, difficulty):
+    n = len(hash_input)    
+    A = BitVector(intVal=0x4F65D4D99B70EF1B, size=n)
+    A = SymBitVec(A)
+    return hash_input | A
 
 
 class ShiftLeft(SymbolicHash):
-  def __call__(self, hash_input, difficulty=None):
-    Bit.reset()
-    hash_input = SymBitVec(hash_input, unknown=True)
-    self.input_rv_indices = hash_input.rvIndices()
-    h = hash_input << (len(hash_input) // 2)
-    self.hash_rv_indices = h.rvIndices()
+  def hash(self, hash_input, difficulty):
+    return hash_input << (len(hash_input) // 2)
 
 
 class ShiftRight(SymbolicHash):
-  def __call__(self, hash_input, difficulty=None):
-    Bit.reset()
-    hash_input = SymBitVec(hash_input, unknown=True)
-    self.input_rv_indices = hash_input.rvIndices()
-    h = hash_input >> (len(hash_input) // 2)
-    self.hash_rv_indices = h.rvIndices()
+  def hash(self, hash_input, difficulty):
+    return hash_input >> (len(hash_input) // 2)
 
 
 class Invert(SymbolicHash):
-  def __call__(self, hash_input, difficulty=None):
-    Bit.reset()
-    hash_input = SymBitVec(hash_input, unknown=True)
-    self.input_rv_indices = hash_input.rvIndices()
-    h = ~hash_input
-    self.hash_rv_indices = h.rvIndices()
+  def hash(self, hash_input, difficulty):
+    return ~hash_input

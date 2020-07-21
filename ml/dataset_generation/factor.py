@@ -5,12 +5,15 @@ from enum import Enum, unique
 @unique
 class FactorType(Enum):
   AND = 'AND'
+  AND_C0 = 'AND_C0'
+  AND_C1 = 'AND_C1'
   XOR = 'XOR'
   XOR_C0 = 'XOR_C0'
   XOR_C1 = 'XOR_C1'
   OR = 'OR'
+  OR_C0 = 'OR_C0'
+  OR_C1 = 'OR_C1'
   INV = 'INV'
-  SHIFT = 'SHIFT'
 
   @staticmethod
   def numInputs(factor_type):
@@ -19,12 +22,15 @@ class FactorType(Enum):
 
     return {
       FactorType.AND: 2,
+      FactorType.AND_C0: 1,
+      FactorType.AND_C1: 1,
       FactorType.XOR: 2,
       FactorType.XOR_C0: 1,
       FactorType.XOR_C1: 1,
       FactorType.OR: 2,
+      FactorType.OR_C0: 1,
+      FactorType.OR_C1: 1,
       FactorType.INV: 1,
-      FactorType.SHIFT: 1
     }[factor_type]
 
 
