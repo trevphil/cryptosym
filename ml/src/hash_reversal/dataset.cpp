@@ -88,7 +88,7 @@ Dataset::Graph Dataset::loadFactorGraph() const {
 }
 
 bool Dataset::isHashInputBit(size_t bit_index) const {
-  for (const size_t &idx : config_->hash_rv_indices) {
+  for (const size_t &idx : config_->input_rv_indices) {
     if (bit_index == idx) return true;
   }
   return false;

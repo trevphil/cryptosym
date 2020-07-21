@@ -21,40 +21,56 @@ double Probability::probOne(const Factor &factor,
                             const VariableAssignments &assignments) const {
   const double eps = config_->epsilon;
 
-  double output_prob_one = 0.5;
+  double assignment_prob = 0.5;
   const std::string &factor_type = factor.factor_type;
   const auto values = factor.extractInputOutput(assignments);
 
   if (factor_type == "AND") {
-    spdlog::error("NOT IMPLEMENTED");
+    if (values.out == 0) {
+      assignment_prob = values.out == (values.in1 & values.in2) ? 1.0/3.0 : 0.0;
+    } else {
+      assignment_prob = values.out == (values.in1 & values.in2);
+    }
+
+  } else if (factor_type == "AND_C0") {
+    assignment_prob = values.out == 0 ? 0.5 : 0.0;
+
+  } else if (factor_type == "AND_C1") {
+    assignment_prob = values.out == values.in1;
 
   } else if (factor_type == "XOR") {
-    // TODO - Need to represent uncertaintly that 1 = (0 ^ 1) but also 1 = (1 ^ 0) ?
-    output_prob_one = values.out == (values.in1 ^ values.in2);
+    assignment_prob = values.out == (values.in1 ^ values.in2) ? 0.5 : 0.0;
 
   } else if (factor_type == "XOR_C0") {
-    output_prob_one = values.out == values.in1;
+    assignment_prob = values.out == values.in1;
 
   } else if (factor_type == "XOR_C1") {
-    output_prob_one = values.out != values.in1;
+    assignment_prob = values.out != values.in1;
 
   } else if (factor_type == "OR") {
-    spdlog::error("NOT IMPLEMENTED");
+    if (values.out == 0) {
+      assignment_prob = values.out == (values.in1 | values.in2);
+    } else {
+      assignment_prob = values.out == (values.in1 | values.in2) ? 1.0/3.0 : 0.0;
+    }
+
+  } else if (factor_type == "OR_C0") {
+    assignment_prob = values.out == values.in1;
+
+  } else if (factor_type == "OR_C1") {
+    assignment_prob = values.out ? 0.5 : 0.0;
 
   } else if (factor_type == "INV") {
-    output_prob_one = values.out != values.in1;
-
-  } else if (factor_type == "SHIFT") {
-    output_prob_one = values.out == values.in1;
+    assignment_prob = values.out != values.in1;
 
   } else if (factor_type == "PRIOR") {
-    output_prob_one = 0.5;
+    assignment_prob = 0.5;
 
   } else {
     spdlog::error("Unsupported factor: {}", factor_type);
   }
 
-  return std::max(eps, std::min(1.0 - eps, output_prob_one));
+  return std::max(eps, std::min(1.0 - eps, assignment_prob));
 }
 
 }  // end namespace hash_reversal

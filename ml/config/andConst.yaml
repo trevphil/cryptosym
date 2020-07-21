@@ -1,0 +1,7 @@
+lbp_max_iter: 50
+lbp_damping: 0.75
+dataset_dir: "data/andConst"
+epsilon: 0.0001
+print_connections: false
+print_bit_accuracies: true
+test_mode: false
