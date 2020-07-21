@@ -19,7 +19,6 @@
 #include "hash_reversal/factor_graph.hpp"
 #include "hash_reversal/probability.hpp"
 #include "hash_reversal/dataset.hpp"
-#include "utils/convenience.hpp"
 #include "utils/config.hpp"
 
 int main(int argc, char** argv) {
@@ -37,63 +36,54 @@ int main(int argc, char** argv) {
 
   const std::shared_ptr<hash_reversal::Dataset> dataset(
 			new hash_reversal::Dataset(config));
-  if (!dataset->verifyDataset()) {
-    spdlog::error("The dataset does not represent bits correctly, exiting.");
-    return 1;
-  }
-
   const std::shared_ptr<hash_reversal::Probability> prob(
     	new hash_reversal::Probability(config));
-  hash_reversal::FactorGraph factor_graph(prob, config);
+  hash_reversal::FactorGraph factor_graph(prob, dataset, config);
 
   spdlog::info("Checking accuracy on test data...");
   int total_correct = 0;
   int total_count = 0;
-  std::vector<double> num_correct_per_rv(config->num_rvs, 0);
-  std::vector<double> count_per_rv(config->num_rvs, 0);
+  const size_t n = config->num_rvs;
+  const size_t n_input = config->num_input_bits;
+  std::vector<double> num_correct_per_rv(n, 0);
+  std::vector<double> count_per_rv(n, 0);
 
-  const size_t num_test = config->num_samples;
+  const size_t num_test = 1; // config->num_samples;
 
   for (size_t sample_idx = 0; sample_idx < num_test; ++sample_idx) {
     spdlog::info("Test case {}/{}", sample_idx + 1, num_test);
 
-    const auto hash_bits = dataset->getHashBits(sample_idx);
-    const auto hash_str = utils::Convenience::bitset2hex(hash_bits.second);
-    spdlog::info("\tExpected hash: {}", hash_str);
-
-    factor_graph.runLBP(hash_bits.first);
+    const auto observed = dataset->getObservedData(sample_idx);
+    factor_graph.runLBP(observed);
     const auto marginals = factor_graph.marginals();
 
     const auto ground_truth = dataset->getFullSample(sample_idx);
-    const size_t n = config->num_rvs;
-    const size_t n_input = config->num_input_bits;
     size_t local_correct = 0, local_correct_hash_input = 0;
-    double sum_abs_llr = 0;
 
     for (size_t rv = 0; rv < n; ++rv) {
       const auto prediction = marginals.at(rv);
-      const bool guess = prediction.prob_bit_is_one > 0.5 ? true : false;
+      const bool guess = prediction.prob_one > 0.5 ? true : false;
       const bool true_val = ground_truth[rv];
       const bool is_correct = (guess == true_val);
       total_correct += is_correct;
       local_correct += is_correct;
       if (dataset->isHashInputBit(rv)) {
         local_correct_hash_input += is_correct;
+        spdlog::info("RV {0}: predicted {1}, was {2} (prob={3:.30f})",
+                     rv, guess, true_val, prediction.prob_one);
       }
       num_correct_per_rv[rv] += is_correct;
       count_per_rv[rv] += true_val;
-      sum_abs_llr += std::abs(prediction.log_likelihood_ratio);
       total_count++;
     }
 
-    spdlog::info("\tGot {0}/{1} ({2:.2f}%), average abs(LLR) is {3:.3f}", local_correct, n,
-                 100.0 * local_correct / n, sum_abs_llr / n);
+    spdlog::info("\tGot {0}/{1} ({2:.2f}%)", local_correct, n, 100.0 * local_correct / n);
 
-    const double hash_pct_correct = 100.0 * local_correct_hash_input / n_input;
+    const double input_pct_correct = 100.0 * local_correct_hash_input / n_input;
     spdlog::info("\tGot {0}/{1} ({2:.2f}%) hash input bits", local_correct_hash_input, n_input,
-                 hash_pct_correct);
+                 input_pct_correct);
 
-    if (config->test_mode && hash_pct_correct < 90.0) {
+    if (config->test_mode && input_pct_correct < 90.0) {
       spdlog::error("Test case '{}': only {}/{} hash input bits predicted correctly",
                     config->hash_algo, local_correct_hash_input, n_input);
       return 1;
@@ -103,7 +93,7 @@ int main(int argc, char** argv) {
   if (config->print_bit_accuracies) {
     for (size_t rv = 0; rv < config->num_rvs; ++rv) {
       if (rv % 32 == 0 && rv != 0) spdlog::info("-----------------------------");
-      spdlog::info("RV {0}:\taccuracy {1:.2f}%,\tmean {2:.2f}", rv + 1,
+      spdlog::info("RV {0}:\taccuracy {1:.2f}%,\tmean value {2:.2f}", rv,
                    100.0 * num_correct_per_rv[rv] / num_test, count_per_rv[rv] / num_test);
     }
   }

@@ -51,12 +51,40 @@ Dataset::Dataset(std::shared_ptr<utils::Config> config) : config_(config) {
   spdlog::info("Finished loading dataset in {} seconds.", end - start);
 }
 
-std::vector<size_t> Dataset::hashInputBitIndices() const {
-  std::vector<size_t> indices;
-  indices.reserve(config_->num_input_bits);
-  for (size_t i = 0; i < config_->num_input_bits; ++i)
-    indices.push_back(i);
-  return indices;
+Dataset::Graph Dataset::loadFactorGraph() const {
+  std::ifstream data;
+  data.open(config_->graph_file);
+  std::string line;
+
+  const size_t n = config_->num_rvs;
+  std::vector<RandomVariable> rvs(n);
+  std::vector<Factor> factors;
+  factors.reserve(n);
+  for (size_t i = 0; i < n; ++i) {
+    factors.push_back(Factor(i));
+    rvs[i].factor_indices.insert(i);
+  }
+
+  while (std::getline(data, line)) {
+    std::stringstream line_stream(line);
+    std::string tmp;
+
+    std::getline(line_stream, tmp, ';');
+    std::string factor_type = tmp;
+
+    std::getline(line_stream, tmp, ';');
+    const size_t rv_index = std::stoul(tmp);
+    factors[rv_index].factor_type = factor_type;
+
+    while (std::getline(line_stream, tmp, ';')) {
+      const size_t rv_dependency = std::stoul(tmp);
+      factors[rv_index].referenced_rvs.insert(rv_dependency);
+      rvs[rv_dependency].factor_indices.insert(rv_index);
+    }
+  }
+
+  data.close();
+  return {rvs, factors};
 }
 
 bool Dataset::isHashInputBit(size_t bit_index) const {
@@ -65,51 +93,27 @@ bool Dataset::isHashInputBit(size_t bit_index) const {
   return bit_index >= hash_input_lb && bit_index < hash_input_ub;
 }
 
-Dataset::Hash Dataset::getHashBits(size_t sample_index) const {
-  boost::dynamic_bitset<> hash_bits(config_->num_hash_bits);
-  std::vector<VariableAssignment> observed;
+VariableAssignments Dataset::getObservedData(size_t sample_index) const {
+  VariableAssignments observed;
 
   const size_t n = config_->num_rvs;
   const size_t nhash = config_->num_hash_bits;
-  size_t i = nhash - 1;
 
   for (size_t bit_idx = n - nhash; bit_idx < n; ++bit_idx) {
     const auto bitval = samples_.at(bit_idx)[sample_index];
-    observed.push_back(VariableAssignment(bit_idx, bitval));
-    hash_bits[i--] = bitval;
+    observed[bit_idx] = bitval;
   }
-  return {observed, hash_bits};
+
+  return observed;
 }
 
 boost::dynamic_bitset<> Dataset::getFullSample(size_t sample_index) const {
   const size_t n = config_->num_rvs;
   boost::dynamic_bitset<> all_bits(n);
   for (size_t i = 0; i < n; ++i) {
-    all_bits[n - i - 1] = samples_.at(i)[sample_index];
+    all_bits[i] = samples_.at(i)[sample_index];
   }
   return all_bits;
-}
-
-bool Dataset::verifyDataset() const {
-  const std::string expected_hash3 = config_->hash3_hex;
-  const auto hash3 = getHashBits(3).second;
-  const auto hash3_hex = utils::Convenience::bitset2hex(hash3);
-  if (expected_hash3 != hash3_hex) {
-    spdlog::error("Dataset verification:\n\tExpected {}\n\tGot {}",
-                  expected_hash3, hash3_hex);
-    return false;
-  }
-
-  const std::string expected_sample3 = config_->sample3_hex;
-  const auto sample3 = getFullSample(3);
-  const auto sample3_hex = utils::Convenience::bitset2hex(sample3);
-  if (expected_sample3 != sample3_hex) {
-    spdlog::error("Dataset verification:\n\tExpected {}\n\tGot {}",
-                  expected_sample3, sample3_hex);
-    return false;
-  }
-
-  return true;
 }
 
 }  // end namespace hash_reversal

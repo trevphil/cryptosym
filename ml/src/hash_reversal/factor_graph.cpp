@@ -16,25 +16,21 @@
 
 #include <algorithm>
 #include <cmath>
-#include <deque>
-#include <fstream>
 #include <string>
 
 namespace hash_reversal {
 
 FactorGraph::FactorGraph(std::shared_ptr<Probability> prob,
+                         std::shared_ptr<Dataset> dataset,
                          std::shared_ptr<utils::Config> config)
-    : prob_(prob), config_(config) {
+    : prob_(prob), dataset_(dataset), config_(config) {
   spdlog::info("Initializing factor graph...");
   const auto start = utils::Convenience::time_since_epoch();
 
-  setupFactors();
-
-  const size_t n = config_->num_rvs;
-  rv_messages_ = Eigen::MatrixXd::Zero(n, n);
-  factor_messages_ = Eigen::MatrixXd::Zero(n, n);
-  rv_initialization_ = Eigen::VectorXd::Zero(n);
-  factor_initialization_ = Eigen::VectorXd::Zero(n);
+  const auto &graph = dataset_->loadFactorGraph();
+  rvs_ = graph.first;
+  factors_ = graph.second;
+  spdlog::info("\tCreated {} RVs and {} factors.", rvs_.size(), factors_.size());
 
   const auto end = utils::Convenience::time_since_epoch();
   spdlog::info("Finished initializing factor graph in {} seconds.", end - start);
@@ -42,45 +38,22 @@ FactorGraph::FactorGraph(std::shared_ptr<Probability> prob,
   if (config_->print_connections) printConnections();
 }
 
-void FactorGraph::setupFactors() {
-  std::ifstream data;
-  data.open(config_->graph_file);
-  std::string line;
+FactorGraph::Prediction FactorGraph::predict(size_t rv_index) const {
+  Prediction prediction(rv_index, 0.5);
+  double msg0 = 1.0, msg1 = 1.0;
+  const auto &rv = rvs_.at(rv_index);
 
-  const size_t n = config_->num_rvs;
-  rvs_ = std::vector<RandomVariable>(n);
-  factors_ = std::vector<Factor>(n);
-  for (size_t i = 0; i < n; ++i) factors_[i].primary_rv = i;
-
-  while (std::getline(data, line)) {
-    std::stringstream line_stream(line);
-    std::string tmp;
-
-    std::getline(line_stream, tmp, ';');
-    std::string factor_type = tmp;
-
-    std::getline(line_stream, tmp, ';');
-    const size_t rv_index = std::stoul(tmp);
-    factors_[rv_index].factor_type = factor_type;
-    rvs_[rv_index].factor_indices.insert(rv_index);
-
-    while (std::getline(line_stream, tmp, ';')) {
-      const size_t rv_dependency = std::stoul(tmp);
-      factors_[rv_index].rv_dependencies.insert(rv_dependency);
-      rvs_[rv_dependency].factor_indices.insert(rv_index);
-    }
+  for (size_t factor_index : rv.factor_indices) {
+    msg0 *= factors_.at(factor_index).prevMessage(rv_index, 0);
+    msg1 *= factors_.at(factor_index).prevMessage(rv_index, 1);
   }
 
-  data.close();
+  if (msg0 + msg1 == 0) {
+    spdlog::warn("Prediction for RV {} would divide by zero!", rv_index);
+  } else {
+    prediction.prob_one = msg1 / (msg0 + msg1);
+  }
 
-  spdlog::info("\tCreated {} factors and {} RVs.", factors_.size(), rvs_.size());
-}
-
-FactorGraph::Prediction FactorGraph::predict(size_t rv_index) const {
-  FactorGraph::Prediction prediction;
-  double x = rv_initialization_(rv_index) + factor_messages_.col(rv_index).sum();
-  prediction.log_likelihood_ratio = x;
-  prediction.prob_bit_is_one = (x < 0) ? 1 : 0;
   return prediction;
 }
 
@@ -92,40 +65,19 @@ std::vector<FactorGraph::Prediction> FactorGraph::marginals() const {
   return predictions;
 }
 
-void FactorGraph::setupLBP(const std::vector<VariableAssignment> &observed) {
-  spdlog::info("\tSetting up loopy BP...");
-  const size_t n = config_->num_rvs;
-  rv_messages_ = Eigen::MatrixXd::Zero(n, n);
-  factor_messages_ = Eigen::MatrixXd::Zero(n, n);
-  rv_initialization_ = Eigen::VectorXd::Zero(n);
-  factor_initialization_ = Eigen::VectorXd::Zero(n);
-
-  for (size_t i = 0; i < n; ++i) {
-    std::vector<VariableAssignment> relevant;
-    const auto &factor = factors_.at(i);
-    const auto &referenced_rvs = factor.referencedRVs();
-
-    for (const auto &o : observed)
-      if (referenced_rvs.count(o.rv_index) > 0) relevant.push_back(o);
-
-    const double prob_rv_one = prob_->probOne(factor, relevant);
-    rv_initialization_(i) = std::log((1.0 - prob_rv_one) / prob_rv_one);
-  }
-}
-
-void FactorGraph::runLBP(const std::vector<VariableAssignment> &observed) {
-  setupLBP(observed);
-
+void FactorGraph::runLBP(const VariableAssignments &observed) {
   spdlog::info("\tStarting loopy BP...");
   const auto start = utils::Convenience::time_since_epoch();
 
-  size_t itr = 0;
+  size_t itr = 0, forward = 1;
   for (itr = 0; itr < config_->lbp_max_iter; ++itr) {
-    updateFactorMessages();
-    updateRandomVariableMessages();
+    spdlog::info("************** ITER {} ***************", itr);
+    updateRandomVariableMessages(forward);
+    updateFactorMessages(forward, observed);
     const auto &marg = marginals();
     if (equal(previous_marginals_, marg)) break;
     previous_marginals_ = marg;
+    forward = (forward + 1) % 2;
   }
 
   if (itr >= config_->lbp_max_iter) {
@@ -139,55 +91,90 @@ void FactorGraph::runLBP(const std::vector<VariableAssignment> &observed) {
 }
 
 bool FactorGraph::equal(const std::vector<FactorGraph::Prediction> &marginals1,
-                        const std::vector<FactorGraph::Prediction> &marginals2, double tol) const {
+                        const std::vector<FactorGraph::Prediction> &marginals2,
+                        double tol) const {
   const size_t n = marginals1.size();
   if (n != marginals2.size()) return false;
 
   for (size_t i = 0; i < n; ++i) {
-    const double llr1 = marginals1.at(i).log_likelihood_ratio;
-    const double llr2 = marginals2.at(i).log_likelihood_ratio;
-    if (std::abs(llr1 - llr2) > tol) return false;
+    const double p1 = marginals1.at(i).prob_one;
+    const double p2 = marginals2.at(i).prob_one;
+    if (std::abs(p1 - p2) > tol) return false;
   }
 
   return true;
 }
 
-void FactorGraph::updateFactorMessages() {
-  const Eigen::MatrixXd prev_factor_msg(factor_messages_);
+void FactorGraph::updateFactorMessages(bool forward,
+                                       const VariableAssignments &observed) {
+  const size_t num_facs = factors_.size();
+  const double damping = config_->lbp_damping;
 
-  const auto rv_msg_tanh = (rv_messages_ / 2.0).array().tanh().matrix();
-  for (size_t factor_index = 0; factor_index < factors_.size(); ++factor_index) {
-    const auto &factor = factors_.at(factor_index);
-    for (size_t rv_index : factor.rv_dependencies) {
-      double prod = 1.0;
-      for (size_t other_rv_index : factor.rv_dependencies) {
-        if (rv_index != other_rv_index) prod *= rv_msg_tanh(other_rv_index, factor_index);
+  for (size_t i = 0; i < num_facs; ++i) {
+    const size_t factor_index = forward ? i : num_facs - i - 1;
+    auto &factor = factors_.at(factor_index);
+
+    for (size_t to_rv : factor.referenced_rvs) {
+      std::set<size_t> unobserved_indices;
+      for (size_t rv_index : factor.referenced_rvs) {
+        if (observed.count(rv_index) == 0 && rv_index != to_rv) {
+          unobserved_indices.insert(rv_index);
+        }
       }
-      if (std::abs(prod) != 1.0) {
-        factor_messages_(factor_index, rv_index) = 2.0 * std::atanh(prod);
+
+      VariableAssignments assignments = observed;
+      const size_t n = unobserved_indices.size();
+      const size_t num_combinations = 1 << n;
+      double result0 = 0, result1 = 0;
+
+      for (size_t combo = 0; combo < num_combinations; ++combo) {
+        size_t i = 0;
+        for (size_t unobserved_rv_index : unobserved_indices) {
+          assignments[unobserved_rv_index] = (combo >> (i++)) & 1;
+        }
+
+        assignments[to_rv] = false;
+        double message_product0 = prob_->probOne(factor, assignments);
+        assignments[to_rv] = true;
+        double message_product1 = prob_->probOne(factor, assignments);
+
+        for (size_t rv_index : factor.referenced_rvs) {
+          if (rv_index == to_rv) continue;
+          const bool rv_val = assignments[rv_index];
+          message_product0 *= rvs_.at(rv_index).prevMessage(factor_index, rv_val);
+          message_product1 *= rvs_.at(rv_index).prevMessage(factor_index, rv_val);
+        }
+        result0 += message_product0;
+        result1 += message_product1;
       }
+
+      spdlog::info("Updating factor {} message to RV {} = {}",
+                   factor_index, to_rv, result0);
+      factor.updateMessage(to_rv, 0, result0, damping);
+      factor.updateMessage(to_rv, 1, result1, damping);
     }
   }
-
-  const double damping = config_->lbp_damping;
-  factor_messages_ = (factor_messages_ * damping) + (prev_factor_msg * (1 - damping));
 }
 
-void FactorGraph::updateRandomVariableMessages() {
-  const Eigen::MatrixXd prev_rv_msg(rv_messages_);
+void FactorGraph::updateRandomVariableMessages(bool forward) {
+  const size_t num_rvs = config_->num_rvs;
+  const double damping = config_->lbp_damping;
 
-  const auto col_sums = factor_messages_.colwise().sum();
-  for (size_t rv_index = 0; rv_index < rvs_.size(); ++rv_index) {
-    const auto &rv = rvs_.at(rv_index);
-    for (size_t factor_index : rv.factor_indices) {
-      double total = col_sums(rv_index) - factor_messages_(factor_index, rv_index);
-      total += rv_initialization_(rv_index);
-      rv_messages_(rv_index, factor_index) = total;
+  for (size_t i = 0; i < num_rvs; ++i) {
+    const size_t rv_index = forward ? i : num_rvs - i - 1;
+    auto &rv = rvs_.at(rv_index);
+    for (size_t fac_idx : rv.factor_indices) {
+      double result0 = 1.0;
+      double result1 = 1.0;
+      for (size_t other_fac_idx : rv.factor_indices) {
+        if (fac_idx == other_fac_idx) continue;
+        result0 *= factors_.at(other_fac_idx).prevMessage(rv_index, 0);
+        result1 *= factors_.at(other_fac_idx).prevMessage(rv_index, 1);
+      }
+      rv.updateMessage(fac_idx, 0, result0, damping);
+      rv.updateMessage(fac_idx, 1, result1, damping);
     }
   }
-
-  const double damping = config_->lbp_damping;
-  rv_messages_ = (rv_messages_ * damping) + (prev_rv_msg * (1 - damping));
 }
 
 void FactorGraph::printConnections() const {
@@ -196,7 +183,7 @@ void FactorGraph::printConnections() const {
     const auto &rv_neighbors = rvs_.at(i).factor_indices;
     const std::string rv_nb_str = utils::Convenience::set2str<size_t>(rv_neighbors);
     spdlog::info("\tRV {} is referenced by factors {}", i, rv_nb_str);
-    const auto &fac_neighbors = factors_.at(i).rv_dependencies;
+    const auto &fac_neighbors = factors_.at(i).referenced_rvs;
     const std::string fac_nb_str = utils::Convenience::set2str<size_t>(fac_neighbors);
     spdlog::info("\tFactor: RV {} depends on RVs {}", i, fac_nb_str);
   }

@@ -48,8 +48,11 @@ class Convenience {
   }
 
   static std::string bitset2hex(const boost::dynamic_bitset<> &bs) {
-    std::string b;
-    boost::to_string(bs, b);
+    std::string bitset_str;
+    boost::to_string(bs, bitset_str);
+    std::string b(bitset_str);
+    std::reverse(b.begin(), b.end());
+
     std::string out;
 
     for (size_t i = 0; i < b.size(); i += 4) {
@@ -60,7 +63,7 @@ class Convenience {
       }
 
       if (n <= 9) out.push_back('0' + n);
-      else out.push_back('A' + n - 10);
+      else out.push_back('a' + n - 10);
     }
 
     return out;

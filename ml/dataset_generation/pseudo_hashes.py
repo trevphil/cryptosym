@@ -55,16 +55,36 @@ class PseudoHash(SymbolicHash):
     self.num_hash_bits = len(h)
 
 
-class XorHashConst(SymbolicHash):
+class XorConst(SymbolicHash):
   def __call__(self, hash_input, difficulty=None):
-    pass
+    SymBitVec.reset()
+    hash_input = SymBitVec(hash_input)
+    n = len(hash_input)
+    
+    A = BitVector(intVal=0x4F65D4D99B70EF1B, size=n)
+    h = hash_input ^ A
+    self.num_hash_bits = len(h)
 
 
 class ShiftLeft(SymbolicHash):
   def __call__(self, hash_input, difficulty=None):
-    pass
+    SymBitVec.reset()
+    hash_input = SymBitVec(hash_input)
+    h = hash_input << (len(hash_input) // 2)
+    self.num_hash_bits = len(h)
 
 
 class ShiftRight(SymbolicHash):
   def __call__(self, hash_input, difficulty=None):
-    pass
+    SymBitVec.reset()
+    hash_input = SymBitVec(hash_input)
+    h = hash_input >> (len(hash_input) // 2)
+    self.num_hash_bits = len(h)
+
+
+class Invert(SymbolicHash):
+  def __call__(self, hash_input, difficulty=None):
+    SymBitVec.reset()
+    hash_input = SymBitVec(hash_input)
+    h = ~hash_input
+    self.num_hash_bits = len(h)

@@ -12,25 +12,81 @@
 
 #pragma once
 
+#include <spdlog/spdlog.h>
+
 #include <set>
+#include <map>
 #include <string>
+#include <iostream>
+
+#include "hash_reversal/variable_assignments.hpp"
 
 namespace hash_reversal {
 
-struct RandomVariable {
+class FactorGraphNode {
+ public:
+  void updateMessage(size_t to, bool rv_val, double new_msg, double damping) {
+    std::ostringstream key_stream;
+    key_stream << to << "_" << rv_val;
+    const std::string key = key_stream.str();
+
+    if (messages_.count(key) > 0) {
+      const double prev_msg = messages_.at(key);
+      messages_[key] = damping * new_msg + (1.0 - damping) * prev_msg;
+    } else {
+      messages_[key] = new_msg;
+    }
+  }
+
+  double prevMessage(size_t to, bool rv_val) const {
+    std::ostringstream key_stream;
+    key_stream << to << "_" << rv_val;
+    const std::string key = key_stream.str();
+
+    if (messages_.count(key) > 0) {
+      return messages_.at(key);
+    }
+    return 1.0;
+  }
+
+ protected:
+  std::map<std::string, double> messages_;
+};
+
+class RandomVariable : public FactorGraphNode {
+ public:
   std::set<size_t> factor_indices;
 };
 
-struct Factor {
-  std::string factor_type;
-  size_t primary_rv;
-  std::set<size_t> rv_dependencies;
+class Factor : public FactorGraphNode {
+ public:
+  struct Values {
+    bool in1, in2, out;
+  };
 
-  std::set<size_t> referencedRVs() const {
-    std::set<size_t> referenced = rv_dependencies;
-    referenced.insert(primary_rv);
-    return referenced;
+  Factor(size_t rv) : factor_type("PRIOR"), output_rv(rv) {
+    referenced_rvs.insert(rv);
   }
+
+  Values extractInputOutput(const VariableAssignments &assignments) const {
+    Values v;
+    bool did_set_in1 = false;
+    for (size_t rv_index : referenced_rvs) {
+      if (rv_index == output_rv) {
+        v.out = assignments.at(rv_index);
+      } else if (!did_set_in1) {
+        v.in1 = assignments.at(rv_index);
+        did_set_in1 = true;
+      } else {
+        v.in2 = assignments.at(rv_index);
+      }
+    }
+    return v;
+  }
+
+  std::string factor_type;
+  size_t output_rv;
+  std::set<size_t> referenced_rvs;
 };
 
 } // end namespace hash_reversal

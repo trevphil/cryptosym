@@ -12,12 +12,10 @@
 
 #pragma once
 
+#include <map>
+
 namespace hash_reversal {
 
-struct VariableAssignment {
-  VariableAssignment(size_t rv_idx, bool v) : rv_index(rv_idx), value(v) {}
-  size_t rv_index;
-  bool value;
-};
+typedef std::map<size_t, bool> VariableAssignments;
 
 }  // end namespace hash_reversal

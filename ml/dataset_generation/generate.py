@@ -5,10 +5,13 @@ import random
 import argparse
 import yaml
 import numpy as np
+import networkx as nx
 from pathlib import Path
 from BitVector import BitVector
+from matplotlib import pyplot as plt
 
 from dataset_generation import pseudo_hashes
+from dataset_generation.factor import Factor
 
 
 """
@@ -35,9 +38,10 @@ def sample(nbits):
 def hashAlgos():
   return {
     'pseudoHash': pseudo_hashes.PseudoHash(),
-    'xorHashConst': pseudo_hashes.XorHashConst(),
+    'xorConst': pseudo_hashes.XorConst(),
     'shiftLeft': pseudo_hashes.ShiftLeft(),
-    'shiftRight': pseudo_hashes.ShiftRight()
+    'shiftRight': pseudo_hashes.ShiftRight(),
+    'invert': pseudo_hashes.Invert()
   }
 
 
@@ -59,6 +63,8 @@ def main():
                       help='Choose the hashing algorithm to apply to the input data')
   parser.add_argument('--difficulty', type=int, default=64,
                       help='SHA-256 difficulty (an interger between 1 and 64 inclusive)')
+  parser.add_argument('--visualize', type=bool, default=False,
+                      help='Visualize the symbolic graph of bit dependencies')
   args = parser.parse_args()
 
   num_input_bits = args.num_input_bits
@@ -95,8 +101,8 @@ def main():
     algo(hash_input, difficulty=args.difficulty)
     bitvec = algo.bits()
     if sample_idx == 3:
-      sample3 = hex(int(bitvec))[2:].upper()
-      hash3 = hex(int(bitvec[-nhash:]))[2:].upper()
+      sample3 = hex(int(bitvec))[2:]
+      hash3 = hex(int(bitvec[-nhash:]))[2:]
     # The MSB (left-most) of the BitVector will go in the left-most column of `data`
     data[N - sample_idx - 1, :] = bitvec
 
@@ -126,6 +132,10 @@ def main():
 
   print('Generated dataset with {} samples (hash={}, {} input bits).'.format(
     N, args.hash_algo, num_input_bits))
+  
+  if args.visualize:
+    nx.draw(Factor.DIRECTED_GRAPH, node_size=50, with_labels=True)
+    plt.show()
 
 
 if __name__ == '__main__':

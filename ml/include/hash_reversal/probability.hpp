@@ -13,12 +13,13 @@
 #pragma once
 
 #include <boost/dynamic_bitset.hpp>
+#include <spdlog/spdlog.h>
 #include <memory>
 #include <vector>
 
 #include "utils/config.hpp"
 #include "hash_reversal/factor.hpp"
-#include "hash_reversal/variable_assignment.hpp"
+#include "hash_reversal/variable_assignments.hpp"
 
 namespace hash_reversal {
 
@@ -27,7 +28,7 @@ class Probability {
   explicit Probability(std::shared_ptr<utils::Config> config);
 
   double probOne(const Factor &factor,
-                 const std::vector<VariableAssignment> &observed_neighbors) const;
+                 const VariableAssignments &observed) const;
 
  private:
   std::shared_ptr<utils::Config> config_;
