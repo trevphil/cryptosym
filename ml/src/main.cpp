@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
   std::vector<double> num_correct_per_rv(n, 0);
   std::vector<double> count_per_rv(n, 0);
 
-  const size_t num_test = 1; // config->num_samples;
+  const size_t num_test = config->num_samples;
 
   for (size_t sample_idx = 0; sample_idx < num_test; ++sample_idx) {
     spdlog::info("Test case {}/{}", sample_idx + 1, num_test);
@@ -56,6 +56,7 @@ int main(int argc, char** argv) {
     const auto observed = dataset->getObservedData(sample_idx);
     factor_graph.runLBP(observed);
     const auto marginals = factor_graph.marginals();
+    boost::dynamic_bitset<> predicted_input(n_input);
 
     const auto ground_truth = dataset->getFullSample(sample_idx);
     size_t local_correct = 0, local_correct_hash_input = 0;
@@ -69,12 +70,14 @@ int main(int argc, char** argv) {
       local_correct += is_correct;
       if (dataset->isHashInputBit(rv)) {
         local_correct_hash_input += is_correct;
+        predicted_input[prediction.rv_index] = guess;
       }
       num_correct_per_rv[rv] += is_correct;
       count_per_rv[rv] += true_val;
       total_count++;
     }
 
+    spdlog::info("\tPredicted input: {}", utils::Convenience::bitset2hex(predicted_input));
     spdlog::info("\tGot {0}/{1} ({2:.2f}%)", local_correct, n, 100.0 * local_correct / n);
 
     const double input_pct_correct = 100.0 * local_correct_hash_input / n_input;
