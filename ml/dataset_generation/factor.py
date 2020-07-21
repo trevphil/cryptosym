@@ -15,8 +15,7 @@ class FactorType(Enum):
   @staticmethod
   def numInputs(factor_type):
     if not (factor_type in FactorType):
-      print('Invalid factor type: {}'.format(factor_type))
-      raise NotImplementedError
+      raise NotImplementedError('Invalid factor type: {}'.format(factor_type))
 
     return {
       FactorType.AND: 2,
@@ -30,30 +29,27 @@ class FactorType(Enum):
 
 
 class Factor(object):
-  DIRECTED_GRAPH = nx.DiGraph()
-  
+  directed_graph = nx.DiGraph()
+
   @staticmethod
   def reset():
-    Factor.DIRECTED_GRAPH = nx.DiGraph()
+    Factor.directed_graph = nx.DiGraph()
 
-  def __init__(self, factor_type, out, in1, in2=None):
+  def __init__(self, factor_type, out, inputs=[]):
     self.n_inputs = FactorType.numInputs(factor_type)
-    if self.n_inputs == 2 and in2 is None:
-      raise RuntimeError('Factor {} requires two inputs'.format(factor_type.value))
-    elif self.n_inputs == 1 and in2 is not None:
-      raise RuntimeError('{} requires 1 input'.format(factor_type.value))
+    if self.n_inputs != len(inputs):
+      err_msg = 'Factor {} requires {} input(s), given {}'.format(factor_type.value, self.n_inputs, len(inputs))
+      raise RuntimeError(err_msg)
 
     self.factor_type = factor_type
     self.out = out
-    self.in1 = in1
-    Factor.DIRECTED_GRAPH.add_edge(in1, out)
-
-    if in2 is not None:
-      self.in2 = in2
-      Factor.DIRECTED_GRAPH.add_edge(in2, out)
+    self.inputs = inputs
+    for inp in inputs:
+      Factor.directed_graph.add_edge(inp.index, out.index)
 
   def __str__(self):
-    s = '{};{};{}'.format(self.factor_type.value, self.out, self.in1)
-    if self.n_inputs > 1:
-      s += ';{}'.format(self.in2)
-    return s
+    if len(self.inputs) == 0:
+      return '{};{}'.format(self.factor_type.value, self.out.index)
+    else:
+      input_str = ';'.join(str(inp.index) for inp in self.inputs)
+      return '{};{};{}'.format(self.factor_type.value, self.out.index, input_str)

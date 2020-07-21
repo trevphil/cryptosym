@@ -42,7 +42,8 @@ class FactorGraph {
 
  private:
   Prediction predict(size_t rv_index) const;
-  void updateFactorMessages(bool forward, const VariableAssignments &observed);
+  void reset();
+  void updateFactorMessages(bool forward);
   void updateRandomVariableMessages(bool forward);
   void printConnections() const;
   bool equal(const std::vector<Prediction> &marginals1,
@@ -55,6 +56,7 @@ class FactorGraph {
   std::vector<RandomVariable> rvs_;
   std::vector<Factor> factors_;
   std::vector<Prediction> previous_marginals_;
+  VariableAssignments observed_;
 };
 
 }  // end namespace hash_reversal

@@ -18,12 +18,12 @@ Probability::Probability(std::shared_ptr<utils::Config> config) : config_(config
 }
 
 double Probability::probOne(const Factor &factor,
-                            const VariableAssignments &observed) const {
+                            const VariableAssignments &assignments) const {
   const double eps = config_->epsilon;
 
   double output_prob_one = 0.5;
   const std::string &factor_type = factor.factor_type;
-  const auto values = factor.extractInputOutput(observed);
+  const auto values = factor.extractInputOutput(assignments);
 
   if (factor_type == "AND") {
     spdlog::error("NOT IMPLEMENTED");

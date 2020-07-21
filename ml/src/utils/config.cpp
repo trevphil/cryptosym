@@ -177,39 +177,26 @@ void Config::loadDatasetParameters() {
     spdlog::info("{} --> {}", param, num_samples);
   }
 
-  param = "num_hash_bits";
+  param = "hash_rv_indices";
   if (!data[param]) {
     valid_ = false;
     spdlog::error("Missing '{}'", param);
   } else {
-    num_hash_bits = data[param].as<size_t>();
-    spdlog::info("{} --> {}", param, num_hash_bits);
+    hash_rv_indices = data[param].as<std::vector<size_t>>();
+    spdlog::info("{} --> {}", param, utils::Convenience::vec2str<size_t>(hash_rv_indices));
   }
 
-  param = "num_input_bits";
+  param = "input_rv_indices";
   if (!data[param]) {
     valid_ = false;
     spdlog::error("Missing '{}'", param);
   } else {
-    num_input_bits = data[param].as<size_t>();
-    spdlog::info("{} --> {}", param, num_input_bits);
-  }
-
-  param = "num_internal_bits";
-  if (!data[param]) {
-    valid_ = false;
-    spdlog::error("Missing '{}'", param);
-  } else {
-    num_internal_bits = data[param].as<size_t>();
-    spdlog::info("{} --> {}", param, num_internal_bits);
+    input_rv_indices = data[param].as<std::vector<size_t>>();
+    spdlog::info("{} --> {}", param, utils::Convenience::vec2str<size_t>(input_rv_indices));
   }
 }
 
 void Config::validateParameters() {
-  if (num_rvs != num_hash_bits + num_input_bits + num_internal_bits) {
-    valid_ = false;
-    spdlog::error("Number of RVs should equal # hash bits + # input bits + # internals");
-  }
   if (num_samples % 8 != 0) {
     valid_ = false;
     spdlog::error("Number of samples is not a multiple of 8");

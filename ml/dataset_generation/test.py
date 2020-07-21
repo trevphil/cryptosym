@@ -14,5 +14,5 @@ if __name__ == '__main__':
 
   saveFactors('factors.txt')
 
-  nx.draw(Factor.DIRECTED_GRAPH, node_size=10, with_labels=False)
+  nx.draw(Factor.directed_graph, node_size=10, with_labels=False)
   plt.show()

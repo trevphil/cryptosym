@@ -1,21 +1,20 @@
 # -*- coding: utf-8 -*-
 from BitVector import BitVector
 
-from dataset_generation.symbolic import SymBitVec, saveFactors
+from dataset_generation.bit import Bit, saveFactors
+from dataset_generation.sym_bit_vec import SymBitVec
 
 
 class SymbolicHash(object):
   def __init__(self):
-    self.num_hash_bits = -1
+    self.input_rv_indices = []
+    self.hash_rv_indices = []
 
   def numVars(self):
-    return SymBitVec.RV_INDEX
+    return Bit.rv_index
   
-  def numHashBits(self):
-    return self.num_hash_bits
-  
-  def bits(self):
-    return SymBitVec.BITS
+  def allBits(self):
+    return BitVector(bitlist=[bool(bit.val) for bit in Bit.rv_bits])
 
   def saveFactors(self, filename):
     saveFactors(filename)
@@ -31,10 +30,10 @@ class SymbolicHash(object):
 
     raise NotImplementedError
 
-
+"""
 class PseudoHash(SymbolicHash):
   def __call__(self, hash_input, difficulty=None):
-    SymBitVec.reset()
+    Bit.reset()
     hash_input = SymBitVec(hash_input)
 
     n = len(hash_input)
@@ -53,38 +52,44 @@ class PseudoHash(SymbolicHash):
     h = a | (b << 16) | (c << 32) | (d << 48)
     
     self.num_hash_bits = len(h)
-
+"""
 
 class XorConst(SymbolicHash):
   def __call__(self, hash_input, difficulty=None):
-    SymBitVec.reset()
-    hash_input = SymBitVec(hash_input)
-    n = len(hash_input)
-    
+    Bit.reset()
+    hash_input = SymBitVec(hash_input, unknown=True)
+    self.input_rv_indices = hash_input.rvIndices()
+
+    n = len(hash_input)    
     A = BitVector(intVal=0x4F65D4D99B70EF1B, size=n)
+    A = SymBitVec(A)
+
     h = hash_input ^ A
-    self.num_hash_bits = len(h)
+    self.hash_rv_indices = h.rvIndices()
 
 
 class ShiftLeft(SymbolicHash):
   def __call__(self, hash_input, difficulty=None):
-    SymBitVec.reset()
-    hash_input = SymBitVec(hash_input)
+    Bit.reset()
+    hash_input = SymBitVec(hash_input, unknown=True)
+    self.input_rv_indices = hash_input.rvIndices()
     h = hash_input << (len(hash_input) // 2)
-    self.num_hash_bits = len(h)
+    self.hash_rv_indices = h.rvIndices()
 
 
 class ShiftRight(SymbolicHash):
   def __call__(self, hash_input, difficulty=None):
-    SymBitVec.reset()
-    hash_input = SymBitVec(hash_input)
+    Bit.reset()
+    hash_input = SymBitVec(hash_input, unknown=True)
+    self.input_rv_indices = hash_input.rvIndices()
     h = hash_input >> (len(hash_input) // 2)
-    self.num_hash_bits = len(h)
+    self.hash_rv_indices = h.rvIndices()
 
 
 class Invert(SymbolicHash):
   def __call__(self, hash_input, difficulty=None):
-    SymBitVec.reset()
-    hash_input = SymBitVec(hash_input)
+    Bit.reset()
+    hash_input = SymBitVec(hash_input, unknown=True)
+    self.input_rv_indices = hash_input.rvIndices()
     h = ~hash_input
-    self.num_hash_bits = len(h)
+    self.hash_rv_indices = h.rvIndices()

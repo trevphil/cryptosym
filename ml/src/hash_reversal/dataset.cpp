@@ -88,18 +88,16 @@ Dataset::Graph Dataset::loadFactorGraph() const {
 }
 
 bool Dataset::isHashInputBit(size_t bit_index) const {
-  const size_t hash_input_lb = 0;
-  const size_t hash_input_ub = config_->num_input_bits;
-  return bit_index >= hash_input_lb && bit_index < hash_input_ub;
+  for (const size_t &idx : config_->hash_rv_indices) {
+    if (bit_index == idx) return true;
+  }
+  return false;
 }
 
 VariableAssignments Dataset::getObservedData(size_t sample_index) const {
   VariableAssignments observed;
 
-  const size_t n = config_->num_rvs;
-  const size_t nhash = config_->num_hash_bits;
-
-  for (size_t bit_idx = n - nhash; bit_idx < n; ++bit_idx) {
+  for (const size_t &bit_idx : config_->hash_rv_indices) {
     const auto bitval = samples_.at(bit_idx)[sample_index];
     observed[bit_idx] = bitval;
   }

@@ -37,7 +37,7 @@ def sample(nbits):
 
 def hashAlgos():
   return {
-    'pseudoHash': pseudo_hashes.PseudoHash(),
+    # 'pseudoHash': pseudo_hashes.PseudoHash(),
     'xorConst': pseudo_hashes.XorConst(),
     'shiftLeft': pseudo_hashes.ShiftLeft(),
     'shiftRight': pseudo_hashes.ShiftRight(),
@@ -85,24 +85,24 @@ def main():
   algo = hash_algos[args.hash_algo]
   algo(sample(num_input_bits), difficulty=args.difficulty)
   n = algo.numVars()
-  nhash = algo.numHashBits()
+  input_indices = algo.input_rv_indices
+  hash_indices = algo.hash_rv_indices
 
   print('Saving hash function symbolically as a factor graph...')
   algo.saveFactors(graph_file)
 
   print('Allocating data...')
   data = np.zeros((N, n), dtype=bool)
-  hash3 = None
-  sample3 = None
+  example_hash = None
+  example_sample = None
 
   print('Populating data...')
   for sample_idx in range(N):
     hash_input = sample(num_input_bits)
     algo(hash_input, difficulty=args.difficulty)
-    bitvec = algo.bits()
-    if sample_idx == 3:
-      sample3 = hex(int(bitvec))[2:]
-      hash3 = hex(int(bitvec[-nhash:]))[2:]
+    bitvec = algo.allBits()
+    if example_sample is None:
+      example_sample = hex(int(bitvec))[2:]
     # The MSB (left-most) of the BitVector will go in the left-most column of `data`
     data[N - sample_idx - 1, :] = bitvec
 
@@ -117,24 +117,22 @@ def main():
     'hash': args.hash_algo,
     'num_rvs': n,
     'num_samples': N,
-    'num_hash_bits': nhash,
-    'num_input_bits': num_input_bits,
-    'num_internal_bits': n - num_input_bits - nhash,
-    'hash3_hex': hash3,
-    'sample3_hex': sample3
+    'input_rv_indices': input_indices,
+    'hash_rv_indices': hash_indices,
+    'example_sample': example_sample
   }
   
   if algo == 'sha256':
     params.update({'difficulty': args.difficulty})
 
   with open(params_file, 'w') as f:
-    yaml.dump(params, f)
+    yaml.dump(params, f, default_flow_style=None)
 
   print('Generated dataset with {} samples (hash={}, {} input bits).'.format(
     N, args.hash_algo, num_input_bits))
   
   if args.visualize:
-    nx.draw(Factor.DIRECTED_GRAPH, node_size=50, with_labels=True)
+    nx.draw(Factor.directed_graph, node_size=50, with_labels=True)
     plt.show()
 
 

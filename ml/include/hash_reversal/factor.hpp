@@ -17,7 +17,7 @@
 #include <set>
 #include <map>
 #include <string>
-#include <iostream>
+#include <utility>
 
 #include "hash_reversal/variable_assignments.hpp"
 
@@ -26,10 +26,7 @@ namespace hash_reversal {
 class FactorGraphNode {
  public:
   void updateMessage(size_t to, bool rv_val, double new_msg, double damping) {
-    std::ostringstream key_stream;
-    key_stream << to << "_" << rv_val;
-    const std::string key = key_stream.str();
-
+    const std::pair<size_t, bool> key = {to, rv_val};
     if (messages_.count(key) > 0) {
       const double prev_msg = messages_.at(key);
       messages_[key] = damping * new_msg + (1.0 - damping) * prev_msg;
@@ -39,18 +36,17 @@ class FactorGraphNode {
   }
 
   double prevMessage(size_t to, bool rv_val) const {
-    std::ostringstream key_stream;
-    key_stream << to << "_" << rv_val;
-    const std::string key = key_stream.str();
-
-    if (messages_.count(key) > 0) {
-      return messages_.at(key);
-    }
+    const std::pair<size_t, bool> key = {to, rv_val};
+    if (messages_.count(key) > 0) return messages_.at(key);
     return 1.0;
   }
 
+  void reset() {
+    messages_.clear();
+  }
+
  protected:
-  std::map<std::string, double> messages_;
+  std::map<std::pair<size_t, double>, double> messages_;
 };
 
 class RandomVariable : public FactorGraphNode {

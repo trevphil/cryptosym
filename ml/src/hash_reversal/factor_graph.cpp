@@ -39,6 +39,10 @@ FactorGraph::FactorGraph(std::shared_ptr<Probability> prob,
 }
 
 FactorGraph::Prediction FactorGraph::predict(size_t rv_index) const {
+  for (const auto itr : observed_) {
+    if (itr.first == rv_index) return Prediction(rv_index, itr.second ? 1.0 : 0.0);
+  }
+
   Prediction prediction(rv_index, 0.5);
   double msg0 = 1.0, msg1 = 1.0;
   const auto &rv = rvs_.at(rv_index);
@@ -65,15 +69,24 @@ std::vector<FactorGraph::Prediction> FactorGraph::marginals() const {
   return predictions;
 }
 
+void FactorGraph::reset() {
+  observed_.clear();
+  previous_marginals_.clear();
+  for (auto &rv : rvs_) rv.reset();
+  for (auto &factor : factors_) factor.reset();
+}
+
 void FactorGraph::runLBP(const VariableAssignments &observed) {
   spdlog::info("\tStarting loopy BP...");
   const auto start = utils::Convenience::time_since_epoch();
 
+  reset();
+  observed_ = observed;
+
   size_t itr = 0, forward = 1;
   for (itr = 0; itr < config_->lbp_max_iter; ++itr) {
-    spdlog::info("************** ITER {} ***************", itr);
     updateRandomVariableMessages(forward);
-    updateFactorMessages(forward, observed);
+    updateFactorMessages(forward);
     const auto &marg = marginals();
     if (equal(previous_marginals_, marg)) break;
     previous_marginals_ = marg;
@@ -105,8 +118,7 @@ bool FactorGraph::equal(const std::vector<FactorGraph::Prediction> &marginals1,
   return true;
 }
 
-void FactorGraph::updateFactorMessages(bool forward,
-                                       const VariableAssignments &observed) {
+void FactorGraph::updateFactorMessages(bool forward) {
   const size_t num_facs = factors_.size();
   const double damping = config_->lbp_damping;
 
@@ -117,12 +129,12 @@ void FactorGraph::updateFactorMessages(bool forward,
     for (size_t to_rv : factor.referenced_rvs) {
       std::set<size_t> unobserved_indices;
       for (size_t rv_index : factor.referenced_rvs) {
-        if (observed.count(rv_index) == 0 && rv_index != to_rv) {
+        if (observed_.count(rv_index) == 0 && rv_index != to_rv) {
           unobserved_indices.insert(rv_index);
         }
       }
 
-      VariableAssignments assignments = observed;
+      VariableAssignments assignments = observed_;
       const size_t n = unobserved_indices.size();
       const size_t num_combinations = 1 << n;
       double result0 = 0, result1 = 0;
@@ -148,8 +160,6 @@ void FactorGraph::updateFactorMessages(bool forward,
         result1 += message_product1;
       }
 
-      spdlog::info("Updating factor {} message to RV {} = {}",
-                   factor_index, to_rv, result0);
       factor.updateMessage(to_rv, 0, result0, damping);
       factor.updateMessage(to_rv, 1, result1, damping);
     }

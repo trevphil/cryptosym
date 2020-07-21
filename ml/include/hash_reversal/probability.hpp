@@ -28,7 +28,7 @@ class Probability {
   explicit Probability(std::shared_ptr<utils::Config> config);
 
   double probOne(const Factor &factor,
-                 const VariableAssignments &observed) const;
+                 const VariableAssignments &assignments) const;
 
  private:
   std::shared_ptr<utils::Config> config_;

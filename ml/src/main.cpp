@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
   int total_correct = 0;
   int total_count = 0;
   const size_t n = config->num_rvs;
-  const size_t n_input = config->num_input_bits;
+  const size_t n_input = config->input_rv_indices.size();
   std::vector<double> num_correct_per_rv(n, 0);
   std::vector<double> count_per_rv(n, 0);
 
@@ -69,8 +69,6 @@ int main(int argc, char** argv) {
       local_correct += is_correct;
       if (dataset->isHashInputBit(rv)) {
         local_correct_hash_input += is_correct;
-        spdlog::info("RV {0}: predicted {1}, was {2} (prob={3:.30f})",
-                     rv, guess, true_val, prediction.prob_one);
       }
       num_correct_per_rv[rv] += is_correct;
       count_per_rv[rv] += true_val;
