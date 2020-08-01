@@ -52,11 +52,12 @@ class LossyPseudoHash(SymbolicHash):
     B = SymBitVec(BitVector(intVal=0xFFE1, size=n))
     C = SymBitVec(BitVector(intVal=0xBF09, size=n))
     D = SymBitVec(BitVector(intVal=0xBEEF, size=n))
+    mask = SymBitVec(BitVector(intVal=0xFFFF, size=n))
 
-    a = (hash_input >> 0 ) ^ A
-    b = (hash_input >> 16) ^ B
-    c = (hash_input >> 32) ^ C
-    d = (hash_input >> 48) ^ D
+    a = ((hash_input >> 0 ) & mask) ^ A
+    b = ((hash_input >> 16) & mask) ^ B
+    c = ((hash_input >> 32) & mask) ^ C
+    d = ((hash_input >> 48) & mask) ^ D
     a = (a | b)
     b = (b & c)
     c = (c ^ d)
