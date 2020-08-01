@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from BitVector import BitVector
 
+from dataset_generation import nsha256
 from dataset_generation.bit import Bit, saveFactors
 from dataset_generation.sym_bit_vec import SymBitVec
 
@@ -39,7 +40,12 @@ class SymbolicHash(object):
     return h
 
 
-class PseudoHash(SymbolicHash):
+class SHA256Hash(SymbolicHash):
+  def hash(self, hash_input, difficulty):
+    return nsha256.SHA256(hash_input).digest()
+
+
+class LossyPseudoHash(SymbolicHash):
   def hash(self, hash_input, difficulty):
     n = len(hash_input)
     A = SymBitVec(BitVector(intVal=0xAC32, size=n))
@@ -54,6 +60,23 @@ class PseudoHash(SymbolicHash):
     a = (a | b)
     b = (b & c)
     c = (c ^ d)
+    h = a | (b << 16) | (c << 32) | (d << 48)
+    return h
+
+
+class NonLossyPseudoHash(SymbolicHash):
+  def hash(self, hash_input, difficulty):
+    n = len(hash_input)
+    A = SymBitVec(BitVector(intVal=0xAC32, size=n))
+    B = SymBitVec(BitVector(intVal=0xFFE1, size=n))
+    C = SymBitVec(BitVector(intVal=0xBF09, size=n))
+    D = SymBitVec(BitVector(intVal=0xBEEF, size=n))
+    
+    mask = SymBitVec(BitVector(intVal=0xFFFF, size=n))
+    a = ((hash_input >> 0 ) & mask) ^ A
+    b = ((hash_input >> 16) & mask) ^ B
+    c = ((hash_input >> 32) & mask) ^ C
+    d = ((hash_input >> 48) & mask) ^ D
     h = a | (b << 16) | (c << 32) | (d << 48)
     return h
 

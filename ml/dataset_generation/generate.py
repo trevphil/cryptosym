@@ -37,7 +37,9 @@ def sample(nbits):
 
 def hashAlgos():
   return {
-    'pseudoHash': pseudo_hashes.PseudoHash(),
+    'sha256': pseudo_hashes.SHA256Hash(),
+    'lossyPseudoHash': pseudo_hashes.LossyPseudoHash(),
+    'nonLossyPseudoHash': pseudo_hashes.NonLossyPseudoHash(),
     'xorConst': pseudo_hashes.XorConst(),
     'shiftLeft': pseudo_hashes.ShiftLeft(),
     'shiftRight': pseudo_hashes.ShiftRight(),
@@ -67,7 +69,23 @@ def main():
                       help='SHA-256 difficulty (an interger between 1 and 64 inclusive)')
   parser.add_argument('--visualize', type=bool, default=False,
                       help='Visualize the symbolic graph of bit dependencies')
+  parser.add_argument('--hash-input', type=str, default=None,
+                      help='Give input message in hex to simply print the hash of the input')
   args = parser.parse_args()
+
+  if args.hash_input is not None:
+    print('Computing {} hash for: {}\n'.format(args.hash_algo, args.hash_input))
+    num = int(args.hash_input, 16)
+    input_bv = BitVector(intVal=num, size=args.num_input_bits)
+    algo = hash_algos[args.hash_algo]
+    algo(input_bv, difficulty=args.difficulty)
+    hash_indices = algo.hash_rv_indices
+    hash_output = BitVector(size=len(hash_indices))
+    bitvec = algo.allBits()
+    for i, bit_index in enumerate(hash_indices):
+      hash_output[i] = bitvec[bit_index]
+    print(hex(int(hash_output))[2:])
+    return
 
   num_input_bits = args.num_input_bits
   N = int(8 * round(args.num_samples / 8))  # number of samples
@@ -95,7 +113,6 @@ def main():
 
   print('Allocating data...')
   data = np.zeros((N, n), dtype=bool)
-  example_hash = None
   example_sample = None
 
   print('Populating data...')

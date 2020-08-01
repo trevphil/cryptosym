@@ -88,6 +88,44 @@ class Bit(object):
       Bit.factors.append(Factor(f_type, result, [b]))
 
     return result
+  
+  @staticmethod
+  def add(a, b, carry=None):
+    if carry is None:
+      carry = Bit(0, False)
+
+    out = int(a.val) + int(b.val) + int(carry.val)
+    result_val = bool(out & 1)
+    carry_out_val = bool((out >> 1) & 1)
+    
+    is_rv = a.is_rv or b.is_rv or carry.is_rv
+    result = Bit(result_val, is_rv)
+
+    f_types = {
+      tuple(): FactorType.ADD,
+      (False, ): FactorType.ADD_C0,
+      (True, ): FactorType.ADD_C1,
+      (False, False): FactorType.ADD_C00,
+      (False, True): FactorType.ADD_C01,
+      (True, False): FactorType.ADD_C10,
+      (True, True): FactorType.ADD_C11
+    }
+
+    inputs = [x for x in [a, b, carry] if x.is_rv]
+    fixed = [x for x in [a, b, carry] if not x.is_rv]
+
+    # TODO - Need to make a factor for the carry?
+    carry_out_is_rv = len(inputs) > 0
+    if len(inputs) == 1 and fixed[0].val == False and fixed[1].val == False:
+      carry_out_is_rv = False # The single unknown input cannot cause carry_out to be 1
+    carry_out = Bit(carry_out_val, carry_out_is_rv)
+
+    if len(inputs) > 0:
+      key = tuple(sorted([x.val for x in fixed]))
+      f_type = f_types[key]
+      Bit.factors.append(Factor(f_type, result, inputs))
+
+    return result, carry
 
 
 def saveFactors(filename):

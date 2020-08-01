@@ -16,6 +16,17 @@ class SymBitVec(object):
   
   def rvIndices(self):
     return [bit.index for bit in self.bits if bit.is_rv]
+  
+  def hex(self):
+    return hex(int(self))[2:].lower()
+  
+  def concat(self, other):
+    new_bits = self.bits + other.bits
+    return SymBitVec(new_bits)
+
+  def extract(self, lower_bound, upper_bound):
+    new_bits = self.bits[lower_bound:upper_bound]
+    return SymBitVec(new_bits)
 
   def __len__(self):
     return len(self.bits)
@@ -23,6 +34,13 @@ class SymBitVec(object):
   def __getitem__(self, i):
     return self.bits[i]
   
+  def __int__(self):
+    n = len(self)
+    bv = BitVector(size=n)
+    for i in range(n):
+      bv[i] = self.bits[i].val
+    return int(bv)
+
   def __invert__(a):
     return SymBitVec([~a[i] for i in range(len(a))])
 
@@ -51,4 +69,7 @@ class SymBitVec(object):
     output_bits = deepcopy(a.bits[:-n])
     output_bits = [Bit(0, False) for _ in range(n)] + output_bits
     return SymBitVec(output_bits)
+
+  def __add__(a, b):
+    raise NotImplementedError
   

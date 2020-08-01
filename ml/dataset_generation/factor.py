@@ -14,6 +14,13 @@ class FactorType(Enum):
   OR_C0 = 'OR_C0'
   OR_C1 = 'OR_C1'
   INV = 'INV'
+  ADD = 'ADD'
+  ADD_C0 = 'ADD_C0'
+  ADD_C1 = 'ADD_C1'
+  ADD_C00 = 'ADD_C00'
+  ADD_C01 = 'ADD_C01'
+  ADD_C10 = 'ADD_C10'
+  ADD_C11 = 'ADD_C11'
 
   @staticmethod
   def numInputs(factor_type):
@@ -31,6 +38,13 @@ class FactorType(Enum):
       FactorType.OR_C0: 1,
       FactorType.OR_C1: 1,
       FactorType.INV: 1,
+      FactorType.ADD: 3,
+      FactorType.ADD_C0: 2,
+      FactorType.ADD_C1: 2,
+      FactorType.ADD_C00: 1,
+      FactorType.ADD_C01: 1,
+      FactorType.ADD_C10: 1,
+      FactorType.ADD_C11: 1,
     }[factor_type]
 
 

@@ -14,6 +14,7 @@
 
 #include <boost/dynamic_bitset.hpp>
 
+#include <string>
 #include <utility>
 #include <memory>
 #include <vector>
@@ -33,6 +34,8 @@ class Dataset {
   Graph loadFactorGraph() const;
 
   bool isHashInputBit(size_t bit_index) const;
+
+  std::string getHash(size_t sample_index) const;
 
   VariableAssignments getObservedData(size_t sample_index) const;
 
