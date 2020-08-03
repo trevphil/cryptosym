@@ -133,11 +133,14 @@ class SHA256:
     for item in self._h[1:]:
       result = result.concat(item)
     
-    hex_digest = result.hex()
-    if hex_digest != self._expected_digest:
-      raise RuntimeError('Expected {}, got {}'.format(
-        self._expected_digest, hex_digest))
-    else:
-      print('Hashes match: {}'.format(hex_digest))
+    if self._difficulty == 64:
+      # Running the "true" SHA-256 algo, so make sure result is correct
+      hex_digest = result.hex()
+      hex_digest = ('0' * (64 - len(hex_digest))) + hex_digest
+      if hex_digest != self._expected_digest:
+        raise RuntimeError('Expected {}, got {}'.format(
+          self._expected_digest, hex_digest))
+      else:
+        print('Hashes match: {}'.format(hex_digest))
 
     return result

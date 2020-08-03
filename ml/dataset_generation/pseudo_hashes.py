@@ -42,7 +42,7 @@ class SymbolicHash(object):
 
 class SHA256Hash(SymbolicHash):
   def hash(self, hash_input, difficulty):
-    return nsha256.SHA256(hash_input).digest()
+    return nsha256.SHA256(hash_input, difficulty=difficulty).digest()
 
 
 class LossyPseudoHash(SymbolicHash):

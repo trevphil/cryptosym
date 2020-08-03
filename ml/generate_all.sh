@@ -2,7 +2,7 @@
 
 set -e
 
-# python -m dataset_generation.generate --num-samples 8 --num-input-bits 64 --hash-algo sha256 --difficulty 1
+python -m dataset_generation.generate --num-samples 16 --num-input-bits 512 --hash-algo sha256 --difficulty 1
 
 python -m dataset_generation.generate --num-samples 64 --num-input-bits 64 --hash-algo invert
 
