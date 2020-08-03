@@ -94,6 +94,15 @@ bool Dataset::isHashInputBit(size_t bit_index) const {
   return false;
 }
 
+std::string Dataset::getHashInput(size_t sample_index) const {
+  const size_t n = config_->input_rv_indices.size();
+  boost::dynamic_bitset<> input_bits(n);
+  for (size_t i = 0; i < n; ++i) {
+    input_bits[i] = samples_.at(config_->input_rv_indices.at(i))[sample_index];
+  }
+  return utils::Convenience::bitset2hex(input_bits);
+}
+
 std::string Dataset::getHash(size_t sample_index) const {
   const size_t n = config_->hash_rv_indices.size();
   boost::dynamic_bitset<> hash_bits(n);

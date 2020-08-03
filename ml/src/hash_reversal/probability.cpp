@@ -27,19 +27,19 @@ double Probability::probOne(const Factor &factor,
 
   if (factor_type == "AND") {
     if (values.out == 0) {
-      assignment_prob = values.out == (values.in1 & values.in2) ? 1.0/3.0 : 0.0;
+      assignment_prob = values.out == (values.in1 & values.in2) ? 1.0/3.0 : 0;
     } else {
       assignment_prob = values.out == (values.in1 & values.in2);
     }
 
   } else if (factor_type == "AND_C0") {
-    assignment_prob = values.out == 0 ? 0.5 : 0.0;
+    assignment_prob = values.out == 0 ? 0.5 : 0;
 
   } else if (factor_type == "AND_C1") {
     assignment_prob = values.out == values.in1;
 
   } else if (factor_type == "XOR") {
-    assignment_prob = values.out == (values.in1 ^ values.in2) ? 0.5 : 0.0;
+    assignment_prob = values.out == (values.in1 ^ values.in2) ? 0.5 : 0;
 
   } else if (factor_type == "XOR_C0") {
     assignment_prob = values.out == values.in1;
@@ -51,17 +51,65 @@ double Probability::probOne(const Factor &factor,
     if (values.out == 0) {
       assignment_prob = values.out == (values.in1 | values.in2);
     } else {
-      assignment_prob = values.out == (values.in1 | values.in2) ? 1.0/3.0 : 0.0;
+      assignment_prob = values.out == (values.in1 | values.in2) ? 1.0/3.0 : 0;
     }
 
   } else if (factor_type == "OR_C0") {
     assignment_prob = values.out == values.in1;
 
   } else if (factor_type == "OR_C1") {
-    assignment_prob = values.out ? 0.5 : 0.0;
+    assignment_prob = values.out ? 0.5 : 0;
 
   } else if (factor_type == "INV") {
     assignment_prob = values.out != values.in1;
+
+  } else if (factor_type == "ADD") {
+    const int out = int(values.in1) + int(values.in2) + int(values.in3);
+    assignment_prob = values.out == bool(out & 1) ? 0.25 : 0;
+
+  } else if (factor_type == "ADD_C0") {
+    const int sum = int(values.in1) + int(values.in2);
+    assignment_prob = values.out == bool(sum & 1) ? 0.5 : 0;
+
+  } else if (factor_type == "ADD_C1") {
+    const int sum = int(values.in1) + int(values.in2);
+    assignment_prob = values.out != bool(sum & 1) ? 0.5 : 0;
+
+  } else if (factor_type == "ADD_C00") {
+    assignment_prob = values.out == values.in1;
+
+  } else if (factor_type == "ADD_C01") {
+    assignment_prob = values.out != values.in1;
+
+  } else if (factor_type == "ADD_C11") {
+    assignment_prob = values.out == values.in1;
+
+  } else if (factor_type == "ADD_CARRY") {
+    const int out = int(values.in1) + int(values.in2) + int(values.in3);
+    assignment_prob = values.out == bool((out >> 1) & 1) ? 0.25 : 0;
+
+  } else if (factor_type == "ADD_CARRY_C0") {
+    const bool carry = ((int(values.in1) + int(values.in2)) >> 1) & 1;
+    if (values.out == 0) {
+      // The two unknown inputs could be (0, 0), (0, 1), or (1, 0) for carry=0
+      assignment_prob = values.out == carry ? 1.0/3.0 : 0;
+    } else {
+      // The two unknown inputs can only be (1, 1) for carry to be = 1
+      assignment_prob = values.out == carry ? 1.0 : 0;
+    }
+
+  } else if (factor_type == "ADD_CARRY_C1") {
+    const bool carry = ((int(values.in1) + int(values.in2)) >> 1) & 1;
+    if (values.out == 0) {
+      // Both unknown inputs must have been (0, 0) for carry to be = 0
+      assignment_prob = values.out == carry ? 1.0 : 0;
+    } else {
+      // Unknown inputs could be (0, 1), (1, 0), or (1, 1) for carry=1
+      assignment_prob = values.out == carry ? 1.0/3.0 : 0;
+    }
+
+  } else if (factor_type == "ADD_CARRY_C01") {
+    assignment_prob = values.out == values.in1;
 
   } else if (factor_type == "PRIOR") {
     assignment_prob = 0.5;

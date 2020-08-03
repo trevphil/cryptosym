@@ -35,6 +35,8 @@ class Dataset {
 
   bool isHashInputBit(size_t bit_index) const;
 
+  std::string getHashInput(size_t sample_index) const;
+
   std::string getHash(size_t sample_index) const;
 
   VariableAssignments getObservedData(size_t sample_index) const;

@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <vector>
+#include <string>
 
 #include "utils/config.hpp"
 #include "utils/convenience.hpp"
@@ -39,6 +40,8 @@ class FactorGraph {
   void runLBP(const VariableAssignments &observed);
 
   std::vector<Prediction> marginals() const;
+
+  std::string factorType(size_t rv_index) const;
 
  private:
   Prediction predict(size_t rv_index) const;

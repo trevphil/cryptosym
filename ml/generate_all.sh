@@ -19,3 +19,7 @@ python -m dataset_generation.generate --num-samples 64 --num-input-bits 64 --has
 python -m dataset_generation.generate --num-samples 64 --num-input-bits 64 --hash-algo orConst
 
 python -m dataset_generation.generate --num-samples 64 --num-input-bits 64 --hash-algo andConst
+
+python -m dataset_generation.generate --num-samples 64 --num-input-bits 64 --hash-algo addConst
+
+python -m dataset_generation.generate --num-samples 64 --num-input-bits 64 --hash-algo add

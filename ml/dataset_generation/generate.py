@@ -45,7 +45,9 @@ def hashAlgos():
     'shiftRight': pseudo_hashes.ShiftRight(),
     'invert': pseudo_hashes.Invert(),
     'andConst': pseudo_hashes.AndConst(),
-    'orConst': pseudo_hashes.OrConst()
+    'orConst': pseudo_hashes.OrConst(),
+    'addConst': pseudo_hashes.AddConst(),
+    'add': pseudo_hashes.Add(),
   }
 
 
@@ -67,7 +69,7 @@ def main():
                       help='Choose the hashing algorithm to apply to the input data')
   parser.add_argument('--difficulty', type=int, default=64,
                       help='SHA-256 difficulty (an interger between 1 and 64 inclusive)')
-  parser.add_argument('--visualize', type=bool, default=False,
+  parser.add_argument('--visualize', action='store_true',
                       help='Visualize the symbolic graph of bit dependencies')
   parser.add_argument('--hash-input', type=str, default=None,
                       help='Give input message in hex to simply print the hash of the input')

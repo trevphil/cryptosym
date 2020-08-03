@@ -82,27 +82,44 @@ class NonLossyPseudoHash(SymbolicHash):
     return h
 
 
+class AddConst(SymbolicHash):
+  def hash(self, hash_input, difficulty):
+    n = len(hash_input)    
+    A = SymBitVec(BitVector(intVal=0x4F65D4D99B70EF1B, size=n))
+    return hash_input + A
+
+
+class Add(SymbolicHash):
+  def hash(self, hash_input, difficulty):
+    n = len(hash_input)
+    half_n = n // 2
+    mask = SymBitVec(BitVector(intVal=(1 << half_n) - 1, size=n))
+    a = (hash_input & mask)
+    b = (hash_input >> half_n) & mask
+    out = (a + b) & mask
+    inv_input = ~hash_input
+    h = (inv_input & (mask << half_n)) | out
+    return h
+
+
 class XorConst(SymbolicHash):
   def hash(self, hash_input, difficulty):
     n = len(hash_input)    
-    A = BitVector(intVal=0x4F65D4D99B70EF1B, size=n)
-    A = SymBitVec(A)
+    A = SymBitVec(BitVector(intVal=0x4F65D4D99B70EF1B, size=n))
     return hash_input ^ A
 
 
 class AndConst(SymbolicHash):
   def hash(self, hash_input, difficulty):
     n = len(hash_input)    
-    A = BitVector(intVal=0x4F65D4D99B70EF1B, size=n)
-    A = SymBitVec(A)
+    A = SymBitVec(BitVector(intVal=0x4F65D4D99B70EF1B, size=n))
     return hash_input & A
 
 
 class OrConst(SymbolicHash):
   def hash(self, hash_input, difficulty):
     n = len(hash_input)    
-    A = BitVector(intVal=0x4F65D4D99B70EF1B, size=n)
-    A = SymBitVec(A)
+    A = SymBitVec(BitVector(intVal=0x4F65D4D99B70EF1B, size=n))
     return hash_input | A
 
 

@@ -69,6 +69,10 @@ std::vector<FactorGraph::Prediction> FactorGraph::marginals() const {
   return predictions;
 }
 
+std::string FactorGraph::factorType(size_t rv_index) const {
+  return factors_.at(rv_index).factor_type;
+}
+
 void FactorGraph::reset() {
   observed_.clear();
   previous_marginals_.clear();

@@ -71,5 +71,11 @@ class SymBitVec(object):
     return SymBitVec(output_bits)
 
   def __add__(a, b):
-    raise NotImplementedError
-  
+    n = len(a)
+    assert n == len(b)
+    carry = None
+    output_bits = []
+    for i in reversed(range(n)):
+      out, carry = Bit.add(a[i], b[i], carry)
+      output_bits = [out] + output_bits
+    return SymBitVec(output_bits)

@@ -107,25 +107,39 @@ class Bit(object):
       (True, ): FactorType.ADD_C1,
       (False, False): FactorType.ADD_C00,
       (False, True): FactorType.ADD_C01,
-      (True, False): FactorType.ADD_C10,
       (True, True): FactorType.ADD_C11
+    }
+    
+    carry_out_f_types = {
+      tuple(): FactorType.ADD_CARRY,
+      (False, ): FactorType.ADD_CARRY_C0,
+      (True, ): FactorType.ADD_CARRY_C1,
+      # Case where two fixed inputs are (False, False) is excluded, carry=0
+      (False, True): FactorType.ADD_CARRY_C01,
+      # Case where two fixed inputs are (True, True) is excluded, carry=1
     }
 
     inputs = [x for x in [a, b, carry] if x.is_rv]
     fixed = [x for x in [a, b, carry] if not x.is_rv]
 
-    # TODO - Need to make a factor for the carry?
-    carry_out_is_rv = len(inputs) > 0
-    if len(inputs) == 1 and fixed[0].val == False and fixed[1].val == False:
-      carry_out_is_rv = False # The single unknown input cannot cause carry_out to be 1
+    carry_out_is_rv = is_rv
+    if len(inputs) == 1:
+      if fixed[0].val == False and fixed[1].val == False:
+        carry_out_is_rv = False # The single unknown input cannot cause carry_out to be 1
+      elif fixed[0].val == True and fixed[1].val == True:
+        carry_out_is_rv = False # The single unknown input cannot cause carry_out to be 0
     carry_out = Bit(carry_out_val, carry_out_is_rv)
 
-    if len(inputs) > 0:
+    if is_rv:
       key = tuple(sorted([x.val for x in fixed]))
       f_type = f_types[key]
       Bit.factors.append(Factor(f_type, result, inputs))
+      # Another factor may be created for the carry bit
+      if carry_out_is_rv:
+        carry_out_f_type = carry_out_f_types[key]
+        Bit.factors.append(Factor(carry_out_f_type, carry_out, inputs))
 
-    return result, carry
+    return result, carry_out
 
 
 def saveFactors(filename):

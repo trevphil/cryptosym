@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
   std::vector<double> num_correct_per_rv(n, 0);
   std::vector<double> count_per_rv(n, 0);
 
-  const size_t num_test = 1; // config->num_samples;
+  const size_t num_test = 16; // config->num_samples;
 
   for (size_t sample_idx = 0; sample_idx < num_test; ++sample_idx) {
     spdlog::info("Test case {}/{}", sample_idx + 1, num_test);
@@ -77,6 +77,7 @@ int main(int argc, char** argv) {
       total_count++;
     }
 
+    spdlog::info("\tInput          : {}", dataset->getHashInput(sample_idx));
     spdlog::info("\tPredicted input: {}", utils::Convenience::bitset2hex(predicted_input));
     spdlog::info("\tHash           : {}", dataset->getHash(sample_idx));
 
@@ -94,8 +95,10 @@ int main(int argc, char** argv) {
 
   if (config->print_bit_accuracies) {
     for (const size_t &rv : config->input_rv_indices) {
-      spdlog::info("RV {0}:\taccuracy {1:.2f}%,\tmean value {2:.2f}", rv,
-                   100.0 * num_correct_per_rv[rv] / num_test, count_per_rv[rv] / num_test);
+      spdlog::info("RV {0} ({1}):\taccuracy {2:.2f}%,\tmean value {3:.2f}",
+                   rv, factor_graph.factorType(rv),
+                   100.0 * num_correct_per_rv[rv] / num_test,
+                   count_per_rv[rv] / num_test);
     }
   }
 
