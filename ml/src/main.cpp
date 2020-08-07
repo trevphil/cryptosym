@@ -48,7 +48,8 @@ int main(int argc, char** argv) {
   std::vector<double> num_correct_per_rv(n, 0);
   std::vector<double> count_per_rv(n, 0);
 
-  const size_t num_test = 16; // config->num_samples;
+  const size_t num_test = std::min<size_t>(config->num_test,
+                                           config->num_samples);
 
   for (size_t sample_idx = 0; sample_idx < num_test; ++sample_idx) {
     spdlog::info("Test case {}/{}", sample_idx + 1, num_test);
@@ -63,14 +64,14 @@ int main(int argc, char** argv) {
 
     for (size_t rv = 0; rv < n; ++rv) {
       const auto prediction = marginals.at(rv);
-      const bool guess = prediction.prob_one > 0.5 ? true : false;
+      const bool predicted_val = prediction.prob_one > 0.5 ? true : false;
       const bool true_val = ground_truth[rv];
-      const bool is_correct = (guess == true_val);
+      const bool is_correct = (predicted_val == true_val);
       total_correct += is_correct;
       local_correct += is_correct;
       if (dataset->isHashInputBit(rv)) {
         local_correct_hash_input += is_correct;
-        predicted_input[prediction.rv_index] = guess;
+        predicted_input[prediction.rv_index] = predicted_val;
       }
       num_correct_per_rv[rv] += is_correct;
       count_per_rv[rv] += true_val;

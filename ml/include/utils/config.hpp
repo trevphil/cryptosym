@@ -48,6 +48,7 @@ class Config {
   bool print_bit_accuracies;
   bool test_mode;
   size_t num_samples;
+  size_t num_test;
 
  private:
   bool valid_;

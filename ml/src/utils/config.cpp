@@ -93,6 +93,15 @@ void Config::loadYAML(const std::string &config_file) {
     spdlog::info("{} --> {}", param, epsilon);
   }
 
+  param = "num_test";
+  if (!data[param]) {
+    valid_ = false;
+    spdlog::error("Missing '{}'", param);
+  } else {
+    num_test = data[param].as<size_t>();
+    spdlog::info("{} --> {}", param, num_test);
+  }
+
   param = "print_connections";
   if (!data[param]) {
     valid_ = false;

@@ -88,58 +88,20 @@ class Bit(object):
       Bit.factors.append(Factor(f_type, result, [b]))
 
     return result
-  
+
   @staticmethod
-  def add(a, b, carry=None):
-    if carry is None:
-      carry = Bit(0, False)
+  def add(a, b, carry_in=None):
+    if carry_in is None:
+      carry_in = Bit(0, False)
 
-    out = int(a.val) + int(b.val) + int(carry.val)
-    result_val = bool(out & 1)
-    carry_out_val = bool((out >> 1) & 1)
+    sum1 = a ^ b
+    carry1 = a & b
     
-    is_rv = a.is_rv or b.is_rv or carry.is_rv
-    result = Bit(result_val, is_rv)
+    sum2 = carry_in ^ sum1
+    carry2 = carry_in & sum1
 
-    f_types = {
-      tuple(): FactorType.ADD,
-      (False, ): FactorType.ADD_C0,
-      (True, ): FactorType.ADD_C1,
-      (False, False): FactorType.ADD_C00,
-      (False, True): FactorType.ADD_C01,
-      (True, True): FactorType.ADD_C11
-    }
-    
-    carry_out_f_types = {
-      tuple(): FactorType.ADD_CARRY,
-      (False, ): FactorType.ADD_CARRY_C0,
-      (True, ): FactorType.ADD_CARRY_C1,
-      # Case where two fixed inputs are (False, False) is excluded, carry=0
-      (False, True): FactorType.ADD_CARRY_C01,
-      # Case where two fixed inputs are (True, True) is excluded, carry=1
-    }
-
-    inputs = [x for x in [a, b, carry] if x.is_rv]
-    fixed = [x for x in [a, b, carry] if not x.is_rv]
-
-    carry_out_is_rv = is_rv
-    if len(inputs) == 1:
-      if fixed[0].val == False and fixed[1].val == False:
-        carry_out_is_rv = False # The single unknown input cannot cause carry_out to be 1
-      elif fixed[0].val == True and fixed[1].val == True:
-        carry_out_is_rv = False # The single unknown input cannot cause carry_out to be 0
-    carry_out = Bit(carry_out_val, carry_out_is_rv)
-
-    if is_rv:
-      key = tuple(sorted([x.val for x in fixed]))
-      f_type = f_types[key]
-      Bit.factors.append(Factor(f_type, result, inputs))
-      # Another factor may be created for the carry bit
-      if carry_out_is_rv:
-        carry_out_f_type = carry_out_f_types[key]
-        Bit.factors.append(Factor(carry_out_f_type, carry_out, inputs))
-
-    return result, carry_out
+    carry_out = carry1 | carry2
+    return sum2, carry_out
 
 
 def saveFactors(filename):

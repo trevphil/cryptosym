@@ -23,7 +23,7 @@ class SymbolicHash(object):
   def hash(self, hash_input, difficulty):
     raise NotImplementedError  # Override in sub-classes
 
-  def __call__(self, hash_input, difficulty=None):
+  def __call__(self, hash_input, difficulty=1):
     """
     @parameter
      - hash_input: A BitVector
@@ -48,37 +48,44 @@ class SHA256Hash(SymbolicHash):
 class LossyPseudoHash(SymbolicHash):
   def hash(self, hash_input, difficulty):
     n = len(hash_input)
-    A = SymBitVec(BitVector(intVal=0xAC32, size=n))
-    B = SymBitVec(BitVector(intVal=0xFFE1, size=n))
-    C = SymBitVec(BitVector(intVal=0xBF09, size=n))
-    D = SymBitVec(BitVector(intVal=0xBEEF, size=n))
-    mask = SymBitVec(BitVector(intVal=0xFFFF, size=n))
+    n4 = n // 4
 
-    a = ((hash_input >> 0 ) & mask) ^ A
-    b = ((hash_input >> 16) & mask) ^ B
-    c = ((hash_input >> 32) & mask) ^ C
-    d = ((hash_input >> 48) & mask) ^ D
-    a = (a | b)
-    b = (b & c)
-    c = (c ^ d)
-    h = a | (b << 16) | (c << 32) | (d << 48)
+    A = SymBitVec(BitVector(intVal=0xAC32DEA362872, size=n))
+    B = SymBitVec(BitVector(intVal=0xFFE1BEEF14301, size=n))
+    C = SymBitVec(BitVector(intVal=0xBF09CDEA82901, size=n))
+    D = SymBitVec(BitVector(intVal=0xBEEFDEEDABBA2, size=n))
+    mask = SymBitVec(BitVector(intVal=(1 << n4) - 1, size=n))
+    h = hash_input
+
+    for _ in range(difficulty):
+      a = ((h >> (n4 * 0)) & mask) ^ A
+      b = ((h >> (n4 * 1)) & mask) ^ B
+      c = ((h >> (n4 * 2)) & mask) ^ C
+      d = ((h >> (n4 * 3)) & mask) ^ D
+      a = (a | b)
+      b = (b & c)
+      c = (c ^ d)
+      h = a | (b << (n4 * 1)) | (c << (n4 * 2)) | (d << (n4 * 3))
     return h
 
 
 class NonLossyPseudoHash(SymbolicHash):
   def hash(self, hash_input, difficulty):
     n = len(hash_input)
-    A = SymBitVec(BitVector(intVal=0xAC32, size=n))
-    B = SymBitVec(BitVector(intVal=0xFFE1, size=n))
-    C = SymBitVec(BitVector(intVal=0xBF09, size=n))
-    D = SymBitVec(BitVector(intVal=0xBEEF, size=n))
-    
-    mask = SymBitVec(BitVector(intVal=0xFFFF, size=n))
-    a = ((hash_input >> 0 ) & mask) ^ A
-    b = ((hash_input >> 16) & mask) ^ B
-    c = ((hash_input >> 32) & mask) ^ C
-    d = ((hash_input >> 48) & mask) ^ D
-    h = a | (b << 16) | (c << 32) | (d << 48)
+    n4 = n // 4
+    A = SymBitVec(BitVector(intVal=0xAC32DEA362872, size=n))
+    B = SymBitVec(BitVector(intVal=0xFFE1BEEF14301, size=n))
+    C = SymBitVec(BitVector(intVal=0xBF09CDEA82901, size=n))
+    D = SymBitVec(BitVector(intVal=0xBEEFDEEDABBA2, size=n))
+    mask = SymBitVec(BitVector(intVal=(1 << n4) - 1, size=n))
+    h = hash_input
+
+    for _ in range(difficulty):
+      a = ((h >> (n4 * 0)) & mask) ^ A
+      b = ((h >> (n4 * 1)) & mask) ^ B
+      c = ((h >> (n4 * 2)) & mask) ^ C
+      d = ((h >> (n4 * 3)) & mask) ^ D
+      h = a | (b << (n4 * 1)) | (c << (n4 * 2)) | (d << (n4 * 3))
     return h
 
 

@@ -1,6 +1,6 @@
 lbp_max_iter: 50
 lbp_damping: 0.75
-dataset_dir: "data/shiftRight"
+dataset_dir: "data/sha256"
 epsilon: 0.0001
 num_test: 10
 print_connections: false

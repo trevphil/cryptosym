@@ -14,19 +14,6 @@ class FactorType(Enum):
   OR_C0 = 'OR_C0'
   OR_C1 = 'OR_C1'
   INV = 'INV'
-  # ADDITION...
-  ADD = 'ADD'
-  ADD_C0 = 'ADD_C0'
-  ADD_C1 = 'ADD_C1'
-  ADD_C00 = 'ADD_C00'
-  ADD_C01 = 'ADD_C01'
-  ADD_C11 = 'ADD_C11'
-  # ADDITION (carry bit)...
-  ADD_CARRY = 'ADD_CARRY'
-  ADD_CARRY_C0 = 'ADD_CARRY_C0'
-  ADD_CARRY_C1 = 'ADD_CARRY_C1'
-  # Case ADD_CARRY_C00 (carry=0) and ADD_CARRY_C11 (carry=1) excluded, carry is known
-  ADD_CARRY_C01 = 'ADD_CARRY_C01'
 
   @staticmethod
   def numInputs(factor_type):
@@ -44,19 +31,6 @@ class FactorType(Enum):
       FactorType.OR_C0: 1,
       FactorType.OR_C1: 1,
       FactorType.INV: 1,
-      # ADDITION...
-      FactorType.ADD: 3,
-      FactorType.ADD_C0: 2,
-      FactorType.ADD_C1: 2,
-      FactorType.ADD_C00: 1,
-      FactorType.ADD_C01: 1,
-      FactorType.ADD_C11: 1,
-      # ADDITION (carry bit)...
-      FactorType.ADD_CARRY: 3,
-      FactorType.ADD_CARRY_C0: 2,
-      FactorType.ADD_CARRY_C1: 2,
-      # Case ADD_CARRY_C00 (carry=0) and ADD_CARRY_C11 (carry=1) excluded, carry is known
-      FactorType.ADD_CARRY_C01: 1,
     }[factor_type]
 
 
