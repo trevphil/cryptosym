@@ -40,54 +40,80 @@ class Bit(object):
 
   def __xor__(a, b):
     result_val = a.val ^ b.val
-    is_rv = a.is_rv or b.is_rv
-    result = Bit(result_val, is_rv)
 
     if a.is_rv and b.is_rv:
+      result = Bit(result_val, True)
       f_type = FactorType.XOR
       Bit.factors.append(Factor(f_type, result, [a, b]))
+      return result
     elif a.is_rv:
-      f_type = FactorType.XOR_C1 if b.val is True else FactorType.XOR_C0
-      Bit.factors.append(Factor(f_type, result, [a]))
+      if b.val is False:
+        # XOR with a constant of 0 is simply the other input
+        return a
+      else:
+        # XOR with a constant of 1 is the inverse of the other input
+        return ~a
     elif b.is_rv:
-      f_type = FactorType.XOR_C1 if a.val is True else FactorType.XOR_C0
-      Bit.factors.append(Factor(f_type, result, [b]))
-
-    return result
+      if a.val is False:
+        # XOR with a constant of 0 is simply the other input
+        return b
+      else:
+        # XOR with a constant of 1 is the inverse of the other input
+        return ~b
+    else:
+      # Both are constants
+      return Bit(result_val, False)
   
   def __or__(a, b):
     result_val = a.val | b.val
-    is_rv = a.is_rv or b.is_rv
-    result = Bit(result_val, is_rv)
+
+    # If OR-ing with a constant of 1, result will be always be 1
+    if not a.is_rv and a.val is True:
+      return Bit(result_val, False)
+    elif not b.is_rv and b.val is True:
+      return Bit(result_val, False)
 
     if a.is_rv and b.is_rv:
       f_type = FactorType.OR
+      result = Bit(result_val, True)
       Bit.factors.append(Factor(f_type, result, [a, b]))
+      return result
     elif a.is_rv:
-      f_type = FactorType.OR_C1 if b.val is True else FactorType.OR_C0
-      Bit.factors.append(Factor(f_type, result, [a]))
+      # Here, "b" is a constant equal to 0, so result is directly "a"
+      return a
     elif b.is_rv:
-      f_type = FactorType.OR_C1 if a.val is True else FactorType.OR_C0
-      Bit.factors.append(Factor(f_type, result, [b]))
-
-    return result
+      # Here, "a" is a constant equal to 0, so result is directly "b"
+      return b
+    else:
+      # Both are constants
+      return Bit(result_val, False)
   
   def __and__(a, b):
     result_val = a.val & b.val
+    
+    # If AND-ing with a constant of 0, result will always be 0
+    if not a.is_rv and a.val is False:
+      return Bit(result_val, False)
+    elif not b.is_rv and b.val is False:
+      return Bit(result_val, False)
+
     is_rv = a.is_rv or b.is_rv
     result = Bit(result_val, is_rv)
 
     if a.is_rv and b.is_rv:
       f_type = FactorType.AND
+      result = Bit(result_val, True)
       Bit.factors.append(Factor(f_type, result, [a, b]))
+      return result
     elif a.is_rv:
-      f_type = FactorType.AND_C1 if b.val is True else FactorType.AND_C0
-      Bit.factors.append(Factor(f_type, result, [a]))
+      # Here, "b" is a constant equal to 1, so result is directly "a"
+      return a
     elif b.is_rv:
-      f_type = FactorType.AND_C1 if a.val is True else FactorType.AND_C0
-      Bit.factors.append(Factor(f_type, result, [b]))
-
-    return result
+      # Here, "a" is a constant equal to 1, so result is directly "b"
+      return b
+    else:
+      # Both are constants
+      return Bit(result_val, False)
 
   @staticmethod
   def add(a, b, carry_in=None):

@@ -86,7 +86,10 @@ def main():
     bitvec = algo.allBits()
     for i, bit_index in enumerate(hash_indices):
       hash_output[i] = bitvec[bit_index]
-    print(hex(int(hash_output))[2:])
+
+    digest_str = hex(int(hash_output))[2:]
+    pad = '0' * (len(hash_output) // 4 - len(digest_str))
+    print(pad + digest_str)
     return
 
   num_input_bits = args.num_input_bits
