@@ -15,6 +15,7 @@
 #include <spdlog/spdlog.h>
 
 #include <fstream>
+#include <iostream>
 
 namespace hash_reversal {
 
@@ -103,15 +104,6 @@ std::string Dataset::getHashInput(size_t sample_index) const {
   return utils::Convenience::bitset2hex(input_bits);
 }
 
-std::string Dataset::getHash(size_t sample_index) const {
-  const size_t n = config_->hash_rv_indices.size();
-  boost::dynamic_bitset<> hash_bits(n);
-  for (size_t i = 0; i < n; ++i) {
-    hash_bits[i] = samples_.at(config_->hash_rv_indices.at(i))[sample_index];
-  }
-  return utils::Convenience::bitset2hex(hash_bits);
-}
-
 VariableAssignments Dataset::getObservedData(size_t sample_index) const {
   VariableAssignments observed;
 
@@ -121,6 +113,31 @@ VariableAssignments Dataset::getObservedData(size_t sample_index) const {
   }
 
   return observed;
+}
+
+bool Dataset::validate(const boost::dynamic_bitset<> predicted_input,
+                       size_t sample_index) const {
+  const std::string pred_in = utils::Convenience::bitset2hex(predicted_input);
+  const std::string true_in = getHashInput(sample_index);
+  std::ostringstream cmd;
+  cmd << "python -m dataset_generation.generate";
+  cmd << " --num-input-bits " << predicted_input.size();
+  cmd << " --hash-algo " << config_->hash_algo;
+  cmd << " --difficulty " << config_->difficulty;
+  cmd << " --hash-input ";
+
+  const std::string pred_hash = utils::Convenience::exec(cmd.str() + pred_in);
+  const std::string true_hash = utils::Convenience::exec(cmd.str() + true_in);
+
+  if (pred_hash == true_hash) {
+    spdlog::info("Hashes match: {}", pred_hash, true_hash);
+    return true;
+  }
+
+  spdlog::info("\tHashes do not match!");
+  spdlog::info("\t\tPrediction gave {}", pred_hash);
+  spdlog::info("\t\tCorrect hash is {}", true_hash);
+  return false;
 }
 
 boost::dynamic_bitset<> Dataset::getFullSample(size_t sample_index) const {

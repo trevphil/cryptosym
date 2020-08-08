@@ -57,7 +57,7 @@ class RandomVariable : public FactorGraphNode {
 class Factor : public FactorGraphNode {
  public:
   struct Values {
-    bool in1, in2, in3, out;
+    bool in1, in2, out;
   };
 
   Factor(size_t rv) : factor_type("PRIOR"), output_rv(rv) {
@@ -67,18 +67,14 @@ class Factor : public FactorGraphNode {
   Values extractInputOutput(const VariableAssignments &assignments) const {
     Values v;
     bool did_set_in1 = false;
-    bool did_set_in2 = false;
     for (size_t rv_index : referenced_rvs) {
       if (rv_index == output_rv) {
         v.out = assignments.at(rv_index);
       } else if (!did_set_in1) {
         v.in1 = assignments.at(rv_index);
         did_set_in1 = true;
-      } else if (!did_set_in2) {
-        v.in2 = assignments.at(rv_index);
-        did_set_in2 = true;
       } else {
-        v.in3 = assignments.at(rv_index);
+        v.in2 = assignments.at(rv_index);
       }
     }
     return v;

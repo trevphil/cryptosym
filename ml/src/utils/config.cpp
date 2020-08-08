@@ -203,6 +203,15 @@ void Config::loadDatasetParameters() {
     input_rv_indices = data[param].as<std::vector<size_t>>();
     spdlog::info("{} --> {}", param, utils::Convenience::vec2str<size_t>(input_rv_indices));
   }
+
+  param = "difficulty";
+  if (!data[param]) {
+    valid_ = false;
+    spdlog::error("Missing '{}'", param);
+  } else {
+    difficulty = data[param].as<size_t>();
+    spdlog::info("{} --> {}", param, difficulty);
+  }
 }
 
 void Config::validateParameters() {

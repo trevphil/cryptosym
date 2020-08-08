@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import numpy as np
 from BitVector import BitVector
 
 from dataset_generation import nsha256
@@ -50,10 +51,16 @@ class LossyPseudoHash(SymbolicHash):
     n = len(hash_input)
     n4 = n // 4
 
-    A = SymBitVec(BitVector(intVal=0xAC32DEA362872, size=n))
-    B = SymBitVec(BitVector(intVal=0xFFE1BEEF14301, size=n))
-    C = SymBitVec(BitVector(intVal=0xBF09CDEA82901, size=n))
-    D = SymBitVec(BitVector(intVal=0xBEEFDEEDABBA2, size=n))
+    np.random.seed(1)
+    A = int.from_bytes(np.random.bytes(n // 8), 'big')
+    B = int.from_bytes(np.random.bytes(n // 8), 'big')
+    C = int.from_bytes(np.random.bytes(n // 8), 'big')
+    D = int.from_bytes(np.random.bytes(n // 8), 'big')
+    A = SymBitVec(BitVector(intVal=A, size=n))
+    B = SymBitVec(BitVector(intVal=B, size=n))
+    C = SymBitVec(BitVector(intVal=C, size=n))
+    D = SymBitVec(BitVector(intVal=D, size=n))
+
     mask = SymBitVec(BitVector(intVal=(1 << n4) - 1, size=n))
     h = hash_input
 
@@ -73,10 +80,17 @@ class NonLossyPseudoHash(SymbolicHash):
   def hash(self, hash_input, difficulty):
     n = len(hash_input)
     n4 = n // 4
-    A = SymBitVec(BitVector(intVal=0xAC32DEA362872, size=n))
-    B = SymBitVec(BitVector(intVal=0xFFE1BEEF14301, size=n))
-    C = SymBitVec(BitVector(intVal=0xBF09CDEA82901, size=n))
-    D = SymBitVec(BitVector(intVal=0xBEEFDEEDABBA2, size=n))
+    
+    np.random.seed(1)
+    A = int.from_bytes(np.random.bytes(n // 8), 'big')
+    B = int.from_bytes(np.random.bytes(n // 8), 'big')
+    C = int.from_bytes(np.random.bytes(n // 8), 'big')
+    D = int.from_bytes(np.random.bytes(n // 8), 'big')
+    A = SymBitVec(BitVector(intVal=A, size=n))
+    B = SymBitVec(BitVector(intVal=B, size=n))
+    C = SymBitVec(BitVector(intVal=C, size=n))
+    D = SymBitVec(BitVector(intVal=D, size=n))
+
     mask = SymBitVec(BitVector(intVal=(1 << n4) - 1, size=n))
     h = hash_input
 

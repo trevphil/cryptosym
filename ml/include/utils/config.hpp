@@ -49,6 +49,7 @@ class Config {
   bool test_mode;
   size_t num_samples;
   size_t num_test;
+  size_t difficulty;
 
  private:
   bool valid_;

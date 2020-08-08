@@ -67,7 +67,7 @@ def main():
   parser.add_argument('--hash-algo', type=str, default='sha256',
                       choices=list(sorted(hashAlgos().keys())),
                       help='Choose the hashing algorithm to apply to the input data')
-  parser.add_argument('--difficulty', type=int, default=64,
+  parser.add_argument('--difficulty', type=int, default=1,
                       help='SHA-256 difficulty (an interger between 1 and 64 inclusive)')
   parser.add_argument('--visualize', action='store_true',
                       help='Visualize the symbolic graph of bit dependencies')
@@ -76,7 +76,6 @@ def main():
   args = parser.parse_args()
 
   if args.hash_input is not None:
-    print('Computing {} hash for: {}\n'.format(args.hash_algo, args.hash_input))
     num = int(args.hash_input, 16)
     input_bv = BitVector(intVal=num, size=args.num_input_bits)
     algo = hash_algos[args.hash_algo]
@@ -89,7 +88,7 @@ def main():
 
     digest_str = hex(int(hash_output))[2:]
     pad = '0' * (len(hash_output) // 4 - len(digest_str))
-    print(pad + digest_str)
+    print(pad + digest_str, end='')
     return
 
   num_input_bits = args.num_input_bits
@@ -143,11 +142,9 @@ def main():
     'num_samples': N,
     'input_rv_indices': input_indices,
     'hash_rv_indices': hash_indices,
-    'example_sample': example_sample
+    'example_sample': example_sample,
+    'difficulty': args.difficulty
   }
-  
-  if algo == 'sha256':
-    params.update({'difficulty': args.difficulty})
 
   with open(params_file, 'w') as f:
     yaml.dump(params, f, default_flow_style=None)
