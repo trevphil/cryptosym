@@ -4,5 +4,4 @@ dataset_dir: "data/addConst"
 epsilon: 0.0001
 num_test: 10
 print_connections: false
-print_bit_accuracies: false
 test_mode: false

@@ -130,7 +130,7 @@ bool Dataset::validate(const boost::dynamic_bitset<> predicted_input,
   const std::string true_hash = utils::Convenience::exec(cmd.str() + true_in);
 
   if (pred_hash == true_hash) {
-    spdlog::info("Hashes match: {}", pred_hash, true_hash);
+    spdlog::info("\tHashes match: {}", pred_hash, true_hash);
     return true;
   }
 

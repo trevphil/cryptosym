@@ -111,15 +111,6 @@ void Config::loadYAML(const std::string &config_file) {
     spdlog::info("{} --> {}", param, print_connections);
   }
 
-  param = "print_bit_accuracies";
-  if (!data[param]) {
-    valid_ = false;
-    spdlog::error("Missing '{}'", param);
-  } else {
-    print_bit_accuracies = data[param].as<bool>();
-    spdlog::info("{} --> {}", param, print_bit_accuracies);
-  }
-
   param = "test_mode";
   if (!data[param]) {
     valid_ = false;

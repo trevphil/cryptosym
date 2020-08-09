@@ -20,6 +20,7 @@
 #include "hash_reversal/probability.hpp"
 #include "hash_reversal/dataset.hpp"
 #include "utils/config.hpp"
+#include "utils/stats.hpp"
 
 int main(int argc, char** argv) {
   if (argc < 2) {
@@ -27,6 +28,7 @@ int main(int argc, char** argv) {
     return 1;
   }
 
+  // Derive the algorithm configuration from a YAML file
   const std::string config_file = argv[1];
   const std::shared_ptr<utils::Config> config(new utils::Config(config_file));
   if (!config->valid()) {
@@ -34,6 +36,7 @@ int main(int argc, char** argv) {
     return 1;
   }
 
+  // Initialize objects used by the algorithm
   const std::shared_ptr<hash_reversal::Dataset> dataset(
 			new hash_reversal::Dataset(config));
   const std::shared_ptr<hash_reversal::Probability> prob(
@@ -43,9 +46,13 @@ int main(int argc, char** argv) {
   spdlog::info("Checking accuracy on test data...");
   const size_t n = config->num_rvs;
   const size_t n_input = config->input_rv_indices.size();
-  std::vector<double> num_correct_per_rv(n, 0);
-  std::vector<double> count_per_rv(n, 0);
 
+  // Initialize a helper object to track statistics while running the algo
+  std::vector<std::string> f_types(n);
+  for (size_t rv = 0; rv < n; ++rv) f_types[rv] = factor_graph.factorType(rv);
+  utils::Stats stats(config, f_types);
+
+  // How many hash input --> hash output trials to run
   const size_t num_test = std::min<size_t>(config->num_test,
                                            config->num_samples);
 
@@ -60,30 +67,23 @@ int main(int argc, char** argv) {
     const auto ground_truth = dataset->getFullSample(sample_idx);
 
     for (size_t rv = 0; rv < n; ++rv) {
-      const auto prediction = marginals.at(rv);
-      const bool predicted_val = prediction.prob_one > 0.5 ? true : false;
-      // spdlog::info("RV {}: prob_one is {}", rv, prediction.prob_one);
+      const double p = marginals.at(rv).prob_one;
+      const bool predicted_val = p > 0.5 ? true : false;
       const bool true_val = ground_truth[rv];
-      const bool is_correct = (predicted_val == true_val);
+      const bool is_observed = observed.count(rv) > 0;
+      stats.update(rv, predicted_val, true_val, p, is_observed);
+
       if (dataset->isHashInputBit(rv)) {
-        predicted_input[prediction.rv_index] = predicted_val;
+        predicted_input[rv] = predicted_val;
       }
-      num_correct_per_rv[rv] += is_correct;
-      count_per_rv[rv] += true_val;
     }
 
+    // Verify the predicted input creates a hash collision / pre-image
     const bool valid = dataset->validate(predicted_input, sample_idx);
     if (config->test_mode && !valid) return 1;
   }
 
-  if (config->print_bit_accuracies) {
-    for (const size_t rv : config->input_rv_indices) {
-      spdlog::info("RV {0} ({1}):\taccuracy {2:.2f}%,\tmean value {3:.2f}",
-                   rv, factor_graph.factorType(rv),
-                   100.0 * num_correct_per_rv[rv] / num_test,
-                   count_per_rv[rv] / num_test);
-    }
-  }
+  stats.save();
 
   spdlog::info("Done.");
   return 0;

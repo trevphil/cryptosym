@@ -45,7 +45,6 @@ class Config {
   std::vector<size_t> input_rv_indices;
   std::vector<size_t> hash_rv_indices;
   bool print_connections;
-  bool print_bit_accuracies;
   bool test_mode;
   size_t num_samples;
   size_t num_test;

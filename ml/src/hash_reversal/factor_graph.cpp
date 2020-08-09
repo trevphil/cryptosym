@@ -124,7 +124,6 @@ bool FactorGraph::equal(const std::vector<FactorGraph::Prediction> &marginals1,
 
 void FactorGraph::updateFactorMessages(bool forward) {
   const size_t num_facs = factors_.size();
-  const double damping = config_->lbp_damping;
 
   for (size_t i = 0; i < num_facs; ++i) {
     const size_t factor_index = forward ? i : num_facs - i - 1;
@@ -164,15 +163,14 @@ void FactorGraph::updateFactorMessages(bool forward) {
         result1 += message_product1;
       }
 
-      factor.updateMessage(to_rv, 0, result0, damping);
-      factor.updateMessage(to_rv, 1, result1, damping);
+      factor.updateMessage(to_rv, 0, result0, config_);
+      factor.updateMessage(to_rv, 1, result1, config_);
     }
   }
 }
 
 void FactorGraph::updateRandomVariableMessages(bool forward) {
   const size_t num_rvs = config_->num_rvs;
-  const double damping = config_->lbp_damping;
 
   for (size_t i = 0; i < num_rvs; ++i) {
     const size_t rv_index = forward ? i : num_rvs - i - 1;
@@ -185,8 +183,8 @@ void FactorGraph::updateRandomVariableMessages(bool forward) {
         result0 *= factors_.at(other_fac_idx).prevMessage(rv_index, 0);
         result1 *= factors_.at(other_fac_idx).prevMessage(rv_index, 1);
       }
-      rv.updateMessage(fac_idx, 0, result0, damping);
-      rv.updateMessage(fac_idx, 1, result1, damping);
+      rv.updateMessage(fac_idx, 0, result0, config_);
+      rv.updateMessage(fac_idx, 1, result1, config_);
     }
   }
 }

@@ -38,34 +38,34 @@ class Convenience {
   }
 
   template <typename T>
-  static std::string vec2str(const std::vector<T> &v) {
+  static std::string vec2str(const std::vector<T> &v, bool brackets = true) {
     auto begin = v.begin();
     auto end = v.end();
     std::stringstream ss;
-    ss << "[";
+    if (brackets) ss << "[";
     bool first = true;
     for (; begin != end; ++begin) {
       if (!first) ss << ", ";
       ss << *begin;
       first = false;
     }
-    ss << "]";
+    if (brackets) ss << "]";
     return ss.str();
   }
 
   template <typename T>
-  static std::string set2str(const std::set<T> &s) {
+  static std::string set2str(const std::set<T> &s, bool brackets = true) {
     auto begin = s.begin();
     auto end = s.end();
     std::stringstream ss;
-    ss << "[";
+    if (brackets) ss << "[";
     bool first = true;
     for (; begin != end; ++begin) {
       if (!first) ss << ", ";
       ss << *begin;
       first = false;
     }
-    ss << "]";
+    if (brackets) ss << "]";
     return ss.str();
   }
 
