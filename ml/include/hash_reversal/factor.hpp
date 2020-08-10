@@ -30,8 +30,6 @@ class FactorGraphNode {
   void updateMessage(size_t to, bool rv_val, double new_msg,
                      std::shared_ptr<utils::Config> config) {
     const double damping = config->lbp_damping;
-    // const double eps = config->epsilon;
-    // new_msg = std::max(eps, std::min(1.0 / eps, new_msg));
 
     const std::pair<size_t, bool> key = {to, rv_val};
     if (messages_.count(key) > 0) {
