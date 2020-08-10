@@ -117,15 +117,12 @@ def main():
 
   print('Allocating data...')
   data = np.zeros((N, n), dtype=bool)
-  example_sample = None
 
   print('Populating data...')
   for sample_idx in range(N):
     hash_input = sample(num_input_bits)
     algo(hash_input, difficulty=args.difficulty)
     bitvec = algo.allBits()
-    if example_sample is None:
-      example_sample = hex(int(bitvec))[2:]
     # The MSB (left-most) of the BitVector will go in the left-most column of `data`
     data[N - sample_idx - 1, :] = bitvec
 
@@ -142,7 +139,6 @@ def main():
     'num_samples': N,
     'input_rv_indices': input_indices,
     'hash_rv_indices': hash_indices,
-    'example_sample': example_sample,
     'difficulty': args.difficulty
   }
 
@@ -151,7 +147,10 @@ def main():
 
   print('Generated dataset with {} samples (hash={}, {} input bits).'.format(
     N, args.hash_algo, num_input_bits))
-  
+
+  cycles = len(list(nx.simple_cycles(Factor.directed_graph))) > 0
+  print('Cyclic Bayesian network: {}'.format(cycles))
+
   if args.visualize:
     nx.draw(Factor.directed_graph, node_size=50, with_labels=True)
     plt.show()

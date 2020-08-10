@@ -4,6 +4,7 @@ from BitVector import BitVector
 
 from dataset_generation import nsha256
 from dataset_generation.bit import Bit, saveFactors
+from dataset_generation.factor import Factor
 from dataset_generation.sym_bit_vec import SymBitVec
 
 
@@ -34,6 +35,7 @@ class SymbolicHash(object):
     """
     
     Bit.reset()
+    Factor.reset()
     hash_input = SymBitVec(hash_input, unknown=True)
     self.input_rv_indices = hash_input.rvIndices()
     h = self.hash(hash_input, difficulty)

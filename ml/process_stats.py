@@ -53,6 +53,8 @@ def load_data(filename):
 if __name__ == '__main__':
   data = load_data('statistics.txt')
   
+  print('WARNING: Remember, input bits can be incorrectly predicted but still result in the correct hash!')
+
   print('Factor accuracies:')
   f_accuracies = data['factor accuracies']
   for f_type in sorted(f_accuracies.keys()):

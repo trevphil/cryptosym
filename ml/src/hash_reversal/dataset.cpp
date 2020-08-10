@@ -135,6 +135,7 @@ bool Dataset::validate(const boost::dynamic_bitset<> predicted_input,
   }
 
   spdlog::info("\tHashes do not match!");
+  spdlog::info("\t\tPredicted input {}", pred_in);
   spdlog::info("\t\tPrediction gave {}", pred_hash);
   spdlog::info("\t\tCorrect hash is {}", true_hash);
   return false;
