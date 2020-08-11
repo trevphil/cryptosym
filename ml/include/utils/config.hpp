@@ -40,6 +40,7 @@ class Config {
   std::string dataset_dir;
   std::string data_file;
   std::string graph_file;
+  std::string method;
   double epsilon;
   size_t num_rvs;
   std::vector<size_t> input_rv_indices;

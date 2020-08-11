@@ -57,6 +57,15 @@ void Config::loadYAML(const std::string &config_file) {
 
   std::string param;
 
+  param = "method";
+  if (!data[param]) {
+    valid_ = false;
+    spdlog::error("Missing '{}'", param);
+  } else {
+    method = data[param].as<std::string>();
+    spdlog::info("{} --> {}", param, method);
+  }
+
   param = "lbp_max_iter";
   if (!data[param]) {
     valid_ = false;

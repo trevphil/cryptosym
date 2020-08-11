@@ -16,9 +16,11 @@
 #include <memory>
 #include <vector>
 
-#include "hash_reversal/factor_graph.hpp"
 #include "hash_reversal/probability.hpp"
 #include "hash_reversal/dataset.hpp"
+#include "hash_reversal/inference_tool.hpp"
+#include "hash_reversal/factor_graph.hpp"
+#include "hash_reversal/bayes_net.hpp"
 #include "utils/config.hpp"
 #include "utils/stats.hpp"
 
@@ -41,7 +43,19 @@ int main(int argc, char** argv) {
 			new hash_reversal::Dataset(config));
   const std::shared_ptr<hash_reversal::Probability> prob(
     	new hash_reversal::Probability(config));
-  hash_reversal::FactorGraph factor_graph(prob, dataset, config);
+
+  std::shared_ptr<hash_reversal::InferenceTool> inference_tool;
+
+  if (config->method == "lbp") {
+    inference_tool = std::shared_ptr<hash_reversal::InferenceTool>(
+        new hash_reversal::FactorGraph(prob, dataset, config));
+  } else if (config->method == "gtsam") {
+    inference_tool = std::shared_ptr<hash_reversal::InferenceTool>(
+        new hash_reversal::BayesNet(prob, dataset, config));
+  } else {
+    spdlog::error("Unsupported method: {}", config->method);
+    return 1;
+  }
 
   spdlog::info("Checking accuracy on test data...");
   const size_t n = config->num_rvs;
@@ -49,7 +63,7 @@ int main(int argc, char** argv) {
 
   // Initialize a helper object to track statistics while running the algo
   std::vector<std::string> f_types(n);
-  for (size_t rv = 0; rv < n; ++rv) f_types[rv] = factor_graph.factorType(rv);
+  for (size_t rv = 0; rv < n; ++rv) f_types[rv] = inference_tool->factorType(rv);
   utils::Stats stats(config, f_types);
 
   // How many hash input --> hash output trials to run
@@ -60,8 +74,8 @@ int main(int argc, char** argv) {
     spdlog::info("Test case {}/{}", sample_idx + 1, num_test);
 
     const auto observed = dataset->getObservedData(sample_idx);
-    factor_graph.runLBP(observed);
-    const auto marginals = factor_graph.marginals();
+    inference_tool->update(observed);
+    const auto marginals = inference_tool->marginals();
     boost::dynamic_bitset<> predicted_input(n_input);
 
     const auto ground_truth = dataset->getFullSample(sample_idx);

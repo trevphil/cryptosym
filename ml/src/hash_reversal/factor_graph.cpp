@@ -23,27 +23,16 @@ namespace hash_reversal {
 FactorGraph::FactorGraph(std::shared_ptr<Probability> prob,
                          std::shared_ptr<Dataset> dataset,
                          std::shared_ptr<utils::Config> config)
-    : prob_(prob), dataset_(dataset), config_(config) {
-  spdlog::info("Initializing factor graph...");
-  const auto start = utils::Convenience::time_since_epoch();
+    : InferenceTool(prob, dataset, config) { }
 
-  const auto &graph = dataset_->loadFactorGraph();
-  rvs_ = graph.first;
-  factors_ = graph.second;
-  spdlog::info("\tCreated {} RVs and {} factors.", rvs_.size(), factors_.size());
-
-  const auto end = utils::Convenience::time_since_epoch();
-  spdlog::info("Finished initializing factor graph in {} seconds.", end - start);
-
-  if (config_->print_connections) printConnections();
-}
-
-FactorGraph::Prediction FactorGraph::predict(size_t rv_index) const {
+InferenceTool::Prediction FactorGraph::predict(size_t rv_index) const {
   for (const auto itr : observed_) {
-    if (itr.first == rv_index) return Prediction(rv_index, itr.second ? 1.0 : 0.0);
+    if (itr.first == rv_index) {
+      return InferenceTool::Prediction(rv_index, itr.second ? 1.0 : 0.0);
+    }
   }
 
-  Prediction prediction(rv_index, 0.5);
+  InferenceTool::Prediction prediction(rv_index, 0.5);
   double msg0 = 1.0, msg1 = 1.0;
   const auto &rv = rvs_.at(rv_index);
 
@@ -61,16 +50,12 @@ FactorGraph::Prediction FactorGraph::predict(size_t rv_index) const {
   return prediction;
 }
 
-std::vector<FactorGraph::Prediction> FactorGraph::marginals() const {
+std::vector<InferenceTool::Prediction> FactorGraph::marginals() const {
   const size_t n = config_->num_rvs;
-  std::vector<Prediction> predictions;
+  std::vector<InferenceTool::Prediction> predictions;
   predictions.reserve(n);
   for (size_t rv = 0; rv < n; ++rv) predictions.push_back(predict(rv));
   return predictions;
-}
-
-std::string FactorGraph::factorType(size_t rv_index) const {
-  return factors_.at(rv_index).factor_type;
 }
 
 void FactorGraph::reset() {
@@ -80,7 +65,7 @@ void FactorGraph::reset() {
   for (auto &factor : factors_) factor.reset();
 }
 
-void FactorGraph::runLBP(const VariableAssignments &observed) {
+void FactorGraph::update(const VariableAssignments &observed) {
   spdlog::info("\tStarting loopy BP...");
   const auto start = utils::Convenience::time_since_epoch();
 
@@ -107,8 +92,8 @@ void FactorGraph::runLBP(const VariableAssignments &observed) {
   spdlog::info("\tLBP finished in {} seconds.", end - start);
 }
 
-bool FactorGraph::equal(const std::vector<FactorGraph::Prediction> &marginals1,
-                        const std::vector<FactorGraph::Prediction> &marginals2,
+bool FactorGraph::equal(const std::vector<InferenceTool::Prediction> &marginals1,
+                        const std::vector<InferenceTool::Prediction> &marginals2,
                         double tol) const {
   const size_t n = marginals1.size();
   if (n != marginals2.size()) return false;
@@ -186,18 +171,6 @@ void FactorGraph::updateRandomVariableMessages(bool forward) {
       rv.updateMessage(fac_idx, 0, result0, config_);
       rv.updateMessage(fac_idx, 1, result1, config_);
     }
-  }
-}
-
-void FactorGraph::printConnections() const {
-  const size_t n = config_->num_rvs;
-  for (size_t i = 0; i < n; ++i) {
-    const auto &rv_neighbors = rvs_.at(i).factor_indices;
-    const std::string rv_nb_str = utils::Convenience::set2str<size_t>(rv_neighbors);
-    spdlog::info("\tRV {} is referenced by factors {}", i, rv_nb_str);
-    const auto &fac_neighbors = factors_.at(i).referenced_rvs;
-    const std::string fac_nb_str = utils::Convenience::set2str<size_t>(fac_neighbors);
-    spdlog::info("\tFactor: RV {} depends on RVs {}", i, fac_nb_str);
   }
 }
 

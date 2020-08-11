@@ -12,54 +12,34 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
 #include <string>
 
-#include "utils/config.hpp"
-#include "utils/convenience.hpp"
-#include "hash_reversal/factor.hpp"
-#include "hash_reversal/dataset.hpp"
-#include "hash_reversal/probability.hpp"
-#include "hash_reversal/variable_assignments.hpp"
+#include "hash_reversal/inference_tool.hpp"
 
 namespace hash_reversal {
 
-class FactorGraph {
+class FactorGraph : public InferenceTool {
  public:
-  struct Prediction {
-    Prediction(size_t i, double p) : rv_index(i), prob_one(p) { }
-    size_t rv_index;
-    double prob_one;
-  };
+  FactorGraph(std::shared_ptr<Probability> prob,
+              std::shared_ptr<Dataset> dataset,
+              std::shared_ptr<utils::Config> config);
 
-  explicit FactorGraph(std::shared_ptr<Probability> prob,
-                       std::shared_ptr<Dataset> dataset,
-                       std::shared_ptr<utils::Config> config);
+  void update(const VariableAssignments &observed) override;
 
-  void runLBP(const VariableAssignments &observed);
+  std::vector<InferenceTool::Prediction> marginals() const override;
 
-  std::vector<Prediction> marginals() const;
-
-  std::string factorType(size_t rv_index) const;
+ protected:
+  void reset() override;
 
  private:
   Prediction predict(size_t rv_index) const;
-  void reset();
   void updateFactorMessages(bool forward);
   void updateRandomVariableMessages(bool forward);
-  void printConnections() const;
-  bool equal(const std::vector<Prediction> &marginals1,
-             const std::vector<Prediction> &marginals2,
+  bool equal(const std::vector<InferenceTool::Prediction> &marginals1,
+             const std::vector<InferenceTool::Prediction> &marginals2,
              double tol = 1e-4) const;
 
-  std::shared_ptr<Probability> prob_;
-  std::shared_ptr<Dataset> dataset_;
-  std::shared_ptr<utils::Config> config_;
-  std::vector<RandomVariable> rvs_;
-  std::vector<Factor> factors_;
-  std::vector<Prediction> previous_marginals_;
-  VariableAssignments observed_;
+  std::vector<InferenceTool::Prediction> previous_marginals_;
 };
 
 }  // end namespace hash_reversal
