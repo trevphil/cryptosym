@@ -24,6 +24,8 @@
 #include <string>
 #include <vector>
 
+#include "utils/convenience.hpp"
+
 namespace utils {
 
 class Config {
@@ -40,16 +42,14 @@ class Config {
   std::string graph_file;
   double epsilon;
   size_t num_rvs;
-  size_t num_samples;
-  size_t num_train_samples;
-  size_t num_test_samples;
-  size_t num_hash_bits;
-  size_t num_input_bits;
-  size_t num_internal_bits;
+  std::vector<size_t> input_rv_indices;
+  std::vector<size_t> hash_rv_indices;
   bool print_connections;
-  bool print_bit_accuracies;
   bool test_mode;
-  size_t num_trials;
+  size_t num_samples;
+  size_t num_test;
+  size_t difficulty;
+  size_t observed_input_bits;
 
  private:
   bool valid_;

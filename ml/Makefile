@@ -22,8 +22,8 @@ OBJECTS = $(SOURCES:$(SRC_PATH)/%.$(SRC_EXT)=$(BUILD_PATH)/%.o)
 DEPS = $(OBJECTS:.o=.d)
 
 # flags #
-COMPILE_FLAGS = -std=c++17 -Wall -Wextra -g
-INCLUDES = -I include/ -I /usr/local/include -I /usr/local/include/eigen3
+COMPILE_FLAGS = -std=c++17 -Wall -Wextra -g -O3
+INCLUDES = -I include/ -I /usr/local/include # -I /usr/local/include/eigen3
 # Space-separated pkg-config libraries used by this project
 LIBS = -lyaml-cpp
 

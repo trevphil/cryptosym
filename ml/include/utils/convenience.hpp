@@ -12,13 +12,18 @@
 
 #pragma once
 
+#include <boost/dynamic_bitset.hpp>
+
 #include <algorithm>
 #include <chrono>
-#include <random>
 #include <set>
 #include <string>
-#include <type_traits>
 #include <vector>
+#include <cstdio>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <array>
 
 namespace utils {
 
@@ -33,31 +38,70 @@ class Convenience {
   }
 
   template <typename T>
-  static std::string set2str(const std::set<T> &s) {
-    auto begin = s.begin();
-    auto end = s.end();
+  static std::string vec2str(const std::vector<T> &v, bool brackets = true) {
+    auto begin = v.begin();
+    auto end = v.end();
     std::stringstream ss;
-    ss << "[";
+    if (brackets) ss << "[";
     bool first = true;
     for (; begin != end; ++begin) {
       if (!first) ss << ", ";
       ss << *begin;
       first = false;
     }
-    ss << "]";
+    if (brackets) ss << "]";
     return ss.str();
   }
 
   template <typename T>
-  static std::vector<T> randomSubset(const std::vector<T> &input_vec, size_t k) {
-    if (k < 0 || k >= input_vec.size()) return input_vec;
-    std::vector<unsigned int> indices(input_vec.size());
-    std::iota(indices.begin(), indices.end(), 0);
-    auto rng = std::default_random_engine{};
-    std::shuffle(indices.begin(), indices.end(), rng);
-    std::vector<T> output_vec;
-    for (size_t i = 0; i < k; ++i) output_vec.push_back(input_vec.at(indices.at(i)));
-    return output_vec;
+  static std::string set2str(const std::set<T> &s, bool brackets = true) {
+    auto begin = s.begin();
+    auto end = s.end();
+    std::stringstream ss;
+    if (brackets) ss << "[";
+    bool first = true;
+    for (; begin != end; ++begin) {
+      if (!first) ss << ", ";
+      ss << *begin;
+      first = false;
+    }
+    if (brackets) ss << "]";
+    return ss.str();
+  }
+
+  static std::string bitset2hex(const boost::dynamic_bitset<> &bs) {
+    std::string bitset_str;
+    boost::to_string(bs, bitset_str);
+    std::string b(bitset_str);
+    std::reverse(b.begin(), b.end());
+
+    std::string out;
+
+    for (size_t i = 0; i < b.size(); i += 4) {
+      int8_t n = 0;
+      for (size_t j = i; j < i + 4; ++j) {
+        n <<= 1;
+        if (b[j] == '1') n |= 1;
+      }
+
+      if (n <= 9) out.push_back('0' + n);
+      else out.push_back('a' + n - 10);
+    }
+
+    return out;
+  }
+
+  static std::string exec(const std::string &cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(
+        popen(cmd.c_str(), "r"), pclose);
+    if (!pipe) throw std::runtime_error("popen() failed!");
+
+    while (std::fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
+      result += buffer.data();
+
+    return result;
   }
 };
 

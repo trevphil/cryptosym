@@ -13,10 +13,14 @@
 #pragma once
 
 #include <boost/dynamic_bitset.hpp>
+
+#include <string>
+#include <utility>
 #include <memory>
 #include <vector>
 
-#include "hash_reversal/variable_assignment.hpp"
+#include "hash_reversal/factor.hpp"
+#include "hash_reversal/variable_assignments.hpp"
 #include "utils/config.hpp"
 #include "utils/convenience.hpp"
 
@@ -26,20 +30,23 @@ class Dataset {
  public:
   explicit Dataset(std::shared_ptr<utils::Config> config);
 
-  std::vector<size_t> hashInputBitIndices() const;
+  typedef std::pair<std::vector<RandomVariable>, std::vector<Factor>> Graph;
+  Graph loadFactorGraph() const;
 
   bool isHashInputBit(size_t bit_index) const;
 
-  std::vector<VariableAssignment> getHashBits(size_t test_sample_index) const;
+  std::string getHashInput(size_t sample_index) const;
 
-  boost::dynamic_bitset<> getGroundTruth(size_t test_sample_index) const;
+  VariableAssignments getObservedData(size_t sample_index) const;
 
-  boost::dynamic_bitset<> getTrainSamples(size_t rv_index) const;
+  boost::dynamic_bitset<> getFullSample(size_t sample_index) const;
+
+  bool validate(const boost::dynamic_bitset<> predicted_input,
+                size_t sample_index) const;
 
  private:
   std::shared_ptr<utils::Config> config_;
-  std::vector<boost::dynamic_bitset<>> train_;
-  std::vector<boost::dynamic_bitset<>> test_;
+  std::vector<boost::dynamic_bitset<>> samples_;
 };
 
 }  // end namespace hash_reversal

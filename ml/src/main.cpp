@@ -16,10 +16,11 @@
 #include <memory>
 #include <vector>
 
-#include "hash_reversal/dataset.hpp"
 #include "hash_reversal/factor_graph.hpp"
 #include "hash_reversal/probability.hpp"
+#include "hash_reversal/dataset.hpp"
 #include "utils/config.hpp"
+#include "utils/stats.hpp"
 
 int main(int argc, char** argv) {
   if (argc < 2) {
@@ -27,6 +28,7 @@ int main(int argc, char** argv) {
     return 1;
   }
 
+  // Derive the algorithm configuration from a YAML file
   const std::string config_file = argv[1];
   const std::shared_ptr<utils::Config> config(new utils::Config(config_file));
   if (!config->valid()) {
@@ -34,72 +36,55 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  const std::shared_ptr<hash_reversal::Dataset> dataset(new hash_reversal::Dataset(config));
+  // Initialize objects used by the algorithm
+  const std::shared_ptr<hash_reversal::Dataset> dataset(
+			new hash_reversal::Dataset(config));
   const std::shared_ptr<hash_reversal::Probability> prob(
-      new hash_reversal::Probability(dataset, config));
+    	new hash_reversal::Probability(config));
   hash_reversal::FactorGraph factor_graph(prob, dataset, config);
 
   spdlog::info("Checking accuracy on test data...");
-  int total_correct = 0;
-  int total_count = 0;
-  std::vector<double> num_correct_per_rv(config->num_rvs, 0);
-  std::vector<double> count_per_rv(config->num_rvs, 0);
+  const size_t n = config->num_rvs;
+  const size_t n_input = config->input_rv_indices.size();
 
-  const size_t num_test = std::min<size_t>(config->num_trials, config->num_test_samples);
+  // Initialize a helper object to track statistics while running the algo
+  std::vector<std::string> f_types(n);
+  for (size_t rv = 0; rv < n; ++rv) f_types[rv] = factor_graph.factorType(rv);
+  utils::Stats stats(config, f_types);
 
-  for (size_t test_idx = 0; test_idx < num_test; ++test_idx) {
-    spdlog::info("Test case {}/{}", test_idx + 1, num_test);
+  // How many hash input --> hash output trials to run
+  const size_t num_test = std::min<size_t>(config->num_test,
+                                           config->num_samples);
 
-    const auto observed_hash_bits = dataset->getHashBits(test_idx);
-    factor_graph.runLBP(observed_hash_bits);
+  for (size_t sample_idx = 0; sample_idx < num_test; ++sample_idx) {
+    spdlog::info("Test case {}/{}", sample_idx + 1, num_test);
+
+    const auto observed = dataset->getObservedData(sample_idx);
+    factor_graph.runLBP(observed);
     const auto marginals = factor_graph.marginals();
+    boost::dynamic_bitset<> predicted_input(n_input);
 
-    const auto ground_truth = dataset->getGroundTruth(test_idx);
-    const size_t n = config->num_rvs;
-    const size_t n_input = config->num_input_bits;
-    size_t local_correct = 0, local_correct_hash_input = 0;
-    double sum_abs_llr = 0;
+    const auto ground_truth = dataset->getFullSample(sample_idx);
 
     for (size_t rv = 0; rv < n; ++rv) {
-      const auto prediction = marginals.at(rv);
-      const bool guess = prediction.prob_bit_is_one > 0.5 ? true : false;
+      const double p = marginals.at(rv).prob_one;
+      const bool predicted_val = p > 0.5 ? true : false;
       const bool true_val = ground_truth[rv];
-      const bool is_correct = (guess == true_val);
-      total_correct += is_correct;
-      local_correct += is_correct;
+      const bool is_observed = observed.count(rv) > 0;
+      stats.update(rv, predicted_val, true_val, p, is_observed);
+
       if (dataset->isHashInputBit(rv)) {
-        local_correct_hash_input += is_correct;
+        predicted_input[rv] = predicted_val;
       }
-      num_correct_per_rv[rv] += is_correct;
-      count_per_rv[rv] += true_val;
-      sum_abs_llr += std::abs(prediction.log_likelihood_ratio);
-      total_count++;
     }
 
-    spdlog::info("\tGot {0}/{1} ({2:.2f}%), average abs(LLR) is {3:.3f}", local_correct, n,
-                 100.0 * local_correct / n, sum_abs_llr / n);
-
-    const double hash_pct_correct = 100.0 * local_correct_hash_input / n_input;
-    spdlog::info("\tGot {0}/{1} ({2:.2f}%) hash input bits", local_correct_hash_input, n_input,
-                 hash_pct_correct);
-
-    if (config->test_mode && hash_pct_correct < 90.0) {
-      spdlog::error("Test case '{}': only {}/{} hash input bits predicted correctly",
-                    config->hash_algo, local_correct_hash_input, n_input);
-      return 1;
-    }
+    // Verify the predicted input creates a hash collision / pre-image
+    const bool valid = dataset->validate(predicted_input, sample_idx);
+    if (config->test_mode && !valid) return 1;
   }
 
-  if (config->print_bit_accuracies) {
-    for (size_t rv = 0; rv < config->num_rvs; ++rv) {
-      if (rv % 32 == 0 && rv != 0) spdlog::info("-----------------------------");
-      spdlog::info("RV {0}:\taccuracy {1:.2f}%,\tmean {2:.2f}", rv + 1,
-                   100.0 * num_correct_per_rv[rv] / num_test, count_per_rv[rv] / num_test);
-    }
-  }
+  stats.save();
 
-  spdlog::info("Total accuracy: {0}/{1} ({2:.2f}%)", total_correct, total_count,
-               100.0 * total_correct / total_count);
   spdlog::info("Done.");
   return 0;
 }

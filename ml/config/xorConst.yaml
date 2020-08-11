@@ -1,8 +1,8 @@
-lbp_max_iter: 2
+lbp_max_iter: 50
 lbp_damping: 0.75
-dataset_dir: "data/sha256"
+dataset_dir: "data/xorConst"
 epsilon: 0.0001
 num_test: 10
 print_connections: false
 test_mode: false
-observed_input_bits: 480
+observed_input_bits: 0
