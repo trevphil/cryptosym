@@ -112,6 +112,12 @@ VariableAssignments Dataset::getObservedData(size_t sample_index) const {
     observed[bit_idx] = bitval;
   }
 
+  // The first bits of the hash input may be (optionally) observed
+  for (size_t rv = 0; rv < config_->observed_input_bits; ++rv) {
+    const auto bitval = samples_.at(rv)[sample_index];
+    observed[rv] = bitval;
+  }
+
   return observed;
 }
 

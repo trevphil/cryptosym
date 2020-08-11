@@ -49,6 +49,7 @@ class Config {
   size_t num_samples;
   size_t num_test;
   size_t difficulty;
+  size_t observed_input_bits;
 
  private:
   bool valid_;

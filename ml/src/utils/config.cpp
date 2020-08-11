@@ -119,6 +119,15 @@ void Config::loadYAML(const std::string &config_file) {
     test_mode = data[param].as<bool>();
     spdlog::info("{} --> {}", param, test_mode);
   }
+
+  param = "observed_input_bits";
+  if (!data[param]) {
+    valid_ = false;
+    spdlog::error("Missing '{}'", param);
+  } else {
+    observed_input_bits = data[param].as<size_t>();
+    spdlog::info("{} --> {}", param, observed_input_bits);
+  }
 }
 
 void Config::loadDatasetParameters() {
@@ -177,6 +186,15 @@ void Config::loadDatasetParameters() {
     spdlog::info("{} --> {}", param, num_samples);
   }
 
+  param = "difficulty";
+  if (!data[param]) {
+    valid_ = false;
+    spdlog::error("Missing '{}'", param);
+  } else {
+    difficulty = data[param].as<size_t>();
+    spdlog::info("{} --> {}", param, difficulty);
+  }
+
   param = "hash_rv_indices";
   if (!data[param]) {
     valid_ = false;
@@ -193,15 +211,6 @@ void Config::loadDatasetParameters() {
   } else {
     input_rv_indices = data[param].as<std::vector<size_t>>();
     spdlog::info("{} --> {}", param, utils::Convenience::vec2str<size_t>(input_rv_indices));
-  }
-
-  param = "difficulty";
-  if (!data[param]) {
-    valid_ = false;
-    spdlog::error("Missing '{}'", param);
-  } else {
-    difficulty = data[param].as<size_t>();
-    spdlog::info("{} --> {}", param, difficulty);
   }
 }
 

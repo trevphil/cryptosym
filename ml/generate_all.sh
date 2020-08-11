@@ -2,11 +2,11 @@
 
 set -e
 
-python -m dataset_generation.generate --num-samples 16 --num-input-bits 512 --hash-algo sha256 --difficulty 1
+python -m dataset_generation.generate --num-samples 16 --num-input-bits 512 --hash-algo sha256 --difficulty 64
 
-python -m dataset_generation.generate --num-samples 16 --num-input-bits 512 --hash-algo lossyPseudoHash --difficulty 4
+python -m dataset_generation.generate --num-samples 16 --num-input-bits 64 --hash-algo lossyPseudoHash --difficulty 4
 
-python -m dataset_generation.generate --num-samples 16 --num-input-bits 512 --hash-algo nonLossyPseudoHash --difficulty 4
+python -m dataset_generation.generate --num-samples 16 --num-input-bits 64 --hash-algo nonLossyPseudoHash --difficulty 4
 
 python -m dataset_generation.generate --num-samples 64 --num-input-bits 64 --hash-algo invert
 

@@ -28,6 +28,15 @@ class SymBitVec(object):
     new_bits = self.bits[lower_bound:upper_bound]
     return SymBitVec(new_bits)
 
+  def resize(self, new_size):
+    if new_size == len(self):
+      return self
+    elif new_size < len(self):
+      return SymBitVec(self.bits[-new_size:]) if new_size > 0 else SymBitVec([])
+    else:
+      num_zeros = new_size - len(self)
+      return SymBitVec([Bit(0, False) for _ in range(num_zeros)] + self.bits)
+
   def __len__(self):
     return len(self.bits)
   

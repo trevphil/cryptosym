@@ -54,7 +54,7 @@ def hashAlgos():
 def main():
   random.seed(0)
   np.random.seed(0)
-  
+
   hash_algos = hashAlgos()
 
   parser = argparse.ArgumentParser(description='Hash reversal dataset generator')
@@ -148,8 +148,8 @@ def main():
   print('Generated dataset with {} samples (hash={}, {} input bits).'.format(
     N, args.hash_algo, num_input_bits))
 
-  cycles = len(list(nx.simple_cycles(Factor.directed_graph))) > 0
-  print('Cyclic Bayesian network: {}'.format(cycles))
+  cyclic = len(list(nx.simple_cycles(Factor.directed_graph))) > 0
+  print('Directed graph cyclic? {}'.format(cyclic))
 
   if args.visualize:
     nx.draw(Factor.directed_graph, node_size=50, with_labels=True)

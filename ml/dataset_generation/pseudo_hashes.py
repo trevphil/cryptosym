@@ -45,7 +45,11 @@ class SymbolicHash(object):
 
 class SHA256Hash(SymbolicHash):
   def hash(self, hash_input, difficulty):
-    return nsha256.SHA256(hash_input, difficulty=difficulty).digest()
+    bitvecs = nsha256.sha256(hash_input, difficulty=difficulty).bitvecDigest()
+    result = bitvecs[0]
+    for bv in bitvecs[1:]:
+      result = result.concat(bv)
+    return result
 
 
 class LossyPseudoHash(SymbolicHash):
