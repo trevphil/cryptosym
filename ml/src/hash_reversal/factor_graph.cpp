@@ -69,7 +69,6 @@ void FactorGraph::update(const VariableAssignments &observed) {
   spdlog::info("\tStarting loopy BP...");
   const auto start = utils::Convenience::time_since_epoch();
 
-  reset();
   observed_ = observed;
 
   size_t itr = 0, forward = 1;

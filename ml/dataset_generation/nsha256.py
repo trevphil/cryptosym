@@ -3,9 +3,6 @@
 
 """
 Adapted from https://bitbucket.org/pypy/pypy/src/tip/lib_pypy/_sha256.py
-
-TODO - Make sure that everywhere a SymBitVec is initialized, it is correctly
-set to unknown or known
 """
 
 import hashlib
@@ -49,75 +46,394 @@ def sha_transform(sha_info, difficulty):
     h  = t0 + t1
     return d & F32, h & F32
 
-  ss[3], ss[7] = RND(ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],0,SymBitVec(BitVector(intVal=0x428a2f98, size=32)))
-  ss[2], ss[6] = RND(ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],1,SymBitVec(BitVector(intVal=0x71374491, size=32)))
-  ss[1], ss[5] = RND(ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],2,SymBitVec(BitVector(intVal=0xb5c0fbcf, size=32)))
-  ss[0], ss[4] = RND(ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],3,SymBitVec(BitVector(intVal=0xe9b5dba5, size=32)))
-  ss[7], ss[3] = RND(ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],4,SymBitVec(BitVector(intVal=0x3956c25b, size=32)))
-  ss[6], ss[2] = RND(ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],5,SymBitVec(BitVector(intVal=0x59f111f1, size=32)))
-  ss[5], ss[1] = RND(ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],6,SymBitVec(BitVector(intVal=0x923f82a4, size=32)))
-  ss[4], ss[0] = RND(ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],7,SymBitVec(BitVector(intVal=0xab1c5ed5, size=32)))
-  ss[3], ss[7] = RND(ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],8,SymBitVec(BitVector(intVal=0xd807aa98, size=32)))
-  ss[2], ss[6] = RND(ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],9,SymBitVec(BitVector(intVal=0x12835b01, size=32)))
-  ss[1], ss[5] = RND(ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],10,SymBitVec(BitVector(intVal=0x243185be, size=32)))
-  ss[0], ss[4] = RND(ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],11,SymBitVec(BitVector(intVal=0x550c7dc3, size=32)))
-  ss[7], ss[3] = RND(ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],12,SymBitVec(BitVector(intVal=0x72be5d74, size=32)))
-  ss[6], ss[2] = RND(ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],13,SymBitVec(BitVector(intVal=0x80deb1fe, size=32)))
-  ss[5], ss[1] = RND(ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],14,SymBitVec(BitVector(intVal=0x9bdc06a7, size=32)))
-  ss[4], ss[0] = RND(ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],15,SymBitVec(BitVector(intVal=0xc19bf174, size=32)))
-  ss[3], ss[7] = RND(ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],16,SymBitVec(BitVector(intVal=0xe49b69c1, size=32)))
-  ss[2], ss[6] = RND(ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],17,SymBitVec(BitVector(intVal=0xefbe4786, size=32)))
-  ss[1], ss[5] = RND(ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],18,SymBitVec(BitVector(intVal=0x0fc19dc6, size=32)))
-  ss[0], ss[4] = RND(ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],19,SymBitVec(BitVector(intVal=0x240ca1cc, size=32)))
-  ss[7], ss[3] = RND(ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],20,SymBitVec(BitVector(intVal=0x2de92c6f, size=32)))
-  ss[6], ss[2] = RND(ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],21,SymBitVec(BitVector(intVal=0x4a7484aa, size=32)))
-  ss[5], ss[1] = RND(ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],22,SymBitVec(BitVector(intVal=0x5cb0a9dc, size=32)))
-  ss[4], ss[0] = RND(ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],23,SymBitVec(BitVector(intVal=0x76f988da, size=32)))
-  ss[3], ss[7] = RND(ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],24,SymBitVec(BitVector(intVal=0x983e5152, size=32)))
-  ss[2], ss[6] = RND(ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],25,SymBitVec(BitVector(intVal=0xa831c66d, size=32)))
-  ss[1], ss[5] = RND(ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],26,SymBitVec(BitVector(intVal=0xb00327c8, size=32)))
-  ss[0], ss[4] = RND(ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],27,SymBitVec(BitVector(intVal=0xbf597fc7, size=32)))
-  ss[7], ss[3] = RND(ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],28,SymBitVec(BitVector(intVal=0xc6e00bf3, size=32)))
-  ss[6], ss[2] = RND(ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],29,SymBitVec(BitVector(intVal=0xd5a79147, size=32)))
-  ss[5], ss[1] = RND(ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],30,SymBitVec(BitVector(intVal=0x06ca6351, size=32)))
-  ss[4], ss[0] = RND(ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],31,SymBitVec(BitVector(intVal=0x14292967, size=32)))
-  ss[3], ss[7] = RND(ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],32,SymBitVec(BitVector(intVal=0x27b70a85, size=32)))
-  ss[2], ss[6] = RND(ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],33,SymBitVec(BitVector(intVal=0x2e1b2138, size=32)))
-  ss[1], ss[5] = RND(ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],34,SymBitVec(BitVector(intVal=0x4d2c6dfc, size=32)))
-  ss[0], ss[4] = RND(ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],35,SymBitVec(BitVector(intVal=0x53380d13, size=32)))
-  ss[7], ss[3] = RND(ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],36,SymBitVec(BitVector(intVal=0x650a7354, size=32)))
-  ss[6], ss[2] = RND(ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],37,SymBitVec(BitVector(intVal=0x766a0abb, size=32)))
-  ss[5], ss[1] = RND(ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],38,SymBitVec(BitVector(intVal=0x81c2c92e, size=32)))
-  ss[4], ss[0] = RND(ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],39,SymBitVec(BitVector(intVal=0x92722c85, size=32)))
-  ss[3], ss[7] = RND(ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],40,SymBitVec(BitVector(intVal=0xa2bfe8a1, size=32)))
-  ss[2], ss[6] = RND(ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],41,SymBitVec(BitVector(intVal=0xa81a664b, size=32)))
-  ss[1], ss[5] = RND(ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],42,SymBitVec(BitVector(intVal=0xc24b8b70, size=32)))
-  ss[0], ss[4] = RND(ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],43,SymBitVec(BitVector(intVal=0xc76c51a3, size=32)))
-  ss[7], ss[3] = RND(ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],44,SymBitVec(BitVector(intVal=0xd192e819, size=32)))
-  ss[6], ss[2] = RND(ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],45,SymBitVec(BitVector(intVal=0xd6990624, size=32)))
-  ss[5], ss[1] = RND(ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],46,SymBitVec(BitVector(intVal=0xf40e3585, size=32)))
-  ss[4], ss[0] = RND(ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],47,SymBitVec(BitVector(intVal=0x106aa070, size=32)))
-  ss[3], ss[7] = RND(ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],48,SymBitVec(BitVector(intVal=0x19a4c116, size=32)))
-  ss[2], ss[6] = RND(ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],49,SymBitVec(BitVector(intVal=0x1e376c08, size=32)))
-  ss[1], ss[5] = RND(ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],50,SymBitVec(BitVector(intVal=0x2748774c, size=32)))
-  ss[0], ss[4] = RND(ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],51,SymBitVec(BitVector(intVal=0x34b0bcb5, size=32)))
-  ss[7], ss[3] = RND(ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],52,SymBitVec(BitVector(intVal=0x391c0cb3, size=32)))
-  ss[6], ss[2] = RND(ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],53,SymBitVec(BitVector(intVal=0x4ed8aa4a, size=32)))
-  ss[5], ss[1] = RND(ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],54,SymBitVec(BitVector(intVal=0x5b9cca4f, size=32)))
-  ss[4], ss[0] = RND(ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],55,SymBitVec(BitVector(intVal=0x682e6ff3, size=32)))
-  ss[3], ss[7] = RND(ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],56,SymBitVec(BitVector(intVal=0x748f82ee, size=32)))
-  ss[2], ss[6] = RND(ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],57,SymBitVec(BitVector(intVal=0x78a5636f, size=32)))
-  ss[1], ss[5] = RND(ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],58,SymBitVec(BitVector(intVal=0x84c87814, size=32)))
-  ss[0], ss[4] = RND(ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],59,SymBitVec(BitVector(intVal=0x8cc70208, size=32)))
-  ss[7], ss[3] = RND(ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],60,SymBitVec(BitVector(intVal=0x90befffa, size=32)))
-  ss[6], ss[2] = RND(ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],61,SymBitVec(BitVector(intVal=0xa4506ceb, size=32)))
-  ss[5], ss[1] = RND(ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],62,SymBitVec(BitVector(intVal=0xbef9a3f7, size=32)))
-  ss[4], ss[0] = RND(ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],63,SymBitVec(BitVector(intVal=0xc67178f2, size=32)))
+  def finish(ss):
+    dig = []
+    for i, x in enumerate(sha_info['digest']):
+      dig.append((x + ss[i]) & F32)
+    sha_info['digest'] = dig
 
-  dig = []
-  for i, x in enumerate(sha_info['digest']):
-    dig.append((x + ss[i]) & F32)
-  sha_info['digest'] = dig
+  itr = 0
+
+  ss[3], ss[7] = RND(ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],0,SymBitVec(BitVector(intVal=0x428a2f98, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[2], ss[6] = RND(ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],1,SymBitVec(BitVector(intVal=0x71374491, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[1], ss[5] = RND(ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],2,SymBitVec(BitVector(intVal=0xb5c0fbcf, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[0], ss[4] = RND(ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],3,SymBitVec(BitVector(intVal=0xe9b5dba5, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[7], ss[3] = RND(ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],4,SymBitVec(BitVector(intVal=0x3956c25b, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[6], ss[2] = RND(ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],5,SymBitVec(BitVector(intVal=0x59f111f1, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[5], ss[1] = RND(ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],6,SymBitVec(BitVector(intVal=0x923f82a4, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[4], ss[0] = RND(ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],7,SymBitVec(BitVector(intVal=0xab1c5ed5, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[3], ss[7] = RND(ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],8,SymBitVec(BitVector(intVal=0xd807aa98, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[2], ss[6] = RND(ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],9,SymBitVec(BitVector(intVal=0x12835b01, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[1], ss[5] = RND(ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],10,SymBitVec(BitVector(intVal=0x243185be, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[0], ss[4] = RND(ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],11,SymBitVec(BitVector(intVal=0x550c7dc3, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[7], ss[3] = RND(ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],12,SymBitVec(BitVector(intVal=0x72be5d74, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[6], ss[2] = RND(ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],13,SymBitVec(BitVector(intVal=0x80deb1fe, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[5], ss[1] = RND(ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],14,SymBitVec(BitVector(intVal=0x9bdc06a7, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[4], ss[0] = RND(ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],15,SymBitVec(BitVector(intVal=0xc19bf174, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[3], ss[7] = RND(ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],16,SymBitVec(BitVector(intVal=0xe49b69c1, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[2], ss[6] = RND(ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],17,SymBitVec(BitVector(intVal=0xefbe4786, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[1], ss[5] = RND(ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],18,SymBitVec(BitVector(intVal=0x0fc19dc6, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[0], ss[4] = RND(ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],19,SymBitVec(BitVector(intVal=0x240ca1cc, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[7], ss[3] = RND(ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],20,SymBitVec(BitVector(intVal=0x2de92c6f, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[6], ss[2] = RND(ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],21,SymBitVec(BitVector(intVal=0x4a7484aa, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[5], ss[1] = RND(ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],22,SymBitVec(BitVector(intVal=0x5cb0a9dc, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[4], ss[0] = RND(ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],23,SymBitVec(BitVector(intVal=0x76f988da, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[3], ss[7] = RND(ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],24,SymBitVec(BitVector(intVal=0x983e5152, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[2], ss[6] = RND(ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],25,SymBitVec(BitVector(intVal=0xa831c66d, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[1], ss[5] = RND(ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],26,SymBitVec(BitVector(intVal=0xb00327c8, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[0], ss[4] = RND(ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],27,SymBitVec(BitVector(intVal=0xbf597fc7, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[7], ss[3] = RND(ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],28,SymBitVec(BitVector(intVal=0xc6e00bf3, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[6], ss[2] = RND(ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],29,SymBitVec(BitVector(intVal=0xd5a79147, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[5], ss[1] = RND(ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],30,SymBitVec(BitVector(intVal=0x06ca6351, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[4], ss[0] = RND(ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],31,SymBitVec(BitVector(intVal=0x14292967, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[3], ss[7] = RND(ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],32,SymBitVec(BitVector(intVal=0x27b70a85, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[2], ss[6] = RND(ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],33,SymBitVec(BitVector(intVal=0x2e1b2138, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[1], ss[5] = RND(ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],34,SymBitVec(BitVector(intVal=0x4d2c6dfc, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[0], ss[4] = RND(ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],35,SymBitVec(BitVector(intVal=0x53380d13, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[7], ss[3] = RND(ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],36,SymBitVec(BitVector(intVal=0x650a7354, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[6], ss[2] = RND(ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],37,SymBitVec(BitVector(intVal=0x766a0abb, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[5], ss[1] = RND(ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],38,SymBitVec(BitVector(intVal=0x81c2c92e, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[4], ss[0] = RND(ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],39,SymBitVec(BitVector(intVal=0x92722c85, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[3], ss[7] = RND(ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],40,SymBitVec(BitVector(intVal=0xa2bfe8a1, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[2], ss[6] = RND(ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],41,SymBitVec(BitVector(intVal=0xa81a664b, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[1], ss[5] = RND(ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],42,SymBitVec(BitVector(intVal=0xc24b8b70, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[0], ss[4] = RND(ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],43,SymBitVec(BitVector(intVal=0xc76c51a3, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[7], ss[3] = RND(ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],44,SymBitVec(BitVector(intVal=0xd192e819, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[6], ss[2] = RND(ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],45,SymBitVec(BitVector(intVal=0xd6990624, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[5], ss[1] = RND(ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],46,SymBitVec(BitVector(intVal=0xf40e3585, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[4], ss[0] = RND(ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],47,SymBitVec(BitVector(intVal=0x106aa070, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[3], ss[7] = RND(ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],48,SymBitVec(BitVector(intVal=0x19a4c116, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[2], ss[6] = RND(ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],49,SymBitVec(BitVector(intVal=0x1e376c08, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[1], ss[5] = RND(ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],50,SymBitVec(BitVector(intVal=0x2748774c, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[0], ss[4] = RND(ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],51,SymBitVec(BitVector(intVal=0x34b0bcb5, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[7], ss[3] = RND(ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],52,SymBitVec(BitVector(intVal=0x391c0cb3, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[6], ss[2] = RND(ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],53,SymBitVec(BitVector(intVal=0x4ed8aa4a, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[5], ss[1] = RND(ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],54,SymBitVec(BitVector(intVal=0x5b9cca4f, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[4], ss[0] = RND(ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],55,SymBitVec(BitVector(intVal=0x682e6ff3, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[3], ss[7] = RND(ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],56,SymBitVec(BitVector(intVal=0x748f82ee, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[2], ss[6] = RND(ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],57,SymBitVec(BitVector(intVal=0x78a5636f, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[1], ss[5] = RND(ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],ss[5],58,SymBitVec(BitVector(intVal=0x84c87814, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[0], ss[4] = RND(ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],ss[4],59,SymBitVec(BitVector(intVal=0x8cc70208, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[7], ss[3] = RND(ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],ss[3],60,SymBitVec(BitVector(intVal=0x90befffa, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[6], ss[2] = RND(ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],ss[2],61,SymBitVec(BitVector(intVal=0xa4506ceb, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[5], ss[1] = RND(ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],ss[1],62,SymBitVec(BitVector(intVal=0xbef9a3f7, size=32)))
+  itr += 1
+  if itr == difficulty:
+    finish(ss)
+    return
+
+  ss[4], ss[0] = RND(ss[1],ss[2],ss[3],ss[4],ss[5],ss[6],ss[7],ss[0],63,SymBitVec(BitVector(intVal=0xc67178f2, size=32)))
+  finish(ss)
 
 
 def sha_init():
@@ -240,7 +556,7 @@ class sha256(object):
   def __init__(self, input_data=None, difficulty=64):
     self._sha = sha_init()
     self._difficulty = difficulty
-    
+
     if input_data is None:
       self._real_hasher = hashlib.sha256()
       return
@@ -255,7 +571,7 @@ class sha256(object):
   def update(self, input_data):
     input_data = getbuf(input_data)
     sha_update(self._sha, input_data, self._difficulty)
-    
+
     int_val = int(input_data)
     input_bytes = int_val.to_bytes((int_val.bit_length() + 7) // 8, 'big')
     self._real_hasher.update(input_bytes)
@@ -270,8 +586,6 @@ class sha256(object):
       real_dig = self._real_hasher.hexdigest()
       if dig != real_dig:
         raise RuntimeError('Expected {}, got {}'.format(real_dig, dig))
-      else:
-        print('Hashes match: {}'.format(dig))
     return result
 
 

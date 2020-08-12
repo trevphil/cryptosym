@@ -42,11 +42,11 @@ class InferenceTool {
 
   virtual std::vector<Prediction> marginals() const;
 
+  virtual void reset();
+
   std::string factorType(size_t rv_index) const;
 
  protected:
-  virtual void reset();
-
   std::shared_ptr<Probability> prob_;
   std::shared_ptr<Dataset> dataset_;
   std::shared_ptr<utils::Config> config_;

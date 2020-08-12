@@ -12,7 +12,8 @@
 
 #pragma once
 
-#include <gtsam/inference/Key.h>
+#include <gtsam/discrete/Signature.h>
+#include <gtsam/discrete/DiscreteKey.h>
 #include <gtsam/discrete/DiscreteFactorGraph.h>
 #include <gtsam/discrete/DiscreteMarginals.h>
 #include <gtsam/inference/BayesNet.h>
@@ -37,7 +38,10 @@ class BayesNet : public InferenceTool {
   void reset() override;
 
  private:
+  std::vector<InferenceTool::Prediction> predictions_;
   gtsam::DiscreteBayesNet dbn_;
+  gtsam::DiscreteFactorGraph factor_graph_;
+  gtsam::Ordering ordering_;
 };
 
 }  // end namespace hash_reversal

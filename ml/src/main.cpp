@@ -74,6 +74,7 @@ int main(int argc, char** argv) {
     spdlog::info("Test case {}/{}", sample_idx + 1, num_test);
 
     const auto observed = dataset->getObservedData(sample_idx);
+    inference_tool->reset();
     inference_tool->update(observed);
     const auto marginals = inference_tool->marginals();
     boost::dynamic_bitset<> predicted_input(n_input);

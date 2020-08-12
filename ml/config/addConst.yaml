@@ -6,4 +6,4 @@ num_test: 10
 print_connections: false
 test_mode: false
 observed_input_bits: 0
-method: "lbp"
+method: "gtsam"
