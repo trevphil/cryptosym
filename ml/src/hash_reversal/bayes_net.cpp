@@ -51,6 +51,9 @@ BayesNet::BayesNet(std::shared_ptr<Probability> prob,
 }
 
 void BayesNet::update(const VariableAssignments &observed) {
+  spdlog::info("\tStarting GTSAM Bayes Net method...");
+  const auto start = utils::Convenience::time_since_epoch();
+
   for (const auto it : observed) {
     const gtsam::DiscreteKey key(it.first, 2);
     const std::string val = it.second ? "0 1" : "1 0";
@@ -58,8 +61,11 @@ void BayesNet::update(const VariableAssignments &observed) {
   }
 
   // Can also try it without giving an ordering
+  spdlog::info("\tEliminating variables...");
   // auto bayes_tree = factor_graph_.eliminateMultifrontal(ordering_);
-  auto chordal = factor_graph_.eliminateSequential(ordering_);
+  // auto chordal = factor_graph_.eliminateSequential(ordering_);
+  auto chordal = factor_graph_.eliminateSequential();
+  spdlog::info("\tOptimizing...");
   gtsam::DiscreteFactor::sharedValues mpe = chordal->optimize();
 
   const size_t n = config_->num_rvs;
@@ -70,6 +76,9 @@ void BayesNet::update(const VariableAssignments &observed) {
     const InferenceTool::Prediction pred(rv, prob_one);
     predictions_.push_back(pred);
   }
+
+  const auto end = utils::Convenience::time_since_epoch();
+  spdlog::info("\tGTSAM Bayes Net method finished in {} seconds.", end - start);
 }
 
 std::vector<InferenceTool::Prediction> BayesNet::marginals() const {
