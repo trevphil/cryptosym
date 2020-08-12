@@ -12,6 +12,11 @@
 
 #pragma once
 
+#include <gtsam/inference/Key.h>
+#include <gtsam/discrete/DiscreteFactorGraph.h>
+#include <gtsam/discrete/DiscreteMarginals.h>
+#include <gtsam/inference/BayesNet.h>
+
 #include <string>
 
 #include "hash_reversal/inference_tool.hpp"
@@ -30,6 +35,9 @@ class BayesNet : public InferenceTool {
 
  protected:
   void reset() override;
+
+ private:
+  gtsam::DiscreteBayesNet dbn_;
 };
 
 }  // end namespace hash_reversal

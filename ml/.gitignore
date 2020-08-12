@@ -9,3 +9,4 @@ bin/*
 .vscode/*
 main
 *.txt
+!CMakeLists.txt
