@@ -42,10 +42,10 @@ class Bit(object):
     result_val = a.val ^ b.val
 
     if a.is_rv and b.is_rv:
-      result = Bit(result_val, True)
-      f_type = FactorType.XOR
-      Bit.factors.append(Factor(f_type, result, [a, b]))
-      return result
+      tmp1 = ~(a & b)
+      tmp2 = ~(a & tmp1)
+      tmp3 = ~(b & tmp1)
+      return ~(tmp2 & tmp3)
     elif a.is_rv:
       if b.val is False:
         # XOR with a constant of 0 is simply the other input
@@ -74,10 +74,9 @@ class Bit(object):
       return Bit(result_val, False)
 
     if a.is_rv and b.is_rv:
-      f_type = FactorType.OR
-      result = Bit(result_val, True)
-      Bit.factors.append(Factor(f_type, result, [a, b]))
-      return result
+      tmp1 = ~(a & a)
+      tmp2 = ~(b & b)
+      return ~(tmp1 & tmp2)
     elif a.is_rv:
       # Here, "b" is a constant equal to 0, so result is directly "a"
       return a

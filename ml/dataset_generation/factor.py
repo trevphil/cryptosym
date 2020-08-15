@@ -5,8 +5,6 @@ from enum import Enum, unique
 @unique
 class FactorType(Enum):
   AND = 'AND'
-  XOR = 'XOR'
-  OR = 'OR'
   INV = 'INV'
 
   @staticmethod
@@ -16,8 +14,6 @@ class FactorType(Enum):
 
     return {
       FactorType.AND: 2,
-      FactorType.XOR: 2,
-      FactorType.OR: 2,
       FactorType.INV: 1,
     }[factor_type]
 
