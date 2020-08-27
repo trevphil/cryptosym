@@ -85,6 +85,17 @@ class Factor : public FactorGraphNode {
     return v;
   }
 
+  std::vector<size_t> inputRVs() const {
+    std::vector<size_t> referenced;
+    for (size_t rv : referenced_rvs) {
+      if (rv != output_rv) referenced.push_back(rv);
+    }
+    if (factor_type == "AND" && referenced.size() == 1u) {
+      referenced.push_back(referenced.at(0));
+    }
+    return referenced;
+  }
+
   std::string factor_type;
   size_t output_rv;
   std::set<size_t> referenced_rvs;

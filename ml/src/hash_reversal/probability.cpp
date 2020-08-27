@@ -32,16 +32,6 @@ double Probability::probOne(const Factor &factor,
       assignment_prob = values.out == (values.in1 & values.in2);
     }
 
-  } else if (factor_type == "XOR") {
-    assignment_prob = values.out == (values.in1 ^ values.in2) ? 0.5 : 0;
-
-  } else if (factor_type == "OR") {
-    if (values.out == 0) {
-      assignment_prob = values.out == (values.in1 | values.in2);
-    } else {
-      assignment_prob = values.out == (values.in1 | values.in2) ? 1.0/3.0 : 0;
-    }
-
   } else if (factor_type == "INV") {
     assignment_prob = values.out != values.in1;
 
