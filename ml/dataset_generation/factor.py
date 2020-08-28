@@ -4,8 +4,10 @@ from enum import Enum, unique
 
 @unique
 class FactorType(Enum):
-  AND = 'AND'
+  PRIOR = 'PRIOR'
+  SAME = 'SAME'
   INV = 'INV'
+  AND = 'AND'
 
   @staticmethod
   def numInputs(factor_type):
@@ -13,8 +15,10 @@ class FactorType(Enum):
       raise NotImplementedError('Invalid factor type: {}'.format(factor_type))
 
     return {
-      FactorType.AND: 2,
+      FactorType.PRIOR: 0,
+      FactorType.SAME: 1,
       FactorType.INV: 1,
+      FactorType.AND: 2,
     }[factor_type]
 
 
@@ -34,8 +38,11 @@ class Factor(object):
     self.factor_type = factor_type
     self.out = out
     self.inputs = inputs
-    for inp in inputs:
-      Factor.directed_graph.add_edge(inp.index, out.index)
+    if len(inputs) > 0:
+      for inp in inputs:
+        Factor.directed_graph.add_edge(inp.index, out.index)
+    else:
+      Factor.directed_graph.add_node(out.index)
 
   def __str__(self):
     if len(self.inputs) == 0:

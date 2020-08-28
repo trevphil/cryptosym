@@ -15,13 +15,16 @@ class SymbolicHash(object):
 
   def numVars(self):
     return Bit.rv_index
-  
+
+  def numFactors(self):
+    return len(Bit.factors)
+
   def allBits(self):
     return BitVector(bitlist=[bool(bit.val) for bit in Bit.rv_bits])
 
   def saveFactors(self, filename):
     saveFactors(filename)
-  
+
   def hash(self, hash_input, difficulty):
     raise NotImplementedError  # Override in sub-classes
 
@@ -29,11 +32,11 @@ class SymbolicHash(object):
     """
     @parameter
      - hash_input: A BitVector
-     - difficulty: An optional difficulty, between 1-64
+     - difficulty: An optional difficulty, between 1-64 inclusive
     @return
-     - The hashed input, as a BitVector
+     - The hashed input, as a SymBitVec
     """
-    
+
     Bit.reset()
     Factor.reset()
     hash_input = SymBitVec(hash_input, unknown=True)
@@ -86,7 +89,7 @@ class NonLossyPseudoHash(SymbolicHash):
   def hash(self, hash_input, difficulty):
     n = len(hash_input)
     n4 = n // 4
-    
+
     np.random.seed(1)
     A = int.from_bytes(np.random.bytes(n // 8), 'big')
     B = int.from_bytes(np.random.bytes(n // 8), 'big')
@@ -111,7 +114,7 @@ class NonLossyPseudoHash(SymbolicHash):
 
 class AddConst(SymbolicHash):
   def hash(self, hash_input, difficulty):
-    n = len(hash_input)    
+    n = len(hash_input)
     A = SymBitVec(BitVector(intVal=0x4F65D4D99B70EF1B, size=n))
     return hash_input + A
 
@@ -131,21 +134,21 @@ class Add(SymbolicHash):
 
 class XorConst(SymbolicHash):
   def hash(self, hash_input, difficulty):
-    n = len(hash_input)    
+    n = len(hash_input)
     A = SymBitVec(BitVector(intVal=0x4F65D4D99B70EF1B, size=n))
     return hash_input ^ A
 
 
 class AndConst(SymbolicHash):
   def hash(self, hash_input, difficulty):
-    n = len(hash_input)    
+    n = len(hash_input)
     A = SymBitVec(BitVector(intVal=0x4F65D4D99B70EF1B, size=n))
     return hash_input & A
 
 
 class OrConst(SymbolicHash):
   def hash(self, hash_input, difficulty):
-    n = len(hash_input)    
+    n = len(hash_input)
     A = SymBitVec(BitVector(intVal=0x4F65D4D99B70EF1B, size=n))
     return hash_input | A
 

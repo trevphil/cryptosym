@@ -75,7 +75,7 @@ void FactorGraph::update(const VariableAssignments &observed) {
   for (itr = 0; itr < config_->lbp_max_iter; ++itr) {
     updateRandomVariableMessages(forward);
     updateFactorMessages(forward);
-    const auto &marg = marginals();
+    const auto marg = marginals();
     if (equal(previous_marginals_, marg)) break;
     previous_marginals_ = marg;
     forward = (forward + 1) % 2;

@@ -12,73 +12,81 @@
 
 #include "hash_reversal/bayes_net.hpp"
 
+#include <algorithm>
+
 #include <spdlog/spdlog.h>
 
 namespace hash_reversal {
 
-using namespace gtsam;
+using gtsam::symbol_shorthand::X;
 
 BayesNet::BayesNet(std::shared_ptr<Probability> prob,
                    std::shared_ptr<Dataset> dataset,
                    std::shared_ptr<utils::Config> config)
     : InferenceTool(prob, dataset, config) {
-  for (const auto &factor : factors_) {
-    gtsam::DiscreteKey out(factor.output_rv, 2);
-    std::vector<gtsam::DiscreteKey> inp;
-    for (const size_t input : factor.referenced_rvs) {
-      if (input == factor.output_rv) continue;
-      inp.push_back(gtsam::DiscreteKey(input, 2));
-    }
-
-    ordering_ += out.first;
-
-    if (factor.factor_type == "PRIOR") {
-      dbn_.add(out % "50/50");
-    } else if (factor.factor_type == "AND") {
-      dbn_.add((out | inp.at(0), inp.at(1)) = "1/0 1/0 1/0 0/1");
-    } else if (factor.factor_type == "OR") {
-      dbn_.add((out | inp.at(0), inp.at(1)) = "1/0 0/1 0/1 0/1");
-    } else if (factor.factor_type == "XOR") {
-      dbn_.add((out | inp.at(0), inp.at(1)) = "1/0 0/1 0/1 1/0");
-    } else if (factor.factor_type == "INV") {
-      dbn_.add((out | inp.at(0)) = "0/1 1/0");
-    } else {
-      spdlog::error("Unsupported factor: {}", factor.factor_type);
-    }
-  }
-
-  factor_graph_ = gtsam::DiscreteFactorGraph(dbn_);
+  noise_ = gtsam::noiseModel::Diagonal::Sigmas(
+      (gtsam::Vector(1) << 100.0).finished());
+  prior_noise_ = gtsam::noiseModel::Diagonal::Sigmas(
+      (gtsam::Vector(1) << 1e-6).finished());
 }
 
 void BayesNet::update(const VariableAssignments &observed) {
-  spdlog::info("\tStarting GTSAM Bayes Net method...");
+  spdlog::info("\tStarting GTSAM method...");
   const auto start = utils::Convenience::time_since_epoch();
 
-  for (const auto it : observed) {
-    const gtsam::DiscreteKey key(it.first, 2);
-    const std::string val = it.second ? "0 1" : "1 0";
-    factor_graph_.add(key, val);
+  for (const auto &factor : factors_) {
+    // TODO: Need to account for inverse of RVs
+    const std::vector<size_t> inputs = factor.inputRVs();
+    const size_t rv = factor.output_rv;
+    const std::string &ftype = factor.factor_type;
+    const bool is_observed = observed.count(rv) > 0;
+    const double val = is_observed ? double(observed.at(rv)) : 0.5;
+    init_values_.insert(X(rv), val);
+
+    if (ftype == "PRIOR") {
+      gtsam::PriorFactor<double> prior(X(rv), val, noise_);
+      graph_.add(prior);
+    } else if (ftype == "INV") {
+      InvFactor inv_fac(X(inputs.at(0)), X(rv), noise_);
+      graph_.add(inv_fac);
+    } else if (ftype == "AND") {
+      AndFactor and_fac(X(inputs.at(0)), X(inputs.at(1)), X(rv), noise_);
+      graph_.add(and_fac);
+    } else {
+      spdlog::error("\tUnsupported factor type: {}", ftype);
+    }
   }
 
-  // Can also try it without giving an ordering
-  spdlog::info("\tEliminating variables...");
-  // auto bayes_tree = factor_graph_.eliminateMultifrontal(ordering_);
-  // auto chordal = factor_graph_.eliminateSequential(ordering_);
-  auto chordal = factor_graph_.eliminateSequential();
-  spdlog::info("\tOptimizing...");
-  gtsam::DiscreteFactor::sharedValues mpe = chordal->optimize();
+  for (const auto it : observed) {
+    // Attach priors with extremely low variance to the observed RVs
+    gtsam::PriorFactor<double> prior(
+        X(it.first), double(it.second), prior_noise_);
+    graph_.add(prior);
+  }
+
+  spdlog::info("\tStarting graph optimization...");
+  gtsam::LevenbergMarquardtParams params;
+  params.maxIterations = 20;
+  params.relativeErrorTol = 1e-4;
+  params.absoluteErrorTol = 1e-4;
+  gtsam::LevenbergMarquardtOptimizer optimizer(graph_, init_values_, params);
+  const gtsam::Values result = optimizer.optimize();
+  spdlog::info("\tFinished graph optimization in {} iterations (error={})",
+               optimizer.iterations(), optimizer.error());
 
   const size_t n = config_->num_rvs;
   predictions_.clear();
   predictions_.reserve(n);
   for (size_t rv = 0; rv < n; ++rv) {
-    const double prob_one = mpe->at(rv) == 1 ? 1.0 : 0.0;
+    const double rv_val = result.at<double>(X(rv));
+    // spdlog::info("RV {}: {}", rv, rv_val);
+    const double prob_one = std::max(0.0, std::min(1.0, rv_val));
     const InferenceTool::Prediction pred(rv, prob_one);
     predictions_.push_back(pred);
   }
 
   const auto end = utils::Convenience::time_since_epoch();
-  spdlog::info("\tGTSAM Bayes Net method finished in {} seconds.", end - start);
+  spdlog::info("\tGTSAM method finished in {} seconds.", end - start);
 }
 
 std::vector<InferenceTool::Prediction> BayesNet::marginals() const {
@@ -87,7 +95,8 @@ std::vector<InferenceTool::Prediction> BayesNet::marginals() const {
 
 void BayesNet::reset() {
   predictions_.clear();
-  factor_graph_ = gtsam::DiscreteFactorGraph(dbn_);
+  graph_.resize(0u);
+  init_values_.clear();
 }
 
 }  // end namespace hash_reversal

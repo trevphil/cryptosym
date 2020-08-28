@@ -10,16 +10,16 @@ class SymBitVec(object):
     if type(bits) is list:
       self.bits = bits
     elif type(bits) is BitVector:
-      self.bits = [Bit(bits[i], unknown) for i in range(len(bits))]
+      self.bits = [Bit(bits[i], unknown, unknown) for i in range(len(bits))]
     else:
       raise RuntimeError('SymBitVec: Unsupported type {}'.format(type(bits)))
-  
+
   def rvIndices(self):
     return [bit.index for bit in self.bits if bit.is_rv]
-  
+
   def hex(self):
     return hex(int(self))[2:].lower()
-  
+
   def concat(self, other):
     new_bits = self.bits + other.bits
     return SymBitVec(new_bits)
@@ -39,10 +39,10 @@ class SymBitVec(object):
 
   def __len__(self):
     return len(self.bits)
-  
+
   def __getitem__(self, i):
     return self.bits[i]
-  
+
   def __int__(self):
     n = len(self)
     bv = BitVector(size=n)
@@ -56,15 +56,15 @@ class SymBitVec(object):
   def __xor__(a, b):
     assert len(a) == len(b)
     return SymBitVec([a[i] ^ b[i] for i in range(len(a))])
-  
+
   def __and__(a, b):
     assert len(a) == len(b)
     return SymBitVec([a[i] & b[i] for i in range(len(a))])
-  
+
   def __or__(a, b):
     assert len(a) == len(b)
     return SymBitVec([a[i] | b[i] for i in range(len(a))])
-  
+
   def __lshift__(a, n):
     if n == 0:
       return deepcopy(a)

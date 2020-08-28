@@ -2,8 +2,8 @@ lbp_max_iter: 50
 lbp_damping: 0.75
 dataset_dir: "data/lossyPseudoHash"
 epsilon: 0.0001
-num_test: 10
+num_test: 1
 print_connections: false
 test_mode: false
 observed_input_bits: 0
-method: "gtsam"
+method: "lbp"

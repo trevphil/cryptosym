@@ -25,6 +25,10 @@
 
 namespace hash_reversal {
 
+/*****************************************
+ *********** FACTOR GRAPH NODE ***********
+ *****************************************/
+
 class FactorGraphNode {
  public:
   void updateMessage(size_t to, bool rv_val, double new_msg,
@@ -54,10 +58,18 @@ class FactorGraphNode {
   std::map<std::pair<size_t, double>, double> messages_;
 };
 
+/*****************************************
+ ************ RANDOM VARIABLE ************
+ *****************************************/
+
 class RandomVariable : public FactorGraphNode {
  public:
   std::set<size_t> factor_indices;
 };
+
+/*****************************************
+ **************** FACTOR *****************
+ *****************************************/
 
 class Factor : public FactorGraphNode {
  public:
@@ -65,9 +77,8 @@ class Factor : public FactorGraphNode {
     bool in1, in2, out;
   };
 
-  Factor(size_t rv) : factor_type("PRIOR"), output_rv(rv) {
-    referenced_rvs.insert(rv);
-  }
+  Factor(const std::string &ftype, size_t out, const std::set<size_t> &ref)
+      : factor_type(ftype), output_rv(out), referenced_rvs(ref) { }
 
   Values extractInputOutput(const VariableAssignments &assignments) const {
     Values v;
@@ -86,14 +97,11 @@ class Factor : public FactorGraphNode {
   }
 
   std::vector<size_t> inputRVs() const {
-    std::vector<size_t> referenced;
+    std::vector<size_t> inputs;
     for (size_t rv : referenced_rvs) {
-      if (rv != output_rv) referenced.push_back(rv);
+      if (rv != output_rv) inputs.push_back(rv);
     }
-    if (factor_type == "AND" && referenced.size() == 1u) {
-      referenced.push_back(referenced.at(0));
-    }
-    return referenced;
+    return inputs;
   }
 
   std::string factor_type;

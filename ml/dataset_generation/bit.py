@@ -7,20 +7,22 @@ class Bit(object):
   factors = []
   rv_bits = []
 
-  def __init__(self, bit_value, is_rv):
+  def __init__(self, bit_value, is_rv, is_prior=False):
     self.val = bool(bit_value)
     self.is_rv = is_rv
     if self.is_rv:
       self.index = Bit.rv_index
       Bit.rv_index += 1
       Bit.rv_bits.append(self)
+      if is_prior:
+        Bit.factors.append(Factor(FactorType.PRIOR, self))
 
   @staticmethod
   def reset():
     Bit.rv_index = 0
     Bit.factors = []
     Bit.rv_bits = []
-  
+
   def __repr__(self):
     if self.is_rv:
       return 'Bit({}, index: {})'.format(int(self.val), self.index)
@@ -33,9 +35,8 @@ class Bit(object):
     result = Bit(result_val, is_rv)
 
     if a.is_rv:
-      f_type = FactorType.INV
-      Bit.factors.append(Factor(f_type, result, [a]))
-    
+      Bit.factors.append(Factor(FactorType.INV, result, [a]))
+
     return result
 
   def __xor__(a, b):
@@ -63,7 +64,7 @@ class Bit(object):
     else:
       # Both are constants
       return Bit(result_val, False)
-  
+
   def __or__(a, b):
     result_val = a.val | b.val
 
@@ -86,23 +87,24 @@ class Bit(object):
     else:
       # Both are constants
       return Bit(result_val, False)
-  
+
   def __and__(a, b):
     result_val = a.val & b.val
-    
+
     # If AND-ing with a constant of 0, result will always be 0
     if not a.is_rv and a.val is False:
       return Bit(result_val, False)
     elif not b.is_rv and b.val is False:
       return Bit(result_val, False)
 
-    is_rv = a.is_rv or b.is_rv
-    result = Bit(result_val, is_rv)
-
     if a.is_rv and b.is_rv:
-      f_type = FactorType.AND
+      if a.index == b.index:
+        # Special logic to prevent same RVs as inputs to AND factor
+        tmp = Bit(b.val, b.is_rv)
+        Bit.factors.append(Factor(FactorType.SAME, tmp, [b]))
+        b = tmp
       result = Bit(result_val, True)
-      Bit.factors.append(Factor(f_type, result, [a, b]))
+      Bit.factors.append(Factor(FactorType.AND, result, [a, b]))
       return result
     elif a.is_rv:
       # Here, "b" is a constant equal to 1, so result is directly "a"
@@ -121,7 +123,7 @@ class Bit(object):
 
     sum1 = a ^ b
     carry1 = a & b
-    
+
     sum2 = carry_in ^ sum1
     carry2 = carry_in & sum1
 

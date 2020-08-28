@@ -4,17 +4,23 @@ import sys
 import random
 import argparse
 import yaml
+import pydot
 import numpy as np
 import networkx as nx
 from pathlib import Path
 from BitVector import BitVector
 from matplotlib import pyplot as plt
+from networkx.drawing.nx_pydot import graphviz_layout
 
-from dataset_generation import pseudo_hashes
+plt.rcParams['figure.figsize'] = (15, 5)
+
+from dataset_generation import hash_funcs
 from dataset_generation.factor import Factor
 
 
 """
+TODO: Update this documentation
+
 This generates a binary file representation of the dataset.
 Each dataset "sample" is 256 hash bits followed by the hash input bits
 of fixed length, followed by (optional) additional bits of fixed length
@@ -37,17 +43,17 @@ def sample(nbits):
 
 def hashAlgos():
   return {
-    'sha256': pseudo_hashes.SHA256Hash(),
-    'lossyPseudoHash': pseudo_hashes.LossyPseudoHash(),
-    'nonLossyPseudoHash': pseudo_hashes.NonLossyPseudoHash(),
-    'xorConst': pseudo_hashes.XorConst(),
-    'shiftLeft': pseudo_hashes.ShiftLeft(),
-    'shiftRight': pseudo_hashes.ShiftRight(),
-    'invert': pseudo_hashes.Invert(),
-    'andConst': pseudo_hashes.AndConst(),
-    'orConst': pseudo_hashes.OrConst(),
-    'addConst': pseudo_hashes.AddConst(),
-    'add': pseudo_hashes.Add(),
+    'sha256': hash_funcs.SHA256Hash(),
+    'lossyPseudoHash': hash_funcs.LossyPseudoHash(),
+    'nonLossyPseudoHash': hash_funcs.NonLossyPseudoHash(),
+    'xorConst': hash_funcs.XorConst(),
+    'shiftLeft': hash_funcs.ShiftLeft(),
+    'shiftRight': hash_funcs.ShiftRight(),
+    'invert': hash_funcs.Invert(),
+    'andConst': hash_funcs.AndConst(),
+    'orConst': hash_funcs.OrConst(),
+    'addConst': hash_funcs.AddConst(),
+    'add': hash_funcs.Add(),
   }
 
 
@@ -98,10 +104,11 @@ def main():
   data_file = os.path.join(dataset_dir, 'data.bits')
   params_file = os.path.join(dataset_dir, 'params.yaml')
   graph_file = os.path.join(dataset_dir, 'factors.txt')
+  viz_file = os.path.join(dataset_dir, 'graph.pdf')
 
   Path(dataset_dir).mkdir(parents=True, exist_ok=True)
 
-  for f in [data_file, params_file, params_file]:
+  for f in [data_file, params_file, graph_file, viz_file]:
     if os.path.exists(f):
       os.remove(f)
 
@@ -109,6 +116,7 @@ def main():
   algo = hash_algos[args.hash_algo]
   algo(sample(num_input_bits), difficulty=args.difficulty)
   n = algo.numVars()
+  assert n == algo.numFactors(), '%d RVs but %d factors' % (n, algo.numFactors())
   input_indices = algo.input_rv_indices
   hash_indices = algo.hash_rv_indices
 
@@ -152,8 +160,15 @@ def main():
   print('Directed graph cyclic? {}'.format(cyclic))
 
   if args.visualize:
-    nx.draw(Factor.directed_graph, node_size=50, with_labels=True)
-    plt.show()
+    colors = ['#0000ff' for _ in range(n)]
+    for input_idx in input_indices:
+      colors[input_idx] = '#ff0000'
+    for output_idx in hash_indices:
+      colors[output_idx] = '#00ff00'
+    pos = graphviz_layout(Factor.directed_graph, prog='dot')
+    nx.draw(Factor.directed_graph, pos, node_size=5,
+            with_labels=False, node_color=colors, width=0.25, arrowsize=4)
+    plt.savefig(viz_file)
 
 
 if __name__ == '__main__':

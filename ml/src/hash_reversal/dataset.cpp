@@ -61,27 +61,36 @@ Dataset::Graph Dataset::loadFactorGraph() const {
   std::vector<RandomVariable> rvs(n);
   std::vector<Factor> factors;
   factors.reserve(n);
-  for (size_t i = 0; i < n; ++i) {
-    factors.push_back(Factor(i));
-    rvs[i].factor_indices.insert(i);
-  }
 
-  while (std::getline(data, line)) {
+  for (size_t output_rv = 0; output_rv < n; ++output_rv) {
+    std::getline(data, line);
     std::stringstream line_stream(line);
     std::string tmp;
 
     std::getline(line_stream, tmp, ';');
-    std::string factor_type = tmp;
+    const std::string factor_type = tmp;
 
     std::getline(line_stream, tmp, ';');
     const size_t rv_index = std::stoul(tmp);
-    factors[rv_index].factor_type = factor_type;
+    if (rv_index != output_rv) spdlog::error("Factors are garbage.");
+    std::set<size_t> referenced_rvs = {output_rv};
+    rvs[output_rv].factor_indices.insert(output_rv);
 
     while (std::getline(line_stream, tmp, ';')) {
-      const size_t rv_dependency = std::stoul(tmp);
-      factors[rv_index].referenced_rvs.insert(rv_dependency);
-      rvs[rv_dependency].factor_indices.insert(rv_index);
+      const size_t input_rv = std::stoul(tmp);
+      referenced_rvs.insert(input_rv);
+      rvs[input_rv].factor_indices.insert(output_rv);
     }
+
+    if (factor_type == "AND" && referenced_rvs.size() < 3u) {
+      spdlog::warn("AND factor may reference the same RV twice as an input");
+    }
+
+    factors.push_back(Factor(factor_type, output_rv, referenced_rvs));
+  }
+
+  if (std::getline(data, line)) {
+    spdlog::error("Factor file was not 100% read, factors are garbage.");
   }
 
   data.close();

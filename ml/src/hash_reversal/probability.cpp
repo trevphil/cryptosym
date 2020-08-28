@@ -32,6 +32,9 @@ double Probability::probOne(const Factor &factor,
       assignment_prob = values.out == (values.in1 & values.in2);
     }
 
+  } else if (factor_type == "SAME") {
+    assignment_prob = values.out == values.in1;
+
   } else if (factor_type == "INV") {
     assignment_prob = values.out != values.in1;
 
