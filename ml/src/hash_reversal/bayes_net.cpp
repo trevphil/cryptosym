@@ -30,7 +30,14 @@ BayesNet::BayesNet(std::shared_ptr<Probability> prob,
       (gtsam::Vector(1) << 1e-6).finished());
 }
 
-void BayesNet::update(const VariableAssignments &observed) {
+void BayesNet::reconfigure(const VariableAssignments &observed) {
+  observed_ = observed;
+  predictions_.clear();
+  graph_.resize(0u);
+  init_values_.clear();
+}
+
+void BayesNet::solve() {
   spdlog::info("\tStarting GTSAM method...");
   const auto start = utils::Convenience::time_since_epoch();
 
@@ -39,8 +46,8 @@ void BayesNet::update(const VariableAssignments &observed) {
     const std::vector<size_t> inputs = factor.inputRVs();
     const size_t rv = factor.output_rv;
     const std::string &ftype = factor.factor_type;
-    const bool is_observed = observed.count(rv) > 0;
-    const double val = is_observed ? double(observed.at(rv)) : 0.5;
+    const bool is_observed = observed_.count(rv) > 0;
+    const double val = is_observed ? double(observed_.at(rv)) : 0.5;
     init_values_.insert(X(rv), val);
 
     if (ftype == "PRIOR") {
@@ -57,7 +64,7 @@ void BayesNet::update(const VariableAssignments &observed) {
     }
   }
 
-  for (const auto it : observed) {
+  for (const auto it : observed_) {
     // Attach priors with extremely low variance to the observed RVs
     gtsam::PriorFactor<double> prior(
         X(it.first), double(it.second), prior_noise_);
@@ -91,12 +98,6 @@ void BayesNet::update(const VariableAssignments &observed) {
 
 std::vector<InferenceTool::Prediction> BayesNet::marginals() const {
   return predictions_;
-}
-
-void BayesNet::reset() {
-  predictions_.clear();
-  graph_.resize(0u);
-  init_values_.clear();
 }
 
 }  // end namespace hash_reversal

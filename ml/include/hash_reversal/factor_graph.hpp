@@ -24,12 +24,12 @@ class FactorGraph : public InferenceTool {
               std::shared_ptr<Dataset> dataset,
               std::shared_ptr<utils::Config> config);
 
-  void update(const VariableAssignments &observed) override;
+  void solve() override;
 
   std::vector<InferenceTool::Prediction> marginals() const override;
 
  protected:
-  void reset() override;
+  void reconfigure(const VariableAssignments &observed) override;
 
  private:
   Prediction predict(size_t rv_index) const;

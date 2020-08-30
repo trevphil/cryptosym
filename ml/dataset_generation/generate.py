@@ -162,7 +162,7 @@ def main():
   if args.visualize:
     colors = ['#0000ff' for _ in range(n)]
     for input_idx in input_indices:
-      colors[input_idx] = '#ff0000'
+      colors[input_idx] = '#ffffff'
     for output_idx in hash_indices:
       colors[output_idx] = '#00ff00'
     pos = graphviz_layout(Factor.directed_graph, prog='dot')

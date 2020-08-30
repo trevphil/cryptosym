@@ -18,12 +18,13 @@ Probability::Probability(std::shared_ptr<utils::Config> config) : config_(config
 }
 
 double Probability::probOne(const Factor &factor,
-                            const VariableAssignments &assignments) const {
+                            const VariableAssignments &assignments,
+                            const VariableAssignments &observed) const {
   const double eps = config_->epsilon;
 
   double assignment_prob = 0.5;
   const std::string &factor_type = factor.factor_type;
-  const auto values = factor.extractInputOutput(assignments);
+  const auto values = factor.extract(assignments);
 
   if (factor_type == "AND") {
     if (values.out == 0) {
@@ -39,7 +40,11 @@ double Probability::probOne(const Factor &factor,
     assignment_prob = values.out != values.in1;
 
   } else if (factor_type == "PRIOR") {
-    assignment_prob = 0.5;
+    if (observed.count(factor.output_rv) > 0u) {
+      assignment_prob = observed.at(factor.output_rv) ? 1.0 : 0.0;
+    } else {
+      assignment_prob = 0.5;
+    }
 
   } else {
     spdlog::error("Unsupported factor: {}", factor_type);

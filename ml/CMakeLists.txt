@@ -21,6 +21,7 @@ include(GtsamBuildTypes)
 add_executable(hash_reversal
                src/main.cpp
                src/utils/config.cpp
+               src/hash_reversal/factor.cpp
                src/hash_reversal/bayes_net.cpp
                src/hash_reversal/dataset.cpp
                src/hash_reversal/factor_graph.cpp

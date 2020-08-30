@@ -1,4 +1,4 @@
-lbp_max_iter: 2
+lbp_max_iter: 50
 lbp_damping: 0.75
 dataset_dir: "data/sha256"
 epsilon: 0.0001

@@ -38,11 +38,11 @@ class InferenceTool {
 
   virtual ~InferenceTool();
 
-  virtual void update(const VariableAssignments &observed);
+  virtual void reconfigure(const VariableAssignments &observed);
+
+  virtual void solve();
 
   virtual std::vector<Prediction> marginals() const;
-
-  virtual void reset();
 
   std::string factorType(size_t rv_index) const;
 

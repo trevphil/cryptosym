@@ -37,18 +37,18 @@ InferenceTool::InferenceTool(std::shared_ptr<Probability> prob,
 InferenceTool::~InferenceTool() {
 }
 
-void InferenceTool::update(const VariableAssignments &observed) {
+void InferenceTool::reconfigure(const VariableAssignments &observed) {
   (void)observed;
-  spdlog::warn("update() function should be overridden in subclasses");
+  spdlog::warn("reconfigure() function should be overridden in subclasses");
+}
+
+void InferenceTool::solve() {
+  spdlog::warn("solve() function should be overridden in subclasses");
 }
 
 std::vector<InferenceTool::Prediction> InferenceTool::marginals() const {
   spdlog::warn("marginals() function should be overridden in subclasses");
   return {};
-}
-
-void InferenceTool::reset() {
-  spdlog::warn("reset() function should be overridden in subclasses");
 }
 
 std::string InferenceTool::factorType(size_t rv_index) const {

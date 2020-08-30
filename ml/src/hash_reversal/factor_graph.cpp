@@ -26,12 +26,6 @@ FactorGraph::FactorGraph(std::shared_ptr<Probability> prob,
     : InferenceTool(prob, dataset, config) { }
 
 InferenceTool::Prediction FactorGraph::predict(size_t rv_index) const {
-  for (const auto itr : observed_) {
-    if (itr.first == rv_index) {
-      return InferenceTool::Prediction(rv_index, itr.second ? 1.0 : 0.0);
-    }
-  }
-
   InferenceTool::Prediction prediction(rv_index, 0.5);
   double msg0 = 1.0, msg1 = 1.0;
   const auto &rv = rvs_.at(rv_index);
@@ -58,20 +52,18 @@ std::vector<InferenceTool::Prediction> FactorGraph::marginals() const {
   return predictions;
 }
 
-void FactorGraph::reset() {
-  observed_.clear();
+void FactorGraph::reconfigure(const VariableAssignments &observed) {
+  observed_ = observed;
   previous_marginals_.clear();
   for (auto &rv : rvs_) rv.reset();
-  for (auto &factor : factors_) factor.reset();
+  for (auto &factor : factors_) factor.reset(observed_, config_);
 }
 
-void FactorGraph::update(const VariableAssignments &observed) {
+void FactorGraph::solve() {
   spdlog::info("\tStarting loopy BP...");
   const auto start = utils::Convenience::time_since_epoch();
 
-  observed_ = observed;
-
-  size_t itr = 0, forward = 1;
+  size_t itr = 0, forward = 0;
   for (itr = 0; itr < config_->lbp_max_iter; ++itr) {
     updateRandomVariableMessages(forward);
     updateFactorMessages(forward);
@@ -133,9 +125,9 @@ void FactorGraph::updateFactorMessages(bool forward) {
         }
 
         assignments[to_rv] = false;
-        double message_product0 = prob_->probOne(factor, assignments);
+        double message_product0 = prob_->probOne(factor, assignments, observed_);
         assignments[to_rv] = true;
-        double message_product1 = prob_->probOne(factor, assignments);
+        double message_product1 = prob_->probOne(factor, assignments, observed_);
 
         for (size_t rv_index : factor.referenced_rvs) {
           if (rv_index == to_rv) continue;
