@@ -9,7 +9,7 @@ from time import time
 from BitVector import BitVector
 
 from scipy.optimize import (
-  minimize, NonlinearConstraint, Bounds
+  minimize, basinhopping, NonlinearConstraint, Bounds
 )
 
 
@@ -58,22 +58,38 @@ def solve(factors, observed, config):
   for rv, val in observed.items():
     init_guess[rv] = float(val)
 
-  def f(rvs):
-    # TODO: formulate this as vectorized operations
-    err = 0.0
-    for i in range(n):
+  # Ax = b (for SAME and INV)
+  A = np.zeros((n, n))
+  b = np.zeros((n, 1))
+
+  for i in range(n):
+    factor = factors[i]
+    if factor.factor_type == 'SAME':
+      inp, out = factor.input_rvs[0], factor.output_rv
+      # x_i - x_j = 0.0 since the RVs are the same
+      A[out, out] = 1.0
+      A[out, inp] = -1.0
+    elif factor.factor_type == 'INV':
+      inp, out = factor.input_rvs[0], factor.output_rv
+      # x_i + x_j = 1.0 since the RVs are inverses
+      A[out, out] = 1.0
+      A[out, inp] = 1.0
+      b[out] = 1.0
+
+  and_factor_indices = [i for i in range(n)
+                        if factors[i].factor_type == 'AND']
+
+  def f(x):
+    for i in and_factor_indices:
       factor = factors[i]
-      if factor.factor_type == 'SAME':
-        inp, out = factor.input_rvs[0], factor.output_rv
-        err += (rvs[inp] - rvs[out]) ** 2.0
-      elif factor.factor_type == 'INV':
-        inp, out = factor.input_rvs[0], factor.output_rv
-        err += (1.0 - rvs[inp] - rvs[out]) ** 2.0
-      if factor.factor_type == 'AND':
-        inp1, inp2 = factor.input_rvs
-        out = factor.output_rv
-        err += (rvs[inp1] * rvs[inp2] - rvs[out]) ** 2.0
-    return err
+      inp1, inp2 = factor.input_rvs
+      out = factor.output_rv
+      # Update the A matrix s.t. inp1 * inp2 - out = 0.0
+      A[out, out] = -1.0
+      A[out, inp1] = x[inp2]
+
+    err = A.dot(x.reshape((-1, 1))) - b
+    return np.sum(err ** 2)
 
   lower = np.zeros(n)
   upper = np.ones(n)
@@ -82,41 +98,12 @@ def solve(factors, observed, config):
     upper[rv] = float(val)
   bounds = Bounds(lower, upper)
 
-  same, inv = np.zeros((n, n)), np.zeros((n, n))
-  inv_b = np.zeros(n)
-
-  for i in range(n):
-    factor = factors[i]
-    if factor.factor_type == 'SAME':
-      inp, out = factor.input_rvs[0], factor.output_rv
-      same[out, out] = 1.0
-      same[out, inp] = -1.0
-    elif factor.factor_type == 'INV':
-      inp, out = factor.input_rvs[0], factor.output_rv
-      inv[out, out] = 1.0
-      inv[out, inp] = 1.0
-      inv_b[out] = 1.0
-
-  def same_constraint(x):
-    return same.dot(x.reshape((-1, 1))).squeeze()
-
-  def inv_constraint(x):
-    return inv_b - inv.dot(x.reshape((-1, 1))).squeeze()
-
-  cons = [
-    # {'type': 'eq', 'fun': same_constraint},
-    # {'type': 'eq', 'fun': inv_constraint}
-  ]
-
-  options = {
-    'maxiter': 40,
-    'disp': True
-  }
+  options = {'maxiter': 40, 'disp': True}
 
   start = time()
-  print('Starting optimization')
-  result = minimize(f, init_guess, constraints=cons,
-                    bounds=bounds, options=options)
+  print('Starting optimization...')
+  result = minimize(f, init_guess, bounds=bounds, options=options)
+  # result = basinhopping(f, init_guess, stepsize=1.0)
   print('Optimization finished in %.2f s' % (time() - start))
   print('\tsuccess: {}'.format(result['success']))
   print('\tstatus:  {}'.format(result['message']))
