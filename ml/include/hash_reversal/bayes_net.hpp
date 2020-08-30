@@ -26,19 +26,35 @@
 
 namespace hash_reversal {
 
+class SameFactor : public gtsam::NoiseModelFactor2<double, double> {
+ public:
+  SameFactor(gtsam::Key k1, gtsam::Key k2, const gtsam::SharedNoiseModel &model)
+      : gtsam::NoiseModelFactor2<double, double>(model, k1, k2) { }
+
+  gtsam::Vector evaluateError(const double &inp, const double &out,
+                              boost::optional<gtsam::Matrix&> J1 = boost::none,
+                              boost::optional<gtsam::Matrix&> J2 = boost::none) const {
+    // if (H) (*H) = (Matrix(2,3)<< 1.0,0.0,0.0, 0.0,1.0,0.0).finished();
+    // return (Vector(2) << q.x() - mx_, q.y() - my_).finished();
+    if (J1) (*J1) = (gtsam::Matrix(1, 1) << 2 * inp - 2 * out).finished();
+    if (J2) (*J2) = (gtsam::Matrix(1, 1) << 2 * out - 2 * inp).finished();
+    const double err = inp - out;
+    return (gtsam::Vector(1) << err * err).finished();
+  }
+};
+
 class InvFactor : public gtsam::NoiseModelFactor2<double, double> {
  public:
   InvFactor(gtsam::Key k1, gtsam::Key k2, const gtsam::SharedNoiseModel &model)
       : gtsam::NoiseModelFactor2<double, double>(model, k1, k2) { }
 
   gtsam::Vector evaluateError(const double &inp, const double &out,
-                              boost::optional<gtsam::Matrix&> H1 = boost::none,
-                              boost::optional<gtsam::Matrix&> H2 = boost::none) const {
-    // if (H) (*H) = (Matrix(2,3)<< 1.0,0.0,0.0, 0.0,1.0,0.0).finished();
-    // return (Vector(2) << q.x() - mx_, q.y() - my_).finished();
-    if (H1) (*H1) = (gtsam::Matrix(1, 1) << -1.0).finished();
-    if (H2) (*H2) = (gtsam::Matrix(1, 1) << -1.0).finished();
-    return (gtsam::Vector(1) << 1.0 - inp - out).finished();
+                              boost::optional<gtsam::Matrix&> J1 = boost::none,
+                              boost::optional<gtsam::Matrix&> J2 = boost::none) const {
+    if (J1) (*J1) = (gtsam::Matrix(1, 1) << 2 * inp + 2 * out - 2).finished();
+    if (J2) (*J2) = (gtsam::Matrix(1, 1) << 2 * out + 2 * inp - 2).finished();
+    const double err = 1.0 - inp - out;
+    return (gtsam::Vector(1) << err * err).finished();
   }
 };
 
@@ -49,15 +65,17 @@ class AndFactor : public gtsam::NoiseModelFactor3<double, double, double> {
       : gtsam::NoiseModelFactor3<double, double, double>(model, k1, k2, k3) { }
 
   gtsam::Vector evaluateError(const double &inp1, const double &inp2, const double &out,
-                              boost::optional<gtsam::Matrix&> H1 = boost::none,
-                              boost::optional<gtsam::Matrix&> H2 = boost::none,
-                              boost::optional<gtsam::Matrix&> H3 = boost::none) const {
-    // if (H) (*H) = (Matrix(2,3)<< 1.0,0.0,0.0, 0.0,1.0,0.0).finished();
-    // return (Vector(2) << q.x() - mx_, q.y() - my_).finished();
-    if (H1) (*H1) = (gtsam::Matrix(1, 1) << inp2).finished();
-    if (H2) (*H2) = (gtsam::Matrix(1, 1) << inp1).finished();
-    if (H3) (*H3) = (gtsam::Matrix(1, 1) << -1.0).finished();
-    return (gtsam::Vector(1) << inp1 * inp2 - out).finished();
+                              boost::optional<gtsam::Matrix&> J1 = boost::none,
+                              boost::optional<gtsam::Matrix&> J2 = boost::none,
+                              boost::optional<gtsam::Matrix&> J3 = boost::none) const {
+    const double i1_partial = 2 * inp1 * inp2 * inp2 - 2 * out * inp2;
+    const double i2_partial = 2 * inp1 * inp1 * inp2  - 2 * out * inp1;
+    const double out_partial = 2 * out - 2 * inp1 * inp2;
+    if (J1) (*J1) = (gtsam::Matrix(1, 1) << i1_partial).finished();
+    if (J2) (*J2) = (gtsam::Matrix(1, 1) << i2_partial).finished();
+    if (J3) (*J3) = (gtsam::Matrix(1, 1) << out_partial).finished();
+    const double err = inp1 * inp2 - out;
+    return (gtsam::Vector(1) << err * err).finished();
   }
 };
 

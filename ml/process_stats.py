@@ -52,7 +52,7 @@ def load_data(filename):
 
 if __name__ == '__main__':
   data = load_data('statistics.txt')
-  
+
   print('WARNING: Remember, input bits can be incorrectly predicted but still result in the correct hash!')
 
   print('Factor accuracies:')
@@ -60,14 +60,15 @@ if __name__ == '__main__':
   for f_type in sorted(f_accuracies.keys()):
     print('\t{} --> {}'.format(f_type, f_accuracies[f_type]))
 
+  nbins = 60
   fig, axs = plt.subplots(1, 2, sharey=True, tight_layout=True)
   axs[0].set_title('Correct predictions')
   axs[0].set_xlabel('Prob. hash input bit is 1')
-  axs[0].hist(data['probability bit is one for correct predictions'], bins=30)
+  axs[0].hist(data['probability bit is one for correct predictions'], bins=nbins)
   axs[1].set_title('Incorrect predictions')
   axs[1].set_xlabel('Prob. hash input bit is 1')
-  axs[1].hist(data['probability bit is one for incorrect predictions'], bins=30)
-  
+  axs[1].hist(data['probability bit is one for incorrect predictions'], bins=nbins)
+
   n = len(data['bit accuracies'])
   m = len(data['bit mean values'])
   assert n == m, '{} != {}'.format(n, m)

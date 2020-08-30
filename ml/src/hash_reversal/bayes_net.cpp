@@ -42,7 +42,6 @@ void BayesNet::solve() {
   const auto start = utils::Convenience::time_since_epoch();
 
   for (const auto &factor : factors_) {
-    // TODO: Need to account for inverse of RVs
     const std::vector<size_t> inputs = factor.inputRVs();
     const size_t rv = factor.output_rv;
     const std::string &ftype = factor.factor_type;
@@ -53,6 +52,9 @@ void BayesNet::solve() {
     if (ftype == "PRIOR") {
       gtsam::PriorFactor<double> prior(X(rv), val, noise_);
       graph_.add(prior);
+    } else if (ftype == "SAME") {
+      SameFactor same_fac(X(inputs.at(0)), X(rv), noise_);
+      graph_.add(same_fac);
     } else if (ftype == "INV") {
       InvFactor inv_fac(X(inputs.at(0)), X(rv), noise_);
       graph_.add(inv_fac);
