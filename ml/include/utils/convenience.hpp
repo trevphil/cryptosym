@@ -12,18 +12,17 @@
 
 #pragma once
 
-#include <boost/dynamic_bitset.hpp>
-
 #include <algorithm>
+#include <array>
+#include <boost/dynamic_bitset.hpp>
 #include <chrono>
-#include <set>
-#include <string>
-#include <vector>
 #include <cstdio>
 #include <iostream>
 #include <memory>
+#include <set>
 #include <stdexcept>
-#include <array>
+#include <string>
+#include <vector>
 
 namespace utils {
 
@@ -84,8 +83,10 @@ class Convenience {
         if (b[j] == '1') n |= 1;
       }
 
-      if (n <= 9) out.push_back('0' + n);
-      else out.push_back('a' + n - 10);
+      if (n <= 9)
+        out.push_back('0' + n);
+      else
+        out.push_back('a' + n - 10);
     }
 
     return out;
@@ -94,8 +95,7 @@ class Convenience {
   static std::string exec(const std::string &cmd) {
     std::array<char, 128> buffer;
     std::string result;
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(
-        popen(cmd.c_str(), "r"), pclose);
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
     if (!pipe) throw std::runtime_error("popen() failed!");
 
     while (std::fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)

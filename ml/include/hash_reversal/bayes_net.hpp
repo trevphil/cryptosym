@@ -13,11 +13,11 @@
 #pragma once
 
 #include <gtsam/inference/Symbol.h>
-#include <gtsam/nonlinear/Values.h>
-#include <gtsam/nonlinear/PriorFactor.h>
+#include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
 #include <gtsam/nonlinear/NonlinearFactor.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
-#include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
+#include <gtsam/nonlinear/PriorFactor.h>
+#include <gtsam/nonlinear/Values.h>
 
 #include <string>
 #include <vector>
@@ -29,11 +29,11 @@ namespace hash_reversal {
 class SameFactor : public gtsam::NoiseModelFactor2<double, double> {
  public:
   SameFactor(gtsam::Key k1, gtsam::Key k2, const gtsam::SharedNoiseModel &model)
-      : gtsam::NoiseModelFactor2<double, double>(model, k1, k2) { }
+      : gtsam::NoiseModelFactor2<double, double>(model, k1, k2) {}
 
   gtsam::Vector evaluateError(const double &inp, const double &out,
-                              boost::optional<gtsam::Matrix&> J1 = boost::none,
-                              boost::optional<gtsam::Matrix&> J2 = boost::none) const {
+                              boost::optional<gtsam::Matrix &> J1 = boost::none,
+                              boost::optional<gtsam::Matrix &> J2 = boost::none) const {
     // if (H) (*H) = (Matrix(2,3)<< 1.0,0.0,0.0, 0.0,1.0,0.0).finished();
     // return (Vector(2) << q.x() - mx_, q.y() - my_).finished();
     if (J1) (*J1) = (gtsam::Matrix(1, 1) << 2 * inp - 2 * out).finished();
@@ -46,11 +46,11 @@ class SameFactor : public gtsam::NoiseModelFactor2<double, double> {
 class InvFactor : public gtsam::NoiseModelFactor2<double, double> {
  public:
   InvFactor(gtsam::Key k1, gtsam::Key k2, const gtsam::SharedNoiseModel &model)
-      : gtsam::NoiseModelFactor2<double, double>(model, k1, k2) { }
+      : gtsam::NoiseModelFactor2<double, double>(model, k1, k2) {}
 
   gtsam::Vector evaluateError(const double &inp, const double &out,
-                              boost::optional<gtsam::Matrix&> J1 = boost::none,
-                              boost::optional<gtsam::Matrix&> J2 = boost::none) const {
+                              boost::optional<gtsam::Matrix &> J1 = boost::none,
+                              boost::optional<gtsam::Matrix &> J2 = boost::none) const {
     if (J1) (*J1) = (gtsam::Matrix(1, 1) << 2 * inp + 2 * out - 2).finished();
     if (J2) (*J2) = (gtsam::Matrix(1, 1) << 2 * out + 2 * inp - 2).finished();
     const double err = 1.0 - inp - out;
@@ -65,14 +65,14 @@ class AndFactor : public gtsam::NoiseModelFactor3<double, double, double> {
  public:
   AndFactor(gtsam::Key k1, gtsam::Key k2, gtsam::Key k3,
             const gtsam::SharedNoiseModel &model)
-      : gtsam::NoiseModelFactor3<double, double, double>(model, k1, k2, k3) { }
+      : gtsam::NoiseModelFactor3<double, double, double>(model, k1, k2, k3) {}
 
   gtsam::Vector evaluateError(const double &inp1, const double &inp2, const double &out,
-                              boost::optional<gtsam::Matrix&> J1 = boost::none,
-                              boost::optional<gtsam::Matrix&> J2 = boost::none,
-                              boost::optional<gtsam::Matrix&> J3 = boost::none) const {
+                              boost::optional<gtsam::Matrix &> J1 = boost::none,
+                              boost::optional<gtsam::Matrix &> J2 = boost::none,
+                              boost::optional<gtsam::Matrix &> J3 = boost::none) const {
     const double i1_partial = 2 * inp1 * inp2 * inp2 - 2 * out * inp2;
-    const double i2_partial = 2 * inp1 * inp1 * inp2  - 2 * out * inp1;
+    const double i2_partial = 2 * inp1 * inp1 * inp2 - 2 * out * inp1;
     const double out_partial = 2 * out - 2 * inp1 * inp2;
     if (J1) (*J1) = (gtsam::Matrix(1, 1) << i1_partial).finished();
     if (J2) (*J2) = (gtsam::Matrix(1, 1) << i2_partial).finished();
@@ -84,8 +84,7 @@ class AndFactor : public gtsam::NoiseModelFactor3<double, double, double> {
 
 class BayesNet : public InferenceTool {
  public:
-  BayesNet(std::shared_ptr<Probability> prob,
-           std::shared_ptr<Dataset> dataset,
+  BayesNet(std::shared_ptr<Probability> prob, std::shared_ptr<Dataset> dataset,
            std::shared_ptr<utils::Config> config);
 
   void solve() override;

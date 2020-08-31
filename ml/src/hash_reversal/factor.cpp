@@ -10,9 +10,9 @@
  * Proprietary and confidential
  */
 
-#include <spdlog/spdlog.h>
-
 #include "hash_reversal/factor.hpp"
+
+#include <spdlog/spdlog.h>
 
 namespace hash_reversal {
 
@@ -20,8 +20,7 @@ namespace hash_reversal {
  *********** FACTOR GRAPH NODE ***********
  *****************************************/
 
-FactorGraphNode::~FactorGraphNode() {
-}
+FactorGraphNode::~FactorGraphNode() {}
 
 std::set<size_t> FactorGraphNode::neighbors() const {
   spdlog::warn("neighbors() should be overridden in subclasses");
@@ -69,20 +68,16 @@ void FactorGraphNode::reset(const VariableAssignments &observed,
  ************ RANDOM VARIABLE ************
  *****************************************/
 
-std::set<size_t> RandomVariable::neighbors() const {
-  return factor_indices;
-}
+std::set<size_t> RandomVariable::neighbors() const { return factor_indices; }
 
 /*****************************************
  **************** FACTOR *****************
  *****************************************/
 
 Factor::Factor(const std::string &ftype, size_t out, const std::set<size_t> &ref)
-    : factor_type(ftype), output_rv(out), referenced_rvs(ref) { }
+    : factor_type(ftype), output_rv(out), referenced_rvs(ref) {}
 
-std::set<size_t> Factor::neighbors() const {
-  return referenced_rvs;
-}
+std::set<size_t> Factor::neighbors() const { return referenced_rvs; }
 
 Factor::Values Factor::extract(const VariableAssignments &assignments) const {
   Values v;
@@ -108,4 +103,4 @@ std::vector<size_t> Factor::inputRVs() const {
   return inputs;
 }
 
-} // end namespace hash_reversal
+}  // end namespace hash_reversal

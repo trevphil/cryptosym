@@ -16,11 +16,11 @@
 #include <memory>
 #include <vector>
 
-#include "hash_reversal/probability.hpp"
-#include "hash_reversal/dataset.hpp"
-#include "hash_reversal/inference_tool.hpp"
-#include "hash_reversal/factor_graph.hpp"
 #include "hash_reversal/bayes_net.hpp"
+#include "hash_reversal/dataset.hpp"
+#include "hash_reversal/factor_graph.hpp"
+#include "hash_reversal/inference_tool.hpp"
+#include "hash_reversal/probability.hpp"
 #include "utils/config.hpp"
 #include "utils/stats.hpp"
 
@@ -40,9 +40,9 @@ int main(int argc, char** argv) {
 
   // Initialize objects used by the algorithm
   const std::shared_ptr<hash_reversal::Dataset> dataset(
-			new hash_reversal::Dataset(config));
+      new hash_reversal::Dataset(config));
   const std::shared_ptr<hash_reversal::Probability> prob(
-    	new hash_reversal::Probability(config));
+      new hash_reversal::Probability(config));
 
   std::shared_ptr<hash_reversal::InferenceTool> inference_tool;
 
@@ -67,8 +67,7 @@ int main(int argc, char** argv) {
   utils::Stats stats(config, f_types);
 
   // How many hash input --> hash output trials to run
-  const size_t num_test = std::min<size_t>(config->num_test,
-                                           config->num_samples);
+  const size_t num_test = std::min<size_t>(config->num_test, config->num_samples);
 
   for (size_t sample_idx = 0; sample_idx < num_test; ++sample_idx) {
     spdlog::info("Test case {}/{}", sample_idx + 1, num_test);

@@ -34,8 +34,7 @@ InferenceTool::InferenceTool(std::shared_ptr<Probability> prob,
   if (config_->print_connections) printConnections();
 }
 
-InferenceTool::~InferenceTool() {
-}
+InferenceTool::~InferenceTool() {}
 
 void InferenceTool::reconfigure(const VariableAssignments &observed) {
   (void)observed;

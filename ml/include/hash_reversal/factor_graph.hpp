@@ -20,8 +20,7 @@ namespace hash_reversal {
 
 class FactorGraph : public InferenceTool {
  public:
-  FactorGraph(std::shared_ptr<Probability> prob,
-              std::shared_ptr<Dataset> dataset,
+  FactorGraph(std::shared_ptr<Probability> prob, std::shared_ptr<Dataset> dataset,
               std::shared_ptr<utils::Config> config);
 
   void solve() override;

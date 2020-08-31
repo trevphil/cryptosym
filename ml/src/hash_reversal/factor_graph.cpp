@@ -23,7 +23,7 @@ namespace hash_reversal {
 FactorGraph::FactorGraph(std::shared_ptr<Probability> prob,
                          std::shared_ptr<Dataset> dataset,
                          std::shared_ptr<utils::Config> config)
-    : InferenceTool(prob, dataset, config) { }
+    : InferenceTool(prob, dataset, config) {}
 
 InferenceTool::Prediction FactorGraph::predict(size_t rv_index) const {
   InferenceTool::Prediction prediction(rv_index, 0.5);

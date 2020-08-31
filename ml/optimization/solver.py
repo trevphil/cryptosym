@@ -3,6 +3,7 @@ import os
 import sys
 import math
 import yaml
+import argparse
 import subprocess
 import numpy as np
 from time import time
@@ -12,80 +13,8 @@ from scipy.optimize import (
   minimize, NonlinearConstraint, Bounds
 )
 
-
-class GNC(object):
-  def __init__(self, c):
-    self._c_sq = c * c
-    self._mu = None
-    self._itr = 0
-
-  def mu(self, err_vector):
-    if self._mu is None:
-      self._mu = 2 * np.max(err_vector) / self._c_sq
-      print('mu initialized to %.3f' % self._mu)
-    return max(1.0, self._mu)
-
-  def iteration(self):
-    return self._itr
-
-  def increment(self):
-    self._itr += 1
-    if self._mu is not None:
-      self._mu = max(1.0, self._mu / 1.4)
-      print('mu is now %.3f' % self._mu)
-
-
-class Factor(object):
-  def __init__(self, data_string):
-    parts = data_string.strip().split(';')
-    self.factor_type = parts[0]
-    self.output_rv = int(parts[1])
-    self.input_rvs = []
-    for p in parts[2:]:
-      self.input_rvs.append(int(p))
-    if self.factor_type == 'AND' and len(self.input_rvs) < 2:
-      print('Warning: AND factors has %d inputs' % len(self.input_rvs))
-
-  """
-  (i - j) ^ 2 = i^2 - 2ij + j^2
-    d/di = 2i - 2j
-    d/dj = 2j - 2i
-
-  (1 - i - j) ^ 2
-    d/di = 2i + 2j - 2
-    d/dj = 2j + 2i - 2
-
-  (ij - k) ^ 2
-    d/di = 2ij^2 - 2jk
-    d/dj = 2i^2j - 2ik
-    d/dk = 2k - 2ij
-  """
-
-  def partial(self, with_respect_to, x):
-    wrt = with_respect_to
-    if wrt != self.output_rv and wrt not in self.input_rvs:
-      raise RuntimeError
-
-    if self.factor_type == 'SAME':
-      i, j = self.input_rvs[0], self.output_rv
-      if wrt == i:
-        return 2 * (x[i] - x[j])
-      else:
-        return 2 * (x[j] - x[i])
-    elif self.factor_type == 'INV':
-      i, j = self.input_rvs[0], self.output_rv
-      return 2 * (x[i] + x[j] - 1)
-    elif self.factor_type == 'AND':
-      i, j = self.input_rvs
-      k = self.output_rv
-      if wrt == i:
-        return 2 * (x[i] * x[j] * x[j] - x[j] * x[k])
-      elif wrt == j:
-        return 2 * (x[i] * x[i] * x[j] - x[i] * x[k])
-      else:
-        return 2 * (x[k] - x[i] * x[j])
-    else:
-      return 0.0
+from optimization.gnc import GNC
+from optimization.factor import Factor
 
 
 def load_factors(factor_file):
@@ -134,14 +63,6 @@ def solve(factors, observed, config):
   A = np.zeros((n, n))
   b = np.zeros((n, 1))
 
-  # Jacobian: J[i] = derivative of f(x) w.r.t. variable `i`
-  def jacobian(x):
-    J = np.zeros(n)
-    for i in range(n):
-      for factor_idx in factors_per_rv[i]:
-        J[i] += factors[factor_idx].partial(i, x)
-    return J
-
   for i in range(n):
     factor = factors[i]
     if factor.factor_type == 'SAME':
@@ -181,17 +102,36 @@ def solve(factors, observed, config):
     # err = (r_sq * C_sq * mu) / (r_sq + mu * C_sq)
     # return np.sum(err)
 
+  # Jacobian: J[i] = derivative of f(x) w.r.t. variable `i`
+  def jacobian(x):
+    J = np.zeros(n)
+    for i in range(n):
+      for factor_idx in factors_per_rv[i]:
+        J[i] += factors[factor_idx].first_order(i, x)
+    return J
+
+  # Hessian: H[i, j] = derivative of J[j] w.r.t. variable `i`
+  def hessian(x):
+    H = np.zeros((n, n))
+    for j in range(n):
+      for factor_idx in factors_per_rv[j]:
+        factor = factors[factor_idx]
+        for i in factor.referenced_rvs:
+          H[i, j] += factor.second_order(j, i, x)
+    assert np.sum(np.abs(H - H.T)) < 1e-5, 'Hessian is not symmetric'
+    return H
+
   lower, upper = np.zeros(n), np.ones(n)
   for rv, val in observed.items():
     lower[rv] = float(val)
     upper[rv] = float(val)
 
-  options = {'maxiter': 40, 'disp': False}
+  options = {'maxiter': 40, 'disp': True}
 
   start = time()
   print('Starting optimization...')
-  result = minimize(f, init_guess, bounds=Bounds(lower, upper),
-                    jac=jacobian, options=options, callback=cb)
+  result = minimize(f, init_guess, method='trust-ncg', bounds=Bounds(lower, upper),
+                    jac=jacobian, hess=hessian, options=options, callback=cb)
   print('Optimization finished in %.2f s' % (time() - start))
   print('\tsuccess: {}'.format(result['success']))
   print('\tstatus:  {}'.format(result['message']))
@@ -227,12 +167,10 @@ def verify(true_input, predicted_input, config):
     print('Expected:\n\t{}\nGot:\n\t{}'.format(true_out, pred_out))
 
 
-def main(test_case):
-  base = os.path.abspath('data')
-  dataset_dir = os.path.join(base, test_case)
-  config_file = os.path.join(dataset_dir, 'params.yaml')
-  factor_file = os.path.join(dataset_dir, 'factors.txt')
-  data_file = os.path.join(dataset_dir, 'data.bits')
+def main(dataset):
+  config_file = os.path.join(dataset, 'params.yaml')
+  factor_file = os.path.join(dataset, 'factors.txt')
+  data_file = os.path.join(dataset, 'data.bits')
 
   config = load_config(config_file)
   factors = load_factors(factor_file)
@@ -262,6 +200,9 @@ def main(test_case):
 
 
 if __name__ == '__main__':
-  main('lossyPseudoHash')
+  parser = argparse.ArgumentParser(description='Hash reversal via optimization')
+  parser.add_argument('dataset', type=str, help='Path to the dataset directory')
+  args = parser.parse_args()
+  main(args.dataset)
   print('Done.')
   sys.exit(0)

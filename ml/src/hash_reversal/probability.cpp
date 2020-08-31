@@ -14,11 +14,9 @@
 
 namespace hash_reversal {
 
-Probability::Probability(std::shared_ptr<utils::Config> config) : config_(config) {
-}
+Probability::Probability(std::shared_ptr<utils::Config> config) : config_(config) {}
 
-double Probability::probOne(const Factor &factor,
-                            const VariableAssignments &assignments,
+double Probability::probOne(const Factor &factor, const VariableAssignments &assignments,
                             const VariableAssignments &observed) const {
   const double eps = config_->epsilon;
 
@@ -28,7 +26,7 @@ double Probability::probOne(const Factor &factor,
 
   if (factor_type == "AND") {
     if (values.out == 0) {
-      assignment_prob = values.out == (values.in1 & values.in2) ? 1.0/3.0 : 0;
+      assignment_prob = values.out == (values.in1 & values.in2) ? 1.0 / 3.0 : 0;
     } else {
       assignment_prob = values.out == (values.in1 & values.in2);
     }

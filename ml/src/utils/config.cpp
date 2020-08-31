@@ -34,7 +34,8 @@ void Config::configureLogging() const {
   std::vector<spdlog::sink_ptr> sinks;
   sinks.push_back(std::make_shared<spdlog::sinks::stdout_sink_st>());
   sinks.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(oss.str()));
-  auto logger = std::make_shared<spdlog::logger>("basic_logger", begin(sinks), end(sinks));
+  auto logger =
+      std::make_shared<spdlog::logger>("basic_logger", begin(sinks), end(sinks));
   spdlog::register_logger(logger);
 
   spdlog::set_level(spdlog::level::debug);
@@ -144,7 +145,8 @@ void Config::loadDatasetParameters() {
   std::filesystem::path dataset_params = dataset_base / "params.yaml";
   std::filesystem::path dataset_data = dataset_base / "data.bits";
   std::filesystem::path dataset_graph = dataset_base / "factors.txt";
-  std::vector<std::filesystem::path> paths = {dataset_params, dataset_data, dataset_graph};
+  std::vector<std::filesystem::path> paths = {dataset_params, dataset_data,
+                                              dataset_graph};
 
   for (auto &p : paths) {
     if (p.is_relative()) {
@@ -210,7 +212,8 @@ void Config::loadDatasetParameters() {
     spdlog::error("Missing '{}'", param);
   } else {
     hash_rv_indices = data[param].as<std::vector<size_t>>();
-    spdlog::info("{} --> {}", param, utils::Convenience::vec2str<size_t>(hash_rv_indices));
+    spdlog::info("{} --> {}", param,
+                 utils::Convenience::vec2str<size_t>(hash_rv_indices));
   }
 
   param = "input_rv_indices";
@@ -219,7 +222,8 @@ void Config::loadDatasetParameters() {
     spdlog::error("Missing '{}'", param);
   } else {
     input_rv_indices = data[param].as<std::vector<size_t>>();
-    spdlog::info("{} --> {}", param, utils::Convenience::vec2str<size_t>(input_rv_indices));
+    spdlog::info("{} --> {}", param,
+                 utils::Convenience::vec2str<size_t>(input_rv_indices));
   }
 }
 

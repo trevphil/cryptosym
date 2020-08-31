@@ -12,14 +12,14 @@
 
 #pragma once
 
-#include <map>
-#include <string>
-#include <vector>
-#include <memory>
+#include <spdlog/spdlog.h>
+
 #include <fstream>
 #include <iostream>
-
-#include <spdlog/spdlog.h>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "utils/config.hpp"
 #include "utils/convenience.hpp"
@@ -36,8 +36,8 @@ class Stats {
     count_per_rv_ = std::vector<double>(n, 0);
   }
 
-  void update(size_t rv_index, bool predicted_val, bool true_val,
-              double prob_one, bool is_observed) {
+  void update(size_t rv_index, bool predicted_val, bool true_val, double prob_one,
+              bool is_observed) {
     const bool is_correct = (predicted_val == true_val);
 
     if (!is_observed) {

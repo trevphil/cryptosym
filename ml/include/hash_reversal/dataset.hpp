@@ -13,10 +13,9 @@
 #pragma once
 
 #include <boost/dynamic_bitset.hpp>
-
+#include <memory>
 #include <string>
 #include <utility>
-#include <memory>
 #include <vector>
 
 #include "hash_reversal/factor.hpp"
@@ -41,8 +40,7 @@ class Dataset {
 
   boost::dynamic_bitset<> getFullSample(size_t sample_index) const;
 
-  bool validate(const boost::dynamic_bitset<> predicted_input,
-                size_t sample_index) const;
+  bool validate(const boost::dynamic_bitset<> predicted_input, size_t sample_index) const;
 
  private:
   std::shared_ptr<utils::Config> config_;

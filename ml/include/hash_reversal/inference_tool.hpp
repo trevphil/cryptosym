@@ -12,28 +12,27 @@
 
 #pragma once
 
-#include <vector>
 #include <memory>
+#include <vector>
 
-#include "utils/config.hpp"
-#include "utils/convenience.hpp"
 #include "hash_reversal/dataset.hpp"
+#include "hash_reversal/factor.hpp"
 #include "hash_reversal/probability.hpp"
 #include "hash_reversal/variable_assignments.hpp"
-#include "hash_reversal/factor.hpp"
+#include "utils/config.hpp"
+#include "utils/convenience.hpp"
 
 namespace hash_reversal {
 
 class InferenceTool {
  public:
   struct Prediction {
-    Prediction(size_t i, double p) : rv_index(i), prob_one(p) { }
+    Prediction(size_t i, double p) : rv_index(i), prob_one(p) {}
     size_t rv_index;
     double prob_one;
   };
 
-  InferenceTool(std::shared_ptr<Probability> prob,
-                std::shared_ptr<Dataset> dataset,
+  InferenceTool(std::shared_ptr<Probability> prob, std::shared_ptr<Dataset> dataset,
                 std::shared_ptr<utils::Config> config);
 
   virtual ~InferenceTool();

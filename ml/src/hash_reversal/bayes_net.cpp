@@ -12,22 +12,20 @@
 
 #include "hash_reversal/bayes_net.hpp"
 
-#include <algorithm>
-
 #include <spdlog/spdlog.h>
+
+#include <algorithm>
 
 namespace hash_reversal {
 
 using gtsam::symbol_shorthand::X;
 
-BayesNet::BayesNet(std::shared_ptr<Probability> prob,
-                   std::shared_ptr<Dataset> dataset,
+BayesNet::BayesNet(std::shared_ptr<Probability> prob, std::shared_ptr<Dataset> dataset,
                    std::shared_ptr<utils::Config> config)
     : InferenceTool(prob, dataset, config) {
-  noise_ = gtsam::noiseModel::Diagonal::Sigmas(
-      (gtsam::Vector(1) << 100.0).finished());
-  prior_noise_ = gtsam::noiseModel::Diagonal::Sigmas(
-      (gtsam::Vector(1) << 1e-6).finished());
+  noise_ = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(1) << 100.0).finished());
+  prior_noise_ =
+      gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(1) << 1e-6).finished());
 }
 
 void BayesNet::reconfigure(const VariableAssignments &observed) {
@@ -68,8 +66,7 @@ void BayesNet::solve() {
 
   for (const auto it : observed_) {
     // Attach priors with extremely low variance to the observed RVs
-    gtsam::PriorFactor<double> prior(
-        X(it.first), double(it.second), prior_noise_);
+    gtsam::PriorFactor<double> prior(X(it.first), double(it.second), prior_noise_);
     graph_.add(prior);
   }
 

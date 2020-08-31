@@ -12,11 +12,11 @@
 
 #pragma once
 
-#include <set>
 #include <map>
+#include <memory>
+#include <set>
 #include <string>
 #include <utility>
-#include <memory>
 
 #include "hash_reversal/variable_assignments.hpp"
 #include "utils/config.hpp"
@@ -52,6 +52,7 @@ class FactorGraphNode {
 class RandomVariable : public FactorGraphNode {
  public:
   std::set<size_t> factor_indices;
+
  private:
   std::set<size_t> neighbors() const override;
 };
@@ -80,4 +81,4 @@ class Factor : public FactorGraphNode {
   std::set<size_t> neighbors() const override;
 };
 
-} // end namespace hash_reversal
+}  // end namespace hash_reversal
