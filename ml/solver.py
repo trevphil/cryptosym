@@ -9,8 +9,30 @@ from time import time
 from BitVector import BitVector
 
 from scipy.optimize import (
-  minimize, basinhopping, NonlinearConstraint, Bounds
+  minimize, NonlinearConstraint, Bounds
 )
+
+
+class GNC(object):
+  def __init__(self, c):
+    self._c_sq = c * c
+    self._mu = None
+    self._itr = 0
+
+  def mu(self, err_vector):
+    if self._mu is None:
+      self._mu = 2 * np.max(err_vector) / self._c_sq
+      print('mu initialized to %.3f' % self._mu)
+    return max(1.0, self._mu)
+
+  def iteration(self):
+    return self._itr
+
+  def increment(self):
+    self._itr += 1
+    if self._mu is not None:
+      self._mu = max(1.0, self._mu / 1.4)
+      print('mu is now %.3f' % self._mu)
 
 
 class Factor(object):
@@ -24,6 +46,48 @@ class Factor(object):
     if self.factor_type == 'AND' and len(self.input_rvs) < 2:
       print('Warning: AND factors has %d inputs' % len(self.input_rvs))
 
+  """
+  (i - j) ^ 2 = i^2 - 2ij + j^2
+    d/di = 2i - 2j
+    d/dj = 2j - 2i
+
+  (1 - i - j) ^ 2
+    d/di = 2i + 2j - 2
+    d/dj = 2j + 2i - 2
+
+  (ij - k) ^ 2
+    d/di = 2ij^2 - 2jk
+    d/dj = 2i^2j - 2ik
+    d/dk = 2k - 2ij
+  """
+
+  def partial(self, with_respect_to, x):
+    wrt = with_respect_to
+    if wrt != self.output_rv and wrt not in self.input_rvs:
+      raise RuntimeError
+
+    if self.factor_type == 'SAME':
+      i, j = self.input_rvs[0], self.output_rv
+      if wrt == i:
+        return 2 * (x[i] - x[j])
+      else:
+        return 2 * (x[j] - x[i])
+    elif self.factor_type == 'INV':
+      i, j = self.input_rvs[0], self.output_rv
+      return 2 * (x[i] + x[j] - 1)
+    elif self.factor_type == 'AND':
+      i, j = self.input_rvs
+      k = self.output_rv
+      if wrt == i:
+        return 2 * (x[i] * x[j] * x[j] - x[j] * x[k])
+      elif wrt == j:
+        return 2 * (x[i] * x[i] * x[j] - x[i] * x[k])
+      else:
+        return 2 * (x[k] - x[i] * x[j])
+    else:
+      return 0.0
+
+
 def load_factors(factor_file):
   factors = dict()
   with open(factor_file, 'r') as f:
@@ -32,10 +96,12 @@ def load_factors(factor_file):
       factors[factor.output_rv] = factor
   return factors
 
+
 def load_config(config_file):
   with open(config_file, 'r') as f:
     config = yaml.safe_load(f)
   return config
+
 
 def load_bitvectors(data_file, config):
   n = int(config['num_rvs'])
@@ -52,15 +118,29 @@ def load_bitvectors(data_file, config):
     samples.append(BitVector(bitlist=sample.astype(bool)))
   return samples
 
+
 def solve(factors, observed, config):
   n = int(config['num_rvs'])
   init_guess = [0.5 for _ in range(n)]
   for rv, val in observed.items():
     init_guess[rv] = float(val)
 
-  # Ax = b (for SAME and INV)
+  factors_per_rv = [set([i]) for i in range(n)]
+  for i, factor in factors.items():
+    for input_rv in factor.input_rvs:
+      factors_per_rv[input_rv].add(i)
+
+  # Ax = b (for SAME and INV) --> Ax - b = 0
   A = np.zeros((n, n))
   b = np.zeros((n, 1))
+
+  # Jacobian: J[i] = derivative of f(x) w.r.t. variable `i`
+  def jacobian(x):
+    J = np.zeros(n)
+    for i in range(n):
+      for factor_idx in factors_per_rv[i]:
+        J[i] += factors[factor_idx].partial(i, x)
+    return J
 
   for i in range(n):
     factor = factors[i]
@@ -79,6 +159,13 @@ def solve(factors, observed, config):
   and_factor_indices = [i for i in range(n)
                         if factors[i].factor_type == 'AND']
 
+  C = 0.02
+  C_sq = C * C
+  gnc = GNC(C)
+
+  def cb(x):
+    gnc.increment()
+
   def f(x):
     for i in and_factor_indices:
       factor = factors[i]
@@ -88,28 +175,30 @@ def solve(factors, observed, config):
       A[out, out] = -1.0
       A[out, inp1] = x[inp2]
 
-    err = A.dot(x.reshape((-1, 1))) - b
-    return np.sum(err ** 2)
+    r_sq = (A.dot(x.reshape((-1, 1))) - b) ** 2.0
+    return np.sum(r_sq)
+    # mu = gnc.mu(r_sq)
+    # err = (r_sq * C_sq * mu) / (r_sq + mu * C_sq)
+    # return np.sum(err)
 
-  lower = np.zeros(n)
-  upper = np.ones(n)
+  lower, upper = np.zeros(n), np.ones(n)
   for rv, val in observed.items():
     lower[rv] = float(val)
     upper[rv] = float(val)
-  bounds = Bounds(lower, upper)
 
-  options = {'maxiter': 40, 'disp': True}
+  options = {'maxiter': 40, 'disp': False}
 
   start = time()
   print('Starting optimization...')
-  result = minimize(f, init_guess, bounds=bounds, options=options)
-  # result = basinhopping(f, init_guess, stepsize=1.0)
+  result = minimize(f, init_guess, bounds=Bounds(lower, upper),
+                    jac=jacobian, options=options, callback=cb)
   print('Optimization finished in %.2f s' % (time() - start))
   print('\tsuccess: {}'.format(result['success']))
   print('\tstatus:  {}'.format(result['message']))
   print('\terror:   {:.2f}'.format(result['fun']))
 
   return [(1.0 if rv > 0.5 else 0.0) for rv in result['x']]
+
 
 def verify(true_input, predicted_input, config):
   input_rvs = config['input_rv_indices']
@@ -136,6 +225,7 @@ def verify(true_input, predicted_input, config):
     print('Hashes match: {}'.format(true_out))
   else:
     print('Expected:\n\t{}\nGot:\n\t{}'.format(true_out, pred_out))
+
 
 def main(test_case):
   base = os.path.abspath('data')
@@ -172,8 +262,6 @@ def main(test_case):
 
 
 if __name__ == '__main__':
-  # main('sha256')
   main('lossyPseudoHash')
-  # main('xorConst')
   print('Done.')
   sys.exit(0)
