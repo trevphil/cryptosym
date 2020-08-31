@@ -4,7 +4,7 @@ set -e
 
 python -m dataset_generation.generate --num-samples 8 --num-input-bits 64 --hash-algo sha256 --difficulty 64
 
-python -m dataset_generation.generate --num-samples 8 --num-input-bits 64 --hash-algo lossyPseudoHash --visualize --difficulty 1
+python -m dataset_generation.generate --num-samples 8 --num-input-bits 64 --hash-algo lossyPseudoHash --visualize --difficulty 4
 
 python -m dataset_generation.generate --num-samples 8 --num-input-bits 64 --hash-algo nonLossyPseudoHash --visualize --difficulty 1
 

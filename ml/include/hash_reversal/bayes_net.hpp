@@ -58,9 +58,6 @@ class InvFactor : public gtsam::NoiseModelFactor2<double, double> {
   }
 };
 
-/*
-TODO: This gate doesn't seem to work
-*/
 class AndFactor : public gtsam::NoiseModelFactor3<double, double, double> {
  public:
   AndFactor(gtsam::Key k1, gtsam::Key k2, gtsam::Key k3,
