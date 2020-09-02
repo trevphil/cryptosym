@@ -36,12 +36,9 @@ class FactorGraphNode {
 
   double prevMessage(size_t to, bool rv_val) const;
 
-  void reset(const VariableAssignments &observed = {},
-             std::shared_ptr<utils::Config> config = nullptr);
+  void reset();
 
  protected:
-  virtual std::set<size_t> neighbors() const;
-
   std::map<std::pair<size_t, double>, double> messages_;
 };
 
@@ -52,9 +49,6 @@ class FactorGraphNode {
 class RandomVariable : public FactorGraphNode {
  public:
   std::set<size_t> factor_indices;
-
- private:
-  std::set<size_t> neighbors() const override;
 };
 
 /*****************************************
@@ -78,9 +72,6 @@ class Factor : public FactorGraphNode {
   std::string factor_type;
   size_t output_rv;
   std::set<size_t> referenced_rvs;
-
- private:
-  std::set<size_t> neighbors() const override;
 };
 
 }  // end namespace hash_reversal

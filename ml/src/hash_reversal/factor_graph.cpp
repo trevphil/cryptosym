@@ -55,7 +55,7 @@ void FactorGraph::reconfigure(const VariableAssignments &observed) {
   observed_ = observed;
   previous_marginals_.clear();
   for (auto &itr : rvs_) itr.second.reset();
-  for (auto &itr : factors_) itr.second.reset(observed_, config_);
+  for (auto &itr : factors_) itr.second.reset();
 }
 
 void FactorGraph::solve() {

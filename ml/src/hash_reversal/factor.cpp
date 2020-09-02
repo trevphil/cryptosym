@@ -22,11 +22,6 @@ namespace hash_reversal {
 
 FactorGraphNode::~FactorGraphNode() {}
 
-std::set<size_t> FactorGraphNode::neighbors() const {
-  spdlog::warn("neighbors() should be overridden in subclasses");
-  return {};
-}
-
 void FactorGraphNode::updateMessage(size_t to, bool rv_val, double new_msg,
                                     std::shared_ptr<utils::Config> config) {
   const double damping = config->lbp_damping;
@@ -46,29 +41,13 @@ double FactorGraphNode::prevMessage(size_t to, bool rv_val) const {
   return 1.0;
 }
 
-void FactorGraphNode::reset(const VariableAssignments &observed,
-                            std::shared_ptr<utils::Config> config) {
+void FactorGraphNode::reset() {
   messages_.clear();
-  if (observed.size() == 0u || config == nullptr) return;
-
-  for (size_t neighbor : neighbors()) {
-    if (observed.count(neighbor) == 0u) continue;
-    const bool is_one = observed.at(neighbor);
-    if (is_one) {
-      updateMessage(neighbor, false, 0.0, config);
-      updateMessage(neighbor, true, 1000.0, config);
-    } else {
-      updateMessage(neighbor, false, 1000.0, config);
-      updateMessage(neighbor, true, 0.0, config);
-    }
-  }
 }
 
 /*****************************************
  ************ RANDOM VARIABLE ************
  *****************************************/
-
-std::set<size_t> RandomVariable::neighbors() const { return factor_indices; }
 
 /*****************************************
  **************** FACTOR *****************
@@ -78,8 +57,6 @@ Factor::Factor() : factor_type("NULL") {}
 
 Factor::Factor(const std::string &ftype, size_t out, const std::set<size_t> &ref)
     : factor_type(ftype), output_rv(out), referenced_rvs(ref) {}
-
-std::set<size_t> Factor::neighbors() const { return referenced_rvs; }
 
 Factor::Values Factor::extract(const VariableAssignments &assignments) const {
   Values v;
