@@ -23,9 +23,12 @@ using gtsam::symbol_shorthand::X;
 BayesNet::BayesNet(std::shared_ptr<Probability> prob, std::shared_ptr<Dataset> dataset,
                    std::shared_ptr<utils::Config> config)
     : InferenceTool(prob, dataset, config) {
-  noise_ = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(1) << 100.0).finished());
-  prior_noise_ =
+  high_noise_ =
+      gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(1) << 100.0).finished());
+  low_noise_ =
       gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(1) << 1e-6).finished());
+  const auto m_estimator = gtsam::noiseModel::mEstimator::DCS::Create(1.0);
+  dcs_noise_ = gtsam::noiseModel::Robust::Create(m_estimator, low_noise_);
 }
 
 void BayesNet::reconfigure(const VariableAssignments &observed) {
@@ -49,16 +52,24 @@ void BayesNet::solve() {
     init_values_.insert(X(rv), val);
 
     if (ftype == "PRIOR") {
-      gtsam::PriorFactor<double> prior(X(rv), val, noise_);
+      gtsam::PriorFactor<double> prior(X(rv), val, high_noise_);
       graph_.add(prior);
     } else if (ftype == "SAME") {
-      SameFactor same_fac(X(inputs.at(0)), X(rv), noise_);
+      SameFactor same_fac(X(inputs.at(0)), X(rv), low_noise_);
       graph_.add(same_fac);
     } else if (ftype == "INV") {
-      InvFactor inv_fac(X(inputs.at(0)), X(rv), noise_);
+      InvFactor inv_fac(X(inputs.at(0)), X(rv), low_noise_);
       graph_.add(inv_fac);
     } else if (ftype == "AND") {
-      AndFactor and_fac(X(inputs.at(0)), X(inputs.at(1)), X(rv), noise_);
+      AndFactor and00(X(inputs.at(0)), X(inputs.at(1)), X(rv), dcs_noise_, 0);
+      AndFactor and01(X(inputs.at(0)), X(inputs.at(1)), X(rv), dcs_noise_, 1);
+      AndFactor and10(X(inputs.at(0)), X(inputs.at(1)), X(rv), dcs_noise_, 2);
+      AndFactor and11(X(inputs.at(0)), X(inputs.at(1)), X(rv), dcs_noise_, 3);
+      AndFactor and_fac(X(inputs.at(0)), X(inputs.at(1)), X(rv), low_noise_, 4);
+      graph_.add(and00);
+      graph_.add(and01);
+      graph_.add(and10);
+      graph_.add(and11);
       graph_.add(and_fac);
     } else {
       spdlog::error("\tUnsupported factor type: {}", ftype);
@@ -67,7 +78,7 @@ void BayesNet::solve() {
 
   for (const auto it : observed_) {
     // Attach priors with extremely low variance to the observed RVs
-    gtsam::PriorFactor<double> prior(X(it.first), double(it.second), prior_noise_);
+    gtsam::PriorFactor<double> prior(X(it.first), double(it.second), low_noise_);
     graph_.add(prior);
   }
 

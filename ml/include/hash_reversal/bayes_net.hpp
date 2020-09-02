@@ -61,22 +61,52 @@ class InvFactor : public gtsam::NoiseModelFactor2<double, double> {
 class AndFactor : public gtsam::NoiseModelFactor3<double, double, double> {
  public:
   AndFactor(gtsam::Key k1, gtsam::Key k2, gtsam::Key k3,
-            const gtsam::SharedNoiseModel &model)
-      : gtsam::NoiseModelFactor3<double, double, double>(model, k1, k2, k3) {}
+            const gtsam::SharedNoiseModel &model, size_t c)
+      : gtsam::NoiseModelFactor3<double, double, double>(model, k1, k2, k3), case_(c) {}
 
   gtsam::Vector evaluateError(const double &inp1, const double &inp2, const double &out,
                               boost::optional<gtsam::Matrix &> J1 = boost::none,
                               boost::optional<gtsam::Matrix &> J2 = boost::none,
                               boost::optional<gtsam::Matrix &> J3 = boost::none) const {
-    const double i1_partial = 2 * inp1 * inp2 * inp2 - 2 * out * inp2;
-    const double i2_partial = 2 * inp1 * inp1 * inp2 - 2 * out * inp1;
-    const double out_partial = 2 * out - 2 * inp1 * inp2;
+    double err, i1_partial, i2_partial, out_partial;
+    if (case_ == 0) {
+      // inp1 = 0, inp2 = 0, out = 0
+      err = inp1 * inp1 + inp2 * inp2 + out * out;
+      i1_partial = 2 * inp1;
+      i2_partial = 2 * inp2;
+      out_partial = 2 * out;
+    } else if (case_ == 1) {
+      // inp1 = 0, inp2 = 1, out = 0
+      err = inp1 * inp1 + (1 - inp2) * (1 - inp2) + out * out;
+      i1_partial = 2 * inp1;
+      i2_partial = 2 * (inp2 - 1);
+      out_partial = 2 * out;
+    } else if (case_ == 2) {
+      // inp1 = 1, inp2 = 0, out = 0
+      err = (1 - inp1) * (1 - inp1) + inp2 * inp2 + out * out;
+      i1_partial = 2 * (inp1 - 1);
+      i2_partial = 2 * inp2;
+      out_partial = 2 * out;
+    } else if (case_ == 3) {
+      // inp1 = 1, inp2 = 1, out = 1
+      err = (1 - inp1) * (1 - inp1) + (1 - inp2) * (1 - inp2) + (1 - out) * (1 - out);
+      i1_partial = 2 * (inp1 - 1);
+      i2_partial = 2 * (inp2 - 1);
+      out_partial = 2 * (out - 1);
+    } else if (case_ == 4) {
+      err = (inp1 * inp2 - out) * (inp1 * inp2 - out);
+      i1_partial = 2 * inp1 * inp2 * inp2 - 2 * out * inp2;
+      i2_partial = 2 * inp1 * inp1 * inp2 - 2 * out * inp1;
+      out_partial = 2 * out - 2 * inp1 * inp2;
+    }
     if (J1) (*J1) = (gtsam::Matrix(1, 1) << i1_partial).finished();
     if (J2) (*J2) = (gtsam::Matrix(1, 1) << i2_partial).finished();
     if (J3) (*J3) = (gtsam::Matrix(1, 1) << out_partial).finished();
-    const double err = inp1 * inp2 - out;
-    return (gtsam::Vector(1) << err * err).finished();
+    return (gtsam::Vector(1) << err).finished();
   }
+
+ private:
+  size_t case_;
 };
 
 class BayesNet : public InferenceTool {
@@ -95,8 +125,9 @@ class BayesNet : public InferenceTool {
   std::vector<InferenceTool::Prediction> predictions_;
   gtsam::Values init_values_;
   gtsam::NonlinearFactorGraph graph_;
-  gtsam::noiseModel::Diagonal::shared_ptr noise_;
-  gtsam::noiseModel::Diagonal::shared_ptr prior_noise_;
+  gtsam::noiseModel::Base::shared_ptr high_noise_;
+  gtsam::noiseModel::Base::shared_ptr low_noise_;
+  gtsam::noiseModel::Base::shared_ptr dcs_noise_;
 };
 
 }  // end namespace hash_reversal
