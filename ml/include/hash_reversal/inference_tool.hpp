@@ -37,6 +37,8 @@ class InferenceTool {
 
   virtual ~InferenceTool();
 
+  VariableAssignments propagateObserved(const VariableAssignments &observed) const;
+
   virtual void reconfigure(const VariableAssignments &observed);
 
   virtual void solve();

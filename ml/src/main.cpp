@@ -69,7 +69,8 @@ int main(int argc, char** argv) {
   for (size_t sample_idx = 0; sample_idx < num_test; ++sample_idx) {
     spdlog::info("Test case {}/{}", sample_idx + 1, num_test);
 
-    const auto observed = dataset->getObservedData(sample_idx);
+    auto observed = dataset->getObservedData(sample_idx);
+    observed = inference_tool->propagateObserved(observed);
     inference_tool->reconfigure(observed);
     inference_tool->solve();
     const auto marginals = inference_tool->marginals();

@@ -12,6 +12,8 @@
 
 #include "hash_reversal/inference_tool.hpp"
 
+#include <list>
+
 #include <spdlog/spdlog.h>
 
 namespace hash_reversal {
@@ -35,6 +37,45 @@ InferenceTool::InferenceTool(std::shared_ptr<Probability> prob,
 }
 
 InferenceTool::~InferenceTool() {}
+
+VariableAssignments InferenceTool::propagateObserved(const VariableAssignments &observed) const {
+  VariableAssignments fully_obs = observed;
+  std::list<size_t> queue;
+  std::set<size_t> seen;
+  for (auto &itr : observed) queue.push_back(itr.first);
+
+  while (queue.size() > 0) {
+    const size_t rv = queue.front();
+    queue.pop_front();
+    seen.insert(rv);
+
+    const bool rv_val = fully_obs.at(rv);
+    const Factor &factor = factors_.at(rv);
+    const std::string &f_type = factor.factor_type;
+    const auto inputs = factor.inputRVs();
+
+    if (f_type == "SAME") {
+      const size_t parent = inputs.at(0);
+      fully_obs[parent] = rv_val;
+      if (seen.count(parent) == 0) queue.push_back(parent);
+    } else if (f_type == "INV") {
+      const size_t parent = inputs.at(0);
+      fully_obs[parent] = !rv_val;
+      if (seen.count(parent) == 0) queue.push_back(parent);
+    } else if (f_type == "AND" && rv_val == true) {
+      const size_t inp1 = inputs.at(0);
+      const size_t inp2 = inputs.at(1);
+      fully_obs[inp1] = true;
+      fully_obs[inp2] = true;
+      if (seen.count(inp1) == 0) queue.push_back(inp1);
+      if (seen.count(inp2) == 0) queue.push_back(inp2);
+    }
+  }
+
+  const size_t diff = fully_obs.size() - observed.size();
+  spdlog::info("\tAble to solve {} additional RV values", diff);
+  return fully_obs;
+}
 
 void InferenceTool::reconfigure(const VariableAssignments &observed) {
   (void)observed;
