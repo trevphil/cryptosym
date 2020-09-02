@@ -10,20 +10,25 @@ from dataset_generation.sym_bit_vec import SymBitVec
 
 class SymbolicHash(object):
     def __init__(self):
-        self.input_rv_indices = []
         self.hash_rv_indices = []
 
-    def numVars(self):
-        return Bit.rv_index
+    def hashIndices(self):
+        return self.hash_rv_indices
 
-    def numFactors(self):
-        return len(Bit.factors)
+    def bitsPerSample(self):
+        return len(Bit.rv_bits)
 
     def allBits(self):
         return BitVector(bitlist=[bool(bit.val) for bit in Bit.rv_bits])
 
+    def numUsefulFactors(self):
+        num_useless = len(self.findIgnorableRVs())
+        assert len(Bit.factors) == len(Bit.rv_bits)
+        return len(Bit.factors) - num_useless
+
     def saveFactors(self, filename):
-        saveFactors(filename)
+        ignore = self.findIgnorableRVs()
+        saveFactors(filename, ignore)
 
     def hash(self, hash_input, difficulty):
         raise NotImplementedError  # Override in sub-classes
@@ -40,10 +45,23 @@ class SymbolicHash(object):
         Bit.reset()
         Factor.reset()
         hash_input = SymBitVec(hash_input, unknown=True)
-        self.input_rv_indices = hash_input.rvIndices()
         h = self.hash(hash_input, difficulty)
         self.hash_rv_indices = h.rvIndices()
         return h
+
+    def findIgnorableRVs(self):
+        idx, num_bits = 0, self.bitsPerSample()
+        seen, useless = set(), set(range(num_bits))
+        queue = list(self.hash_rv_indices)
+        while idx < len(queue):
+            rv = queue[idx]  # Do not pop from queue, to speed it up
+            useless.discard(rv)
+            seen.add(rv)
+            factor = Bit.factors[rv]
+            parents = [inp.index for inp in factor.inputs]
+            queue += [p for p in parents if not p in seen]
+            idx += 1
+        return useless
 
 
 class SHA256Hash(SymbolicHash):

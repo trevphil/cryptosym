@@ -129,15 +129,6 @@ void Config::loadYAML(const std::string &config_file) {
     test_mode = data[param].as<bool>();
     spdlog::info("{} --> {}", param, test_mode);
   }
-
-  param = "observed_input_bits";
-  if (!data[param]) {
-    valid_ = false;
-    spdlog::error("Missing '{}'", param);
-  } else {
-    observed_input_bits = data[param].as<size_t>();
-    spdlog::info("{} --> {}", param, observed_input_bits);
-  }
 }
 
 void Config::loadDatasetParameters() {
@@ -179,13 +170,22 @@ void Config::loadDatasetParameters() {
     spdlog::info("{} --> {}", param, hash_algo);
   }
 
-  param = "num_rvs";
+  param = "num_input_bits";
   if (!data[param]) {
     valid_ = false;
     spdlog::error("Missing '{}'", param);
   } else {
-    num_rvs = data[param].as<size_t>();
-    spdlog::info("{} --> {}", param, num_rvs);
+    num_input_bits = data[param].as<size_t>();
+    spdlog::info("{} --> {}", param, num_input_bits);
+  }
+
+  param = "num_bits_per_sample";
+  if (!data[param]) {
+    valid_ = false;
+    spdlog::error("Missing '{}'", param);
+  } else {
+    num_bits_per_sample = data[param].as<size_t>();
+    spdlog::info("{} --> {}", param, num_bits_per_sample);
   }
 
   param = "num_samples";
@@ -206,24 +206,14 @@ void Config::loadDatasetParameters() {
     spdlog::info("{} --> {}", param, difficulty);
   }
 
-  param = "hash_rv_indices";
+  param = "observed_rv_indices";
   if (!data[param]) {
     valid_ = false;
     spdlog::error("Missing '{}'", param);
   } else {
-    hash_rv_indices = data[param].as<std::vector<size_t>>();
+    observed_rv_indices = data[param].as<std::vector<size_t>>();
     spdlog::info("{} --> {}", param,
-                 utils::Convenience::vec2str<size_t>(hash_rv_indices));
-  }
-
-  param = "input_rv_indices";
-  if (!data[param]) {
-    valid_ = false;
-    spdlog::error("Missing '{}'", param);
-  } else {
-    input_rv_indices = data[param].as<std::vector<size_t>>();
-    spdlog::info("{} --> {}", param,
-                 utils::Convenience::vec2str<size_t>(input_rv_indices));
+                 utils::Convenience::vec2str<size_t>(observed_rv_indices));
   }
 }
 

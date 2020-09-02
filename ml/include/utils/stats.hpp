@@ -28,12 +28,8 @@ namespace utils {
 
 class Stats {
  public:
-  Stats(std::shared_ptr<Config> config, const std::vector<std::string> &factor_types)
-      : config_(config), factor_types_(factor_types) {
-    const size_t n = config_->num_rvs;
-    num_correct_per_rv_ = std::vector<double>(n, 0);
-    rv_cumulative_val_ = std::vector<double>(n, 0);
-    count_per_rv_ = std::vector<double>(n, 0);
+  Stats(std::shared_ptr<Config> config, const std::map<size_t, std::string> &f_types)
+      : config_(config), factor_types_(f_types) {
   }
 
   void update(size_t rv_index, bool predicted_val, bool true_val, double prob_one,
@@ -45,7 +41,7 @@ class Stats {
     }
 
     num_correct_per_rv_[rv_index] += is_correct;
-    const std::string f_type = factor_types_.at(rv_index);
+    const std::string &f_type = factor_types_.at(rv_index);
     num_correct_per_factor_[f_type] += is_correct;
     rv_cumulative_val_[rv_index] += true_val;
     count_per_rv_[rv_index] += 1;
@@ -63,20 +59,22 @@ class Stats {
     data << Convenience::vec2str<double>(incorrect_pred_, false) << std::endl;
 
     data << "bit accuracies" << std::endl;
-    for (size_t rv = 0; rv < config_->num_rvs; ++rv) {
-      data << rv << "," << num_correct_per_rv_.at(rv) / count_per_rv_.at(rv);
+    for (auto &itr : num_correct_per_rv_) {
+      const size_t rv = itr.first;
+      data << rv << "," << itr.second / count_per_rv_.at(rv);
       data << std::endl;
     }
 
     data << "factor accuracies" << std::endl;
-    for (auto it : num_correct_per_factor_) {
-      data << it.first << "," << it.second / count_per_factor_.at(it.first);
+    for (auto &itr : num_correct_per_factor_) {
+      data << itr.first << "," << itr.second / count_per_factor_.at(itr.first);
       data << std::endl;
     }
 
     data << "bit mean values" << std::endl;
-    for (size_t rv = 0; rv < config_->num_rvs; ++rv) {
-      data << rv << "," << rv_cumulative_val_.at(rv) / count_per_rv_.at(rv);
+    for (auto &itr : rv_cumulative_val_) {
+      const size_t rv = itr.first;
+      data << rv << "," << itr.second / count_per_rv_.at(rv);
       data << std::endl;
     }
 
@@ -88,23 +86,23 @@ class Stats {
   std::shared_ptr<Config> config_;
 
   //! Each RV at index `i` has an associated factor of some type (XOR, AND, ...)
-  std::vector<std::string> factor_types_;
+  std::map<size_t, std::string> factor_types_;
 
   //! Tracks "probability the bit is one" for each (in)correct bit prediction.
-  //  Observed bits (hash output bits) are excluded because they're always correct!
+  //  Observed bits (hash output bits) are excluded.
   std::vector<double> correct_pred_, incorrect_pred_;
 
   //! Counts the number of correct predictions for each random variable
-  std::vector<double> num_correct_per_rv_;
+  std::map<size_t, double> num_correct_per_rv_;
 
   //! Counts the number of correct predictions for each factor type
   std::map<std::string, double> num_correct_per_factor_;
 
   //! Cumulative sum of the value of each random variable when it is seen
-  std::vector<double> rv_cumulative_val_;
+  std::map<size_t, double> rv_cumulative_val_;
 
   //! Number of times each random variable is seen
-  std::vector<double> count_per_rv_;
+  std::map<size_t, double> count_per_rv_;
 
   //! Number of times each factor type is seen
   std::map<std::string, double> count_per_factor_;

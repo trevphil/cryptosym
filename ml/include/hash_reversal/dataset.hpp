@@ -13,6 +13,7 @@
 #pragma once
 
 #include <boost/dynamic_bitset.hpp>
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -29,7 +30,7 @@ class Dataset {
  public:
   explicit Dataset(std::shared_ptr<utils::Config> config);
 
-  typedef std::pair<std::vector<RandomVariable>, std::vector<Factor>> Graph;
+  typedef std::pair<std::map<size_t, RandomVariable>, std::map<size_t, Factor>> Graph;
   Graph loadFactorGraph() const;
 
   bool isHashInputBit(size_t bit_index) const;

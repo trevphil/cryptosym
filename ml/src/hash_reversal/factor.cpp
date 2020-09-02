@@ -74,6 +74,8 @@ std::set<size_t> RandomVariable::neighbors() const { return factor_indices; }
  **************** FACTOR *****************
  *****************************************/
 
+Factor::Factor() : factor_type("NULL") {}
+
 Factor::Factor(const std::string &ftype, size_t out, const std::set<size_t> &ref)
     : factor_type(ftype), output_rv(out), referenced_rvs(ref) {}
 

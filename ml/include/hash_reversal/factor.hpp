@@ -67,6 +67,8 @@ class Factor : public FactorGraphNode {
     bool in1, in2, out;
   };
 
+  Factor();
+
   Factor(const std::string &ftype, size_t out, const std::set<size_t> &ref);
 
   Values extract(const VariableAssignments &assignments) const;

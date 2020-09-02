@@ -39,7 +39,8 @@ void BayesNet::solve() {
   spdlog::info("\tStarting GTSAM method...");
   const auto start = utils::Convenience::time_since_epoch();
 
-  for (const auto &factor : factors_) {
+  for (auto &itr : factors_) {
+    const auto &factor = itr.second;
     const std::vector<size_t> inputs = factor.inputRVs();
     const size_t rv = factor.output_rv;
     const std::string &ftype = factor.factor_type;
@@ -80,10 +81,10 @@ void BayesNet::solve() {
   spdlog::info("\tFinished graph optimization in {} iterations (error={})",
                optimizer.iterations(), optimizer.error());
 
-  const size_t n = config_->num_rvs;
   predictions_.clear();
-  predictions_.reserve(n);
-  for (size_t rv = 0; rv < n; ++rv) {
+  predictions_.reserve(factors_.size());
+  for (auto &itr : factors_) {
+    const size_t rv = itr.first;
     const double rv_val = result.at<double>(X(rv));
     // spdlog::info("RV {}: {}", rv, rv_val);
     const double prob_one = std::max(0.0, std::min(1.0, rv_val));

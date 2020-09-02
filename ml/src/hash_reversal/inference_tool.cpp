@@ -23,7 +23,7 @@ InferenceTool::InferenceTool(std::shared_ptr<Probability> prob,
   spdlog::info("Loading factors and random variables...");
   const auto start = utils::Convenience::time_since_epoch();
 
-  const auto &graph = dataset_->loadFactorGraph();
+  const auto graph = dataset_->loadFactorGraph();
   rvs_ = graph.first;
   factors_ = graph.second;
   spdlog::info("\tCreated {} RVs and {} factors.", rvs_.size(), factors_.size());
@@ -50,19 +50,23 @@ std::vector<InferenceTool::Prediction> InferenceTool::marginals() const {
   return {};
 }
 
-std::string InferenceTool::factorType(size_t rv_index) const {
-  return factors_.at(rv_index).factor_type;
+std::map<size_t, std::string> InferenceTool::factorTypes() const {
+  std::map<size_t, std::string> f_types;
+  for (auto &itr : factors_) {
+    f_types[itr.first] = itr.second.factor_type;
+  }
+  return f_types;
 }
 
 void InferenceTool::printConnections() const {
-  const size_t n = config_->num_rvs;
-  for (size_t i = 0; i < n; ++i) {
-    const auto &rv_neighbors = rvs_.at(i).factor_indices;
+  for (auto &itr : factors_) {
+    const size_t rv = itr.first;
+    const auto &rv_neighbors = rvs_.at(rv).factor_indices;
     const std::string rv_nb_str = utils::Convenience::set2str<size_t>(rv_neighbors);
-    spdlog::info("\tRV {} is referenced by factors {}", i, rv_nb_str);
-    const auto &fac_neighbors = factors_.at(i).referenced_rvs;
+    spdlog::info("\tRV {} is referenced by factors {}", rv, rv_nb_str);
+    const auto &fac_neighbors = itr.second.referenced_rvs;
     const std::string fac_nb_str = utils::Convenience::set2str<size_t>(fac_neighbors);
-    spdlog::info("\tFactor: RV {} depends on RVs {}", i, fac_nb_str);
+    spdlog::info("\tFactor: RV {} depends on RVs {}", rv, fac_nb_str);
   }
 }
 

@@ -131,7 +131,8 @@ class Bit(object):
         return sum2, carry_out
 
 
-def saveFactors(filename):
+def saveFactors(filename, ignore):
     with open(filename, 'w') as f:
         for factor in Bit.factors:
-            f.write(str(factor) + '\n')
+            if factor.out.index not in ignore:
+                f.write(str(factor) + '\n')

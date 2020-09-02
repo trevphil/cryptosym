@@ -85,13 +85,7 @@ def main():
         num = int(args.hash_input, 16)
         input_bv = BitVector(intVal=num, size=args.num_input_bits)
         algo = hash_algos[args.hash_algo]
-        algo(input_bv, difficulty=args.difficulty)
-        hash_indices = algo.hash_rv_indices
-        hash_output = BitVector(size=len(hash_indices))
-        bitvec = algo.allBits()
-        for i, bit_index in enumerate(hash_indices):
-            hash_output[i] = bitvec[bit_index]
-
+        hash_output = algo(input_bv, difficulty=args.difficulty)
         digest_str = hex(int(hash_output))[2:]
         pad = '0' * (len(hash_output) // 4 - len(digest_str))
         print(pad + digest_str, end='')
@@ -99,6 +93,7 @@ def main():
 
     num_input_bits = args.num_input_bits
     N = int(8 * round(args.num_samples / 8))  # number of samples
+    N = max(N, 8)
 
     dataset_dir = os.path.join(args.data_dir, args.hash_algo)
     data_file = os.path.join(dataset_dir, 'data.bits')
@@ -115,10 +110,9 @@ def main():
     # Generate symbolic dependencies as factors
     algo = hash_algos[args.hash_algo]
     algo(sample(num_input_bits), difficulty=args.difficulty)
-    n = algo.numVars()
-    assert n == algo.numFactors(), '%d RVs but %d factors' % (n, algo.numFactors())
-    input_indices = algo.input_rv_indices
-    hash_indices = algo.hash_rv_indices
+    n = algo.bitsPerSample()
+    hash_rv_indices = algo.hashIndices()
+    num_useful_factors = algo.numUsefulFactors()
 
     print('Saving hash function symbolically as a factor graph...')
     algo.saveFactors(graph_file)
@@ -130,10 +124,9 @@ def main():
     for sample_idx in range(N):
         hash_input = sample(num_input_bits)
         algo(hash_input, difficulty=args.difficulty)
-        bitvec = algo.allBits()
         # The MSB (left-most) of the BitVector will go in the left-most column
         # of `data`
-        data[N - sample_idx - 1, :] = bitvec
+        data[N - sample_idx - 1, :] = algo.allBits()
 
     print('Transposing matrix and converting back to BitVector...')
     bv = BitVector(bitlist=data.T.reshape((1, -1)).squeeze().tolist())
@@ -144,27 +137,30 @@ def main():
 
     params = {
         'hash': args.hash_algo,
-        'num_rvs': n,
+        'num_input_bits': num_input_bits,
+        'num_bits_per_sample': n,
+        'num_useful_factors': num_useful_factors,
         'num_samples': N,
-        'input_rv_indices': input_indices,
-        'hash_rv_indices': hash_indices,
+        'observed_rv_indices': hash_rv_indices,
         'difficulty': args.difficulty
     }
 
     with open(params_file, 'w') as f:
         yaml.dump(params, f, default_flow_style=None)
 
-    print('Generated dataset with {} samples (hash={}, {} input bits).'.format(
-        N, args.hash_algo, num_input_bits))
+    print('Generated dataset with parameters:')
+    for key in sorted(params.keys()):
+        if key != 'observed_rv_indices':
+            print('\t{}: {}'.format(key, params[key]))
 
     cyclic = len(list(nx.simple_cycles(Factor.directed_graph))) > 0
     print('Directed graph cyclic? {}'.format(cyclic))
 
     if args.visualize:
         colors = ['#0000ff' for _ in range(n)]
-        for input_idx in input_indices:
+        for input_idx in range(num_input_bits):
             colors[input_idx] = '#000000'
-        for output_idx in hash_indices:
+        for output_idx in hash_rv_indices:
             colors[output_idx] = '#00ff00'
         pos = graphviz_layout(Factor.directed_graph, prog='dot')
         nx.draw(Factor.directed_graph, pos, node_size=5,

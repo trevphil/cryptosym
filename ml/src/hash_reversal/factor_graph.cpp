@@ -45,18 +45,17 @@ InferenceTool::Prediction FactorGraph::predict(size_t rv_index) const {
 }
 
 std::vector<InferenceTool::Prediction> FactorGraph::marginals() const {
-  const size_t n = config_->num_rvs;
   std::vector<InferenceTool::Prediction> predictions;
-  predictions.reserve(n);
-  for (size_t rv = 0; rv < n; ++rv) predictions.push_back(predict(rv));
+  predictions.reserve(factors_.size());
+  for (auto &itr : factors_) predictions.push_back(predict(itr.first));
   return predictions;
 }
 
 void FactorGraph::reconfigure(const VariableAssignments &observed) {
   observed_ = observed;
   previous_marginals_.clear();
-  for (auto &rv : rvs_) rv.reset();
-  for (auto &factor : factors_) factor.reset(observed_, config_);
+  for (auto &itr : rvs_) itr.second.reset();
+  for (auto &itr : factors_) itr.second.reset(observed_, config_);
 }
 
 void FactorGraph::solve() {
@@ -90,6 +89,9 @@ bool FactorGraph::equal(const std::vector<InferenceTool::Prediction> &marginals1
   if (n != marginals2.size()) return false;
 
   for (size_t i = 0; i < n; ++i) {
+    const size_t rv1 = marginals1.at(i).rv_index;
+    const size_t rv2 = marginals2.at(i).rv_index;
+    if (rv1 != rv2) return false;
     const double p1 = marginals1.at(i).prob_one;
     const double p2 = marginals2.at(i).prob_one;
     if (std::abs(p1 - p2) > tol) return false;
@@ -99,11 +101,17 @@ bool FactorGraph::equal(const std::vector<InferenceTool::Prediction> &marginals1
 }
 
 void FactorGraph::updateFactorMessages(bool forward) {
-  const size_t num_facs = factors_.size();
+  auto fwd_itr = factors_.begin();
+  auto rev_itr = factors_.rbegin();
 
-  for (size_t i = 0; i < num_facs; ++i) {
-    const size_t factor_index = forward ? i : num_facs - i - 1;
-    auto &factor = factors_.at(factor_index);
+  for (size_t idx = 0; idx < factors_.size(); ++idx) {
+    auto &factor = forward ? fwd_itr->second : rev_itr->second;
+    const size_t factor_index = forward ? fwd_itr->first : rev_itr->first;
+    if (forward) {
+      ++fwd_itr;
+    } else {
+      ++rev_itr;
+    }
 
     for (size_t to_rv : factor.referenced_rvs) {
       std::set<size_t> unobserved_indices;
@@ -146,11 +154,18 @@ void FactorGraph::updateFactorMessages(bool forward) {
 }
 
 void FactorGraph::updateRandomVariableMessages(bool forward) {
-  const size_t num_rvs = config_->num_rvs;
+  auto fwd_itr = rvs_.begin();
+  auto rev_itr = rvs_.rbegin();
 
-  for (size_t i = 0; i < num_rvs; ++i) {
-    const size_t rv_index = forward ? i : num_rvs - i - 1;
-    auto &rv = rvs_.at(rv_index);
+  for (size_t idx = 0; idx < rvs_.size(); ++idx) {
+    auto &rv = forward ? fwd_itr->second : rev_itr->second;
+    const size_t rv_index = forward ? fwd_itr->first : rev_itr->first;
+    if (forward) {
+      ++fwd_itr;
+    } else {
+      ++rev_itr;
+    }
+
     for (size_t fac_idx : rv.factor_indices) {
       double result0 = 1.0;
       double result1 = 1.0;

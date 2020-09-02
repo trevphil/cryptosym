@@ -49,7 +49,7 @@ def solve(factors, observed, config):
     C_sq = C * C
     gnc = GNC(C)
 
-    def cb(x, foo):
+    def cb(x, foo=None):
         gnc.increment()
 
     def f(x):
@@ -92,8 +92,8 @@ def solve(factors, observed, config):
         assert np.sum(np.abs(H - H.T)) < 1e-5, 'Hessian is not symmetric'
         return H
 
-    method = 'trust-constr'
-    options = {'maxiter': 40, 'disp': False}
+    method = 'trust-ncg'
+    options = {'maxiter': 400, 'disp': False}
 
     start = time()
     print('Starting optimization...')

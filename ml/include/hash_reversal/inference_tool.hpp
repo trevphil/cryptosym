@@ -43,14 +43,14 @@ class InferenceTool {
 
   virtual std::vector<Prediction> marginals() const;
 
-  std::string factorType(size_t rv_index) const;
+  std::map<size_t, std::string> factorTypes() const;
 
  protected:
   std::shared_ptr<Probability> prob_;
   std::shared_ptr<Dataset> dataset_;
   std::shared_ptr<utils::Config> config_;
-  std::vector<RandomVariable> rvs_;
-  std::vector<Factor> factors_;
+  std::map<size_t, RandomVariable> rvs_;
+  std::map<size_t, Factor> factors_;
   VariableAssignments observed_;
 
  private:

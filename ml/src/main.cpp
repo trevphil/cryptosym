@@ -58,13 +58,10 @@ int main(int argc, char** argv) {
   }
 
   spdlog::info("Checking accuracy on test data...");
-  const size_t n = config->num_rvs;
-  const size_t n_input = config->input_rv_indices.size();
+  const size_t n_input = config->num_input_bits;
 
   // Initialize a helper object to track statistics while running the algo
-  std::vector<std::string> f_types(n);
-  for (size_t rv = 0; rv < n; ++rv) f_types[rv] = inference_tool->factorType(rv);
-  utils::Stats stats(config, f_types);
+  utils::Stats stats(config, inference_tool->factorTypes());
 
   // How many hash input --> hash output trials to run
   const size_t num_test = std::min<size_t>(config->num_test, config->num_samples);
@@ -80,8 +77,9 @@ int main(int argc, char** argv) {
 
     const auto ground_truth = dataset->getFullSample(sample_idx);
 
-    for (size_t rv = 0; rv < n; ++rv) {
-      const double p = marginals.at(rv).prob_one;
+    for (const auto &prediction : marginals) {
+      const double p = prediction.prob_one;
+      const size_t rv = prediction.rv_index;
       const bool predicted_val = p > 0.5 ? true : false;
       const bool true_val = ground_truth[rv];
       const bool is_observed = observed.count(rv) > 0;

@@ -22,14 +22,14 @@ namespace hash_reversal {
 Dataset::Dataset(std::shared_ptr<utils::Config> config) : config_(config) {
   spdlog::info("Loading dataset...");
   const auto start = utils::Convenience::time_since_epoch();
-  samples_.reserve(config->num_rvs);
+  samples_.reserve(config->num_bits_per_sample);
 
   const size_t num_bytes = config->num_samples / 8;
 
   std::ifstream data(config->data_file, std::ios::in | std::ios::binary);
   char c;
 
-  for (size_t rv = 0; rv < config->num_rvs; ++rv) {
+  for (size_t bit = 0; bit < config->num_bits_per_sample; ++bit) {
     boost::dynamic_bitset<> sample_bits(config->num_samples);
 
     for (size_t i = 0; i < num_bytes; ++i) {
@@ -57,13 +57,10 @@ Dataset::Graph Dataset::loadFactorGraph() const {
   data.open(config_->graph_file);
   std::string line;
 
-  const size_t n = config_->num_rvs;
-  std::vector<RandomVariable> rvs(n);
-  std::vector<Factor> factors;
-  factors.reserve(n);
+  std::map<size_t, RandomVariable> rvs;
+  std::map<size_t, Factor> factors;
 
-  for (size_t output_rv = 0; output_rv < n; ++output_rv) {
-    std::getline(data, line);
+  while (std::getline(data, line)) {
     std::stringstream line_stream(line);
     std::string tmp;
 
@@ -71,8 +68,7 @@ Dataset::Graph Dataset::loadFactorGraph() const {
     const std::string factor_type = tmp;
 
     std::getline(line_stream, tmp, ';');
-    const size_t rv_index = std::stoul(tmp);
-    if (rv_index != output_rv) spdlog::error("Factors are garbage.");
+    const size_t output_rv = std::stoul(tmp);
     std::set<size_t> referenced_rvs = {output_rv};
     rvs[output_rv].factor_indices.insert(output_rv);
 
@@ -86,11 +82,7 @@ Dataset::Graph Dataset::loadFactorGraph() const {
       spdlog::warn("AND factor may reference the same RV twice as an input");
     }
 
-    factors.push_back(Factor(factor_type, output_rv, referenced_rvs));
-  }
-
-  if (std::getline(data, line)) {
-    spdlog::error("Factor file was not 100% read, factors are garbage.");
+    factors[output_rv] = Factor(factor_type, output_rv, referenced_rvs);
   }
 
   data.close();
@@ -98,17 +90,16 @@ Dataset::Graph Dataset::loadFactorGraph() const {
 }
 
 bool Dataset::isHashInputBit(size_t bit_index) const {
-  for (const size_t &idx : config_->input_rv_indices) {
-    if (bit_index == idx) return true;
-  }
-  return false;
+  // Critical assumption here is that the input bits are at the beginning
+  return bit_index < config_->num_input_bits;
 }
 
 std::string Dataset::getHashInput(size_t sample_index) const {
-  const size_t n = config_->input_rv_indices.size();
+  // Critical assumption here is that the input bits are at the beginning
+  const size_t n = config_->num_input_bits;
   boost::dynamic_bitset<> input_bits(n);
   for (size_t i = 0; i < n; ++i) {
-    input_bits[i] = samples_.at(config_->input_rv_indices.at(i))[sample_index];
+    input_bits[i] = samples_.at(i)[sample_index];
   }
   return utils::Convenience::bitset2hex(input_bits);
 }
@@ -116,15 +107,9 @@ std::string Dataset::getHashInput(size_t sample_index) const {
 VariableAssignments Dataset::getObservedData(size_t sample_index) const {
   VariableAssignments observed;
 
-  for (const size_t &bit_idx : config_->hash_rv_indices) {
+  for (const size_t &bit_idx : config_->observed_rv_indices) {
     const auto bitval = samples_.at(bit_idx)[sample_index];
     observed[bit_idx] = bitval;
-  }
-
-  // The first bits of the hash input may be (optionally) observed
-  for (size_t rv = 0; rv < config_->observed_input_bits; ++rv) {
-    const auto bitval = samples_.at(rv)[sample_index];
-    observed[rv] = bitval;
   }
 
   return observed;
@@ -157,7 +142,7 @@ bool Dataset::validate(const boost::dynamic_bitset<> predicted_input,
 }
 
 boost::dynamic_bitset<> Dataset::getFullSample(size_t sample_index) const {
-  const size_t n = config_->num_rvs;
+  const size_t n = config_->num_bits_per_sample;
   boost::dynamic_bitset<> all_bits(n);
   for (size_t i = 0; i < n; ++i) {
     all_bits[i] = samples_.at(i)[sample_index];
