@@ -54,7 +54,8 @@ class Factor(object):
     def _has_variable(self, variable):
         return variable in self.referenced_rvs
 
-    def first_order(self, with_respect_to, x):
+    def first_order(self, with_respect_to, x, rv2idx):
+        X = lambda rv: x[rv2idx[rv]]
         wrt = with_respect_to
         if not self._has_variable(wrt):
             raise RuntimeError
@@ -62,58 +63,58 @@ class Factor(object):
         if self.factor_type == 'SAME':
             i, j = self.input_rvs[0], self.output_rv
             if wrt == i:
-                return 2 * (x[i] - x[j])
+                return 2 * (X(i) - X(j))
             else:
-                return 2 * (x[j] - x[i])
+                return 2 * (X(j) - X(i))
         elif self.factor_type == 'INV':
             i, j = self.input_rvs[0], self.output_rv
-            return 2 * (x[i] + x[j] - 1)
+            return 2 * (X(i) + X(j) - 1)
         elif self.factor_type == 'AND':
             i, j = self.input_rvs
             k = self.output_rv
             if wrt == i:
-                return 2 * (x[i] * x[j] * x[j] - x[j] * x[k])
+                return 2 * (X(i) * X(j) * X(j) - X(j) * X(k))
             elif wrt == j:
-                return 2 * (x[i] * x[i] * x[j] - x[i] * x[k])
+                return 2 * (X(i) * X(i) * X(j) - X(i) * X(k))
             else:
-                return 2 * (x[k] - x[i] * x[j])
+                return 2 * (X(k) - X(i) * X(j))
         elif self.factor_type == 'PRIOR':
             return 0.0
         else:
             raise RuntimeError('Unsupported factor')
 
-    def second_order(self, first, second, x):
+    def second_order(self, first, second, x, rv2idx):
         if not self._has_variable(first):
             raise RuntimeError
         if not self._has_variable(second):
             raise RuntimeError
 
+        X = lambda rv: x[rv2idx[rv]]
         pair = (first, second)
         if self.factor_type == 'SAME':
             i, j = self.input_rvs[0], self.output_rv
             if pair == (i, i) or pair == (j, j):
                 return 2.0
-            else:
-                return -2.0
+            return -2.0
         elif self.factor_type == 'INV':
             return 2.0
         elif self.factor_type == 'AND':
             i, j = self.input_rvs
             k = self.output_rv
             if pair == (i, i):
-                return 2 * x[j] * x[j]
+                return 2 * X(j) * X(j)
             elif pair == (i, j) or pair == (j, i):
-                return 4 * x[i] * x[j] - 2 * x[k]
+                return 4 * X(i) * X(j) - 2 * X(k)
             elif pair == (i, k):
-                return -2 * x[j]
+                return -2 * X(j)
             elif pair == (j, j):
-                return 2 * x[i] * x[i]
+                return 2 * X(i) * X(i)
             elif pair == (j, k):
-                return -2 * x[i]
+                return -2 * X(i)
             elif pair == (k, i):
-                return -2 * x[j]
+                return -2 * X(j)
             elif pair == (k, j):
-                return -2 * x[i]
+                return -2 * X(i)
             else:
                 return 2.0
         elif self.factor_type == 'PRIOR':

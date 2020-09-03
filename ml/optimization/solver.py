@@ -7,43 +7,48 @@ from optimization.gnc import GNC
 
 
 def solve(factors, observed, config):
-    n = int(config['num_rvs'])
-    init_guess = np.ones(n) * 0.5
+    rv_indices = list(sorted(k for k in factors.keys()))
+    rv2idx = {rv_index: i for i, rv_index in enumerate(rv_indices)}
+    num_rvs = len(rv_indices)
+    init_guess = np.ones(num_rvs) * 0.5
     for rv, val in observed.items():
-        init_guess[rv] = float(val)
+        init_guess[rv2idx[rv]] = float(val)
 
-    factors_per_rv = [set([i]) for i in range(n)]
+    factors_per_rv = {rv: set([rv]) for rv in rv_indices}
     for factor_idx, factor in factors.items():
-        for rv in factor.referenced_rvs:
-            factors_per_rv[rv].add(factor_idx)
+        for ref in factor.referenced_rvs:
+            factors_per_rv[ref].add(factor_idx)
 
     # Ax = b (for SAME and INV) --> Ax - b = 0
-    A = np.zeros((n, n))
-    b = np.zeros((n, 1))
+    A = np.zeros((num_rvs, num_rvs))
+    b = np.zeros((num_rvs, 1))
 
     # A_obs * x = b_obs
-    A_obs = np.zeros((n, n))
-    b_obs = np.zeros((n, 1))
+    A_obs = np.zeros((num_rvs, num_rvs))
+    b_obs = np.zeros((num_rvs, 1))
     for rv, val in observed.items():
-      A_obs[rv, rv] = 1.0
-      b_obs[rv] = float(val)
+        i = rv2idx[rv]
+        A_obs[i, i] = 1.0
+        b_obs[i] = float(val)
 
-    for i in range(n):
-        factor = factors[i]
+    for rv in rv_indices:
+        factor = factors[rv]
         if factor.factor_type == 'SAME':
             inp, out = factor.input_rvs[0], factor.output_rv
+            inp, out = rv2idx[inp], rv2idx[out]
             # x_i - x_j = 0.0 since the RVs are the same
             A[out, out] = 1.0
             A[out, inp] = -1.0
         elif factor.factor_type == 'INV':
             inp, out = factor.input_rvs[0], factor.output_rv
+            inp, out = rv2idx[inp], rv2idx[out]
             # x_i + x_j = 1.0 since the RVs are inverses
             A[out, out] = 1.0
             A[out, inp] = 1.0
             b[out] = 1.0
 
-    and_factor_indices = [i for i in range(n)
-                          if factors[i].factor_type == 'AND']
+    and_factor_indices = [rv for rv in rv_indices
+                          if factors[rv].factor_type == 'AND']
 
     C = 0.02
     C_sq = C * C
@@ -57,6 +62,7 @@ def solve(factors, observed, config):
             factor = factors[i]
             inp1, inp2 = factor.input_rvs
             out = factor.output_rv
+            inp1, inp2, out = rv2idx[inp1], rv2idx[inp2], rv2idx[out]
             # Update the A matrix s.t. inp1 * inp2 - out = 0.0
             A[out, out] = -1.0
             A[out, inp1] = x[inp2]
@@ -71,23 +77,27 @@ def solve(factors, observed, config):
 
     # Jacobian: J[i] = derivative of f(x) w.r.t. variable `i`
     def jacobian(x):
-        J = np.zeros(n)
-        for i in range(n):
-            for factor_idx in factors_per_rv[i]:
-                J[i] += factors[factor_idx].first_order(i, x)
-        for i, val in observed.items():
+        J = np.zeros(num_rvs)
+        for rv in rv_indices:
+            for factor_idx in factors_per_rv[rv]:
+                i = rv2idx[rv]
+                J[i] += factors[factor_idx].first_order(rv, x, rv2idx)
+        for rv, val in observed.items():
+            i = rv2idx[rv]
             J[i] += 2 * (x[i] - float(val))
         return J
 
     # Hessian: H[i, j] = derivative of J[j] w.r.t. variable `i`
     def hessian(x):
-        H = np.zeros((n, n))
-        for j in range(n):
-            for factor_idx in factors_per_rv[j]:
+        H = np.zeros((num_rvs, num_rvs))
+        for rv_j in rv_indices:
+            for factor_idx in factors_per_rv[rv_j]:
                 factor = factors[factor_idx]
-                for i in factor.referenced_rvs:
-                    H[i, j] += factor.second_order(j, i, x)
-        for i, val in observed.items():
+                for rv_i in factor.referenced_rvs:
+                    i, j = rv2idx[rv_i], rv2idx[rv_j]
+                    H[i, j] += factor.second_order(rv_j, rv_i, x, rv2idx)
+        for rv, val in observed.items():
+            i = rv2idx[rv]
             H[i, i] += 2.0
         assert np.sum(np.abs(H - H.T)) < 1e-5, 'Hessian is not symmetric'
         return H
@@ -104,4 +114,6 @@ def solve(factors, observed, config):
     print('\tstatus:  {}'.format(result['message']))
     print('\terror:   {:.2f}'.format(result['fun']))
 
-    return [(1.0 if rv > 0.5 else 0.0) for rv in result['x']]
+    return {
+        rv: (1.0 if result['x'][rv2idx[rv]] > 0.5 else 0.0) for rv in rv_indices
+    }

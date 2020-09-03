@@ -27,7 +27,7 @@ def load_config(config_file):
 
 
 def load_bitvectors(data_file, config):
-    n = int(config['num_rvs'])
+    n = int(config['num_bits_per_sample'])
     N = int(config['num_samples'])
     bv = BitVector(filename=data_file)
     data = bv.read_bits_from_file(n * N)
@@ -43,7 +43,7 @@ def load_bitvectors(data_file, config):
 
 
 def verify(true_input, predicted_input, config):
-    input_rvs = config['input_rv_indices']
+    num_input_bits = config['num_input_bits']
     hash_algo = config['hash']
     difficulty = config['difficulty']
 
@@ -54,7 +54,7 @@ def verify(true_input, predicted_input, config):
     print('Pred input: %s' % pred_in)
 
     cmd = ['python', '-m', 'dataset_generation.generate',
-           '--num-input-bits', str(len(input_rvs)),
+           '--num-input-bits', str(num_input_bits),
            '--hash-algo', hash_algo, '--difficulty', str(difficulty),
            '--hash-input']
 
@@ -78,13 +78,10 @@ def main(dataset):
     factors = load_factors(factor_file)
     bitvectors = load_bitvectors(data_file, config)
 
-    n = int(config['num_rvs'])
+    n = int(config['num_bits_per_sample'])
+    n_input = int(config['num_input_bits'])
     N = int(config['num_samples'])
-    input_rvs = config['input_rv_indices']
-    observed_rvs = set(config['hash_rv_indices'])
-    assert n == len(factors), 'Expected %d factors, got %d' % (n, len(factors))
-    print('%d random variables' % n)
-
+    observed_rvs = set(config['observed_rv_indices'])
     num_test = min(1, len(bitvectors))
 
     for test_case in range(num_test):
@@ -92,11 +89,11 @@ def main(dataset):
         sample = bitvectors[test_case]
         observed = {rv: bool(sample[rv]) for rv in observed_rvs}
         predictions = solve(factors, observed, config)
-        predicted_input = BitVector(size=len(input_rvs))
-        true_input = BitVector(size=len(input_rvs))
-        for rv in input_rvs:
-            predicted_input[rv] = bool(predictions[rv])
-            true_input[rv] = sample[rv]
+        predicted_input = BitVector(size=n_input)
+        true_input = sample[:n_input]
+        for rv_idx, predicted_val in predictions.items():
+            if rv_idx < n_input:
+                predicted_input[rv_idx] = bool(predicted_val)
 
         verify(true_input, predicted_input, config)
 
