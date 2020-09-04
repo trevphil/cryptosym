@@ -13,9 +13,9 @@ class GNC(object):
         self._mu = None
         self._itr = 0
 
-    def mu(self, err_vector):
+    def mu(self, residuals_sq):
         if self._mu is None:
-            self._mu = 2 * np.max(err_vector) / self._c_sq
+            self._mu = 2 * np.max(residuals_sq) / self._c_sq
             if self._verbose:
                 print('mu initialized to %.3f' % self._mu)
         return max(1.0, self._mu)
@@ -29,3 +29,4 @@ class GNC(object):
             self._mu = max(1.0, self._mu / 1.4)
             if self._verbose:
                 print('mu is now %.3f' % self._mu)
+        print('Finished iteration %d' % self._itr)

@@ -8,7 +8,7 @@ import numpy as np
 from BitVector import BitVector
 
 from optimization.factor import Factor
-from optimization.solver import solve
+from optimization.solver import Solver
 
 
 def load_factors(factor_file):
@@ -83,12 +83,13 @@ def main(dataset):
     N = int(config['num_samples'])
     observed_rvs = set(config['observed_rv_indices'])
     num_test = min(1, len(bitvectors))
+    solver = Solver()
 
     for test_case in range(num_test):
         print('Test case %d/%d' % (test_case + 1, num_test))
         sample = bitvectors[test_case]
         observed = {rv: bool(sample[rv]) for rv in observed_rvs}
-        predictions = solve(factors, observed, config)
+        predictions = solver.solve(factors, observed, config)
         predicted_input = BitVector(size=n_input)
         true_input = sample[:n_input]
         for rv_idx, predicted_val in predictions.items():

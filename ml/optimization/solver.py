@@ -5,115 +5,102 @@ from scipy.optimize import minimize
 
 from optimization.gnc import GNC
 
+class Solver(object):
+    def __init__(self):
+        # C should be set to be the maximum error expected for inliers
+        self.C = 0.01
+        self.C_sq = self.C * self.C
+        self.sq_residuals = np.array([])
+        self.weights = dict()
+        self.gnc = GNC(self.C)
 
-def solve(factors, observed, config):
-    rv_indices = list(sorted(k for k in factors.keys()))
-    rv2idx = {rv_index: i for i, rv_index in enumerate(rv_indices)}
-    num_rvs = len(rv_indices)
-    init_guess = np.ones(num_rvs) * 0.5
-    for rv, val in observed.items():
-        init_guess[rv2idx[rv]] = float(val)
+    def solve(self, factors, observed, config):
+        rv_indices = []
+        num_and, num_priors = 0, 0
+        for rv, factor in factors.items():
+            rv_indices.append(rv)
+            if factor.factor_type == 'AND':
+                num_and += 1
+            elif factor.factor_type == 'PRIOR':
+                num_priors += 1
+        rv_indices = list(sorted(rv_indices))
+        rv2idx = {rv_index: i for i, rv_index in enumerate(rv_indices)}
 
-    factors_per_rv = {rv: set([rv]) for rv in rv_indices}
-    for factor_idx, factor in factors.items():
-        for ref in factor.referenced_rvs:
-            factors_per_rv[ref].add(factor_idx)
+        num_rvs = len(rv_indices)
+        num_residuals = (num_rvs - num_and) + 2 * (num_and * 4) \
+                        + len(observed) - num_priors
+        self.sq_residuals = np.zeros(num_residuals)
 
-    # Ax = b (for SAME and INV) --> Ax - b = 0
-    A = np.zeros((num_rvs, num_rvs))
-    b = np.zeros((num_rvs, 1))
+        init_guess = np.ones(num_rvs) * 0.5
+        for rv, val in observed.items():
+            init_guess[rv2idx[rv]] = float(val)
 
-    # A_obs * x = b_obs
-    A_obs = np.zeros((num_rvs, num_rvs))
-    b_obs = np.zeros((num_rvs, 1))
-    for rv, val in observed.items():
-        i = rv2idx[rv]
-        A_obs[i, i] = 1.0
-        b_obs[i] = float(val)
+        def cb(x, foo=None):
+            mu = self.gnc.mu(self.sq_residuals)
+            for r_idx, _ in self.weights.items():
+                r_sq = self.sq_residuals[r_idx]
+                w_update = (mu * self.C_sq / (r_sq + mu * self.C_sq)) ** 2
+                self.weights[r_idx] = w_update
+            self.gnc.increment()
 
-    for rv in rv_indices:
-        factor = factors[rv]
-        if factor.factor_type == 'SAME':
-            inp, out = factor.input_rvs[0], factor.output_rv
-            inp, out = rv2idx[inp], rv2idx[out]
-            # x_i - x_j = 0.0 since the RVs are the same
-            A[out, out] = 1.0
-            A[out, inp] = -1.0
-        elif factor.factor_type == 'INV':
-            inp, out = factor.input_rvs[0], factor.output_rv
-            inp, out = rv2idx[inp], rv2idx[out]
-            # x_i + x_j = 1.0 since the RVs are inverses
-            A[out, out] = 1.0
-            A[out, inp] = 1.0
-            b[out] = 1.0
-
-    and_factor_indices = [rv for rv in rv_indices
-                          if factors[rv].factor_type == 'AND']
-
-    C = 0.02
-    C_sq = C * C
-    gnc = GNC(C)
-
-    def cb(x, foo=None):
-        gnc.increment()
-
-    def f(x):
-        for i in and_factor_indices:
-            factor = factors[i]
-            inp1, inp2 = factor.input_rvs
-            out = factor.output_rv
-            inp1, inp2, out = rv2idx[inp1], rv2idx[inp2], rv2idx[out]
-            # Update the A matrix s.t. inp1 * inp2 - out = 0.0
-            A[out, out] = -1.0
-            A[out, inp1] = x[inp2]
-
-        x = x.reshape((-1, 1))
-        err_sq = (A @ x - b) ** 2
-        obs_err_sq = (A_obs @ x - b_obs) ** 2
-        return np.sum(err_sq) + np.sum(obs_err_sq)
-        # mu = gnc.mu(err_sq)
-        # err = (err_sq * C_sq * mu) / (err_sq + mu * C_sq)
-        # return np.sum(err)
-
-    # Jacobian: J[i] = derivative of f(x) w.r.t. variable `i`
-    def jacobian(x):
-        J = np.zeros(num_rvs)
-        for rv in rv_indices:
-            for factor_idx in factors_per_rv[rv]:
+        def f(x):
+            r_idx = 0
+            self.sq_residuals = np.zeros(self.sq_residuals.shape)
+            for rv in rv_indices:
+                factor = factors[rv]
+                ftype = factor.factor_type
                 i = rv2idx[rv]
-                J[i] += factors[factor_idx].first_order(rv, x, rv2idx)
-        for rv, val in observed.items():
-            i = rv2idx[rv]
-            J[i] += 2 * (x[i] - float(val))
-        return J
+                obs_val = observed.get(rv, None)
 
-    # Hessian: H[i, j] = derivative of J[j] w.r.t. variable `i`
-    def hessian(x):
-        H = np.zeros((num_rvs, num_rvs))
-        for rv_j in rv_indices:
-            for factor_idx in factors_per_rv[rv_j]:
-                factor = factors[factor_idx]
-                for rv_i in factor.referenced_rvs:
-                    i, j = rv2idx[rv_i], rv2idx[rv_j]
-                    H[i, j] += factor.second_order(rv_j, rv_i, x, rv2idx)
-        for rv, val in observed.items():
-            i = rv2idx[rv]
-            H[i, i] += 2.0
-        assert np.sum(np.abs(H - H.T)) < 1e-5, 'Hessian is not symmetric'
-        return H
+                if obs_val is not None:
+                    self.sq_residuals[r_idx] = (x[i] - float(obs_val)) ** 2
+                    r_idx += 1
+                if ftype == 'SAME':
+                    inp = rv2idx[factor.input_rvs[0]]
+                    self.sq_residuals[r_idx] = (x[i] - x[inp]) ** 2
+                    r_idx += 1
+                elif ftype == 'INV':
+                    inp = rv2idx[factor.input_rvs[0]]
+                    self.sq_residuals[r_idx] = (1.0 - x[i] - x[inp]) ** 2
+                    r_idx += 1
+                elif ftype == 'AND':
+                    inp1, inp2 = factor.input_rvs
+                    inp1, inp2 = x[rv2idx[inp1]], x[rv2idx[inp2]]
+                    a = inp1 ** 2 + inp2 ** 2 + x[i] ** 2  # AND(0, 0) = 0
+                    b = inp1 ** 2 + (1-inp2) ** 2 + x[i] ** 2  # AND(0, 1) = 0
+                    c = (1-inp1) ** 2 + inp2 ** 2 + x[i] ** 2  # AND(1, 0) = 0
+                    d = (1-inp1) ** 2 + (1-inp2) ** 2 + (1-x[i]) ** 2  # AND(1, 1) = 1
 
-    method = 'trust-ncg'
-    options = {'maxiter': 400, 'disp': False}
+                    # Black-Rangarajan duality of Geman-McClure robust cost function
+                    penalties = []
+                    for residual in [a, b, c, d]:
+                        w = self.weights.get(r_idx, 1.0)
+                        self.sq_residuals[r_idx] = w * residual * residual
+                        penalty = self.C_sq * ((np.sqrt(w) - 1) ** 2)  # times mu (later)
+                        penalties.append(penalty)
+                        r_idx += 1
 
-    start = time()
-    print('Starting optimization...')
-    result = minimize(f, init_guess, method=method, options=options,
-                      jac=jacobian, hess=hessian, callback=cb)
-    print('Optimization finished in %.2f s' % (time() - start))
-    # print('\tsuccess: {}'.format(result['success']))
-    print('\tstatus:  {}'.format(result['message']))
-    print('\terror:   {:.2f}'.format(result['fun']))
+                    mu = self.gnc.mu(self.sq_residuals)
+                    for penalty in penalties:
+                        self.sq_residuals[r_idx] = mu * penalty
+                        r_idx += 1
 
-    return {
-        rv: (1.0 if result['x'][rv2idx[rv]] > 0.5 else 0.0) for rv in rv_indices
-    }
+                elif ftype != 'PRIOR':
+                    raise NotImplementedError('Unknown factor: %s' % ftype)
+
+            assert r_idx == self.sq_residuals.shape[0], 'Index misalignment'
+            return np.sum(self.sq_residuals)
+
+        # method = 'trust-ncg'
+        # options = {'maxiter': 400, 'disp': False}
+
+        start = time()
+        print('Starting optimization...')
+        result = minimize(f, init_guess, callback=cb, tol=1e-6)
+        print('Optimization finished in %.2f s' % (time() - start))
+        print('\tsuccess: {}'.format(result['success']))
+        print('\tstatus:  {}'.format(result['message']))
+        print('\terror:   {:.2f}'.format(result['fun']))
+
+        pred = lambda rv: result['x'][rv2idx[rv]]
+        return {rv: (1.0 if pred(rv) > 0.5 else 0.0) for rv in rv_indices}
