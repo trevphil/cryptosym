@@ -8,7 +8,7 @@ from optimization.gnc import GNC
 class Solver(object):
     def __init__(self):
         # C should be set to be the maximum error expected for inliers
-        self.C = 0.01
+        self.C = 0.001
         self.C_sq = self.C * self.C
         self.sq_residuals = np.array([])
         self.weights = dict()
@@ -75,9 +75,10 @@ class Solver(object):
                     penalties = []
                     for residual in [a, b, c, d]:
                         w = self.weights.get(r_idx, 1.0)
-                        self.sq_residuals[r_idx] = w * residual * residual
+                        self.sq_residuals[r_idx] = residual * residual
                         penalty = self.C_sq * ((np.sqrt(w) - 1) ** 2)  # times mu (later)
                         penalties.append(penalty)
+                        self.weights[r_idx] = w
                         r_idx += 1
 
                     mu = self.gnc.mu(self.sq_residuals)
@@ -89,14 +90,21 @@ class Solver(object):
                     raise NotImplementedError('Unknown factor: %s' % ftype)
 
             assert r_idx == self.sq_residuals.shape[0], 'Index misalignment'
-            return np.sum(self.sq_residuals)
 
-        # method = 'trust-ncg'
-        # options = {'maxiter': 400, 'disp': False}
+            sq_res = self.sq_residuals[:]
+            for r_idx, weight in self.weights.items():
+                sq_res[r_idx] *= weight
+            return np.sum(sq_res)
+
+        method = 'Nelder-Mead'
+        options = {'adaptive': True, 'disp': False, 'maxiter': 100}
+        # method = 'CG'
+        # options = {'eps': 1e-6}
 
         start = time()
         print('Starting optimization...')
-        result = minimize(f, init_guess, callback=cb, tol=1e-6)
+        result = minimize(f, init_guess, callback=cb, tol=1e-6,
+                          method=method, options=options)
         print('Optimization finished in %.2f s' % (time() - start))
         print('\tsuccess: {}'.format(result['success']))
         print('\tstatus:  {}'.format(result['message']))
