@@ -10,23 +10,25 @@ from collections import defaultdict
 S = 4
 
 class PriorNode(nn.Module):
-  def __init__(self, num_parents):
+  def __init__(self, ident, num_parents):
     super(PriorNode, self).__init__()
+    self.ident = ident
     self.num_parents = max(1, num_parents)
     self.fc = nn.Linear(self.num_parents * S, 1)
     self.sig = nn.Sigmoid()
 
   def forward(self, x):
     batch_size = x.size()[0]
-    x = torch.reshape(x, (batch_size, -1))
+    x = torch.reshape(x, (batch_size, self.num_parents * S))
     x = self.fc(x)
     x = self.sig(x)
     x = torch.squeeze(x)
     return x
 
 class SameNode(nn.Module):
-  def __init__(self, num_parents):
+  def __init__(self, ident, num_parents):
     super(SameNode, self).__init__()
+    self.ident = ident
     self.num_parents = max(1, num_parents)
     self.fc = nn.Linear(self.num_parents * S, S)
 
@@ -38,22 +40,23 @@ class SameNode(nn.Module):
     return x
 
 class InvNode(nn.Module):
-  def __init__(self, num_parents):
+  def __init__(self, ident, num_parents):
     super(InvNode, self).__init__()
+    self.ident = ident
     self.num_parents = max(1, num_parents)
     self.fc = nn.Linear(self.num_parents * S, S)
 
   def forward(self, x):
     batch_size = x.size()[0]
-    # Somehow this node is receiving input of shape [1, 8]
     x = torch.reshape(x, (batch_size, self.num_parents * S))
     x = self.fc(1.0 - x)
     x = torch.reshape(x, (batch_size, S, 1))
     return x
 
 class AndNode(nn.Module):
-  def __init__(self, num_parents):
+  def __init__(self, ident, num_parents):
     super(AndNode, self).__init__()
+    self.ident = ident
     self.num_parents = max(1, num_parents)
     self.fc = nn.Linear(self.num_parents * S, 2 * S)
 
@@ -153,7 +156,8 @@ class ReverseHash(nn.Module):
       if rv in self.obs_rv_set:
         i = self.obs_rv2idx[rv]
         node_input = x[:, i].squeeze().item()
-        node_input = torch.ones((batch_size, S, 1)) * node_input
+        shape = (batch_size, S, max(1, self.num_parents[rv]))
+        node_input = torch.ones(shape) * node_input
       else:
         node_input = self.concat_inputs(node_inputs[rv])
       node_output = self.nodes[rv](node_input)
@@ -188,7 +192,7 @@ class ReverseHash(nn.Module):
     assert rv_idx < self.num_input_bits
     return rv_idx
 
-  def concat_inputs(self, list_of_inputs):
+  def concat_inputs(self, list_of_inputs, debug=False):
     batch_size = list_of_inputs[0].size()[0]
     result = torch.zeros((batch_size, S, len(list_of_inputs)))
     for i, inp in enumerate(list_of_inputs):
@@ -202,13 +206,14 @@ class ReverseHash(nn.Module):
     return x[:, :, 0], x[:, :, 1]
 
   def make_node(self, factor):
+    ident = factor.output_rv
     ftype = factor.factor_type
-    num_p = self.num_parents[factor.output_rv]
+    num_inputs = self.num_parents[factor.output_rv]
     if ftype == 'AND':
-      return AndNode(num_p)
+      return AndNode(ident, num_inputs)
     elif ftype == 'INV':
-      return InvNode(num_p)
+      return InvNode(ident, num_inputs)
     elif ftype == 'SAME':
-      return SameNode(num_p)
+      return SameNode(ident, num_inputs)
     elif ftype == 'PRIOR':
-      return PriorNode(num_p)
+      return PriorNode(ident, num_inputs)
