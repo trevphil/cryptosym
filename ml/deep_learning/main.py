@@ -9,6 +9,7 @@ import argparse
 import numpy as np
 from torch import optim
 from BitVector import BitVector
+from collections import defaultdict
 
 from deep_learning.factor import Factor
 from deep_learning.models import ReverseHash
@@ -64,16 +65,23 @@ def main(dataset):
     N = int(config['num_samples'])
     obs_rv_set = set(config['observed_rv_indices'])
     obs_indices = np.array(sorted(obs_rv_set), dtype=int)
+    obs_rv2idx = {rv: i for i, rv in enumerate(sorted(obs_indices))}
     num_obs = len(obs_rv_set)
+
+    parents_per_rv = defaultdict(lambda: 0)
+    for _, factor in factors.items():
+        for input_rv in factor.input_rvs:
+            parents_per_rv[input_rv] += 1
 
     N_train = int(N * 0.70)
     N_val = int(N * 0.15)
     N_test  = N - N_train - N_val
     num_epochs = 5
 
-    model = ReverseHash(factors, obs_rv_set, n_input)
+    model = ReverseHash(factors, obs_rv_set, obs_rv2idx,
+                        n_input, parents_per_rv)
+    loss = Loss(factors, obs_rv_set, obs_rv2idx, n_input)
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
-    loss = Loss()
 
     for epoch in range(num_epochs):
         print('Starting epoch %d' % epoch)
@@ -82,15 +90,17 @@ def main(dataset):
         print('\tStarting training')
         model.train()
         for sample in bitvectors[:N_train]:
+            sample = torch.tensor(sample)
             optimizer.zero_grad()
             model_input = torch.zeros(num_obs)
             for i, rv in enumerate(obs_indices):
-                model_input[i] = float(sample[rv])
+                model_input[i] = sample[rv]
             model_input = torch.reshape(model_input, (1, num_obs))
-            pred = model(model_input)
-            target = np.array(sample[:n_input], dtype=bool)
-            target = torch.ones(pred.shape) * target
-            total_loss = loss(pred, target)
+            predicted_input = model(model_input)
+            target_hash = torch.zeros(len(obs_rv_set))
+            for rv, i in obs_rv2idx.items():
+                target_hash[i] = sample[rv]
+            total_loss = loss(predicted_input, target_hash)
             total_loss.backward()
             optimizer.step()
 
@@ -99,14 +109,16 @@ def main(dataset):
         model.eval()
         cum_loss = 0.0
         for sample in bitvectors[N_train:N_train + N_val]:
+            sample = torch.tensor(sample)
             model_input = torch.zeros(num_obs)
             for i, rv in enumerate(obs_indices):
-                model_input[i] = float(sample[rv])
+                model_input[i] = sample[rv]
             model_input = torch.reshape(model_input, (1, num_obs))
-            pred = model(model_input)
-            target = np.array(sample[:n_input], dtype=bool)
-            target = torch.ones(pred.shape) * target
-            cum_loss += loss(pred, target)
+            predicted_input = model(model_input)
+            target_hash = torch.zeros(len(obs_rv_set))
+            for rv, i in obs_rv2idx.items():
+                target_hash[i] = sample[rv]
+            cum_loss += loss(predicted_input, target_hash)
         print('\tAverage validation loss is %.3f' % (cum_loss / N_val))
 
     # Test
@@ -114,14 +126,16 @@ def main(dataset):
     model.eval()
     cum_loss = 0.0
     for sample in bitvectors[N_train + N_val:]:
+        sample = torch.tensor(sample)
         model_input = torch.zeros(num_obs)
         for i, rv in enumerate(obs_indices):
-            model_input[i] = float(sample[rv])
+            model_input[i] = sample[rv]
         model_input = torch.reshape(model_input, (1, num_obs))
-        pred = model(model_input)
-        target = np.array(sample[:n_input], dtype=bool)
-        target = torch.ones(pred.shape) * target
-        cum_loss += loss(pred, target)
+        predicted_input = model(model_input)
+        target_hash = torch.zeros(len(obs_rv_set))
+        for rv, i in obs_rv2idx.items():
+            target_hash[i] = sample[rv]
+        cum_loss += loss(predicted_input, target_hash)
     print('\tAverage test loss is %.3f' % (cum_loss / N_test))
 
 

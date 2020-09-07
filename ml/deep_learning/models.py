@@ -10,62 +10,65 @@ from collections import defaultdict
 S = 4
 
 class PriorNode(nn.Module):
-  def __init__(self, ident, num_parents):
-    super(PriorNode, self).__init__()
-    self.ident = ident
-    self.num_parents = max(1, num_parents)
-    self.fc = nn.Linear(self.num_parents * S, 1)
-    self.sig = nn.Sigmoid()
+    def __init__(self, ident, num_parents):
+        super(PriorNode, self).__init__()
+        self.ident = ident
+        self.num_parents = max(1, num_parents)
+        self.fc = nn.Linear(self.num_parents * S, 1)
 
-  def forward(self, x):
-    batch_size = x.size()[0]
-    x = torch.reshape(x, (batch_size, self.num_parents * S))
-    x = self.fc(x)
-    x = self.sig(x)
-    x = torch.squeeze(x)
-    return x
+    def forward(self, x):
+        batch_size = x.size()[0]
+        x = torch.reshape(x, (batch_size, self.num_parents * S))
+        x = self.fc(x)
+        return x
 
 class SameNode(nn.Module):
-  def __init__(self, ident, num_parents):
-    super(SameNode, self).__init__()
-    self.ident = ident
-    self.num_parents = max(1, num_parents)
-    self.fc = nn.Linear(self.num_parents * S, S)
+    def __init__(self, ident, num_parents):
+        super(SameNode, self).__init__()
+        self.ident = ident
+        self.num_parents = max(1, num_parents)
+        self.fc = nn.Linear(self.num_parents * S, S)
+        self.sig = nn.Sigmoid()
 
-  def forward(self, x):
-    batch_size = x.size()[0]
-    x = torch.reshape(x, (batch_size, self.num_parents * S))
-    x = self.fc(x)
-    x = torch.reshape(x, (batch_size, S, 1))
-    return x
+    def forward(self, x):
+        batch_size = x.size()[0]
+        x = torch.reshape(x, (batch_size, self.num_parents * S))
+        x = self.fc(x)
+        x = self.sig(x)
+        x = torch.reshape(x, (batch_size, S, 1))
+        return x
 
 class InvNode(nn.Module):
-  def __init__(self, ident, num_parents):
-    super(InvNode, self).__init__()
-    self.ident = ident
-    self.num_parents = max(1, num_parents)
-    self.fc = nn.Linear(self.num_parents * S, S)
+    def __init__(self, ident, num_parents):
+        super(InvNode, self).__init__()
+        self.ident = ident
+        self.num_parents = max(1, num_parents)
+        self.fc = nn.Linear(self.num_parents * S, S)
+        self.sig = nn.Sigmoid()
 
-  def forward(self, x):
-    batch_size = x.size()[0]
-    x = torch.reshape(x, (batch_size, self.num_parents * S))
-    x = self.fc(1.0 - x)
-    x = torch.reshape(x, (batch_size, S, 1))
-    return x
+    def forward(self, x):
+        batch_size = x.size()[0]
+        x = torch.reshape(x, (batch_size, self.num_parents * S))
+        x = self.fc(1.0 - x)
+        x = self.sig(x)
+        x = torch.reshape(x, (batch_size, S, 1))
+        return x
 
 class AndNode(nn.Module):
-  def __init__(self, ident, num_parents):
-    super(AndNode, self).__init__()
-    self.ident = ident
-    self.num_parents = max(1, num_parents)
-    self.fc = nn.Linear(self.num_parents * S, 2 * S)
+    def __init__(self, ident, num_parents):
+        super(AndNode, self).__init__()
+        self.ident = ident
+        self.num_parents = max(1, num_parents)
+        self.fc = nn.Linear(self.num_parents * S, 2 * S)
+        self.sig = nn.Sigmoid()
 
-  def forward(self, x):
-    batch_size = x.size()[0]
-    x = torch.reshape(x, (batch_size, self.num_parents * S))
-    x = self.fc(x)
-    x = torch.reshape(x, (batch_size, S, 2))
-    return x
+    def forward(self, x):
+        batch_size = x.size()[0]
+        x = torch.reshape(x, (batch_size, self.num_parents * S))
+        x = self.fc(x)
+        x = self.sig(x)
+        x = torch.reshape(x, (batch_size, S, 2))
+        return x
 
 """
       ------ hash inputs ------
@@ -118,102 +121,100 @@ class AndNode(nn.Module):
 """
 
 class ReverseHash(nn.Module):
-  def __init__(self, factors, obs_rv_set, num_input_bits):
-    super(ReverseHash, self).__init__()
-    start = time()
-    self.factors = factors
-    self.obs_rv_indices = np.array(sorted(obs_rv_set), dtype=int)
-    self.obs_rv2idx = {rv: i for i, rv in enumerate(self.obs_rv_indices)}
-    self.obs_rv_set = obs_rv_set
-    self.num_input_bits = num_input_bits
+    def __init__(self, factors, obs_rv_set, obs_rv2idx,
+                             num_input_bits, parents_per_rv):
+        super(ReverseHash, self).__init__()
+        start = time()
+        self.factors = factors
+        self.obs_rv_indices = np.array(sorted(obs_rv_set), dtype=int)
+        self.obs_rv_set = obs_rv_set
+        self.obs_rv2idx = obs_rv2idx
+        self.num_input_bits = num_input_bits
+        self.num_parents = parents_per_rv
 
-    self.num_parents = defaultdict(lambda: 0)
-    for _, factor in factors.items():
-      for input_rv in factor.input_rvs:
-        self.num_parents[input_rv] += 1
+        self.nodes = dict()
+        for rv, factor in factors.items():
+            node = self.make_node(factor)
+            self.nodes[rv] = node
+            self.add_module(str(rv), node)
 
-    self.nodes = dict()
-    for rv, factor in factors.items():
-      node = self.make_node(factor)
-      self.nodes[rv] = node
-      self.add_module(str(rv), node)
+        print('Initialized ReverseHash in %.2f s' % (time() - start))
 
-    print('Initialized ReverseHash in %.2f s' % (time() - start))
+    def forward(self, x):
+        start = time()
+        batch_size = x.shape[0]
+        node_inputs = defaultdict(lambda: [])
+        queue = (-self.obs_rv_indices).tolist()
+        queue_set = set(queue)
+        heapify(queue)
 
-  def forward(self, x):
-    start = time()
-    batch_size = x.shape[0]
-    msg_prediction = torch.zeros((batch_size, self.num_input_bits))
-    queue = (-self.obs_rv_indices).tolist()
-    queue_set = set(queue)
-    heapify(queue)
+        dft_input = torch.zeros((batch_size, 1), requires_grad=False)
+        predictions = defaultdict(lambda: dft_input)
 
-    node_inputs = defaultdict(lambda: [])
-    while len(queue) > 0:
-      rv = heappop(queue)
-      queue_set.remove(rv)
-      rv = -rv
-      if rv in self.obs_rv_set:
-        i = self.obs_rv2idx[rv]
-        node_input = x[:, i].squeeze().item()
-        shape = (batch_size, S, max(1, self.num_parents[rv]))
-        node_input = torch.ones(shape) * node_input
-      else:
-        node_input = self.concat_inputs(node_inputs[rv])
-      node_output = self.nodes[rv](node_input)
-      factor = self.factors[rv]
-      if factor.factor_type in ('SAME', 'INV'):
-        out = self.extract_single_output(node_output)
-        child_rv = factor.input_rvs[0]
-        node_inputs[child_rv].append(out)
-      elif factor.factor_type == 'AND':
-        out1, out2 = self.extract_double_output(node_output)
-        child1, child2 = factor.input_rvs
-        node_inputs[child1].append(out1)
-        node_inputs[child2].append(out2)
-      elif factor.factor_type == 'PRIOR':
-        i = self.prediction_rv2idx(rv)
-        if i:
-          msg_prediction[:, i] = node_output
+        while len(queue) > 0:
+            rv = heappop(queue)
+            queue_set.remove(rv)
+            rv = -rv
+            if rv in self.obs_rv_set:
+                i = self.obs_rv2idx[rv]
+                node_input = x[:, i].squeeze().item()
+                shape = (batch_size, S, max(1, self.num_parents[rv]))
+                node_input = torch.ones(shape) * node_input
+            else:
+                node_input = self.concat_inputs(node_inputs[rv])
+            node_output = self.nodes[rv](node_input)
+            factor = self.factors[rv]
+            if factor.factor_type in ('SAME', 'INV'):
+                out = self.extract_single_output(node_output)
+                child_rv = factor.input_rvs[0]
+                node_inputs[child_rv].append(out)
+            elif factor.factor_type == 'AND':
+                out1, out2 = self.extract_double_output(node_output)
+                child1, child2 = factor.input_rvs
+                node_inputs[child1].append(out1)
+                node_inputs[child2].append(out2)
+            elif factor.factor_type == 'PRIOR':
+                assert rv < self.num_input_bits
+                predictions[rv] = node_output
 
-      if node_inputs[rv]:
-        del node_inputs[rv]
+            if node_inputs[rv]:
+                del node_inputs[rv]
 
-      for child in factor.input_rvs:
-        child = -child
-        if child not in queue_set:
-          heappush(queue, child)
-          queue_set.add(child)
+            for child in factor.input_rvs:
+                child = -child
+                if child not in queue_set:
+                    heappush(queue, child)
+                    queue_set.add(child)
 
-    print('Forward pass completed in %.2f s' % (time() - start))
-    return msg_prediction
+        hash_inp = torch.zeros((batch_size, 0), requires_grad=True)
+        for rv in range(self.num_input_bits):
+            hash_inp = torch.cat((hash_inp, predictions[rv]), axis=1)
 
-  def prediction_rv2idx(self, rv_idx):
-    assert rv_idx < self.num_input_bits
-    return rv_idx
+        print('Forward pass completed in %.2f s' % (time() - start))
+        return hash_inp
 
-  def concat_inputs(self, list_of_inputs, debug=False):
-    batch_size = list_of_inputs[0].size()[0]
-    result = torch.zeros((batch_size, S, len(list_of_inputs)))
-    for i, inp in enumerate(list_of_inputs):
-      result[:, :, i] = inp
-    return result
+    def concat_inputs(self, list_of_inputs):
+        batch_size = list_of_inputs[0].size()[0]
+        result = torch.zeros((batch_size, S, len(list_of_inputs)))
+        for i, inp in enumerate(list_of_inputs):
+            result[:, :, i] = inp
+        return result
 
-  def extract_single_output(self, x):
-    return x[:, :, 0]
+    def extract_single_output(self, x):
+        return x[:, :, 0]
 
-  def extract_double_output(self, x):
-    return x[:, :, 0], x[:, :, 1]
+    def extract_double_output(self, x):
+        return x[:, :, 0], x[:, :, 1]
 
-  def make_node(self, factor):
-    ident = factor.output_rv
-    ftype = factor.factor_type
-    num_inputs = self.num_parents[factor.output_rv]
-    if ftype == 'AND':
-      return AndNode(ident, num_inputs)
-    elif ftype == 'INV':
-      return InvNode(ident, num_inputs)
-    elif ftype == 'SAME':
-      return SameNode(ident, num_inputs)
-    elif ftype == 'PRIOR':
-      return PriorNode(ident, num_inputs)
+    def make_node(self, factor):
+        ident = factor.output_rv
+        ftype = factor.factor_type
+        num_inputs = self.num_parents[factor.output_rv]
+        if ftype == 'AND':
+            return AndNode(ident, num_inputs)
+        elif ftype == 'INV':
+            return InvNode(ident, num_inputs)
+        elif ftype == 'SAME':
+            return SameNode(ident, num_inputs)
+        elif ftype == 'PRIOR':
+            return PriorNode(ident, num_inputs)
