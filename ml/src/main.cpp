@@ -16,7 +16,6 @@
 #include <memory>
 #include <vector>
 
-#include "hash_reversal/bayes_net.hpp"
 #include "hash_reversal/dataset.hpp"
 #include "hash_reversal/factor_graph.hpp"
 #include "hash_reversal/inference_tool.hpp"
@@ -49,9 +48,6 @@ int main(int argc, char** argv) {
   if (config->method == "lbp") {
     inference_tool = std::shared_ptr<hash_reversal::InferenceTool>(
         new hash_reversal::FactorGraph(prob, dataset, config));
-  } else if (config->method == "gtsam") {
-    inference_tool = std::shared_ptr<hash_reversal::InferenceTool>(
-        new hash_reversal::BayesNet(prob, dataset, config));
   } else {
     spdlog::error("Unsupported method: {}", config->method);
     return 1;

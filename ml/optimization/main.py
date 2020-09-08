@@ -8,7 +8,8 @@ import numpy as np
 from BitVector import BitVector
 
 from optimization.factor import Factor
-from optimization.solver import Solver
+from optimization.gradient_solver import GradientSolver
+from optimization.gnc_solver import GNCSolver
 
 
 def load_factors(factor_file):
@@ -33,7 +34,7 @@ def load_bitvectors(data_file, config):
     data = bv.read_bits_from_file(n * N)
     bv.close_file_object()
     data = np.array([bit for bit in data], dtype=bool)
-    data = data.reshape((n, N)).T  # data is (N x n)
+    data = data.reshape((N, n))
 
     samples = []
     for sample_idx in range(N):
@@ -69,7 +70,7 @@ def verify(true_input, predicted_input, config):
         print('Expected:\n\t{}\nGot:\n\t{}'.format(true_out, pred_out))
 
 
-def main(dataset):
+def main(dataset, solver_type):
     config_file = os.path.join(dataset, 'params.yaml')
     factor_file = os.path.join(dataset, 'factors.txt')
     data_file = os.path.join(dataset, 'data.bits')
@@ -83,7 +84,13 @@ def main(dataset):
     N = int(config['num_samples'])
     observed_rvs = set(config['observed_rv_indices'])
     num_test = min(1, len(bitvectors))
-    solver = Solver()
+
+    if solver_type.lower() == 'gradient':
+        solver = GradientSolver()
+    elif solver_type.lower() == 'gnc':
+        solver = GNCSolver()
+    else:
+        raise NotImplementedError('Invalid solver: %s' % solver_type)
 
     for test_case in range(num_test):
         print('Test case %d/%d' % (test_case + 1, num_test))
@@ -102,11 +109,11 @@ def main(dataset):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Hash reversal via optimization')
-    parser.add_argument(
-        'dataset',
-        type=str,
+    parser.add_argument('dataset', type=str,
         help='Path to the dataset directory')
+    parser.add_argument('--solver', type=str, default='gradient',
+        help='The type of optimization (gradient or GNC)')
     args = parser.parse_args()
-    main(args.dataset)
+    main(args.dataset, args.solver)
     print('Done.')
     sys.exit(0)

@@ -11,6 +11,7 @@ from dataset_generation.sym_bit_vec import SymBitVec
 class SymbolicHash(object):
     def __init__(self):
         self.hash_rv_indices = []
+        self.ignorable = None
 
     def hashIndices(self):
         return self.hash_rv_indices
@@ -22,18 +23,17 @@ class SymbolicHash(object):
         return BitVector(bitlist=[bool(bit.val) for bit in Bit.rv_bits])
 
     def numUsefulFactors(self):
-        num_useless = len(self.findIgnorableRVs())
+        self.ignorable = self.findIgnorableRVs()
         assert len(Bit.factors) == len(Bit.rv_bits)
-        return len(Bit.factors) - num_useless
+        return len(Bit.factors) - len(self.ignorable)
 
     def saveFactors(self, filename):
-        ignore = self.findIgnorableRVs()
-        saveFactors(filename, ignore)
+        saveFactors(filename, self.ignorable)
 
     def hash(self, hash_input, difficulty):
         raise NotImplementedError  # Override in sub-classes
 
-    def __call__(self, hash_input, difficulty=1):
+    def __call__(self, hash_input, difficulty):
         """
         @parameter
          - hash_input: A BitVector
@@ -51,17 +51,46 @@ class SymbolicHash(object):
 
     def findIgnorableRVs(self):
         idx, num_bits = 0, self.bitsPerSample()
-        seen, useless = set(), set(range(num_bits))
+        seen, ignorable = set(), set(range(num_bits))
         queue = list(self.hash_rv_indices)
         while idx < len(queue):
             rv = queue[idx]  # Do not pop from queue, to speed it up
-            useless.discard(rv)
+            ignorable.discard(rv)
             seen.add(rv)
             factor = Bit.factors[rv]
             parents = [inp.index for inp in factor.inputs]
             queue += [p for p in parents if not p in seen]
             idx += 1
-        return useless
+        return ignorable
+
+    def forwardPropagateInput(self, hash_input):
+        if self.ignorable is None:
+            self.ignorable = self.findIgnorableRVs()
+
+        bitvals = dict()
+        for factor in Bit.factors:
+            rv = factor.out.index
+            if rv in self.ignorable:
+                continue
+            ftype = factor.factor_type.value
+            if ftype == 'PRIOR':
+                bitvals[rv] = float(hash_input[rv])
+            elif ftype == 'SAME':
+                inp = factor.inputs[0].index
+                bitvals[rv] = bitvals[inp]
+            elif ftype == 'INV':
+                inp = factor.inputs[0].index
+                bitvals[rv] = 1 - bitvals[inp]
+            elif ftype == 'AND':
+                inp1 = factor.inputs[0].index
+                inp2 = factor.inputs[1].index
+                bitvals[rv] = inp1 * inp2
+            else:
+                raise RuntimeError(ftype)
+        fwd = BitVector(size=len(self.hash_rv_indices))
+        for i, rv in enumerate(self.hash_rv_indices):
+            fwd[i] = bool(bitvals[rv])
+        return fwd
 
 
 class SHA256Hash(SymbolicHash):

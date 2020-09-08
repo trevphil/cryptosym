@@ -22,22 +22,27 @@ namespace hash_reversal {
 Dataset::Dataset(std::shared_ptr<utils::Config> config) : config_(config) {
   spdlog::info("Loading dataset...");
   const auto start = utils::Convenience::time_since_epoch();
-  samples_.reserve(config->num_bits_per_sample);
 
-  const size_t num_bytes = config->num_samples / 8;
+  const size_t n_samples = config->num_samples;
+  const size_t bps = config->num_bits_per_sample;
+  samples_.reserve(n_samples);
+  for (size_t i = 0; i < n_samples; ++i) {
+    samples_.push_back(boost::dynamic_bitset<>(bps));
+  }
 
   std::ifstream data(config->data_file, std::ios::in | std::ios::binary);
   char c;
+  size_t i = 0;
 
-  for (size_t bit = 0; bit < config->num_bits_per_sample; ++bit) {
-    boost::dynamic_bitset<> sample_bits(config->num_samples);
-
-    for (size_t i = 0; i < num_bytes; ++i) {
-      data.get(c);
-      for (size_t j = 0; j < 8; ++j) sample_bits[(i * 8) + j] = ((c >> j) & 1);
+  while (i < n_samples * bps) {
+    data.get(c);
+    for (size_t j = 0; j < 8; ++j) {
+      const bool bit_val = (c >> (8 - j)) & 1;
+      const size_t sample_idx = i / bps;
+      const size_t rv_idx = i - (sample_idx * bps);
+      samples_.at(sample_idx)[rv_idx] = bit_val;
+      ++i;
     }
-
-    samples_.push_back(sample_bits);
   }
 
   if (data.get(c)) {
@@ -99,7 +104,7 @@ std::string Dataset::getHashInput(size_t sample_index) const {
   const size_t n = config_->num_input_bits;
   boost::dynamic_bitset<> input_bits(n);
   for (size_t i = 0; i < n; ++i) {
-    input_bits[i] = samples_.at(i)[sample_index];
+    input_bits[i] = samples_.at(sample_index)[i];
   }
   return utils::Convenience::bitset2hex(input_bits);
 }
@@ -108,7 +113,7 @@ VariableAssignments Dataset::getObservedData(size_t sample_index) const {
   VariableAssignments observed;
 
   for (const size_t &bit_idx : config_->observed_rv_indices) {
-    const auto bitval = samples_.at(bit_idx)[sample_index];
+    const auto bitval = samples_.at(sample_index)[bit_idx];
     observed[bit_idx] = bitval;
   }
 
@@ -145,7 +150,7 @@ boost::dynamic_bitset<> Dataset::getFullSample(size_t sample_index) const {
   const size_t n = config_->num_bits_per_sample;
   boost::dynamic_bitset<> all_bits(n);
   for (size_t i = 0; i < n; ++i) {
-    all_bits[i] = samples_.at(i)[sample_index];
+    all_bits[i] = samples_.at(sample_index)[i];
   }
   return all_bits;
 }

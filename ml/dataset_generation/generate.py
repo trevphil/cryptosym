@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 from dataset_generation.factor import Factor
 from dataset_generation import hash_funcs
+
 import os
 import sys
 import random
 import argparse
+import h5py
 import yaml
 import pydot
 import numpy as np
@@ -15,23 +17,6 @@ from matplotlib import pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
 
 plt.rcParams['figure.figsize'] = (15, 5)
-
-
-"""
-TODO: Update this documentation
-
-This generates a binary file representation of the dataset.
-Each dataset "sample" is 256 hash bits followed by the hash input bits
-of fixed length, followed by (optional) additional bits of fixed length
-from computations inside of the hashing algorithm.
-
-The number of "random variables" is n = (256 + num_input_bits + num_internals)
-and the number of samples is N. Data is ordered such that each row is a
-random variable, and each column is a sample.
-
-The data is written to a file as a single bit vector by concatenating rows.
-The file format is `<HASH_ALGO>-<NUM_RANDOM_VARIABLES>-<NUM_SAMPLES>.bits`.
-"""
 
 
 def sample(nbits):
@@ -56,6 +41,11 @@ def hashAlgos():
     }
 
 
+def extend(dataset, data):
+    dataset.resize(dataset.shape[0] + 1, axis=0)
+    dataset[-1] = data
+
+
 def main():
     random.seed(0)
     np.random.seed(0)
@@ -66,7 +56,7 @@ def main():
         description='Hash reversal dataset generator')
     parser.add_argument('--data-dir', type=str, default=os.path.abspath('./data'),
                         help='Path to the directory where the dataset should be stored')
-    parser.add_argument('--num-samples', type=int, default=10,
+    parser.add_argument('--num-samples', type=int, default=64,
                         help='Number of samples to use in the dataset')
     parser.add_argument('--num-input-bits', type=int, default=64,
                         help='Number of bits in each input message to the hash function')
@@ -79,6 +69,10 @@ def main():
                         help='Visualize the symbolic graph of bit dependencies')
     parser.add_argument('--hash-input', type=str, default=None,
                         help='Give input message in hex to simply print the hash of the input')
+    parser.add_argument('--pct-val', type=float, default=0.15,
+                        help='Percent of samples used for validation dataset')
+    parser.add_argument('--pct-test', type=float, default=0.15,
+                        help='Percent of samples used for test dataset')
     args = parser.parse_args()
 
     if args.hash_input is not None:
@@ -94,16 +88,24 @@ def main():
     num_input_bits = args.num_input_bits
     N = int(8 * round(args.num_samples / 8))  # number of samples
     N = max(N, 8)
+    N_val = max(1, int(round(N * args.pct_val)))
+    N_test = max(1, int(round(N * args.pct_test)))
+    N_train = N - N_val - N_test
 
-    dataset_dir = os.path.join(args.data_dir, args.hash_algo)
+    algo_dir = '{}_d{}'.format(args.hash_algo, args.difficulty)
+    dataset_dir = os.path.join(args.data_dir, algo_dir)
     data_file = os.path.join(dataset_dir, 'data.bits')
     params_file = os.path.join(dataset_dir, 'params.yaml')
     graph_file = os.path.join(dataset_dir, 'factors.txt')
     viz_file = os.path.join(dataset_dir, 'graph.pdf')
+    train_file = os.path.join(dataset_dir, 'train.hdf5')
+    val_file = os.path.join(dataset_dir, 'val.hdf5')
+    test_file = os.path.join(dataset_dir, 'test.hdf5')
 
     Path(dataset_dir).mkdir(parents=True, exist_ok=True)
 
-    for f in [data_file, params_file, graph_file, viz_file]:
+    for f in [data_file, params_file, graph_file, viz_file,
+        train_file, val_file, test_file]:
         if os.path.exists(f):
             os.remove(f)
 
@@ -113,27 +115,40 @@ def main():
     n = algo.bitsPerSample()
     hash_rv_indices = algo.hashIndices()
     num_useful_factors = algo.numUsefulFactors()
+    n_target = len(hash_rv_indices)
 
     print('Saving hash function symbolically as a factor graph...')
     algo.saveFactors(graph_file)
 
-    print('Allocating data...')
-    data = np.zeros((N, n), dtype=bool)
+    datasets = {
+        'train': (h5py.File(train_file, 'w'), N_train),
+        'val': (h5py.File(val_file, 'w'), N_val),
+        'test': (h5py.File(test_file, 'w'), N_test)
+    }
 
-    print('Populating data...')
-    for sample_idx in range(N):
-        hash_input = sample(num_input_bits)
-        algo(hash_input, difficulty=args.difficulty)
-        # The MSB (left-most) of the BitVector will go in the left-most column
-        # of `data`
-        data[N - sample_idx - 1, :] = algo.allBits()
-
-    print('Transposing matrix and converting back to BitVector...')
-    bv = BitVector(bitlist=data.T.reshape((1, -1)).squeeze().tolist())
-
-    print('Saving samples to %s' % data_file)
-    with open(data_file, 'wb') as f:
-        bv.write_to_file(f)
+    bv = BitVector(size=0)
+    for split in ['train', 'val', 'test']:
+        print('Creating %s split...' % split)
+        dset, num_samples = datasets[split]
+        bits = dset.create_dataset('bits', (0, n),
+            maxshape=(num_samples, n), dtype=bool)
+        target = dset.create_dataset('target', (0, n_target),
+            maxshape=(num_samples, n_target), dtype=bool)
+        for sample_idx in range(num_samples):
+            hash_input = sample(num_input_bits)
+            algo(hash_input, difficulty=args.difficulty)
+            bitvals = algo.allBits()
+            bv += bitvals
+            targetvals = algo.forwardPropagateInput(hash_input)
+            if len(bv) % 8 == 0:
+                # Wait until the BitVector is a multiple of 8
+                with open(data_file, 'ab') as bin_file:
+                    bv.write_to_file(bin_file)
+                bv = BitVector(size=0)  # Reset the BitVector
+            extend(bits, np.array(bitvals, dtype=bool))
+            extend(target, np.array(targetvals, dtype=bool))
+        dset.close()
+    assert len(bv) == 0, 'Data is likely garbage'
 
     params = {
         'hash': args.hash_algo,
@@ -141,6 +156,9 @@ def main():
         'num_bits_per_sample': n,
         'num_useful_factors': num_useful_factors,
         'num_samples': N,
+        'num_train': N_train,
+        'num_val': N_val,
+        'num_test': N_test,
         'observed_rv_indices': hash_rv_indices,
         'difficulty': args.difficulty
     }

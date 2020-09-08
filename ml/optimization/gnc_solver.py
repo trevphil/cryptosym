@@ -5,7 +5,7 @@ from scipy.optimize import minimize
 
 from optimization.gnc import GNC
 
-class Solver(object):
+class GNCSolver(object):
     def __init__(self):
         # C should be set to be the maximum error expected for inliers
         self.C = 0.001
@@ -98,8 +98,6 @@ class Solver(object):
 
         method = 'Nelder-Mead'
         options = {'adaptive': True, 'disp': False, 'maxiter': 100}
-        # method = 'CG'
-        # options = {'eps': 1e-6}
 
         start = time()
         print('Starting optimization...')
