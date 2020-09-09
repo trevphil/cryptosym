@@ -38,7 +38,7 @@ def load_bitvectors(data_file, config):
 
     samples = []
     for sample_idx in range(N):
-        sample = data[N - sample_idx - 1, :]
+        sample = data[sample_idx, :]
         samples.append(BitVector(bitlist=sample.astype(bool)))
     return samples
 

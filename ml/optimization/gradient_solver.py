@@ -20,7 +20,7 @@ class GradientSolver(object):
             for ref in factor.referenced_rvs:
                 factors_per_rv[ref].add(factor_idx)
 
-        # Ax = b (for SAME and INV) --> Ax - b = 0
+        # Ax = b (for INV) --> Ax - b = 0
         A = np.zeros((num_rvs, num_rvs))
         b = np.zeros((num_rvs, 1))
 
@@ -34,13 +34,7 @@ class GradientSolver(object):
 
         for rv in rv_indices:
             factor = factors[rv]
-            if factor.factor_type == 'SAME':
-                inp, out = factor.input_rvs[0], factor.output_rv
-                inp, out = rv2idx[inp], rv2idx[out]
-                # x_i - x_j = 0.0 since the RVs are the same
-                A[out, out] = 1.0
-                A[out, inp] = -1.0
-            elif factor.factor_type == 'INV':
+            if factor.factor_type == 'INV':
                 inp, out = factor.input_rvs[0], factor.output_rv
                 inp, out = rv2idx[inp], rv2idx[out]
                 # x_i + x_j = 1.0 since the RVs are inverses

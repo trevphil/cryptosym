@@ -99,10 +99,7 @@ class Bit(object):
 
         if a.is_rv and b.is_rv:
             if a.index == b.index:
-                # Special logic to prevent same RVs as inputs to AND factor
-                tmp = Bit(b.val, b.is_rv)
-                Bit.factors.append(Factor(FactorType.SAME, tmp, [b]))
-                b = tmp
+                return a
             result = Bit(result_val, True)
             Bit.factors.append(Factor(FactorType.AND, result, [a, b]))
             return result

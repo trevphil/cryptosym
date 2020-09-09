@@ -55,11 +55,7 @@ class GNCSolver(object):
                 if obs_val is not None:
                     self.sq_residuals[r_idx] = (x[i] - float(obs_val)) ** 2
                     r_idx += 1
-                if ftype == 'SAME':
-                    inp = rv2idx[factor.input_rvs[0]]
-                    self.sq_residuals[r_idx] = (x[i] - x[inp]) ** 2
-                    r_idx += 1
-                elif ftype == 'INV':
+                if ftype == 'INV':
                     inp = rv2idx[factor.input_rvs[0]]
                     self.sq_residuals[r_idx] = (1.0 - x[i] - x[inp]) ** 2
                     r_idx += 1

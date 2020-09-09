@@ -6,7 +6,6 @@ from enum import Enum, unique
 @unique
 class FactorType(Enum):
     PRIOR = 'PRIOR'
-    SAME = 'SAME'
     INV = 'INV'
     AND = 'AND'
 
@@ -18,7 +17,6 @@ class FactorType(Enum):
 
         return {
             FactorType.PRIOR: 0,
-            FactorType.SAME: 1,
             FactorType.INV: 1,
             FactorType.AND: 2,
         }[factor_type]

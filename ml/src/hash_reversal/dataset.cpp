@@ -23,24 +23,24 @@ Dataset::Dataset(std::shared_ptr<utils::Config> config) : config_(config) {
   spdlog::info("Loading dataset...");
   const auto start = utils::Convenience::time_since_epoch();
 
-  const size_t n_samples = config->num_samples;
-  const size_t bps = config->num_bits_per_sample;
-  samples_.reserve(n_samples);
-  for (size_t i = 0; i < n_samples; ++i) {
-    samples_.push_back(boost::dynamic_bitset<>(bps));
+  const size_t N = config->num_samples;
+  const size_t n = config->num_bits_per_sample;
+  samples_.reserve(N);
+  for (size_t i = 0; i < N; ++i) {
+    samples_.push_back(boost::dynamic_bitset<>(n));
   }
 
   std::ifstream data(config->data_file, std::ios::in | std::ios::binary);
   char c;
   size_t i = 0;
 
-  while (i < n_samples * bps) {
+  while (i < n * N) {
     data.get(c);
     for (size_t j = 0; j < 8; ++j) {
-      const bool bit_val = (c >> (8 - j)) & 1;
-      const size_t sample_idx = i / bps;
-      const size_t rv_idx = i - (sample_idx * bps);
-      samples_.at(sample_idx)[rv_idx] = bit_val;
+      const bool bit_val = (c >> (7 - j)) & 1;
+      const size_t row = i / n;
+      const size_t col = i - (row * n);
+      samples_.at(row)[col] = bit_val;
       ++i;
     }
   }
@@ -140,6 +140,7 @@ bool Dataset::validate(const boost::dynamic_bitset<> predicted_input,
   }
 
   spdlog::info("\tHashes do not match!");
+  spdlog::info("\t\tTrue input      {}", true_in);
   spdlog::info("\t\tPredicted input {}", pred_in);
   spdlog::info("\t\tPrediction gave {}", pred_hash);
   spdlog::info("\t\tCorrect hash is {}", true_hash);

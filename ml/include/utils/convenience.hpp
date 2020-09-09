@@ -74,7 +74,7 @@ class Convenience {
     std::string b(bitset_str);
     std::reverse(b.begin(), b.end());
 
-    std::string out;
+    std::string out = "";
 
     for (size_t i = 0; i < b.size(); i += 4) {
       int8_t n = 0;
@@ -83,10 +83,7 @@ class Convenience {
         if (b[j] == '1') n |= 1;
       }
 
-      if (n <= 9)
-        out.push_back('0' + n);
-      else
-        out.push_back('a' + n - 10);
+      out.push_back(n <= 9 ? ('0' + n) : ('a' + n - 10));
     }
 
     return out;

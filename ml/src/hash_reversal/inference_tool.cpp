@@ -54,11 +54,7 @@ VariableAssignments InferenceTool::propagateObserved(const VariableAssignments &
     const std::string &f_type = factor.factor_type;
     const auto inputs = factor.inputRVs();
 
-    if (f_type == "SAME") {
-      const size_t parent = inputs.at(0);
-      fully_obs[parent] = rv_val;
-      if (seen.count(parent) == 0) queue.push_back(parent);
-    } else if (f_type == "INV") {
+    if (f_type == "INV") {
       const size_t parent = inputs.at(0);
       fully_obs[parent] = !rv_val;
       if (seen.count(parent) == 0) queue.push_back(parent);

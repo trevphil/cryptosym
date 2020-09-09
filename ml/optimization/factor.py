@@ -1,16 +1,6 @@
 # -*- coding: utf-8 -*-
 
 """
-SAME: (i - j) ^ 2
-  first order:
-    d/di = 2i - 2j
-    d/dj = 2j - 2i
-  second order:
-    d/di,di = 2
-    d/di,dj = -2
-    d/dj,di = -2
-    d/dj,dj = 2
-
 INV: (1 - i - j) ^ 2
   first order:
     d/di = 2i + 2j - 2
@@ -60,13 +50,7 @@ class Factor(object):
         if not self._has_variable(wrt):
             raise RuntimeError
 
-        if self.factor_type == 'SAME':
-            i, j = self.input_rvs[0], self.output_rv
-            if wrt == i:
-                return 2 * (X(i) - X(j))
-            else:
-                return 2 * (X(j) - X(i))
-        elif self.factor_type == 'INV':
+        if self.factor_type == 'INV':
             i, j = self.input_rvs[0], self.output_rv
             return 2 * (X(i) + X(j) - 1)
         elif self.factor_type == 'AND':
@@ -91,12 +75,7 @@ class Factor(object):
 
         X = lambda rv: x[rv2idx[rv]]
         pair = (first, second)
-        if self.factor_type == 'SAME':
-            i, j = self.input_rvs[0], self.output_rv
-            if pair == (i, i) or pair == (j, j):
-                return 2.0
-            return -2.0
-        elif self.factor_type == 'INV':
+        if self.factor_type == 'INV':
             return 2.0
         elif self.factor_type == 'AND':
             i, j = self.input_rvs

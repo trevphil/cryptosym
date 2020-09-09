@@ -148,7 +148,7 @@ def main():
             extend(bits, np.array(bitvals, dtype=bool))
             extend(target, np.array(targetvals, dtype=bool))
         dset.close()
-    assert len(bv) == 0, 'Data is likely garbage'
+    assert len(bv) == 0, 'Data is garbage, not a multiple of 8'
 
     params = {
         'hash': args.hash_algo,

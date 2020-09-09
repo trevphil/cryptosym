@@ -13,6 +13,8 @@ class Loss(object):
         self.obs_rv2idx = obs_rv2idx
 
     def __call__(self, predicted_input, target_hash):
+        # TODO: Add penalty for inconsistency of input->output
+        #       for AND and INV gates
         start = time()
         node_val = dict()
         rvs = sorted(self.factors.keys())
