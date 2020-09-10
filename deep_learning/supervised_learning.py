@@ -21,16 +21,16 @@ class SupervisedLearning(object):
         self.tb_writer = None
 
         self.n_input = int(config['num_input_bits'])
-        self.obs_rv_set = set(config['observed_rv_indices'])
-        self.n_observed = len(self.obs_rv_set)
-        self.obs_rv2idx = {rv: i for i, rv in enumerate(sorted(self.obs_rv_set))}
+        self.observed_rvs = config['observed_rv_indices']
+        self.n_observed = len(self.observed_rvs)
+        self.obs_rv2idx = {rv: i for i, rv in enumerate(self.observed_rvs)}
 
         parents_per_rv = defaultdict(lambda: 0)
         for _, factor in factors.items():
             for input_rv in factor.input_rvs:
                 parents_per_rv[input_rv] += 1
 
-        self.model = ReverseHashModel(factors, self.obs_rv_set, self.obs_rv2idx,
+        self.model = ReverseHashModel(factors, self.observed_rvs, self.obs_rv2idx,
                                       self.n_input, parents_per_rv)
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.0001)
         self.controller = Controller()
@@ -40,14 +40,14 @@ class SupervisedLearning(object):
         self.tb_writer = SummaryWriter(log_dir)
 
         self.loss = ReverseHashLoss(self.output_dir, self.tb_writer, self.factors,
-                                    self.obs_rv_set, self.obs_rv2idx, self.n_input)
+                                    self.observed_rvs, self.obs_rv2idx, self.n_input)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.tb_writer.close()
 
     def forward_pass(self, all_bits):
         model_input = torch.zeros(self.n_observed)
-        for rv, i in self.obs_rv2idx.items():
+        for i, rv in enumerate(self.observed_rvs):
             model_input[i] = all_bits[rv]
         model_input = torch.reshape(model_input, (1, self.n_observed))
         return self.model(model_input)

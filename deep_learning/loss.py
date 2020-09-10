@@ -8,13 +8,14 @@ from time import time
 
 
 class ReverseHashLoss(object):
-    def __init__(self, output_dir, tb_writer, factors, obs_rv_set,
+    def __init__(self, output_dir, tb_writer, factors, observed_rvs,
                  obs_rv2idx, num_input_bits):
         self.output_dir = output_dir
         self.tb_writer = tb_writer
         self.factors = factors
         self.num_input_bits = num_input_bits
-        self.observed_rvs = list(sorted(obs_rv_set))
+        self.observed_rvs = observed_rvs
+        self.obs_rv_set = set(self.observed_rvs)
         self.obs_rv2idx = obs_rv2idx
         self.purpose = None
         self.epoch = None
@@ -144,10 +145,10 @@ class ReverseHashLoss(object):
         loss = F.binary_cross_entropy_with_logits(
             output, target_output, reduction='none')
 
-        output = output.clone().detach()
-        output[output > 0.5] = 1.0
-        output[output <= 0.5] = 0.0
-        num_incorrect = torch.sum(torch.abs(output - target_output))
+        clipped = output.clone().detach()
+        clipped[clipped > 0.5] = 1.0
+        clipped[clipped <= 0.5] = 0.0
+        num_incorrect = torch.sum(torch.abs(clipped - target_output))
         num_total = float(output.size(0))
         accuracy = (num_total - num_incorrect) / num_total
         return loss, accuracy

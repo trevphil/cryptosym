@@ -105,13 +105,13 @@ class AndNode(nn.Module):
 """
 
 class ReverseHashModel(nn.Module):
-    def __init__(self, factors, obs_rv_set, obs_rv2idx,
+    def __init__(self, factors, observed_rvs, obs_rv2idx,
                  num_input_bits, parents_per_rv):
         super(ReverseHashModel, self).__init__()
         start = time()
         self.factors = factors
-        self.obs_rv_indices = np.array(sorted(obs_rv_set), dtype=int)
-        self.obs_rv_set = obs_rv_set
+        self.observed_rvs = np.array(observed_rvs, dtype=int)
+        self.obs_rv_set = set(observed_rvs)
         self.obs_rv2idx = obs_rv2idx
         self.num_input_bits = num_input_bits
         self.num_parents = parents_per_rv
@@ -124,11 +124,11 @@ class ReverseHashModel(nn.Module):
 
         print('Initialized ReverseHashModel in %.2f s' % (time() - start))
 
-    def forward(self, x):
+    def forward(self, observed_bits):
         start = time()
-        batch_size = x.shape[0]
+        batch_size = observed_bits.shape[0]
         node_inputs = defaultdict(lambda: [])
-        queue = (-self.obs_rv_indices).tolist()
+        queue = (-self.observed_rvs).tolist()
         queue_set = set(queue)
         heapify(queue)
 
@@ -141,7 +141,7 @@ class ReverseHashModel(nn.Module):
             rv = -rv
             if rv in self.obs_rv_set:
                 i = self.obs_rv2idx[rv]
-                node_input = x[:, i].squeeze().item()
+                node_input = observed_bits[:, i].squeeze().item()
                 shape = (batch_size, S, max(1, self.num_parents[rv]))
                 node_input = torch.ones(shape) * node_input
             else:
