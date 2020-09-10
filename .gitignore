@@ -4,4 +4,6 @@ __pycache__
 build
 *.so
 *.o
-*.c
+data
+.vscode
+
