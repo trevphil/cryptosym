@@ -76,9 +76,6 @@ class SymbolicHash(object):
             ftype = factor.factor_type.value
             if ftype == 'PRIOR':
                 bitvals[rv] = float(hash_input[rv])
-            elif ftype == 'SAME':
-                inp = factor.inputs[0].index
-                bitvals[rv] = bitvals[inp]
             elif ftype == 'INV':
                 inp = factor.inputs[0].index
                 bitvals[rv] = 1 - bitvals[inp]

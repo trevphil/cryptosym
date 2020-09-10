@@ -132,9 +132,9 @@ def main():
         print('Creating %s split...' % split)
         dset, num_samples = datasets[split]
         bits = dset.create_dataset('bits', (0, n),
-            maxshape=(num_samples, n), dtype=bool)
+            maxshape=(num_samples, n), dtype=float)
         target = dset.create_dataset('target', (0, n_target),
-            maxshape=(num_samples, n_target), dtype=bool)
+            maxshape=(num_samples, n_target), dtype=float)
         for sample_idx in range(num_samples):
             hash_input = sample(num_input_bits)
             algo(hash_input, difficulty=args.difficulty)

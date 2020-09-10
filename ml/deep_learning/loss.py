@@ -10,6 +10,7 @@ from time import time
 class ReverseHashLoss(object):
     def __init__(self, output_dir, tb_writer, factors, obs_rv_set,
                  obs_rv2idx, num_input_bits):
+        self.output_dir = output_dir
         self.tb_writer = tb_writer
         self.factors = factors
         self.num_input_bits = num_input_bits
@@ -94,7 +95,6 @@ class ReverseHashLoss(object):
         start = time()
         loss, accuracy = self.loss_function(predicted_input, target_output)
         comp_time = time() - start
-        print('Loss computation finished in %.2f s' % (time() - start))
 
         aggregated_loss = torch.mean(loss)
         acc_dict = self.get_accuracy_dict(accuracy)
@@ -108,7 +108,7 @@ class ReverseHashLoss(object):
 
         purp = self.purpose.capitalize()
         if len(self.batch_results) % self.report_freq == 0 and self.purpose == 'train':
-            print('{} epoch {} - batch {} - runtime {:.2f} s - loss {:.5f}'.format(
+            print('{} epoch {} - batch {} - loss runtime {:.2f} s - loss {:.5f}'.format(
                 purp, self.epoch, len(self.batch_results),
                 comp_time, aggregated_loss.item()))
 
@@ -131,8 +131,6 @@ class ReverseHashLoss(object):
             if ftype == 'PRIOR':
                 assert rv < self.num_input_bits
                 node_val[rv] = predicted_input[:, rv]
-            elif ftype == 'SAME':
-                node_val[rv] = node_val[factor.input_rvs[0]]
             elif ftype == 'INV':
                 node_val[rv] = 1.0 - node_val[factor.input_rvs[0]]
             elif ftype == 'AND':
@@ -145,5 +143,5 @@ class ReverseHashLoss(object):
 
         loss = F.binary_cross_entropy_with_logits(
             output, target_output, reduction='none')
-        accuracy = torch.zeros(0)
+        accuracy = torch.zeros(1)
         return loss, accuracy

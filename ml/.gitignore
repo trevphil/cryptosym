@@ -10,3 +10,4 @@ bin/*
 main
 *.txt
 !CMakeLists.txt
+learning_*

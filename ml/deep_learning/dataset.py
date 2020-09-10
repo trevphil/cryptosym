@@ -2,6 +2,7 @@
 
 import os
 import h5py
+import torch
 from torch.utils.data import Dataset
 
 class HashReversalDataset(Dataset):
@@ -20,4 +21,6 @@ class HashReversalDataset(Dataset):
         return len(self.bits)
 
     def __getitem__(self, idx):
-        return self.bits[idx], self.target[idx]
+        bits = torch.from_numpy(self.bits[idx])
+        target = torch.from_numpy(self.target[idx])
+        return bits, target

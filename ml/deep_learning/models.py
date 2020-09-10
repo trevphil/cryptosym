@@ -190,7 +190,7 @@ class ReverseHashModel(nn.Module):
         for rv in range(self.num_input_bits):
             hash_inp = torch.cat((hash_inp, predictions[rv]), axis=1)
 
-        print('Forward pass completed in %.2f s' % (time() - start))
+        # print('Forward pass completed in %.2f s' % (time() - start))
         return hash_inp
 
     def concat_inputs(self, list_of_inputs):
