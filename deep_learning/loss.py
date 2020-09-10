@@ -114,7 +114,7 @@ class ReverseHashLoss(object):
 
         loss_dict = self.get_loss_dict(aggregated_loss)
         prefix = '{}/Epoch{}'.format(purp, str(self.epoch).zfill(2))
-        self.tb_writer.add_scalar('%s/Loss' % prefix, aggregated_loss, batch_idx)
+        self.tb_writer.add_scalars('%s/Loss' % prefix, loss_dict, batch_idx)
         self.tb_writer.add_scalars('%s/Accuracy' % prefix, acc_dict, batch_idx)
 
         return aggregated_loss, loss, accuracy
@@ -143,5 +143,11 @@ class ReverseHashLoss(object):
 
         loss = F.binary_cross_entropy_with_logits(
             output, target_output, reduction='none')
-        accuracy = torch.zeros(1)
+
+        output = output.clone().detach()
+        output[output > 0.5] = 1.0
+        output[output <= 0.5] = 0.0
+        num_incorrect = torch.sum(torch.abs(output - target_output))
+        num_total = float(output.size(0))
+        accuracy = (num_total - num_incorrect) / num_total
         return loss, accuracy

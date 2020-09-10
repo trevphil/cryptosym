@@ -6,4 +6,4 @@ build
 *.o
 data
 .vscode
-
+learning_output

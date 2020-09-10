@@ -17,25 +17,9 @@ class PriorNode(nn.Module):
         self.fc = nn.Linear(self.num_parents * S, 1)
 
     def forward(self, x):
-        batch_size = x.size()[0]
+        batch_size = x.size(0)
         x = torch.reshape(x, (batch_size, self.num_parents * S))
         x = self.fc(x)
-        return x
-
-class SameNode(nn.Module):
-    def __init__(self, ident, num_parents):
-        super(SameNode, self).__init__()
-        self.ident = ident
-        self.num_parents = max(1, num_parents)
-        self.fc = nn.Linear(self.num_parents * S, S)
-        self.sig = nn.Sigmoid()
-
-    def forward(self, x):
-        batch_size = x.size()[0]
-        x = torch.reshape(x, (batch_size, self.num_parents * S))
-        x = self.fc(x)
-        x = self.sig(x)
-        x = torch.reshape(x, (batch_size, S, 1))
         return x
 
 class InvNode(nn.Module):
@@ -47,7 +31,7 @@ class InvNode(nn.Module):
         self.sig = nn.Sigmoid()
 
     def forward(self, x):
-        batch_size = x.size()[0]
+        batch_size = x.size(0)
         x = torch.reshape(x, (batch_size, self.num_parents * S))
         x = self.fc(1.0 - x)
         x = self.sig(x)
@@ -63,7 +47,7 @@ class AndNode(nn.Module):
         self.sig = nn.Sigmoid()
 
     def forward(self, x):
-        batch_size = x.size()[0]
+        batch_size = x.size(0)
         x = torch.reshape(x, (batch_size, self.num_parents * S))
         x = self.fc(x)
         x = self.sig(x)
@@ -114,7 +98,7 @@ class AndNode(nn.Module):
   2         [1]           1: [p]                               output[2] = node2(r)
   1         []            -                                    output[1] = node1(p)
 
-  Fix the size of the output tensor for SAME, INV nodes. Output for AND is twice that size.
+  Fix the size of the output tensor for INV node. Output for AND is twice that size.
   The input size for each node can be determined based on:
     num_inputs(RV) = # factors where RV is one of the inputs
 
@@ -164,7 +148,7 @@ class ReverseHashModel(nn.Module):
                 node_input = self.concat_inputs(node_inputs[rv])
             node_output = self.nodes[rv](node_input)
             factor = self.factors[rv]
-            if factor.factor_type in ('SAME', 'INV'):
+            if factor.factor_type == 'INV':
                 out = self.extract_single_output(node_output)
                 child_rv = factor.input_rvs[0]
                 node_inputs[child_rv].append(out)
@@ -194,10 +178,10 @@ class ReverseHashModel(nn.Module):
         return hash_inp
 
     def concat_inputs(self, list_of_inputs):
-        batch_size = list_of_inputs[0].size()[0]
-        result = torch.zeros((batch_size, S, len(list_of_inputs)))
-        for i, inp in enumerate(list_of_inputs):
-            result[:, :, i] = inp
+        batch_size = list_of_inputs[0].size(0)
+        result = torch.zeros((batch_size, S, 0), requires_grad=True)
+        for inp in list_of_inputs:
+            result = torch.cat((result, inp.unsqueeze(2)), axis=2)
         return result
 
     def extract_single_output(self, x):
@@ -214,7 +198,5 @@ class ReverseHashModel(nn.Module):
             return AndNode(ident, num_inputs)
         elif ftype == 'INV':
             return InvNode(ident, num_inputs)
-        elif ftype == 'SAME':
-            return SameNode(ident, num_inputs)
         elif ftype == 'PRIOR':
             return PriorNode(ident, num_inputs)
