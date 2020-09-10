@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from dataset_generation.factor import Factor
 from dataset_generation import hash_funcs
 

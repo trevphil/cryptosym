@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from BitVector import BitVector
 from copy import deepcopy
 

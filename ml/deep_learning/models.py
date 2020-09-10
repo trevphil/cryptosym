@@ -120,10 +120,10 @@ class AndNode(nn.Module):
 
 """
 
-class ReverseHash(nn.Module):
+class ReverseHashModel(nn.Module):
     def __init__(self, factors, obs_rv_set, obs_rv2idx,
-                             num_input_bits, parents_per_rv):
-        super(ReverseHash, self).__init__()
+                 num_input_bits, parents_per_rv):
+        super(ReverseHashModel, self).__init__()
         start = time()
         self.factors = factors
         self.obs_rv_indices = np.array(sorted(obs_rv_set), dtype=int)
@@ -138,7 +138,7 @@ class ReverseHash(nn.Module):
             self.nodes[rv] = node
             self.add_module(str(rv), node)
 
-        print('Initialized ReverseHash in %.2f s' % (time() - start))
+        print('Initialized ReverseHashModel in %.2f s' % (time() - start))
 
     def forward(self, x):
         start = time()
