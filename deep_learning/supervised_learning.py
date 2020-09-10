@@ -35,7 +35,7 @@ class SupervisedLearning(object):
 
         self.model = ReverseHashModel(factors, self.observed_rvs, self.obs_rv2idx,
                                       self.n_input, parents_per_rv)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=0.0001)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
         self.controller = Controller()
 
     def __enter__(self):
