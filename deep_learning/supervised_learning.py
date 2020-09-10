@@ -2,8 +2,10 @@
 
 import os
 import torch
+import subprocess
 import numpy as np
 from torch import optim
+from BitVector import BitVector
 from collections import defaultdict
 from torch.utils.tensorboard import SummaryWriter
 
@@ -15,13 +17,14 @@ from deep_learning.loss import ReverseHashLoss
 class SupervisedLearning(object):
     def __init__(self, output_dir, config, factors, dataloaders):
         self.output_dir = output_dir
+        self.config = config
         self.factors = factors
         self.dataloaders = dataloaders
         self.loss = None
         self.tb_writer = None
 
-        self.n_input = int(config['num_input_bits'])
-        self.observed_rvs = config['observed_rv_indices']
+        self.n_input = int(self.config['num_input_bits'])
+        self.observed_rvs = self.config['observed_rv_indices']
         self.n_observed = len(self.observed_rvs)
         self.obs_rv2idx = {rv: i for i, rv in enumerate(self.observed_rvs)}
 
@@ -87,6 +90,9 @@ class SupervisedLearning(object):
                 pred = self.forward_pass(all_bits)
                 _ = self.loss(batch_idx, pred, target)
 
+                if batch_idx < 10:
+                    self.verify(batch_idx, pred, all_bits[:self.n_input])
+
     def save_best_model(self):
         best_dict = self.controller.get_best_state()['model_dict']
         print('Loading the best model state from past epochs...')
@@ -97,3 +103,36 @@ class SupervisedLearning(object):
         model_path = os.path.join(self.output_dir, 'model.pt')
         print('Saving model as: %s' % model_path)
         torch.save(model.state_dict(), str(model_path))
+
+    def verify(self, test_idx, predicted_input, true_input):
+        hash_algo = self.config['hash']
+        difficulty = self.config['difficulty']
+
+        clipped = predicted_input.clone().detach()
+        clipped[clipped > 0.5] = 1
+        clipped[clipped <= 0.5] = 0
+
+        true_in = int(BitVector(bitlist=true_input.squeeze()))
+        pred_in = int(BitVector(bitlist=clipped.squeeze()))
+
+        fmt = '{:0%dX}' % (self.n_input // 4)
+        true_in = fmt.format(true_in).lower()
+        pred_in = fmt.format(pred_in).lower()
+        print('TEST CASE %d' % test_idx)
+        print('Hash input: %s' % true_in)
+        print('Pred input: %s' % pred_in)
+
+        cmd = ['python', '-m', 'dataset_generation.generate',
+            '--num-input-bits', str(self.n_input),
+            '--hash-algo', hash_algo, '--difficulty', str(difficulty),
+            '--hash-input']
+
+        true_out = subprocess.run(cmd + [true_in],
+                                stdout=subprocess.PIPE).stdout.decode('utf-8')
+        pred_out = subprocess.run(cmd + [pred_in],
+                                stdout=subprocess.PIPE).stdout.decode('utf-8')
+
+        if true_out == pred_out:
+            print('Hashes match: {}'.format(true_out))
+        else:
+            print('Expected:\n\t{}\nGot:\n\t{}'.format(true_out, pred_out))
