@@ -1,13 +1,5 @@
 data/*
-experiments/*
 !data/compute_graph.m
-build
-logs/*
-lib/*
-bin/*
 .DS_Store
 .vscode/*
-main
-*.txt
-!CMakeLists.txt
 learning_*

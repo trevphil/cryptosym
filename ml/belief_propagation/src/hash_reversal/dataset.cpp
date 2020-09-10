@@ -125,7 +125,7 @@ bool Dataset::validate(const boost::dynamic_bitset<> predicted_input,
   const std::string pred_in = utils::Convenience::bitset2hex(predicted_input);
   const std::string true_in = getHashInput(sample_index);
   std::ostringstream cmd;
-  cmd << "python -m dataset_generation.generate";
+  cmd << "PYTHONPATH=.. python -m dataset_generation.generate";
   cmd << " --num-input-bits " << predicted_input.size();
   cmd << " --hash-algo " << config_->hash_algo;
   cmd << " --difficulty " << config_->difficulty;
