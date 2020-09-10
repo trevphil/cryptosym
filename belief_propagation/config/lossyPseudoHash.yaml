@@ -1,0 +1,8 @@
+lbp_max_iter: 50
+lbp_damping: 0.75
+dataset_dir: "../data/lossyPseudoHash_d4"
+epsilon: 0.0001
+num_test: 1
+print_connections: false
+test_mode: false
+method: "lbp"

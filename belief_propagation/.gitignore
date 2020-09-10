@@ -1,0 +1,9 @@
+build
+logs/*
+lib/*
+bin/*
+.DS_Store
+.vscode/*
+main
+*.txt
+!CMakeLists.txt
