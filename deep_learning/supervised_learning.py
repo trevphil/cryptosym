@@ -19,6 +19,7 @@ class SupervisedLearning(object):
         self.output_dir = output_dir
         self.config = config
         self.factors = factors
+        self.factor_indices = list(sorted(factors.keys()))
         self.dataloaders = dataloaders
         self.loss = None
         self.tb_writer = None
@@ -33,9 +34,9 @@ class SupervisedLearning(object):
             for input_rv in factor.input_rvs:
                 parents_per_rv[input_rv] += 1
 
-        self.model = ReverseHashModel(factors, self.observed_rvs, self.obs_rv2idx,
-                                      self.n_input, parents_per_rv)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
+        self.model = ReverseHashModel(config, factors, self.observed_rvs,
+                                      self.obs_rv2idx, parents_per_rv)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=0.0005)
         self.controller = Controller()
 
     def __enter__(self):
@@ -68,7 +69,7 @@ class SupervisedLearning(object):
             for batch_idx, (all_bits, target) in enumerate(self.dataloaders['train']):
                 self.optimizer.zero_grad()
                 pred = self.forward_pass(all_bits)
-                aggregated_loss, _, _ = self.loss(batch_idx, pred, target)
+                aggregated_loss, _, _ = self.loss(batch_idx, pred, all_bits[self.factor_indices])
                 aggregated_loss.backward()
                 self.optimizer.step()
 
@@ -78,7 +79,7 @@ class SupervisedLearning(object):
         with self.loss.new_epoch(epoch, 'val'), torch.no_grad():
             for batch_idx, (all_bits, target) in enumerate(self.dataloaders['val']):
                 pred = self.forward_pass(all_bits)
-                _ = self.loss(batch_idx, pred, target)
+                _ = self.loss(batch_idx, pred, all_bits[self.factor_indices])
 
         self.controller.add_state(epoch, self.loss.get_epoch_loss(), self.model.state_dict())
 
@@ -88,7 +89,7 @@ class SupervisedLearning(object):
         with self.loss.new_epoch(0, 'test'), torch.no_grad():
             for batch_idx, (all_bits, target) in enumerate(self.dataloaders['test']):
                 pred = self.forward_pass(all_bits)
-                _ = self.loss(batch_idx, pred, target)
+                _ = self.loss(batch_idx, pred, all_bits[self.factor_indices])
 
                 if batch_idx < 10:
                     self.verify(batch_idx, pred, all_bits[:self.n_input])
@@ -104,16 +105,16 @@ class SupervisedLearning(object):
         print('Saving model as: %s' % model_path)
         torch.save(model.state_dict(), str(model_path))
 
-    def verify(self, test_idx, predicted_input, true_input):
+    def verify(self, test_idx, bit_predictions, true_input):
         hash_algo = self.config['hash']
         difficulty = self.config['difficulty']
 
-        clipped = predicted_input.clone().detach()
-        clipped[clipped > 0.5] = 1
-        clipped[clipped <= 0.5] = 0
+        pred_input = bit_predictions.clone().detach()
+        pred_input = torch.clamp(torch.round(pred_input), 0, 1)
+        pred_input = pred_input.squeeze()[:self.n_input]
 
         true_in = int(BitVector(bitlist=true_input.squeeze()))
-        pred_in = int(BitVector(bitlist=clipped.squeeze()))
+        pred_in = int(BitVector(bitlist=pred_input))
 
         fmt = '{:0%dX}' % (self.n_input // 4)
         true_in = fmt.format(true_in).lower()

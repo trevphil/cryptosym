@@ -120,35 +120,16 @@ class ReverseHashLoss(object):
 
         return aggregated_loss, loss, accuracy
 
-    def loss_function(self, predicted_input, target_output):
+    def loss_function(self, pred_bit_values, true_bit_vals):
         # TODO: Add penalty for inconsistency of input->output
         #       for AND and INV gates
-        node_val = dict()
-        rvs = sorted(self.factors.keys())
-
-        for rv in rvs:
-            factor = self.factors[rv]
-            ftype = factor.factor_type
-            if ftype == 'PRIOR':
-                assert rv < self.num_input_bits
-                node_val[rv] = predicted_input[:, rv]
-            elif ftype == 'INV':
-                node_val[rv] = 1.0 - node_val[factor.input_rvs[0]]
-            elif ftype == 'AND':
-                inp1, inp2 = factor.input_rvs
-                node_val[rv] = node_val[inp1] * node_val[inp2]
-
-        output = torch.zeros((0, ))
-        for rv in self.observed_rvs:
-            output = torch.cat((output, node_val[rv]))
 
         loss = F.binary_cross_entropy_with_logits(
-            output, target_output, reduction='none')
+            pred_bit_values, true_bit_vals, reduction='none')
 
-        clipped = output.clone().detach()
-        clipped[clipped > 0.5] = 1.0
-        clipped[clipped <= 0.5] = 0.0
-        num_incorrect = torch.sum(torch.abs(clipped - target_output))
-        num_total = float(output.size(0))
+        bits = torch.clamp(torch.round(pred_bit_values), 0, 1)
+        num_incorrect = torch.sum(torch.abs(bits - true_bit_vals))
+        num_total = float(bits.size(0))
         accuracy = (num_total - num_incorrect) / num_total
+
         return loss, accuracy

@@ -7,19 +7,22 @@ from time import time
 from heapq import heappop, heappush, heapify
 from collections import defaultdict
 
-S = 4
-
 class PriorNode(nn.Module):
     def __init__(self, ident, num_parents):
         super(PriorNode, self).__init__()
         self.ident = ident
         self.num_parents = max(1, num_parents)
-        self.fc = nn.Linear(self.num_parents * S, 1)
+        self.fc = nn.Linear(self.num_parents, 1)
+        self.sig = nn.Sigmoid()
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         batch_size = x.size(0)
-        x = torch.reshape(x, (batch_size, self.num_parents * S))
+        x = torch.reshape(x, (batch_size, self.num_parents))
         x = self.fc(x)
+        # x = self.sig(x)
+        x = self.relu(x)
+        x = torch.reshape(x, (batch_size, 1))
         return x
 
 class InvNode(nn.Module):
@@ -27,15 +30,17 @@ class InvNode(nn.Module):
         super(InvNode, self).__init__()
         self.ident = ident
         self.num_parents = max(1, num_parents)
-        self.fc = nn.Linear(self.num_parents * S, S)
+        self.fc = nn.Linear(self.num_parents, 1)
         self.sig = nn.Sigmoid()
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         batch_size = x.size(0)
-        x = torch.reshape(x, (batch_size, self.num_parents * S))
+        x = torch.reshape(x, (batch_size, self.num_parents))
         x = self.fc(1.0 - x)
-        x = self.sig(x)
-        x = torch.reshape(x, (batch_size, S, 1))
+        # x = self.sig(x)
+        x = self.relu(x)
+        x = torch.reshape(x, (batch_size, 1))
         return x
 
 class AndNode(nn.Module):
@@ -43,15 +48,17 @@ class AndNode(nn.Module):
         super(AndNode, self).__init__()
         self.ident = ident
         self.num_parents = max(1, num_parents)
-        self.fc = nn.Linear(self.num_parents * S, 2 * S)
+        self.fc = nn.Linear(self.num_parents, 1)
         self.sig = nn.Sigmoid()
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         batch_size = x.size(0)
-        x = torch.reshape(x, (batch_size, self.num_parents * S))
+        x = torch.reshape(x, (batch_size, self.num_parents))
         x = self.fc(x)
-        x = self.sig(x)
-        x = torch.reshape(x, (batch_size, S, 2))
+        # x = self.sig(x)
+        x = self.relu(x)
+        x = torch.reshape(x, (batch_size, 1))
         return x
 
 """
@@ -105,24 +112,42 @@ class AndNode(nn.Module):
 """
 
 class ReverseHashModel(nn.Module):
-    def __init__(self, factors, observed_rvs, obs_rv2idx,
-                 num_input_bits, parents_per_rv):
+    def __init__(self, config, factors, observed_rvs,
+                 obs_rv2idx, parents_per_rv):
         super(ReverseHashModel, self).__init__()
         start = time()
         self.factors = factors
+        self.sorted_rvs = list(sorted(factors.keys()))
         self.observed_rvs = np.array(observed_rvs, dtype=int)
         self.obs_rv_set = set(observed_rvs)
         self.obs_rv2idx = obs_rv2idx
-        self.num_input_bits = num_input_bits
+        self.num_input_bits = int(config['num_input_bits'])
+        self.bits_per_sample = int(config['num_bits_per_sample'])
         self.num_parents = parents_per_rv
 
+        self.addRandomConnections()
+
         self.nodes = dict()
-        for rv, factor in factors.items():
+        for rv, factor in self.factors.items():
             node = self.make_node(factor)
             self.nodes[rv] = node
             self.add_module(str(rv), node)
 
         print('Initialized ReverseHashModel in %.2f s' % (time() - start))
+
+    def addRandomConnections(self):
+        available_rvs = set(self.factors.keys())
+        rvs = sorted(available_rvs)
+        for rv in rvs:
+            if rv < self.num_input_bits:
+                # Input bit RVs do not have inputs
+                continue
+            existing = set(self.factors[rv].input_rvs)
+            new_inputs = available_rvs.intersection(set(range(rv))).difference(existing)
+
+            for new_input in new_inputs:
+                self.factors[rv].input_rvs.append(new_input)
+                self.num_parents[new_input] += 1
 
     def forward(self, observed_bits):
         start = time()
@@ -133,7 +158,7 @@ class ReverseHashModel(nn.Module):
         heapify(queue)
 
         dft_input = torch.zeros((batch_size, 1), requires_grad=False)
-        predictions = defaultdict(lambda: dft_input)
+        bit_predictions = defaultdict(lambda: dft_input)
 
         while len(queue) > 0:
             rv = heappop(queue)
@@ -142,53 +167,37 @@ class ReverseHashModel(nn.Module):
             if rv in self.obs_rv_set:
                 i = self.obs_rv2idx[rv]
                 node_input = observed_bits[:, i].squeeze().item()
-                shape = (batch_size, S, max(1, self.num_parents[rv]))
+                shape = (batch_size, 1, max(1, self.num_parents[rv]))
                 node_input = torch.ones(shape) * node_input
             else:
                 node_input = self.concat_inputs(node_inputs[rv])
             node_output = self.nodes[rv](node_input)
-            factor = self.factors[rv]
-            if factor.factor_type == 'INV':
-                out = self.extract_single_output(node_output)
-                child_rv = factor.input_rvs[0]
-                node_inputs[child_rv].append(out)
-            elif factor.factor_type == 'AND':
-                out1, out2 = self.extract_double_output(node_output)
-                child1, child2 = factor.input_rvs
-                node_inputs[child1].append(out1)
-                node_inputs[child2].append(out2)
-            elif factor.factor_type == 'PRIOR':
-                assert rv < self.num_input_bits
-                predictions[rv] = node_output
+            bit_predictions[rv] = node_output
 
             if node_inputs[rv]:
                 del node_inputs[rv]
 
+            factor = self.factors[rv]
             for child in factor.input_rvs:
+                node_inputs[child].append(node_output)
                 child = -child
                 if child not in queue_set:
                     heappush(queue, child)
                     queue_set.add(child)
 
-        hash_inp = torch.zeros((batch_size, 0), requires_grad=True)
-        for rv in range(self.num_input_bits):
-            hash_inp = torch.cat((hash_inp, predictions[rv]), axis=1)
+        pred = torch.zeros((batch_size, 0), requires_grad=True)
+        for rv in self.sorted_rvs:
+            pred = torch.cat((pred, bit_predictions[rv]), axis=1)
 
         # print('Forward pass completed in %.2f s' % (time() - start))
-        return hash_inp
+        return pred.squeeze()
 
     def concat_inputs(self, list_of_inputs):
         batch_size = list_of_inputs[0].size(0)
-        result = torch.zeros((batch_size, S, 0), requires_grad=True)
+        result = torch.zeros((batch_size, 0), requires_grad=True)
         for inp in list_of_inputs:
-            result = torch.cat((result, inp.unsqueeze(2)), axis=2)
+            result = torch.cat((result, inp), axis=1)
         return result
-
-    def extract_single_output(self, x):
-        return x[:, :, 0]
-
-    def extract_double_output(self, x):
-        return x[:, :, 0], x[:, :, 1]
 
     def make_node(self, factor):
         ident = factor.output_rv
