@@ -43,8 +43,9 @@ class SupervisedLearning(object):
         log_dir = os.path.join(self.output_dir, 'tb_logs')
         self.tb_writer = SummaryWriter(log_dir)
 
-        self.loss = ReverseHashLoss(self.output_dir, self.tb_writer, self.factors,
-                                    self.observed_rvs, self.obs_rv2idx, self.n_input)
+        self.loss = ReverseHashLoss(self.config, self.output_dir, self.tb_writer,
+                                    self.factors, self.observed_rvs,
+                                    self.obs_rv2idx, self.n_input)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.tb_writer.close()

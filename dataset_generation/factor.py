@@ -11,7 +11,7 @@ class FactorType(Enum):
     AND = 'AND'
 
     @staticmethod
-    def numInputs(factor_type):
+    def num_inputs(factor_type):
         if not (factor_type in FactorType):
             raise NotImplementedError(
                 'Invalid factor type: {}'.format(factor_type))
@@ -31,7 +31,7 @@ class Factor(object):
         Factor.directed_graph = nx.DiGraph()
 
     def __init__(self, factor_type, out, inputs=[]):
-        self.n_inputs = FactorType.numInputs(factor_type)
+        self.n_inputs = FactorType.num_inputs(factor_type)
         if self.n_inputs != len(inputs):
             err_msg = 'Factor {} requires {} input(s), given {}'.format(
                 factor_type.value, self.n_inputs, len(inputs))

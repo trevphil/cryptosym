@@ -125,7 +125,7 @@ class ReverseHashModel(nn.Module):
         self.bits_per_sample = int(config['num_bits_per_sample'])
         self.num_parents = parents_per_rv
 
-        self.addRandomConnections()
+        self.add_connections()
 
         self.nodes = dict()
         for rv, factor in self.factors.items():
@@ -135,7 +135,7 @@ class ReverseHashModel(nn.Module):
 
         print('Initialized ReverseHashModel in %.2f s' % (time() - start))
 
-    def addRandomConnections(self):
+    def add_connections(self):
         available_rvs = set(self.factors.keys())
         rvs = sorted(available_rvs)
         for rv in rvs:
@@ -172,7 +172,9 @@ class ReverseHashModel(nn.Module):
             else:
                 node_input = self.concat_inputs(node_inputs[rv])
             node_output = self.nodes[rv](node_input)
-            bit_predictions[rv] = node_output
+
+            if rv < self.num_input_bits:
+                bit_predictions[rv] = node_output
 
             if node_inputs[rv]:
                 del node_inputs[rv]
@@ -186,7 +188,7 @@ class ReverseHashModel(nn.Module):
                     queue_set.add(child)
 
         pred = torch.zeros((batch_size, 0), requires_grad=True)
-        for rv in self.sorted_rvs:
+        for rv in range(self.num_input_bits):
             pred = torch.cat((pred, bit_predictions[rv]), axis=1)
 
         # print('Forward pass completed in %.2f s' % (time() - start))

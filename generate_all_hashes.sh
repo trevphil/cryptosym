@@ -2,7 +2,7 @@
 
 set -e
 
-python -m dataset_generation.generate --num-samples 64 --num-input-bits 64 --hash-algo lossyPseudoHash --visualize --difficulty 4
+python -m dataset_generation.generate --num-samples 4096 --num-input-bits 64 --hash-algo lossyPseudoHash --visualize --difficulty 4
 
 python -m dataset_generation.generate --num-samples 64 --num-input-bits 64 --hash-algo nonLossyPseudoHash --visualize --difficulty 1
 
@@ -12,7 +12,7 @@ python -m dataset_generation.generate --num-samples 64 --num-input-bits 64 --has
 
 python -m dataset_generation.generate --num-samples 64 --num-input-bits 64 --hash-algo shiftRight --visualize
 
-python -m dataset_generation.generate --num-samples 64 --num-input-bits 64 --hash-algo xorConst --visualize
+python -m dataset_generation.generate --num-samples 4096 --num-input-bits 64 --hash-algo xorConst --visualize
 
 python -m dataset_generation.generate --num-samples 64 --num-input-bits 64 --hash-algo orConst --visualize
 

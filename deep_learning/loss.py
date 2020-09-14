@@ -6,10 +6,14 @@ import torch
 import torch.nn.functional as F
 from time import time
 
+from dataset_generation.hash_funcs import hash_algorithms
+
 
 class ReverseHashLoss(object):
-    def __init__(self, output_dir, tb_writer, factors, observed_rvs,
-                 obs_rv2idx, num_input_bits):
+    def __init__(self, config, output_dir, tb_writer, factors,
+                 observed_rvs, obs_rv2idx, num_input_bits):
+        self.difficulty = int(config['difficulty'])
+        self.algo = hash_algorithms()[config['hash']]
         self.output_dir = output_dir
         self.tb_writer = tb_writer
         self.factors = factors
@@ -120,16 +124,18 @@ class ReverseHashLoss(object):
 
         return aggregated_loss, loss, accuracy
 
-    def loss_function(self, pred_bit_values, true_bit_vals):
+    def loss_function(self, predicted_input, target_hash):
         # TODO: Add penalty for inconsistency of input->output
         #       for AND and INV gates
 
-        loss = F.binary_cross_entropy_with_logits(
-            pred_bit_values, true_bit_vals, reduction='none')
+        inp = torch.clamp(torch.round(predicted_input), 0, 1).bool()
+        predicted_hash = self.algo(inp, self.difficulty)
 
-        bits = torch.clamp(torch.round(pred_bit_values), 0, 1)
-        num_incorrect = torch.sum(torch.abs(bits - true_bit_vals))
-        num_total = float(bits.size(0))
+        loss = F.binary_cross_entropy_with_logits(
+            predicted_hash, target_hash, reduction='none')
+
+        num_incorrect = torch.sum(torch.abs(predicted_hash - target_hash))
+        num_total = float(predicted_hash.size(0))
         accuracy = (num_total - num_incorrect) / num_total
 
         return loss, accuracy
