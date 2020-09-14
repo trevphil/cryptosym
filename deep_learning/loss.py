@@ -128,8 +128,8 @@ class ReverseHashLoss(object):
         # TODO: Add penalty for inconsistency of input->output
         #       for AND and INV gates
 
-        inp = torch.clamp(torch.round(predicted_input), 0, 1).bool()
-        predicted_hash = self.algo(inp, self.difficulty)
+        inp = torch.clamp(torch.round(predicted_input), 0, 1)
+        predicted_hash = self.algo(inp, self.difficulty).bits
 
         loss = F.binary_cross_entropy_with_logits(
             predicted_hash, target_hash, reduction='none')

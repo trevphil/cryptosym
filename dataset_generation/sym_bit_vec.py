@@ -40,7 +40,7 @@ class SymBitVec(object):
         result = torch.zeros(size, requires_grad=requires_grad)
         for i in range(size):
             result[size - i - 1] = int((num >> i) & 1)
-        return result.bool()
+        return result
 
     def rv_indices(self):
         if self.is_tensor:
@@ -112,25 +112,28 @@ class SymBitVec(object):
 
     def __invert__(a):
         if a.is_tensor:
-            return SymBitVec(~(a.bits))
+            return SymBitVec(1.0 - a.bits)
         return SymBitVec([~a[i] for i in range(len(a))])
 
     def __xor__(a, b):
         assert len(a) == len(b)
         if a.is_tensor and b.is_tensor:
-            return SymBitVec(a.bits ^ b.bits)
+            tmp1 = ~(a & b)
+            tmp2 = ~(a & tmp1)
+            tmp3 = ~(b & tmp1)
+            return ~(tmp2 & tmp3)
         return SymBitVec([a[i] ^ b[i] for i in range(len(a))])
 
     def __and__(a, b):
         assert len(a) == len(b)
         if a.is_tensor and b.is_tensor:
-            return SymBitVec(a.bits & b.bits)
+            return SymBitVec(a.bits * b.bits)
         return SymBitVec([a[i] & b[i] for i in range(len(a))])
 
     def __or__(a, b):
         assert len(a) == len(b)
         if a.is_tensor and b.is_tensor:
-            return SymBitVec(a.bits | b.bits)
+            return ~((~a) & (~b))
         return SymBitVec([a[i] | b[i] for i in range(len(a))])
 
     def __lshift__(a, n):
@@ -169,10 +172,12 @@ class SymBitVec(object):
 
     @staticmethod
     def add_tensors(a, b):
-        a, b = a.bits.clone(), b.bits.clone()
-        while torch.sum(b) > 0:
+        a = SymBitVec(a.bits.clone())
+        b = SymBitVec(b.bits.clone())
+        zero = torch.zeros(1, requires_grad=False)
+        while torch.sum(b.bits) > 0:
             carry = a & b
             a = a ^ b
-            b[:-1] = carry[1:]
-            b[-1] = 0
-        return SymBitVec(a)
+            b.bits[:-1] = carry.bits[1:]
+            b.bits[-1] = zero
+        return a

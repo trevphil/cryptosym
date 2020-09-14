@@ -19,7 +19,6 @@ class SupervisedLearning(object):
         self.output_dir = output_dir
         self.config = config
         self.factors = factors
-        self.factor_indices = list(sorted(factors.keys()))
         self.dataloaders = dataloaders
         self.loss = None
         self.tb_writer = None
@@ -70,7 +69,7 @@ class SupervisedLearning(object):
             for batch_idx, (all_bits, target) in enumerate(self.dataloaders['train']):
                 self.optimizer.zero_grad()
                 pred = self.forward_pass(all_bits)
-                aggregated_loss, _, _ = self.loss(batch_idx, pred, all_bits[self.factor_indices])
+                aggregated_loss, _, _ = self.loss(batch_idx, pred, target)
                 aggregated_loss.backward()
                 self.optimizer.step()
 
@@ -80,7 +79,7 @@ class SupervisedLearning(object):
         with self.loss.new_epoch(epoch, 'val'), torch.no_grad():
             for batch_idx, (all_bits, target) in enumerate(self.dataloaders['val']):
                 pred = self.forward_pass(all_bits)
-                _ = self.loss(batch_idx, pred, all_bits[self.factor_indices])
+                _ = self.loss(batch_idx, pred, target)
 
         self.controller.add_state(epoch, self.loss.get_epoch_loss(), self.model.state_dict())
 
@@ -90,7 +89,7 @@ class SupervisedLearning(object):
         with self.loss.new_epoch(0, 'test'), torch.no_grad():
             for batch_idx, (all_bits, target) in enumerate(self.dataloaders['test']):
                 pred = self.forward_pass(all_bits)
-                _ = self.loss(batch_idx, pred, all_bits[self.factor_indices])
+                _ = self.loss(batch_idx, pred, target)
 
                 if batch_idx < 10:
                     self.verify(batch_idx, pred, all_bits[:self.n_input])
