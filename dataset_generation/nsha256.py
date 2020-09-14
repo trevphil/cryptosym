@@ -664,9 +664,16 @@ def test():
     assert '8113ebf33c97daa9998762aacafe750c7cefc2b2f173c90c59663a57fe626f21' == sha256(a_str * 7).hexdigest()
 
     a_str_bytes = bytes(a_str, 'utf-8')
-    input_msg = SymBitVec(int.from_bytes(a_str_bytes, 'big'), size=len(a_str) * 8)
+    a_str_int = int.from_bytes(a_str_bytes, 'big')
+    input_msg = SymBitVec(a_str_int, size=len(a_str) * 8)
     result = sha256(input_msg).hexdigest()
     assert 'd7b553c6f09ac85d142415f857c5310f3bbbe7cdd787cce4b985acedd585266f' == result
+
+    SymBitVec.tensor_mode = True
+    input_msg = SymBitVec(a_str_int, size=len(a_str) * 8)
+    result = sha256(input_msg).hexdigest()
+    assert 'd7b553c6f09ac85d142415f857c5310f3bbbe7cdd787cce4b985acedd585266f' == result
+    SymBitVec.tensor_mode = False
 
     s = sha256(a_str)
     s.update(a_str)

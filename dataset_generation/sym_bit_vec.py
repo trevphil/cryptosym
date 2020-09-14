@@ -39,7 +39,7 @@ class SymBitVec(object):
     def _int_to_tensor(self, num, size, requires_grad):
         result = torch.zeros(size, requires_grad=requires_grad)
         for i in range(size):
-            result[i] = int((num >> i) & 1)
+            result[size - i - 1] = int((num >> i) & 1)
         return result.bool()
 
     def rv_indices(self):
@@ -93,7 +93,8 @@ class SymBitVec(object):
 
     def __getitem__(self, i):
         if self.is_tensor:
-            return self.bits[i].item()
+            n = len(self) - 1
+            return self.bits[n - i].item()
         return self.bits[i]
 
     def __int__(self):
@@ -172,6 +173,6 @@ class SymBitVec(object):
         while torch.sum(b) > 0:
             carry = a & b
             a = a ^ b
-            b[1:] = carry[:-1]
-            b[0] = 0
+            b[:-1] = carry[1:]
+            b[-1] = 0
         return SymBitVec(a)
