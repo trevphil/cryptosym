@@ -6,7 +6,7 @@ from copy import deepcopy
 class Controller(object):
     def __init__(self):
         self.max_num_better_results = 10
-        self.max_num_epochs = 10 # 50
+        self.max_num_epochs = 5 # 50
         self.states = []
 
     def __iter__(self):

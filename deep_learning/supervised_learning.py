@@ -22,6 +22,7 @@ class SupervisedLearning(object):
         self.dataloaders = dataloaders
         self.loss = None
         self.tb_writer = None
+        self.did_viz_graph = False
 
         self.n_input = int(self.config['num_input_bits'])
         self.observed_rvs = self.config['observed_rv_indices']
@@ -54,6 +55,9 @@ class SupervisedLearning(object):
         for i, rv in enumerate(self.observed_rvs):
             model_input[i] = all_bits[rv]
         model_input = torch.reshape(model_input, (1, self.n_observed))
+        if not self.did_viz_graph:
+            self.tb_writer.add_graph(self.model, model_input)
+            self.did_viz_graph = True
         return self.model(model_input)
 
     def train(self):
@@ -119,7 +123,7 @@ class SupervisedLearning(object):
         fmt = '{:0%dX}' % (self.n_input // 4)
         true_in = fmt.format(true_in).lower()
         pred_in = fmt.format(pred_in).lower()
-        print('TEST CASE %d' % test_idx)
+        print('TEST CASE %d' % (test_idx + 1))
         print('Hash input: %s' % true_in)
         print('Pred input: %s' % pred_in)
 

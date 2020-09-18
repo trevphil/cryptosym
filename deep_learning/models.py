@@ -125,7 +125,7 @@ class ReverseHashModel(nn.Module):
         self.bits_per_sample = int(config['num_bits_per_sample'])
         self.num_parents = parents_per_rv
 
-        self.add_connections()
+        # self.add_connections()
 
         self.nodes = dict()
         for rv, factor in self.factors.items():
