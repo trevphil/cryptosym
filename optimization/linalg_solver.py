@@ -121,8 +121,9 @@ class LinAlgSolver(object):
         A = np.zeros((n, n))  # Relevant for INV and SAME factors
         B = np.zeros((n, n))  # Relevant for INV factors
         D = np.zeros((n, n))  # Relevant for AND factors
-        P_row = np.zeros((n, n))  # Row (pseudo-)permutation for AND
-        P_col = np.zeros((n, n))  # Column (pseudo-)permutation for AND
+        P_row = np.eye(n)  # Row permutation for AND
+        P_col = np.eye(n)  # Column permutation for AND
+        S = np.zeros((n, n))  # Column selection matrix
 
         for rv in rvs:
             factor = factors[rv]
@@ -157,43 +158,65 @@ class LinAlgSolver(object):
                     # Otherwise the row and column permutations are invalid.
                     inp1, inp2 = rv2idx[inp1], rv2idx[inp2]
                     D[rv, rv] = -1
-                    P_row[rv, inp2] = 1
-                    P_col[inp2, inp1] = 1
+                    S[inp1, inp1] = 1
+                    P_row[[rv, inp2]] = P_row[[inp2, rv]]
+                    P_col[[inp2, inp1]] = P_col[[inp1, inp2]]
+
+        # Verify that P_row and P_col are permutation matrices
+        P_row_row = np.sum(P_row, axis=1)
+        P_row_col = np.sum(P_row, axis=0)
+        P_col_row = np.sum(P_col, axis=1)
+        P_col_col = np.sum(P_col, axis=0)
+        assert np.allclose(P_row_row, np.ones(P_row_row.shape))
+        assert np.allclose(P_row_col, np.ones(P_row_col.shape))
+        assert np.allclose(P_col_row, np.ones(P_col_row.shape))
+        assert np.allclose(P_col_col, np.ones(P_col_col.shape))
+        assert np.allclose(P_row.T, LA.inv(P_row))
+        assert np.allclose(P_col.T, LA.inv(P_col))
+
+        E = A + D
+        PcS = np.matmul(P_col, S)
 
         print('-' * 40)
         print('Primary matrices:')
         self.mat_info(A, 'A')
         self.mat_info(B, 'B')
         self.mat_info(D, 'D')
-        self.mat_info(A + D, 'A+D')
+        self.mat_info(E, 'E')
         self.mat_info(P_row, 'P_row')
         self.mat_info(P_col, 'P_col')
+        self.mat_info(S, 'S')
         print('-' * 40)
 
-        # (A + D + P_row * X * P_col) * X + B = 0
-        # (E + P_r * X * P_c) * X + B = 0 where E = A + D
-        # (inv(P_r) * E * X) + (X * P_c * X) + (inv(P_r) * B) = 0
-        # XAX + BX + C = 0 where A = P_c; B = inv(P_r) * E; C = inv(P_r) * B
-
         print('#1: VERIFYING CORRECTNESS...')
-        result = A + D
-        result += np.matmul(P_row, np.matmul(X, P_col))
+        # (A + D + P_row * X * P_col * S) * X + B = 0
+        # (E + P_row * X * PcS) * X + B = 0
+        result = E + np.matmul(P_row, np.matmul(X, PcS))
         result = np.matmul(result, X) + B
         result = np.sum(result, axis=1)
         assert np.allclose(result, np.zeros(result.shape))
         print('PASSED.')
 
-        P_row_inv = LA.pinv(P_row)
-        A_hat = P_col.T
-        B_hat = np.matmul(P_row_inv, A + D).T
-        # C_hat = np.matmul(P_row_inv, B).T
-        C_hat = np.matmul(P_row_inv, B).T
+        # (inv(P_row) * E * X) + (X * PcS * X) + (inv(P_row) * B) = 0
+        # (X^T * A * X) + (X^T * B) + C = 0
+        #     where A = PcS^T; B = (E^T * P_row); C = (B * P_row)
+        A_hat = PcS.T
+        B_hat = np.matmul(E.T, P_row)
+        C_hat = np.matmul(B, P_row)
+
         print('-' * 40)
         print('Info for matrix coefficients in the quadratic')
         self.mat_info(A_hat, 'A_hat')
         self.mat_info(B_hat, 'B_hat')
         self.mat_info(C_hat, 'C_hat')
         print('-' * 40)
+
+        print('#2: VERIFYING CORRECTNESS...')
+        result = np.matmul(X, np.matmul(A_hat, X))
+        result += np.matmul(X, B_hat) + C_hat
+        result = np.sum(result.T, axis=1)
+        assert np.allclose(result, np.zeros(result.shape))
+        print('PASSED.')
 
         # (X - H_hat).T * A_hat * (X - H_hat) + K_hat = 0
         H_hat = np.matmul(-LA.pinv(A_hat + A_hat.T), B_hat)
@@ -208,6 +231,15 @@ class LinAlgSolver(object):
         print('A_hat and K_hat commute? {}'.format(commute))
         print('-' * 40)
 
+        print('#3: VERIFYING CORRECTNESS...')
+        tmp = X - H_hat
+        result = np.matmul(tmp.T, np.matmul(A_hat, tmp)) + K_hat
+        print(np.sum(result, axis=0))
+        print('-' * 50)
+        print(np.sum(result, axis=1))
+        assert np.allclose(result, np.zeros(result.shape))
+        print('PASSED.')
+
         prod = np.matmul(-K_hat, LA.pinv(A_hat))
         print('-' * 40)
         self.mat_info(prod, '-K_hat * pinv(A_hat)')
@@ -220,10 +252,7 @@ class LinAlgSolver(object):
         X = H_hat + sq_root
         x = np.diag(X)
 
-        solution = dict()
-        for rv in rvs:
-            if rv in obs_rv_set:
-                solution[rv] = observed[rv]
-            else:
-                solution[rv] = x[rv2idx[rv]]
-        return solution
+        return {
+            rv: observed[rv] if rv in observed else x[rv2idx[rv]]
+            for rv in rvs
+        }
