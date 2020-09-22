@@ -8,6 +8,7 @@ from enum import Enum, unique
 class FactorType(Enum):
     PRIOR = 'PRIOR'
     INV = 'INV'
+    SAME = 'SAME'
     AND = 'AND'
 
     @staticmethod
@@ -19,6 +20,7 @@ class FactorType(Enum):
         return {
             FactorType.PRIOR: 0,
             FactorType.INV: 1,
+            FactorType.SAME: 1,
             FactorType.AND: 2,
         }[factor_type]
 

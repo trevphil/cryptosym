@@ -11,6 +11,7 @@ from BitVector import BitVector
 from optimization.factor import Factor
 from optimization.gradient_solver import GradientSolver
 from optimization.gnc_solver import GNCSolver
+from optimization.linalg_solver import LinAlgSolver
 
 
 def load_factors(factor_file):
@@ -86,7 +87,9 @@ def main(dataset, solver_type):
     observed_rvs = set(config['observed_rv_indices'])
     num_test = min(1, len(bitvectors))
 
-    if solver_type.lower() == 'gradient':
+    if solver_type.lower() == 'linalg':
+        solver = LinAlgSolver()
+    elif solver_type.lower() == 'gradient':
         solver = GradientSolver()
     elif solver_type.lower() == 'gnc':
         solver = GNCSolver()
@@ -97,7 +100,7 @@ def main(dataset, solver_type):
         print('Test case %d/%d' % (test_case + 1, num_test))
         sample = bitvectors[test_case]
         observed = {rv: bool(sample[rv]) for rv in observed_rvs}
-        predictions = solver.solve(factors, observed, config)
+        predictions = solver.solve(factors, observed, config, sample)
         predicted_input = BitVector(size=n_input)
         true_input = sample[:n_input]
         for rv_idx, predicted_val in predictions.items():
@@ -112,7 +115,7 @@ if __name__ == '__main__':
         description='Hash reversal via optimization')
     parser.add_argument('dataset', type=str,
         help='Path to the dataset directory')
-    parser.add_argument('--solver', type=str, default='gradient',
+    parser.add_argument('--solver', type=str, default='linalg',
         help='The type of optimization (gradient or GNC)')
     args = parser.parse_args()
     main(args.dataset, args.solver)

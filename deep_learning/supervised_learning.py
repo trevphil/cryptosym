@@ -6,7 +6,6 @@ import subprocess
 import numpy as np
 from torch import optim
 from BitVector import BitVector
-from collections import defaultdict
 from torch.utils.tensorboard import SummaryWriter
 
 from deep_learning.models import ReverseHashModel
@@ -23,19 +22,13 @@ class SupervisedLearning(object):
         self.loss = None
         self.tb_writer = None
         self.did_viz_graph = False
+        self.feat_size = 20
 
         self.n_input = int(self.config['num_input_bits'])
         self.observed_rvs = self.config['observed_rv_indices']
-        self.n_observed = len(self.observed_rvs)
         self.obs_rv2idx = {rv: i for i, rv in enumerate(self.observed_rvs)}
 
-        parents_per_rv = defaultdict(lambda: 0)
-        for _, factor in factors.items():
-            for input_rv in factor.input_rvs:
-                parents_per_rv[input_rv] += 1
-
-        self.model = ReverseHashModel(config, factors, self.observed_rvs,
-                                      self.obs_rv2idx, parents_per_rv)
+        self.model = ReverseHashModel(config, factors, self.feat_size)
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.0005)
         self.controller = Controller()
 
@@ -51,10 +44,10 @@ class SupervisedLearning(object):
         self.tb_writer.close()
 
     def forward_pass(self, all_bits):
-        model_input = torch.zeros(self.n_observed)
-        for i, rv in enumerate(self.observed_rvs):
-            model_input[i] = all_bits[rv]
-        model_input = torch.reshape(model_input, (1, self.n_observed))
+        n_bits = all_bits.size(0)
+        model_input = torch.ones((1, n_bits, self.feat_size), requires_grad=False) * 0.5
+        for rv in self.observed_rvs:
+            model_input[:, rv, :] = all_bits[rv]
         if not self.did_viz_graph:
             self.tb_writer.add_graph(self.model, model_input)
             self.did_viz_graph = True
@@ -73,7 +66,7 @@ class SupervisedLearning(object):
             for batch_idx, (all_bits, target) in enumerate(self.dataloaders['train']):
                 self.optimizer.zero_grad()
                 pred = self.forward_pass(all_bits)
-                aggregated_loss, _, _ = self.loss(batch_idx, pred, target)
+                aggregated_loss, _, _ = self.loss(batch_idx, pred, target, all_bits)
                 aggregated_loss.backward()
                 self.optimizer.step()
 
@@ -83,7 +76,7 @@ class SupervisedLearning(object):
         with self.loss.new_epoch(epoch, 'val'), torch.no_grad():
             for batch_idx, (all_bits, target) in enumerate(self.dataloaders['val']):
                 pred = self.forward_pass(all_bits)
-                _ = self.loss(batch_idx, pred, target)
+                _ = self.loss(batch_idx, pred, target, all_bits)
 
         self.controller.add_state(epoch, self.loss.get_epoch_loss(), self.model.state_dict())
 
@@ -93,7 +86,7 @@ class SupervisedLearning(object):
         with self.loss.new_epoch(0, 'test'), torch.no_grad():
             for batch_idx, (all_bits, target) in enumerate(self.dataloaders['test']):
                 pred = self.forward_pass(all_bits)
-                _ = self.loss(batch_idx, pred, target)
+                _ = self.loss(batch_idx, pred, target, all_bits)
 
                 if batch_idx < 10:
                     self.verify(batch_idx, pred, all_bits[:self.n_input])

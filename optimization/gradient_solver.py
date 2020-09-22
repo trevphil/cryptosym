@@ -7,7 +7,7 @@ class GradientSolver(object):
     def __init__(self):
         pass
 
-    def solve(self, factors, observed, config):
+    def solve(self, factors, observed, config, all_bits):
         rv_indices = list(sorted(rv for rv in factors.keys()))
         rv2idx = {rv_index: i for i, rv_index in enumerate(rv_indices)}
         num_rvs = len(rv_indices)

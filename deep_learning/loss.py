@@ -27,6 +27,12 @@ class ReverseHashLoss(object):
         self.epoch_losses = {'train': dict(), 'val': dict(), 'test': dict()}
         self.report_freq = 100
 
+        self.and_factor_indices = []
+        for rv, f in self.factors.items():
+            if f.factor_type == 'AND':
+                self.and_factor_indices.append(rv)
+        self.and_factor_indices = list(sorted(self.and_factor_indices))
+
     def new_epoch(self, epoch, purpose):
         self.purpose = purpose
         self.epoch = epoch
@@ -96,9 +102,9 @@ class ReverseHashLoss(object):
         epoch_accuracy = total_acc / n_samples
         return epoch_loss, epoch_accuracy
 
-    def __call__(self, batch_idx, predicted_input, target_output):
+    def __call__(self, batch_idx, predicted_input, target_output, all_bits):
         start = time()
-        loss, accuracy = self.loss_function(predicted_input, target_output)
+        loss, accuracy = self.loss_function(predicted_input, target_output, all_bits)
         comp_time = time() - start
 
         aggregated_loss = torch.mean(loss)
@@ -124,15 +130,21 @@ class ReverseHashLoss(object):
 
         return aggregated_loss, loss, accuracy
 
-    def loss_function(self, predicted_input, target_hash):
-        # TODO: Add penalty for inconsistency of input->output
-        #       for AND and INV gates
 
-        inp = torch.clamp(torch.round(predicted_input), 0, 1)
-        predicted_hash = self.algo(inp, self.difficulty).bits
+
+    def loss_function(self, bit_predictions, target_hash, all_bits):
+        hash_input = bit_predictions[:self.num_input_bits]
+        hash_input = torch.clamp(torch.round(hash_input), 0, 1)
+        predicted_hash = self.algo(hash_input, self.difficulty).bits
 
         loss = F.binary_cross_entropy_with_logits(
             predicted_hash, target_hash, reduction='none')
+
+        a = self.A(bit_predictions)
+        err = a @ torch.reshape(bit_predictions, (-1, 1)) + self.b
+        err = torch.sum(err ** 2) / bit_predictions.numel()
+        print('err = {}'.format(err))
+        loss += err
 
         num_incorrect = torch.sum(torch.abs(predicted_hash - target_hash))
         num_total = float(predicted_hash.size(0))
