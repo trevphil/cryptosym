@@ -31,9 +31,8 @@ I recommend using [Anaconda](https://www.anaconda.com/) to run the code in this 
 Use Python 3.5 and install from `requirements.txt`:
 
 ```
-conda create -n hash_reversal python=3.5
-conda activate hash_reversal
-pip install -r requirements.txt --user
+conda create -n preimage --file requirements.txt python=3.5.6
+conda activate preimage
 ```
 
 # Deterministic SHA-256 Reversal
@@ -143,7 +142,7 @@ In the undirected graph, each RV is a node. We make an edge between every possib
 
 Then the graph is pruned, because having too many edges leads to divergence of loopy belief propagation and also rare events (see [Future Work and Extensions](#future-work-and-extensions)). I prune the graph by removing the lowest-weighted edges from each node until it has no more than `max_connections` edges to other nodes. This `max_connections` is a hyperparameter, but setting it too high will cause the issues that I mentioned earlier.
 
-**Note**: The method I have described for generating the graph's structure is a heuristic, and there may be better ways out there (for example, the [Bayesian information criterion](Bayesian_information_criterion)). In general, to consider all possible graph architectures is an exponentially hard problem. 
+**Note**: The method I have described for generating the graph's structure is a heuristic, and there may be better ways out there (for example, the [Bayesian information criterion](Bayesian_information_criterion)). In general, to consider all possible graph architectures is an exponentially hard problem.
 
 #### Assigning directions to the BN
 

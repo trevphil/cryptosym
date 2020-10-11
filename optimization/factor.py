@@ -11,6 +11,16 @@ INV: (1 - i - j) ^ 2
     d/dj,di = 2
     d/dj,dj = 2
 
+SAME: (i - j) ^ 2
+  first order:
+    d/di = 2 * (i - j)
+    d/dj = -2 * (i - j)
+  second order:
+    d/di,di = 2
+    d/di,dj = -2
+    d/dj,di = -2
+    d/dj,dj = 2
+
 AND: (ij - k) ^ 2
   first order:
     d/di = 2ij^2 - 2jk
@@ -53,6 +63,12 @@ class Factor(object):
         if self.factor_type == 'INV':
             i, j = self.input_rvs[0], self.output_rv
             return 2 * (X(i) + X(j) - 1)
+        elif self.factor_type == 'SAME':
+            i, j = self.input_rvs[0], self.output_rv
+            if wrt == i:
+                return 2 * (X(i) - X(j))
+            else:
+                return -2 * (X(i) - X(j))
         elif self.factor_type == 'AND':
             i, j = self.input_rvs
             k = self.output_rv
@@ -77,6 +93,12 @@ class Factor(object):
         pair = (first, second)
         if self.factor_type == 'INV':
             return 2.0
+        elif self.factor_type == 'SAME':
+            i, j = self.input_rvs[0], self.output_rv
+            if pair == (i, j) or pair == (j, i):
+                return -2.0
+            else:
+                return 2.0
         elif self.factor_type == 'AND':
             i, j = self.input_rvs
             k = self.output_rv

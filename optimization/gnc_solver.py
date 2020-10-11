@@ -59,6 +59,10 @@ class GNCSolver(object):
                     inp = rv2idx[factor.input_rvs[0]]
                     self.sq_residuals[r_idx] = (1.0 - x[i] - x[inp]) ** 2
                     r_idx += 1
+                elif ftype == 'SAME':
+                    inp = rv2idx[factor.input_rvs[0]]
+                    self.sq_residuals[r_idx] = (x[i] - x[inp]) ** 2
+                    r_idx += 1
                 elif ftype == 'AND':
                     inp1, inp2 = factor.input_rvs
                     inp1, inp2 = x[rv2idx[inp1]], x[rv2idx[inp2]]

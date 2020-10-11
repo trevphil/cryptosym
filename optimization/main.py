@@ -8,10 +8,12 @@ import subprocess
 import numpy as np
 from BitVector import BitVector
 
+from optimization import utils
 from optimization.factor import Factor
 from optimization.gradient_solver import GradientSolver
 from optimization.gnc_solver import GNCSolver
 from optimization.linalg_solver import LinAlgSolver
+from optimization.sat_solver import SatSolver
 
 
 def load_factors(factor_file):
@@ -87,12 +89,14 @@ def main(dataset, solver_type):
     observed_rvs = set(config['observed_rv_indices'])
     num_test = min(1, len(bitvectors))
 
-    if solver_type.lower() == 'linalg':
+    if solver_type == 'linalg':
         solver = LinAlgSolver()
-    elif solver_type.lower() == 'gradient':
+    elif solver_type == 'gradient':
         solver = GradientSolver()
-    elif solver_type.lower() == 'gnc':
+    elif solver_type == 'gnc':
         solver = GNCSolver()
+    elif solver_type == 'sat':
+        solver = SatSolver()
     else:
         raise NotImplementedError('Invalid solver: %s' % solver_type)
 
@@ -100,7 +104,11 @@ def main(dataset, solver_type):
         print('Test case %d/%d' % (test_case + 1, num_test))
         sample = bitvectors[test_case]
         observed = {rv: bool(sample[rv]) for rv in observed_rvs}
-        predictions = solver.solve(factors, observed, config, sample)
+        observed = utils.set_implicit_observed(factors, observed, sample)
+        if len(observed) == len(factors):
+            predictions = observed  # Everything was solved already :)
+        else:
+            predictions = solver.solve(factors, observed, config, sample)
         predicted_input = BitVector(size=n_input)
         true_input = sample[:n_input]
         for rv_idx, predicted_val in predictions.items():
@@ -111,12 +119,14 @@ def main(dataset, solver_type):
 
 
 if __name__ == '__main__':
+    np.random.seed(1)
     parser = argparse.ArgumentParser(
         description='Hash reversal via optimization')
     parser.add_argument('dataset', type=str,
         help='Path to the dataset directory')
-    parser.add_argument('--solver', type=str, default='linalg',
-        help='The type of optimization (gradient or GNC)')
+    choices = ['gradient', 'gnc', 'linalg', 'sat']
+    parser.add_argument('--solver', type=str, default='sat',
+        help='The solving technique', choices=choices)
     args = parser.parse_args()
     main(args.dataset, args.solver)
     print('Done.')
