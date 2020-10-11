@@ -4,6 +4,9 @@ import scipy.io
 
 
 def save_to_matlab_matrix(matrices, filename, verbose=True):
+    """
+    Save a numpy matrix to MATLAB format
+    """
     scipy.io.savemat(filename, matrices)
     if verbose:
         print('Saved data to %s' % filename)

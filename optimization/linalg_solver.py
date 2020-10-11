@@ -7,9 +7,26 @@ from scipy import sparse
 from scipy.sparse import linalg as LA
 from collections import defaultdict
 from matplotlib import pyplot as plt
-# from qpsolvers import solve_qp
 
 from optimization.utils import save_to_matlab_matrix
+
+
+class SparseMatrix(object):
+    def __init__(self, shape):
+        self.r = []
+        self.c = []
+        self.d = []
+        self.shape = shape
+
+    def add(self, row, col, val):
+        self.r.append(row)
+        self.c.append(col)
+        self.d.append(float(val))
+
+    def matrix(self):
+        return sparse.coo_matrix((self.d, (self.r, self.c)),
+            shape=self.shape).tocsr()
+
 
 class LinAlgSolver(object):
     def __init__(self):
@@ -56,27 +73,98 @@ class LinAlgSolver(object):
         print('{}\tdim: {};\tsymmetric? {};\trank: {};\tsingular? {}'.format(
             name, sz, symmetric, rank, singular))
 
-    def verify_solvable(self, factors):
-        and_gates_per_rv = defaultdict(lambda: 0)
-        for rv, factor in factors.items():
-            if factor.factor_type == 'AND':
-                inp1, inp2 = factor.input_rvs[:2]
-                and_gates_per_rv[inp1] += 1
-                and_gates_per_rv[inp2] += 1
-                if and_gates_per_rv[inp1] > 1:
-                    return False
-                if and_gates_per_rv[inp2] > 1:
-                    return False
-        return True
+    def count_factors(self, factors):
+        counts = defaultdict(lambda: 0)
+        for f in factors.values():
+            counts[f.factor_type] += 1
+        return counts
 
     def solve(self, factors, observed, config, all_bits):
-        solvable = self.verify_solvable(factors)
-        assert solvable, 'Some RVs are inputs to more than one AND-gate!'
-
         obs_rv_set = set(observed.keys())
+        factor_counts = self.count_factors(factors)
         rvs = list(sorted(factors.keys()))
         rv2idx = {rv: i for i, rv in enumerate(rvs)}
         n = len(rvs)
+
+        take_solution = False
+        if take_solution:
+            x = np.genfromtxt('x.csv', delimiter=',')
+            x = np.round(x).squeeze().astype(int)
+            solution = {rv: x[rv2idx[rv]] for rv in rvs}
+            solution.update(observed)
+            return solution
+
+        # Ax = b
+        A_rows = factor_counts['INV'] + factor_counts['SAME'] + len(observed)
+        A = SparseMatrix((A_rows, n))
+        b = []
+        A_row = 0
+
+        # Ex <= d
+        E_rows = 3 * factor_counts['AND']
+        E = SparseMatrix((E_rows, n))
+        d = []
+        E_row = 0
+
+        for rv, factor in factors.items():
+            ftype = factor.factor_type
+            rv = rv2idx[rv]
+            if ftype == 'INV':
+                inp = rv2idx[factor.input_rvs[0]]
+                # out = 1 - inp
+                A.add(A_row, inp, 1)
+                A.add(A_row, rv, 1)
+                A_row += 1
+                b.append(1.0)
+            elif ftype == 'SAME':
+                inp = rv2idx[factor.input_rvs[0]]
+                # inp - out = 0
+                A.add(A_row, inp, 1)
+                A.add(A_row, rv, -1)
+                A_row += 1
+                b.append(0.0)
+            elif ftype == 'AND':
+                inp1, inp2 = factor.input_rvs[:2]
+                inp1, inp2 = rv2idx[inp1], rv2idx[inp2]
+                # out <= inp1
+                E.add(E_row, rv, 1)
+                E.add(E_row, inp1, -1)
+                E_row += 1
+                d.append(0.0)
+                # out <= inp2
+                E.add(E_row, rv, 1)
+                E.add(E_row, inp2, -1)
+                E_row += 1
+                d.append(0.0)
+                # out >= inp1 + inp2 - 1
+                E.add(E_row, rv, -1)
+                E.add(E_row, inp1, 1)
+                E.add(E_row, inp2, 1)
+                E_row += 1
+                d.append(1.0)
+
+        # Add constraints for observed RVs
+        for rv, rv_val in observed.items():
+            A.add(A_row, rv2idx[rv], 1)
+            A_row += 1
+            b.append(float(rv_val))
+
+        A = A.matrix()
+        E = E.matrix()
+        b = np.hstack(b).reshape((-1, 1))
+        d = np.hstack(d).reshape((-1, 1))
+        f = -np.ones((n, 1))
+
+        # Add constraints to bound x in [0, 1]
+        # sparse.identity(n, format='lil', dtype=self.dtype)
+        # E = np.vstack((E, np.eye(n), -np.eye(n)))
+        # d = np.vstack((d, np.ones((n, 1)), np.zeros((n, 1))))
+
+        ctype = np.array(['B' for _ in range(n)]).reshape((1, -1))
+
+        save_to_matlab_matrix(
+            dict(f=f, Aeq=A, beq=b, Aineq=E, bineq=d, ctype=ctype), 'data.mat')
+        exit()
 
         # X is just to verify the linear algebra works correctly.
         # In reality we would not have access to all of the bits.

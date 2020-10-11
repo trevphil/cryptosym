@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from collections import defaultdict
-
 from dataset_generation.factor import Factor, FactorType
 
 
@@ -9,7 +7,6 @@ class Bit(object):
     rv_index = 0
     factors = []
     rv_bits = []
-    and_gates_per_bit = defaultdict(lambda: 0)
 
     def __init__(self, bit_value, is_rv, is_prior=False):
         self.val = bool(bit_value)
@@ -26,7 +23,6 @@ class Bit(object):
         Bit.rv_index = 0
         Bit.factors = []
         Bit.rv_bits = []
-        Bit.and_gates_per_bit = defaultdict(lambda: 0)
 
     def __repr__(self):
         if self.is_rv:
@@ -105,18 +101,6 @@ class Bit(object):
         if a.is_rv and b.is_rv:
             if a.index == b.index:
                 return a
-
-            if Bit.and_gates_per_bit[a.index] > 0:
-                c = Bit(a.val, a.is_rv)
-                Bit.factors.append(Factor(FactorType.SAME, c, [a]))
-                a = c
-            if Bit.and_gates_per_bit[b.index] > 0:
-                d = Bit(b.val, b.is_rv)
-                Bit.factors.append(Factor(FactorType.SAME, d, [b]))
-                b = d
-            Bit.and_gates_per_bit[a.index] += 1
-            Bit.and_gates_per_bit[b.index] += 1
-
             result = Bit(result_val, True)
             Bit.factors.append(Factor(FactorType.AND, result, [a, b]))
             return result

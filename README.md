@@ -26,13 +26,14 @@ This repository contains my attempts at pre-image attacks on SHA-256, MD5, and B
 
 # Dependencies and Installation
 
-I recommend using [Anaconda](https://www.anaconda.com/) to run the code in this project. It's the easiest way I've found to install the [z3 prover](https://github.com/Z3Prover/z3) for Python.
+I recommend using [Anaconda](https://www.anaconda.com/) to create a Python environment, and then install the necessary libraries with `pip`.
 
-Use Python 3.5 and install from `requirements.txt`:
+Use Python 3.6 and install from `requirements.txt`:
 
 ```
-conda create -n preimage --file requirements.txt python=3.5.6
+conda create -n preimage python=3.6
 conda activate preimage
+pip install -r requirements.txt
 ```
 
 # Deterministic SHA-256 Reversal

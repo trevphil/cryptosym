@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from time import time
+from multiprocessing import cpu_count
 from ortools.sat.python import cp_model
+from ortools.sat.sat_parameters_pb2 import SatParameters
 
 
 class SatSolver(object):
@@ -13,6 +15,7 @@ class SatSolver(object):
         print(info)
 
     def solve(self, factors, observed, config, all_bits):
+        # https://google.github.io/or-tools/python/ortools/sat/python/cp_model.html
         obs_rv_set = set(observed.keys())
         rvs = list(sorted(factors.keys()))
         n = len(rvs)
@@ -37,6 +40,8 @@ class SatSolver(object):
                 model.Add(rv2var[rv] <= rv2var[inp2])
                 model.Add(rv2var[rv] >= rv2var[inp1] + rv2var[inp2] - 1)
         solver = cp_model.CpSolver()
+        # https://github.com/google/or-tools/blob/stable/ortools/sat/sat_parameters.proto
+        solver.parameters = SatParameters(num_search_workers=cpu_count())
         print('Solving (n=%d)...' % len(rvs))
         start = time()
         status = solver.Solve(model)
