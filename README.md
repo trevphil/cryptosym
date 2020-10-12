@@ -36,6 +36,11 @@ conda activate preimage
 pip install -r requirements.txt
 ```
 
+For Cplex, make sure to do:
+```
+export PYTHONPATH=/Applications/CPLEX_Studio1210/cplex/python/3.6/x86-64_osx
+```
+
 # Deterministic SHA-256 Reversal
 
 ## Explanation

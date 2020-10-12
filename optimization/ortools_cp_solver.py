@@ -5,7 +5,7 @@ from ortools.sat.python import cp_model
 from ortools.sat.sat_parameters_pb2 import SatParameters
 
 
-class SatSolver(object):
+class OrtoolsCpSolver(object):
     def __init__(self):
         pass
 
@@ -29,7 +29,7 @@ class SatSolver(object):
             ftype = factor.factor_type
             if ftype == 'INV':
                 inp = factor.input_rvs[0]
-                model.Add(rv2var[inp] != rv2var[rv])
+                model.Add(rv2var[inp] == 1 - rv2var[rv])
             elif ftype == 'SAME':
                 inp = factor.input_rvs[0]
                 model.Add(rv2var[inp] == rv2var[rv])

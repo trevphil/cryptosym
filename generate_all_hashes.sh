@@ -22,6 +22,7 @@ python -m dataset_generation.generate --num-samples 64 --num-input-bits 64 --has
 
 python -m dataset_generation.generate --num-samples 64 --num-input-bits 64 --hash-algo add --visualize
 
+# SHA-256 algorithms
 python -m dataset_generation.generate --num-samples 8 --num-input-bits 64 --hash-algo sha256 --difficulty 1
 python -m dataset_generation.generate --num-samples 8 --num-input-bits 64 --hash-algo sha256 --difficulty 4
 python -m dataset_generation.generate --num-samples 8 --num-input-bits 64 --hash-algo sha256 --difficulty 8

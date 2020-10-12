@@ -13,8 +13,10 @@ from optimization import utils
 from optimization.factor import Factor
 from optimization.gradient_solver import GradientSolver
 from optimization.gnc_solver import GNCSolver
-from optimization.linalg_solver import LinAlgSolver
-from optimization.sat_solver import SatSolver
+from optimization.cplex_milp_solver import CplexMILPSolver
+from optimization.ortools_cp_solver import OrtoolsCpSolver
+from optimization.cplex_cp_solver import CplexCPSolver
+from optimization.gurobi_milp_solver import GurobiMILPSolver
 
 
 def load_factors(factor_file):
@@ -49,14 +51,18 @@ def load_bitvectors(data_file, config):
 
 
 def select_solver(solver_type):
-    if solver_type == 'linalg':
-        return LinAlgSolver()
+    if solver_type == 'cplex_milp':
+        return CplexMILPSolver()
+    elif solver_type == 'cplex_cp':
+        return CplexCPSolver()
     elif solver_type == 'gradient':
         return GradientSolver()
     elif solver_type == 'gnc':
         return GNCSolver()
-    elif solver_type == 'sat':
-        return SatSolver()
+    elif solver_type == 'ortools_cp':
+        return OrtoolsCpSolver()
+    elif solver_type == 'gurobi_milp':
+        return GurobiMILPSolver()
     else:
         raise NotImplementedError('Invalid solver: %s' % solver_type)
 
@@ -147,7 +153,8 @@ if __name__ == '__main__':
         description='Hash reversal via optimization')
     parser.add_argument('dataset', type=str,
         help='Path to the dataset directory')
-    choices = ['gradient', 'gnc', 'linalg', 'sat']
+    choices = ['gradient', 'gnc', 'cplex_milp', 'cplex_cp',
+        'ortools_cp', 'gurobi_milp']
     parser.add_argument('--solver', type=str, default='sat',
         help='The solving technique', choices=choices)
     args = parser.parse_args()

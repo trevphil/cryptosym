@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import scipy
-import sympy
 import numpy as np
 from scipy import sparse
-from scipy.sparse import linalg as LA
+from multiprocessing import cpu_count
 from collections import defaultdict
 from matplotlib import pyplot as plt
+
+from docplex.mp.model import Model
 
 from optimization.utils import save_to_matlab_matrix
 
@@ -28,50 +29,12 @@ class SparseMatrix(object):
             shape=self.shape).tocsr()
 
 
-class LinAlgSolver(object):
+class CplexMILPSolver(object):
     def __init__(self):
         self.check = True
         self.visualize = False
         self.should_save_to_matlab = False
         self.dtype = np.int32
-
-    def numpy2sym(self, M):
-        return sympy.Matrix(M)
-
-    def sym2numpy(self, M):
-        return np.array(M).astype(self.dtype)
-
-    def simplify(self, M):
-        if type(M) is np.ndarray:
-            return M
-        M.sum_duplicates()
-        M.eliminate_zeros()
-        return M
-
-    def allones(self, M):
-        return (M == 1).all()
-
-    def allzeros(self, M):
-        return (M == 0).all()
-
-    def allclose(self, a, b, rtol=1e-5, atol = 1e-8):
-        return self.simplify(a - b).nnz == 0
-
-    def swap_rows(self, M, row1, row2):
-        M[[row1, row2]] = M[[row2, row1]]
-
-    def mat_info(self, M, name):
-        """
-        Print various properties of matrix M
-        """
-
-        sz = M.shape
-        rank = np.linalg.matrix_rank(M.todense())
-        singular = rank < min(sz[0], sz[1])
-        square = sz[0] == sz[1]
-        symmetric = self.allclose(M, M.T) if square else False
-        print('{}\tdim: {};\tsymmetric? {};\trank: {};\tsingular? {}'.format(
-            name, sz, symmetric, rank, singular))
 
     def count_factors(self, factors):
         counts = defaultdict(lambda: 0)
@@ -86,13 +49,33 @@ class LinAlgSolver(object):
         rv2idx = {rv: i for i, rv in enumerate(rvs)}
         n = len(rvs)
 
-        take_solution = False
-        if take_solution:
-            x = np.genfromtxt('x.csv', delimiter=',')
-            x = np.round(x).squeeze().astype(int)
-            solution = {rv: x[rv2idx[rv]] for rv in rvs}
-            solution.update(observed)
-            return solution
+        # https://cdn.rawgit.com/IBMDecisionOptimization/docplex-doc/master/docs/mp/docplex.mp.model.html
+        model = Model(name='hash_reversal')
+        model.context.cplex_parameters.threads = cpu_count()
+        rv2var = {rv: model.binary_var(str(rv)) for rv in rvs}
+        for rv, val in observed.items():
+            model.add_constraint(rv2var[rv] == bool(val))
+        for rv, factor in factors.items():
+            ftype = factor.factor_type
+            if ftype == 'INV':
+                inp = factor.input_rvs[0]
+                model.add_constraint(rv2var[inp] == 1 - rv2var[rv])
+            elif ftype == 'SAME':
+                inp = factor.input_rvs[0]
+                model.add_constraint(rv2var[inp] == rv2var[rv])
+            elif ftype == 'AND':
+                inp1, inp2 = factor.input_rvs[:2]
+                # Linearization of out = inp1 * inp2 for binary variables
+                model.add_constraint(rv2var[rv] <= rv2var[inp1])
+                model.add_constraint(rv2var[rv] <= rv2var[inp2])
+                model.add_constraint(rv2var[rv] >= rv2var[inp1] + rv2var[inp2] - 1)
+
+        model.maximize(sum(rv2var.values()))
+        model.print_information()
+        sol = model.solve()
+        print(model.solve_details)
+        solution = {rv: sol[rv2var[rv]] for rv in rvs}
+        return solution
 
         # Ax = b
         A_rows = factor_counts['INV'] + factor_counts['SAME'] + len(observed)
