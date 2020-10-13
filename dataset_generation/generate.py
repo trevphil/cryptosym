@@ -149,7 +149,7 @@ def main():
     }
 
     with open(params_file, 'w') as f:
-        yaml.dump(params, f, default_flow_style=None)
+        yaml.dump(params, f, default_flow_style=None, width=int(1e5))
 
     print('Generated dataset with parameters:')
     for key in sorted(params.keys()):

@@ -127,7 +127,7 @@ def eval_solver(solver, datasets, difficulties):
 
 
 if __name__ == '__main__':
-    difficulties = [1, 4, 8, 12] # 17, 18, 19, 20, 21, 22, 23, 24, 32, 64]
+    difficulties = [1, 4, 8, 12, 17, 18, 19, 20, 21, 22, 23, 24, 32, 64]
     datasets = ['data/sha256_d%d' % d for d in difficulties]
     plot_factors_vs_difficulty(datasets, difficulties,
         save_to='images/sha256_factors.pdf')
