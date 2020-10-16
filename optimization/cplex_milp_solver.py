@@ -70,7 +70,7 @@ class CplexMILPSolver(object):
                 model.add_constraint(rv2var[rv] <= rv2var[inp2])
                 model.add_constraint(rv2var[rv] >= rv2var[inp1] + rv2var[inp2] - 1)
 
-        model.maximize(sum(rv2var.values()))
+        model.maximize(list(rv2var.values())[0])
         model.print_information()
         sol = model.solve()
         print(model.solve_details)

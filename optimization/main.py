@@ -15,9 +15,10 @@ from optimization.gradient_solver import GradientSolver
 from optimization.gnc_solver import GNCSolver
 from optimization.cplex_milp_solver import CplexMILPSolver
 from optimization.ortools_cp_solver import OrtoolsCpSolver
+from optimization.ortools_milp_solver import OrtoolsMILPSolver
 from optimization.cplex_cp_solver import CplexCPSolver
 from optimization.gurobi_milp_solver import GurobiMILPSolver
-from optimization.sympy_solver import SympySolver
+
 
 def load_factors(factor_file):
     factors = dict()
@@ -61,10 +62,10 @@ def select_solver(solver_type):
         return GNCSolver()
     elif solver_type == 'ortools_cp':
         return OrtoolsCpSolver()
+    elif solver_type == 'ortools_milp':
+        return OrtoolsMILPSolver()
     elif solver_type == 'gurobi_milp':
         return GurobiMILPSolver()
-    elif solver_type == 'sympy':
-        return SympySolver()
     else:
         raise NotImplementedError('Invalid solver: %s' % solver_type)
 
@@ -156,8 +157,8 @@ if __name__ == '__main__':
     parser.add_argument('dataset', type=str,
         help='Path to the dataset directory')
     choices = ['gradient', 'gnc', 'cplex_milp', 'cplex_cp',
-        'ortools_cp', 'gurobi_milp', 'sympy']
-    parser.add_argument('--solver', type=str, default='sat',
+        'ortools_cp', 'ortools_milp', 'gurobi_milp']
+    parser.add_argument('--solver', type=str, default='ortools_cp',
         help='The solving technique', choices=choices)
     args = parser.parse_args()
     _ = main(args.dataset, args.solver)

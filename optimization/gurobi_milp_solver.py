@@ -14,10 +14,10 @@ class GurobiMILPSolver(object):
 
         # https://www.gurobi.com/documentation/9.0/quickstart_mac/py_example_mip1_py.html
         model = gp.Model('hash_reversal')
-        model.setParam(GRB.Param.Threads, cpu_count())
-        model.setParam(GRB.Param.MIPFocus, 1)
+        # model.setParam(GRB.Param.Threads, cpu_count())
+        # model.setParam(GRB.Param.MIPFocus, 1)
         model.setParam(GRB.Param.SolutionLimit, 1)
-        model.setParam(GRB.Param.Heuristics, 0.5)
+        # model.setParam(GRB.Param.Heuristics, 0.5)
 
         rv2var = {rv: model.addVar(vtype=GRB.BINARY, name=str(rv)) for rv in rvs}
         for rv, val in observed.items():
@@ -37,7 +37,7 @@ class GurobiMILPSolver(object):
                 model.addConstr(rv2var[rv] <= rv2var[inp2])
                 model.addConstr(rv2var[rv] >= rv2var[inp1] + rv2var[inp2] - 1)
 
-        model.setObjective(sum(rv2var.values()), GRB.MAXIMIZE)
+        model.setObjective(list(rv2var.values())[0], GRB.MAXIMIZE)
         model.optimize()
         solution = {rv: rv2var[rv].x for rv in rvs}
         return solution
