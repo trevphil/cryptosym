@@ -13,22 +13,22 @@ from dataset_generation.sym_bit_vec import SymBitVec
 
 SHA_BLOCKSIZE = 64
 SHA_DIGESTSIZE = 32  # in bytes
-F32 = SymBitVec(BitVector(intVal=0xffffffff, size=32))
-F8 = SymBitVec(BitVector(intVal=0xff, size=32))
-
-
-def ROR(x, y): return (((x & F32) >> (y & 31)) | (x << (32 - (y & 31)))) & F32
-def Ch(x, y, z): return (z ^ (x & (y ^ z)))
-def Maj(x, y, z): return (((x | y) & z) | (x & y))
-def S(x, n): return ROR(x, n)
-def R(x, n): return (x & F32) >> n
-def Sigma0(x): return (S(x, 2) ^ S(x, 13) ^ S(x, 22))
-def Sigma1(x): return (S(x, 6) ^ S(x, 11) ^ S(x, 25))
-def Gamma0(x): return (S(x, 7) ^ S(x, 18) ^ R(x, 3))
-def Gamma1(x): return (S(x, 17) ^ S(x, 19) ^ R(x, 10))
 
 
 def sha_transform(sha_info, difficulty):
+    F32 = SymBitVec(0xffffffff, size=32)
+    F8 = SymBitVec(0xff, size=32)
+
+    def ROR(x, y): return (((x & F32) >> (y & 31)) | (x << (32 - (y & 31)))) & F32
+    def Ch(x, y, z): return (z ^ (x & (y ^ z)))
+    def Maj(x, y, z): return (((x | y) & z) | (x & y))
+    def S(x, n): return ROR(x, n)
+    def R(x, n): return (x & F32) >> n
+    def Sigma0(x): return (S(x, 2) ^ S(x, 13) ^ S(x, 22))
+    def Sigma1(x): return (S(x, 6) ^ S(x, 11) ^ S(x, 25))
+    def Gamma0(x): return (S(x, 7) ^ S(x, 18) ^ R(x, 3))
+    def Gamma1(x): return (S(x, 17) ^ S(x, 19) ^ R(x, 10))
+
     W = []
 
     d = [x.resize(32) for x in sha_info['data']]
@@ -56,460 +56,460 @@ def sha_transform(sha_info, difficulty):
     itr = 0
 
     ss[3], ss[7] = RND(ss[0], ss[1], ss[2], ss[3], ss[4], ss[5], ss[6], ss[7],
-                       0, SymBitVec(BitVector(intVal=0x428a2f98, size=32)))
+                       0, SymBitVec(0x428a2f98, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[2], ss[6] = RND(ss[7], ss[0], ss[1], ss[2], ss[3], ss[4], ss[5], ss[6],
-                       1, SymBitVec(BitVector(intVal=0x71374491, size=32)))
+                       1, SymBitVec(0x71374491, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[1], ss[5] = RND(ss[6], ss[7], ss[0], ss[1], ss[2], ss[3], ss[4], ss[5],
-                       2, SymBitVec(BitVector(intVal=0xb5c0fbcf, size=32)))
+                       2, SymBitVec(0xb5c0fbcf, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[0], ss[4] = RND(ss[5], ss[6], ss[7], ss[0], ss[1], ss[2], ss[3], ss[4],
-                       3, SymBitVec(BitVector(intVal=0xe9b5dba5, size=32)))
+                       3, SymBitVec(0xe9b5dba5, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[7], ss[3] = RND(ss[4], ss[5], ss[6], ss[7], ss[0], ss[1], ss[2], ss[3],
-                       4, SymBitVec(BitVector(intVal=0x3956c25b, size=32)))
+                       4, SymBitVec(0x3956c25b, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[6], ss[2] = RND(ss[3], ss[4], ss[5], ss[6], ss[7], ss[0], ss[1], ss[2],
-                       5, SymBitVec(BitVector(intVal=0x59f111f1, size=32)))
+                       5, SymBitVec(0x59f111f1, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[5], ss[1] = RND(ss[2], ss[3], ss[4], ss[5], ss[6], ss[7], ss[0], ss[1],
-                       6, SymBitVec(BitVector(intVal=0x923f82a4, size=32)))
+                       6, SymBitVec(0x923f82a4, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[4], ss[0] = RND(ss[1], ss[2], ss[3], ss[4], ss[5], ss[6], ss[7], ss[0],
-                       7, SymBitVec(BitVector(intVal=0xab1c5ed5, size=32)))
+                       7, SymBitVec(0xab1c5ed5, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[3], ss[7] = RND(ss[0], ss[1], ss[2], ss[3], ss[4], ss[5], ss[6], ss[7],
-                       8, SymBitVec(BitVector(intVal=0xd807aa98, size=32)))
+                       8, SymBitVec(0xd807aa98, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[2], ss[6] = RND(ss[7], ss[0], ss[1], ss[2], ss[3], ss[4], ss[5], ss[6],
-                       9, SymBitVec(BitVector(intVal=0x12835b01, size=32)))
+                       9, SymBitVec(0x12835b01, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[1], ss[5] = RND(ss[6], ss[7], ss[0], ss[1], ss[2], ss[3], ss[4], ss[5],
-                       10, SymBitVec(BitVector(intVal=0x243185be, size=32)))
+                       10, SymBitVec(0x243185be, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[0], ss[4] = RND(ss[5], ss[6], ss[7], ss[0], ss[1], ss[2], ss[3], ss[4],
-                       11, SymBitVec(BitVector(intVal=0x550c7dc3, size=32)))
+                       11, SymBitVec(0x550c7dc3, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[7], ss[3] = RND(ss[4], ss[5], ss[6], ss[7], ss[0], ss[1], ss[2], ss[3],
-                       12, SymBitVec(BitVector(intVal=0x72be5d74, size=32)))
+                       12, SymBitVec(0x72be5d74, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[6], ss[2] = RND(ss[3], ss[4], ss[5], ss[6], ss[7], ss[0], ss[1], ss[2],
-                       13, SymBitVec(BitVector(intVal=0x80deb1fe, size=32)))
+                       13, SymBitVec(0x80deb1fe, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[5], ss[1] = RND(ss[2], ss[3], ss[4], ss[5], ss[6], ss[7], ss[0], ss[1],
-                       14, SymBitVec(BitVector(intVal=0x9bdc06a7, size=32)))
+                       14, SymBitVec(0x9bdc06a7, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[4], ss[0] = RND(ss[1], ss[2], ss[3], ss[4], ss[5], ss[6], ss[7], ss[0],
-                       15, SymBitVec(BitVector(intVal=0xc19bf174, size=32)))
+                       15, SymBitVec(0xc19bf174, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[3], ss[7] = RND(ss[0], ss[1], ss[2], ss[3], ss[4], ss[5], ss[6], ss[7],
-                       16, SymBitVec(BitVector(intVal=0xe49b69c1, size=32)))
+                       16, SymBitVec(0xe49b69c1, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[2], ss[6] = RND(ss[7], ss[0], ss[1], ss[2], ss[3], ss[4], ss[5], ss[6],
-                       17, SymBitVec(BitVector(intVal=0xefbe4786, size=32)))
+                       17, SymBitVec(0xefbe4786, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[1], ss[5] = RND(ss[6], ss[7], ss[0], ss[1], ss[2], ss[3], ss[4], ss[5],
-                       18, SymBitVec(BitVector(intVal=0x0fc19dc6, size=32)))
+                       18, SymBitVec(0x0fc19dc6, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[0], ss[4] = RND(ss[5], ss[6], ss[7], ss[0], ss[1], ss[2], ss[3], ss[4],
-                       19, SymBitVec(BitVector(intVal=0x240ca1cc, size=32)))
+                       19, SymBitVec(0x240ca1cc, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[7], ss[3] = RND(ss[4], ss[5], ss[6], ss[7], ss[0], ss[1], ss[2], ss[3],
-                       20, SymBitVec(BitVector(intVal=0x2de92c6f, size=32)))
+                       20, SymBitVec(0x2de92c6f, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[6], ss[2] = RND(ss[3], ss[4], ss[5], ss[6], ss[7], ss[0], ss[1], ss[2],
-                       21, SymBitVec(BitVector(intVal=0x4a7484aa, size=32)))
+                       21, SymBitVec(0x4a7484aa, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[5], ss[1] = RND(ss[2], ss[3], ss[4], ss[5], ss[6], ss[7], ss[0], ss[1],
-                       22, SymBitVec(BitVector(intVal=0x5cb0a9dc, size=32)))
+                       22, SymBitVec(0x5cb0a9dc, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[4], ss[0] = RND(ss[1], ss[2], ss[3], ss[4], ss[5], ss[6], ss[7], ss[0],
-                       23, SymBitVec(BitVector(intVal=0x76f988da, size=32)))
+                       23, SymBitVec(0x76f988da, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[3], ss[7] = RND(ss[0], ss[1], ss[2], ss[3], ss[4], ss[5], ss[6], ss[7],
-                       24, SymBitVec(BitVector(intVal=0x983e5152, size=32)))
+                       24, SymBitVec(0x983e5152, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[2], ss[6] = RND(ss[7], ss[0], ss[1], ss[2], ss[3], ss[4], ss[5], ss[6],
-                       25, SymBitVec(BitVector(intVal=0xa831c66d, size=32)))
+                       25, SymBitVec(0xa831c66d, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[1], ss[5] = RND(ss[6], ss[7], ss[0], ss[1], ss[2], ss[3], ss[4], ss[5],
-                       26, SymBitVec(BitVector(intVal=0xb00327c8, size=32)))
+                       26, SymBitVec(0xb00327c8, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[0], ss[4] = RND(ss[5], ss[6], ss[7], ss[0], ss[1], ss[2], ss[3], ss[4],
-                       27, SymBitVec(BitVector(intVal=0xbf597fc7, size=32)))
+                       27, SymBitVec(0xbf597fc7, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[7], ss[3] = RND(ss[4], ss[5], ss[6], ss[7], ss[0], ss[1], ss[2], ss[3],
-                       28, SymBitVec(BitVector(intVal=0xc6e00bf3, size=32)))
+                       28, SymBitVec(0xc6e00bf3, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[6], ss[2] = RND(ss[3], ss[4], ss[5], ss[6], ss[7], ss[0], ss[1], ss[2],
-                       29, SymBitVec(BitVector(intVal=0xd5a79147, size=32)))
+                       29, SymBitVec(0xd5a79147, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[5], ss[1] = RND(ss[2], ss[3], ss[4], ss[5], ss[6], ss[7], ss[0], ss[1],
-                       30, SymBitVec(BitVector(intVal=0x06ca6351, size=32)))
+                       30, SymBitVec(0x06ca6351, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[4], ss[0] = RND(ss[1], ss[2], ss[3], ss[4], ss[5], ss[6], ss[7], ss[0],
-                       31, SymBitVec(BitVector(intVal=0x14292967, size=32)))
+                       31, SymBitVec(0x14292967, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[3], ss[7] = RND(ss[0], ss[1], ss[2], ss[3], ss[4], ss[5], ss[6], ss[7],
-                       32, SymBitVec(BitVector(intVal=0x27b70a85, size=32)))
+                       32, SymBitVec(0x27b70a85, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[2], ss[6] = RND(ss[7], ss[0], ss[1], ss[2], ss[3], ss[4], ss[5], ss[6],
-                       33, SymBitVec(BitVector(intVal=0x2e1b2138, size=32)))
+                       33, SymBitVec(0x2e1b2138, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[1], ss[5] = RND(ss[6], ss[7], ss[0], ss[1], ss[2], ss[3], ss[4], ss[5],
-                       34, SymBitVec(BitVector(intVal=0x4d2c6dfc, size=32)))
+                       34, SymBitVec(0x4d2c6dfc, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[0], ss[4] = RND(ss[5], ss[6], ss[7], ss[0], ss[1], ss[2], ss[3], ss[4],
-                       35, SymBitVec(BitVector(intVal=0x53380d13, size=32)))
+                       35, SymBitVec(0x53380d13, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[7], ss[3] = RND(ss[4], ss[5], ss[6], ss[7], ss[0], ss[1], ss[2], ss[3],
-                       36, SymBitVec(BitVector(intVal=0x650a7354, size=32)))
+                       36, SymBitVec(0x650a7354, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[6], ss[2] = RND(ss[3], ss[4], ss[5], ss[6], ss[7], ss[0], ss[1], ss[2],
-                       37, SymBitVec(BitVector(intVal=0x766a0abb, size=32)))
+                       37, SymBitVec(0x766a0abb, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[5], ss[1] = RND(ss[2], ss[3], ss[4], ss[5], ss[6], ss[7], ss[0], ss[1],
-                       38, SymBitVec(BitVector(intVal=0x81c2c92e, size=32)))
+                       38, SymBitVec(0x81c2c92e, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[4], ss[0] = RND(ss[1], ss[2], ss[3], ss[4], ss[5], ss[6], ss[7], ss[0],
-                       39, SymBitVec(BitVector(intVal=0x92722c85, size=32)))
+                       39, SymBitVec(0x92722c85, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[3], ss[7] = RND(ss[0], ss[1], ss[2], ss[3], ss[4], ss[5], ss[6], ss[7],
-                       40, SymBitVec(BitVector(intVal=0xa2bfe8a1, size=32)))
+                       40, SymBitVec(0xa2bfe8a1, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[2], ss[6] = RND(ss[7], ss[0], ss[1], ss[2], ss[3], ss[4], ss[5], ss[6],
-                       41, SymBitVec(BitVector(intVal=0xa81a664b, size=32)))
+                       41, SymBitVec(0xa81a664b, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[1], ss[5] = RND(ss[6], ss[7], ss[0], ss[1], ss[2], ss[3], ss[4], ss[5],
-                       42, SymBitVec(BitVector(intVal=0xc24b8b70, size=32)))
+                       42, SymBitVec(0xc24b8b70, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[0], ss[4] = RND(ss[5], ss[6], ss[7], ss[0], ss[1], ss[2], ss[3], ss[4],
-                       43, SymBitVec(BitVector(intVal=0xc76c51a3, size=32)))
+                       43, SymBitVec(0xc76c51a3, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[7], ss[3] = RND(ss[4], ss[5], ss[6], ss[7], ss[0], ss[1], ss[2], ss[3],
-                       44, SymBitVec(BitVector(intVal=0xd192e819, size=32)))
+                       44, SymBitVec(0xd192e819, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[6], ss[2] = RND(ss[3], ss[4], ss[5], ss[6], ss[7], ss[0], ss[1], ss[2],
-                       45, SymBitVec(BitVector(intVal=0xd6990624, size=32)))
+                       45, SymBitVec(0xd6990624, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[5], ss[1] = RND(ss[2], ss[3], ss[4], ss[5], ss[6], ss[7], ss[0], ss[1],
-                       46, SymBitVec(BitVector(intVal=0xf40e3585, size=32)))
+                       46, SymBitVec(0xf40e3585, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[4], ss[0] = RND(ss[1], ss[2], ss[3], ss[4], ss[5], ss[6], ss[7], ss[0],
-                       47, SymBitVec(BitVector(intVal=0x106aa070, size=32)))
+                       47, SymBitVec(0x106aa070, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[3], ss[7] = RND(ss[0], ss[1], ss[2], ss[3], ss[4], ss[5], ss[6], ss[7],
-                       48, SymBitVec(BitVector(intVal=0x19a4c116, size=32)))
+                       48, SymBitVec(0x19a4c116, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[2], ss[6] = RND(ss[7], ss[0], ss[1], ss[2], ss[3], ss[4], ss[5], ss[6],
-                       49, SymBitVec(BitVector(intVal=0x1e376c08, size=32)))
+                       49, SymBitVec(0x1e376c08, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[1], ss[5] = RND(ss[6], ss[7], ss[0], ss[1], ss[2], ss[3], ss[4], ss[5],
-                       50, SymBitVec(BitVector(intVal=0x2748774c, size=32)))
+                       50, SymBitVec(0x2748774c, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[0], ss[4] = RND(ss[5], ss[6], ss[7], ss[0], ss[1], ss[2], ss[3], ss[4],
-                       51, SymBitVec(BitVector(intVal=0x34b0bcb5, size=32)))
+                       51, SymBitVec(0x34b0bcb5, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[7], ss[3] = RND(ss[4], ss[5], ss[6], ss[7], ss[0], ss[1], ss[2], ss[3],
-                       52, SymBitVec(BitVector(intVal=0x391c0cb3, size=32)))
+                       52, SymBitVec(0x391c0cb3, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[6], ss[2] = RND(ss[3], ss[4], ss[5], ss[6], ss[7], ss[0], ss[1], ss[2],
-                       53, SymBitVec(BitVector(intVal=0x4ed8aa4a, size=32)))
+                       53, SymBitVec(0x4ed8aa4a, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[5], ss[1] = RND(ss[2], ss[3], ss[4], ss[5], ss[6], ss[7], ss[0], ss[1],
-                       54, SymBitVec(BitVector(intVal=0x5b9cca4f, size=32)))
+                       54, SymBitVec(0x5b9cca4f, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[4], ss[0] = RND(ss[1], ss[2], ss[3], ss[4], ss[5], ss[6], ss[7], ss[0],
-                       55, SymBitVec(BitVector(intVal=0x682e6ff3, size=32)))
+                       55, SymBitVec(0x682e6ff3, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[3], ss[7] = RND(ss[0], ss[1], ss[2], ss[3], ss[4], ss[5], ss[6], ss[7],
-                       56, SymBitVec(BitVector(intVal=0x748f82ee, size=32)))
+                       56, SymBitVec(0x748f82ee, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[2], ss[6] = RND(ss[7], ss[0], ss[1], ss[2], ss[3], ss[4], ss[5], ss[6],
-                       57, SymBitVec(BitVector(intVal=0x78a5636f, size=32)))
+                       57, SymBitVec(0x78a5636f, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[1], ss[5] = RND(ss[6], ss[7], ss[0], ss[1], ss[2], ss[3], ss[4], ss[5],
-                       58, SymBitVec(BitVector(intVal=0x84c87814, size=32)))
+                       58, SymBitVec(0x84c87814, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[0], ss[4] = RND(ss[5], ss[6], ss[7], ss[0], ss[1], ss[2], ss[3], ss[4],
-                       59, SymBitVec(BitVector(intVal=0x8cc70208, size=32)))
+                       59, SymBitVec(0x8cc70208, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[7], ss[3] = RND(ss[4], ss[5], ss[6], ss[7], ss[0], ss[1], ss[2], ss[3],
-                       60, SymBitVec(BitVector(intVal=0x90befffa, size=32)))
+                       60, SymBitVec(0x90befffa, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[6], ss[2] = RND(ss[3], ss[4], ss[5], ss[6], ss[7], ss[0], ss[1], ss[2],
-                       61, SymBitVec(BitVector(intVal=0xa4506ceb, size=32)))
+                       61, SymBitVec(0xa4506ceb, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[5], ss[1] = RND(ss[2], ss[3], ss[4], ss[5], ss[6], ss[7], ss[0], ss[1],
-                       62, SymBitVec(BitVector(intVal=0xbef9a3f7, size=32)))
+                       62, SymBitVec(0xbef9a3f7, size=32))
     itr += 1
     if itr == difficulty:
         finish(ss)
         return
 
     ss[4], ss[0] = RND(ss[1], ss[2], ss[3], ss[4], ss[5], ss[6], ss[7], ss[0],
-                       63, SymBitVec(BitVector(intVal=0xc67178f2, size=32)))
+                       63, SymBitVec(0xc67178f2, size=32))
     finish(ss)
 
 
 def sha_init():
     sha_info = dict()
     init_data = [0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19]
-    sha_info['digest'] = [SymBitVec(BitVector(intVal=x, size=32)) for x in init_data]
+    sha_info['digest'] = [SymBitVec(x, size=32) for x in init_data]
     sha_info['count_lo'] = 0
     sha_info['count_hi'] = 0
     sha_info['local'] = 0
     sha_info['digestsize'] = 32
-    sha_info['data'] = [SymBitVec(BitVector(intVal=0, size=8)) for _ in range(SHA_BLOCKSIZE)]
+    sha_info['data'] = [SymBitVec(0, size=8) for _ in range(SHA_BLOCKSIZE)]
     return sha_info
 
 
@@ -521,7 +521,7 @@ def getbuf(input_data):
     elif isinstance(input_data, str):
         b = bytes(input_data, 'utf-8')
         i = int.from_bytes(b, 'big')
-        return SymBitVec(BitVector(intVal=i, size=len(b) * 8), unknown=True)
+        return SymBitVec(i, size=len(b) * 8, unknown=True)
     else:
         raise NotImplementedError('SHA256: Unsupported input of type "{}"'.format(type(input_data)))
 
@@ -584,9 +584,9 @@ def sha_final(sha_info, difficulty):
     lo_bit_count = sha_info['count_lo']
     hi_bit_count = sha_info['count_hi']
     count = (lo_bit_count >> 3) & 0x3f
-    sha_info['data'][count] = SymBitVec(BitVector(intVal=0x80, size=8))
+    sha_info['data'][count] = SymBitVec(0x80, size=8)
     count += 1
-    zero = SymBitVec(BitVector(intVal=0, size=8))
+    zero = SymBitVec(0, size=8)
 
     if count > SHA_BLOCKSIZE - 8:
         # zero the bytes in data after the count
@@ -597,8 +597,8 @@ def sha_final(sha_info, difficulty):
     else:
         sha_info['data'] = sha_info['data'][:count] + [zero for _ in range(SHA_BLOCKSIZE - count)]
 
-    lo_bit_count = SymBitVec(BitVector(intVal=lo_bit_count, size=32))
-    hi_bit_count = SymBitVec(BitVector(intVal=hi_bit_count, size=32))
+    lo_bit_count = SymBitVec(lo_bit_count, size=32)
+    hi_bit_count = SymBitVec(hi_bit_count, size=32)
     sha_info['data'][56] = (hi_bit_count >> 24).resize(8)
     sha_info['data'][57] = (hi_bit_count >> 16).resize(8)
     sha_info['data'][58] = (hi_bit_count >> 8).resize(8)
@@ -612,7 +612,9 @@ def sha_final(sha_info, difficulty):
 
     dig = []
     for i in sha_info['digest']:
-        dig += [(i >> 24) & F8, (i >> 16) & F8, (i >> 8) & F8, i & F8]
+        dig += [(i >> 24), (i >> 16), (i >> 8), i]
+    for i in range(len(dig)):
+        dig[i] = dig[i].extract(24, 32)
     return dig
 
 
@@ -642,9 +644,9 @@ class sha256(object):
         self._real_hasher.update(input_bytes)
 
     def hexdigest(self):
-        return ''.join(['%.2x' % int(i) for i in self.bitvecDigest()])
+        return ''.join(['%.2x' % int(i) for i in self.bitvec_digest()])
 
-    def bitvecDigest(self):
+    def bitvec_digest(self):
         result = sha_final(self._sha.copy(), self._difficulty)[:self._sha['digestsize']]
         if self._difficulty == 64:
             dig = ''.join(['%.2x' % int(i) for i in result])
@@ -662,12 +664,21 @@ def test():
     assert '8113ebf33c97daa9998762aacafe750c7cefc2b2f173c90c59663a57fe626f21' == sha256(a_str * 7).hexdigest()
 
     a_str_bytes = bytes(a_str, 'utf-8')
-    result = sha256(BitVector(intVal=int.from_bytes(a_str_bytes, 'big'), size=len(a_str) * 8)).hexdigest()
+    a_str_int = int.from_bytes(a_str_bytes, 'big')
+    input_msg = SymBitVec(a_str_int, size=len(a_str) * 8)
+    result = sha256(input_msg).hexdigest()
     assert 'd7b553c6f09ac85d142415f857c5310f3bbbe7cdd787cce4b985acedd585266f' == result
+
+    SymBitVec.tensor_mode = True
+    input_msg = SymBitVec(a_str_int, size=len(a_str) * 8)
+    result = sha256(input_msg).hexdigest()
+    assert 'd7b553c6f09ac85d142415f857c5310f3bbbe7cdd787cce4b985acedd585266f' == result
+    SymBitVec.tensor_mode = False
 
     s = sha256(a_str)
     s.update(a_str)
     assert '03d9963e05a094593190b6fc794cb1a3e1ac7d7883f0b5855268afeccc70d461' == s.hexdigest()
+    print('All SHA-256 tests passed.')
 
 
 if __name__ == '__main__':

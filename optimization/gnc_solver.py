@@ -14,7 +14,7 @@ class GNCSolver(object):
         self.weights = dict()
         self.gnc = GNC(self.C)
 
-    def solve(self, factors, observed, config):
+    def solve(self, factors, observed, config, all_bits):
         rv_indices = []
         num_and, num_priors = 0, 0
         for rv, factor in factors.items():
@@ -58,6 +58,10 @@ class GNCSolver(object):
                 if ftype == 'INV':
                     inp = rv2idx[factor.input_rvs[0]]
                     self.sq_residuals[r_idx] = (1.0 - x[i] - x[inp]) ** 2
+                    r_idx += 1
+                elif ftype == 'SAME':
+                    inp = rv2idx[factor.input_rvs[0]]
+                    self.sq_residuals[r_idx] = (x[i] - x[inp]) ** 2
                     r_idx += 1
                 elif ftype == 'AND':
                     inp1, inp2 = factor.input_rvs

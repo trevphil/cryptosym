@@ -6,11 +6,18 @@ import yaml
 import argparse
 import subprocess
 import numpy as np
+from time import time
 from BitVector import BitVector
 
+from optimization import utils
 from optimization.factor import Factor
 from optimization.gradient_solver import GradientSolver
 from optimization.gnc_solver import GNCSolver
+from optimization.cplex_milp_solver import CplexMILPSolver
+from optimization.ortools_cp_solver import OrtoolsCpSolver
+from optimization.ortools_milp_solver import OrtoolsMILPSolver
+from optimization.cplex_cp_solver import CplexCPSolver
+from optimization.gurobi_milp_solver import GurobiMILPSolver
 
 
 def load_factors(factor_file):
@@ -44,6 +51,25 @@ def load_bitvectors(data_file, config):
     return samples
 
 
+def select_solver(solver_type):
+    if solver_type == 'cplex_milp':
+        return CplexMILPSolver()
+    elif solver_type == 'cplex_cp':
+        return CplexCPSolver()
+    elif solver_type == 'gradient':
+        return GradientSolver()
+    elif solver_type == 'gnc':
+        return GNCSolver()
+    elif solver_type == 'ortools_cp':
+        return OrtoolsCpSolver()
+    elif solver_type == 'ortools_milp':
+        return OrtoolsMILPSolver()
+    elif solver_type == 'gurobi_milp':
+        return GurobiMILPSolver()
+    else:
+        raise NotImplementedError('Invalid solver: %s' % solver_type)
+
+
 def verify(true_input, predicted_input, config):
     num_input_bits = config['num_input_bits']
     hash_algo = config['hash']
@@ -67,8 +93,10 @@ def verify(true_input, predicted_input, config):
 
     if true_out == pred_out:
         print('Hashes match: {}'.format(true_out))
+        return True
     else:
         print('Expected:\n\t{}\nGot:\n\t{}'.format(true_out, pred_out))
+        return False
 
 
 def main(dataset, solver_type):
@@ -86,35 +114,53 @@ def main(dataset, solver_type):
     observed_rvs = set(config['observed_rv_indices'])
     num_test = min(1, len(bitvectors))
 
-    if solver_type.lower() == 'gradient':
-        solver = GradientSolver()
-    elif solver_type.lower() == 'gnc':
-        solver = GNCSolver()
-    else:
-        raise NotImplementedError('Invalid solver: %s' % solver_type)
+    solver = select_solver(solver_type)
+
+    stats = {
+        'problem_size': [],
+        'runtime': [],
+        'difficulty': [],
+        'success': []
+    }
 
     for test_case in range(num_test):
         print('Test case %d/%d' % (test_case + 1, num_test))
         sample = bitvectors[test_case]
         observed = {rv: bool(sample[rv]) for rv in observed_rvs}
-        predictions = solver.solve(factors, observed, config)
+        observed = utils.set_implicit_observed(factors, observed, sample)
+
+        start = time()
+        if len(observed) == len(factors):
+            predictions = observed  # Everything was solved already :)
+        else:
+            predictions = solver.solve(factors, observed, config, sample)
+
+        stats['runtime'].append(time() - start)
+        stats['problem_size'].append(len(factors))
+        stats['difficulty'].append(config['difficulty'])
+
         predicted_input = BitVector(size=n_input)
         true_input = sample[:n_input]
         for rv_idx, predicted_val in predictions.items():
             if rv_idx < n_input:
                 predicted_input[rv_idx] = bool(predicted_val)
 
-        verify(true_input, predicted_input, config)
+        success = verify(true_input, predicted_input, config)
+        stats['success'].append(float(success))
+    return stats
 
 
 if __name__ == '__main__':
+    np.random.seed(1)
     parser = argparse.ArgumentParser(
         description='Hash reversal via optimization')
     parser.add_argument('dataset', type=str,
         help='Path to the dataset directory')
-    parser.add_argument('--solver', type=str, default='gradient',
-        help='The type of optimization (gradient or GNC)')
+    choices = ['gradient', 'gnc', 'cplex_milp', 'cplex_cp',
+        'ortools_cp', 'ortools_milp', 'gurobi_milp']
+    parser.add_argument('--solver', type=str, default='ortools_cp',
+        help='The solving technique', choices=choices)
     args = parser.parse_args()
-    main(args.dataset, args.solver)
+    _ = main(args.dataset, args.solver)
     print('Done.')
     sys.exit(0)

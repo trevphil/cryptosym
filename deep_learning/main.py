@@ -49,6 +49,7 @@ def main(dataset_dir):
 
     now = datetime.datetime.now()
     out_dir = 'learning_{:%Y-%m-%d-%H-%M-%S}'.format(now)
+    out_dir = os.path.join('learning_output', out_dir)
     Path(out_dir).mkdir(parents=True, exist_ok=True)
 
     learning = SupervisedLearning(out_dir, config, factors, dsets)

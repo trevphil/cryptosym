@@ -7,11 +7,11 @@ class GradientSolver(object):
     def __init__(self):
         pass
 
-    def solve(self, factors, observed, config):
+    def solve(self, factors, observed, config, all_bits):
         rv_indices = list(sorted(rv for rv in factors.keys()))
         rv2idx = {rv_index: i for i, rv_index in enumerate(rv_indices)}
         num_rvs = len(rv_indices)
-        init_guess = np.ones(num_rvs) * 0.5
+        init_guess = np.ones(num_rvs) # * 0.5
         for rv, val in observed.items():
             init_guess[rv2idx[rv]] = float(val)
 
@@ -20,7 +20,7 @@ class GradientSolver(object):
             for ref in factor.referenced_rvs:
                 factors_per_rv[ref].add(factor_idx)
 
-        # Ax = b (for INV) --> Ax - b = 0
+        # Ax = b (for INV and SAME) --> Ax - b = 0
         A = np.zeros((num_rvs, num_rvs))
         b = np.zeros((num_rvs, 1))
 
@@ -34,13 +34,18 @@ class GradientSolver(object):
 
         for rv in rv_indices:
             factor = factors[rv]
-            if factor.factor_type == 'INV':
+            if factor.factor_type in ('INV', 'SAME'):
                 inp, out = factor.input_rvs[0], factor.output_rv
                 inp, out = rv2idx[inp], rv2idx[out]
-                # x_i + x_j = 1.0 since the RVs are inverses
-                A[out, out] = 1.0
-                A[out, inp] = 1.0
-                b[out] = 1.0
+                if factor.factor_type == 'INV':
+                    # x_i + x_j = 1.0 since the RVs are inverses
+                    A[out, out] = 1.0
+                    A[out, inp] = 1.0
+                    b[out] = 1.0
+                else:
+                    # x_i - x_j = 0.0 since the RVs are the same
+                    A[out, out] = -1.0
+                    A[out, inp] = 1.0
 
         and_factor_indices = [rv for rv in rv_indices
                             if factors[rv].factor_type == 'AND']

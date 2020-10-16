@@ -21,6 +21,6 @@ class HashReversalDataset(Dataset):
         return len(self.bits)
 
     def __getitem__(self, idx):
-        bits = torch.from_numpy(self.bits[idx])
-        target = torch.from_numpy(self.target[idx])
+        bits = torch.from_numpy(self.bits[idx]).float()
+        target = torch.from_numpy(self.target[idx]).float()
         return bits, target

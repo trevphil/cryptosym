@@ -8,10 +8,11 @@ from enum import Enum, unique
 class FactorType(Enum):
     PRIOR = 'PRIOR'
     INV = 'INV'
+    SAME = 'SAME'
     AND = 'AND'
 
     @staticmethod
-    def numInputs(factor_type):
+    def num_inputs(factor_type):
         if not (factor_type in FactorType):
             raise NotImplementedError(
                 'Invalid factor type: {}'.format(factor_type))
@@ -19,6 +20,7 @@ class FactorType(Enum):
         return {
             FactorType.PRIOR: 0,
             FactorType.INV: 1,
+            FactorType.SAME: 1,
             FactorType.AND: 2,
         }[factor_type]
 
@@ -31,7 +33,7 @@ class Factor(object):
         Factor.directed_graph = nx.DiGraph()
 
     def __init__(self, factor_type, out, inputs=[]):
-        self.n_inputs = FactorType.numInputs(factor_type)
+        self.n_inputs = FactorType.num_inputs(factor_type)
         if self.n_inputs != len(inputs):
             err_msg = 'Factor {} requires {} input(s), given {}'.format(
                 factor_type.value, self.n_inputs, len(inputs))

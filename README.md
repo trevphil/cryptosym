@@ -26,14 +26,19 @@ This repository contains my attempts at pre-image attacks on SHA-256, MD5, and B
 
 # Dependencies and Installation
 
-I recommend using [Anaconda](https://www.anaconda.com/) to run the code in this project. It's the easiest way I've found to install the [z3 prover](https://github.com/Z3Prover/z3) for Python.
+I recommend using [Anaconda](https://www.anaconda.com/) to create a Python environment, and then install the necessary libraries with `pip`.
 
-Use Python 3.5 and install from `requirements.txt`:
+Use Python 3.6 and install from `requirements.txt`:
 
 ```
-conda create -n hash_reversal python=3.5
-conda activate hash_reversal
-pip install -r requirements.txt --user
+conda create -n preimage python=3.6
+conda activate preimage
+pip install -r requirements.txt
+```
+
+For Cplex, make sure to do:
+```
+export PYTHONPATH=/Applications/CPLEX_Studio1210/cplex/python/3.6/x86-64_osx
 ```
 
 # Deterministic SHA-256 Reversal
@@ -143,7 +148,7 @@ In the undirected graph, each RV is a node. We make an edge between every possib
 
 Then the graph is pruned, because having too many edges leads to divergence of loopy belief propagation and also rare events (see [Future Work and Extensions](#future-work-and-extensions)). I prune the graph by removing the lowest-weighted edges from each node until it has no more than `max_connections` edges to other nodes. This `max_connections` is a hyperparameter, but setting it too high will cause the issues that I mentioned earlier.
 
-**Note**: The method I have described for generating the graph's structure is a heuristic, and there may be better ways out there (for example, the [Bayesian information criterion](Bayesian_information_criterion)). In general, to consider all possible graph architectures is an exponentially hard problem. 
+**Note**: The method I have described for generating the graph's structure is a heuristic, and there may be better ways out there (for example, the [Bayesian information criterion](Bayesian_information_criterion)). In general, to consider all possible graph architectures is an exponentially hard problem.
 
 #### Assigning directions to the BN
 

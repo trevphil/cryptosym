@@ -1,12 +1,29 @@
 # -*- coding: utf-8 -*-
 
+import torch
 import numpy as np
 from BitVector import BitVector
 
 from dataset_generation import nsha256
-from dataset_generation.bit import Bit, saveFactors
+from dataset_generation.bit import Bit, save_factors
 from dataset_generation.factor import Factor
 from dataset_generation.sym_bit_vec import SymBitVec
+
+
+def hash_algorithms():
+    return {
+        'sha256': SHA256Hash(),
+        'lossyPseudoHash': LossyPseudoHash(),
+        'nonLossyPseudoHash': NonLossyPseudoHash(),
+        'xorConst': XorConst(),
+        'shiftLeft': ShiftLeft(),
+        'shiftRight': ShiftRight(),
+        'invert': Invert(),
+        'andConst': AndConst(),
+        'orConst': OrConst(),
+        'addConst': AddConst(),
+        'add': Add(),
+    }
 
 
 class SymbolicHash(object):
@@ -14,22 +31,25 @@ class SymbolicHash(object):
         self.hash_rv_indices = []
         self.ignorable = None
 
-    def hashIndices(self):
+    def hash_indices(self):
         return self.hash_rv_indices
 
-    def bitsPerSample(self):
+    def bits_per_sample(self):
         return len(Bit.rv_bits)
 
-    def allBits(self):
+    def all_bits(self):
         return BitVector(bitlist=[bool(bit.val) for bit in Bit.rv_bits])
 
-    def numUsefulFactors(self):
-        self.ignorable = self.findIgnorableRVs()
+    def num_useful_factors(self):
+        if self.ignorable is None:
+            self.ignorable = self.find_ignorable_rvs()
         assert len(Bit.factors) == len(Bit.rv_bits)
         return len(Bit.factors) - len(self.ignorable)
 
-    def saveFactors(self, filename):
-        saveFactors(filename, self.ignorable)
+    def save_factors(self, filename):
+        if self.ignorable is None:
+            self.ignorable = self.find_ignorable_rvs()
+        save_factors(filename, self.ignorable)
 
     def hash(self, hash_input, difficulty):
         raise NotImplementedError  # Override in sub-classes
@@ -45,13 +65,15 @@ class SymbolicHash(object):
 
         Bit.reset()
         Factor.reset()
+        SymBitVec.tensor_mode = isinstance(hash_input, torch.Tensor)
         hash_input = SymBitVec(hash_input, unknown=True)
         h = self.hash(hash_input, difficulty)
-        self.hash_rv_indices = h.rvIndices()
+        if not SymBitVec.tensor_mode:
+            self.hash_rv_indices = h.rv_indices()
         return h
 
-    def findIgnorableRVs(self):
-        idx, num_bits = 0, self.bitsPerSample()
+    def find_ignorable_rvs(self):
+        idx, num_bits = 0, self.bits_per_sample()
         seen, ignorable = set(), set(range(num_bits))
         queue = list(self.hash_rv_indices)
         while idx < len(queue):
@@ -64,37 +86,11 @@ class SymbolicHash(object):
             idx += 1
         return ignorable
 
-    def forwardPropagateInput(self, hash_input):
-        if self.ignorable is None:
-            self.ignorable = self.findIgnorableRVs()
-
-        bitvals = dict()
-        for factor in Bit.factors:
-            rv = factor.out.index
-            if rv in self.ignorable:
-                continue
-            ftype = factor.factor_type.value
-            if ftype == 'PRIOR':
-                bitvals[rv] = float(hash_input[rv])
-            elif ftype == 'INV':
-                inp = factor.inputs[0].index
-                bitvals[rv] = 1 - bitvals[inp]
-            elif ftype == 'AND':
-                inp1 = factor.inputs[0].index
-                inp2 = factor.inputs[1].index
-                bitvals[rv] = inp1 * inp2
-            else:
-                raise RuntimeError(ftype)
-        fwd = BitVector(size=len(self.hash_rv_indices))
-        for i, rv in enumerate(self.hash_rv_indices):
-            fwd[i] = bool(bitvals[rv])
-        return fwd
-
 
 class SHA256Hash(SymbolicHash):
     def hash(self, hash_input, difficulty):
         bitvecs = nsha256.sha256(
-            hash_input, difficulty=difficulty).bitvecDigest()
+            hash_input, difficulty=difficulty).bitvec_digest()
         result = bitvecs[0]
         for bv in bitvecs[1:]:
             result = result.concat(bv)
@@ -111,12 +107,12 @@ class LossyPseudoHash(SymbolicHash):
         B = int.from_bytes(np.random.bytes(n // 8), 'big')
         C = int.from_bytes(np.random.bytes(n // 8), 'big')
         D = int.from_bytes(np.random.bytes(n // 8), 'big')
-        A = SymBitVec(BitVector(intVal=A, size=n))
-        B = SymBitVec(BitVector(intVal=B, size=n))
-        C = SymBitVec(BitVector(intVal=C, size=n))
-        D = SymBitVec(BitVector(intVal=D, size=n))
+        A = SymBitVec(A, size=n)
+        B = SymBitVec(B, size=n)
+        C = SymBitVec(C, size=n)
+        D = SymBitVec(D, size=n)
 
-        mask = SymBitVec(BitVector(intVal=(1 << n4) - 1, size=n))
+        mask = SymBitVec((1 << n4) - 1, size=n)
         h = hash_input
 
         for _ in range(difficulty):
@@ -141,12 +137,12 @@ class NonLossyPseudoHash(SymbolicHash):
         B = int.from_bytes(np.random.bytes(n // 8), 'big')
         C = int.from_bytes(np.random.bytes(n // 8), 'big')
         D = int.from_bytes(np.random.bytes(n // 8), 'big')
-        A = SymBitVec(BitVector(intVal=A, size=n))
-        B = SymBitVec(BitVector(intVal=B, size=n))
-        C = SymBitVec(BitVector(intVal=C, size=n))
-        D = SymBitVec(BitVector(intVal=D, size=n))
+        A = SymBitVec(A, size=n)
+        B = SymBitVec(B, size=n)
+        C = SymBitVec(C, size=n)
+        D = SymBitVec(D, size=n)
 
-        mask = SymBitVec(BitVector(intVal=(1 << n4) - 1, size=n))
+        mask = SymBitVec((1 << n4) - 1, size=n)
         h = hash_input
 
         for _ in range(difficulty):
@@ -161,7 +157,7 @@ class NonLossyPseudoHash(SymbolicHash):
 class AddConst(SymbolicHash):
     def hash(self, hash_input, difficulty):
         n = len(hash_input)
-        A = SymBitVec(BitVector(intVal=0x4F65D4D99B70EF1B, size=n))
+        A = SymBitVec(0x4F65D4D99B70EF1B, size=n)
         return hash_input + A
 
 
@@ -169,7 +165,7 @@ class Add(SymbolicHash):
     def hash(self, hash_input, difficulty):
         n = len(hash_input)
         half_n = n // 2
-        mask = SymBitVec(BitVector(intVal=(1 << half_n) - 1, size=n))
+        mask = SymBitVec((1 << half_n) - 1, size=n)
         a = (hash_input & mask)
         b = (hash_input >> half_n) & mask
         out = (a + b) & mask
@@ -181,21 +177,21 @@ class Add(SymbolicHash):
 class XorConst(SymbolicHash):
     def hash(self, hash_input, difficulty):
         n = len(hash_input)
-        A = SymBitVec(BitVector(intVal=0x4F65D4D99B70EF1B, size=n))
+        A = SymBitVec(0x4F65D4D99B70EF1B, size=n)
         return hash_input ^ A
 
 
 class AndConst(SymbolicHash):
     def hash(self, hash_input, difficulty):
         n = len(hash_input)
-        A = SymBitVec(BitVector(intVal=0x4F65D4D99B70EF1B, size=n))
+        A = SymBitVec(0x4F65D4D99B70EF1B, size=n)
         return hash_input & A
 
 
 class OrConst(SymbolicHash):
     def hash(self, hash_input, difficulty):
         n = len(hash_input)
-        A = SymBitVec(BitVector(intVal=0x4F65D4D99B70EF1B, size=n))
+        A = SymBitVec(0x4F65D4D99B70EF1B, size=n)
         return hash_input | A
 
 

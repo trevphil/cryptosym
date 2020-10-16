@@ -6,21 +6,32 @@ import torch
 import torch.nn.functional as F
 from time import time
 
+from dataset_generation.hash_funcs import hash_algorithms
+
 
 class ReverseHashLoss(object):
-    def __init__(self, output_dir, tb_writer, factors, obs_rv_set,
-                 obs_rv2idx, num_input_bits):
+    def __init__(self, config, output_dir, tb_writer, factors,
+                 observed_rvs, obs_rv2idx, num_input_bits):
+        self.difficulty = int(config['difficulty'])
+        self.algo = hash_algorithms()[config['hash']]
         self.output_dir = output_dir
         self.tb_writer = tb_writer
         self.factors = factors
         self.num_input_bits = num_input_bits
-        self.observed_rvs = list(sorted(obs_rv_set))
+        self.observed_rvs = observed_rvs
+        self.obs_rv_set = set(self.observed_rvs)
         self.obs_rv2idx = obs_rv2idx
         self.purpose = None
         self.epoch = None
         self.batch_results = []
         self.epoch_losses = {'train': dict(), 'val': dict(), 'test': dict()}
         self.report_freq = 100
+
+        self.and_factor_indices = []
+        for rv, f in self.factors.items():
+            if f.factor_type == 'AND':
+                self.and_factor_indices.append(rv)
+        self.and_factor_indices = list(sorted(self.and_factor_indices))
 
     def new_epoch(self, epoch, purpose):
         self.purpose = purpose
@@ -91,9 +102,9 @@ class ReverseHashLoss(object):
         epoch_accuracy = total_acc / n_samples
         return epoch_loss, epoch_accuracy
 
-    def __call__(self, batch_idx, predicted_input, target_output):
+    def __call__(self, batch_idx, predicted_input, target_output, all_bits):
         start = time()
-        loss, accuracy = self.loss_function(predicted_input, target_output)
+        loss, accuracy = self.loss_function(predicted_input, target_output, all_bits)
         comp_time = time() - start
 
         aggregated_loss = torch.mean(loss)
@@ -114,34 +125,29 @@ class ReverseHashLoss(object):
 
         loss_dict = self.get_loss_dict(aggregated_loss)
         prefix = '{}/Epoch{}'.format(purp, str(self.epoch).zfill(2))
-        self.tb_writer.add_scalar('%s/Loss' % prefix, aggregated_loss, batch_idx)
+        self.tb_writer.add_scalars('%s/Loss' % prefix, loss_dict, batch_idx)
         self.tb_writer.add_scalars('%s/Accuracy' % prefix, acc_dict, batch_idx)
 
         return aggregated_loss, loss, accuracy
 
-    def loss_function(self, predicted_input, target_output):
-        # TODO: Add penalty for inconsistency of input->output
-        #       for AND and INV gates
-        node_val = dict()
-        rvs = sorted(self.factors.keys())
 
-        for rv in rvs:
-            factor = self.factors[rv]
-            ftype = factor.factor_type
-            if ftype == 'PRIOR':
-                assert rv < self.num_input_bits
-                node_val[rv] = predicted_input[:, rv]
-            elif ftype == 'INV':
-                node_val[rv] = 1.0 - node_val[factor.input_rvs[0]]
-            elif ftype == 'AND':
-                inp1, inp2 = factor.input_rvs
-                node_val[rv] = node_val[inp1] * node_val[inp2]
 
-        output = torch.zeros((0, ))
-        for rv in self.observed_rvs:
-            output = torch.cat((output, node_val[rv]))
+    def loss_function(self, bit_predictions, target_hash, all_bits):
+        hash_input = bit_predictions[:self.num_input_bits]
+        hash_input = torch.clamp(torch.round(hash_input), 0, 1)
+        predicted_hash = self.algo(hash_input, self.difficulty).bits
 
         loss = F.binary_cross_entropy_with_logits(
-            output, target_output, reduction='none')
-        accuracy = torch.zeros(1)
+            predicted_hash, target_hash, reduction='none')
+
+        a = self.A(bit_predictions)
+        err = a @ torch.reshape(bit_predictions, (-1, 1)) + self.b
+        err = torch.sum(err ** 2) / bit_predictions.numel()
+        print('err = {}'.format(err))
+        loss += err
+
+        num_incorrect = torch.sum(torch.abs(predicted_hash - target_hash))
+        num_total = float(predicted_hash.size(0))
+        accuracy = (num_total - num_incorrect) / num_total
+
         return loss, accuracy

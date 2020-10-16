@@ -39,6 +39,7 @@ InferenceTool::InferenceTool(std::shared_ptr<Probability> prob,
 InferenceTool::~InferenceTool() {}
 
 VariableAssignments InferenceTool::propagateObserved(const VariableAssignments &observed) const {
+  // TODO: Propagate backward --> forward --> backward ... until nothing new observed
   VariableAssignments fully_obs = observed;
   std::list<size_t> queue;
   std::set<size_t> seen;
@@ -57,6 +58,10 @@ VariableAssignments InferenceTool::propagateObserved(const VariableAssignments &
     if (f_type == "INV") {
       const size_t parent = inputs.at(0);
       fully_obs[parent] = !rv_val;
+      if (seen.count(parent) == 0) queue.push_back(parent);
+    } else if (f_type == "SAME") {
+      const size_t parent = inputs.at(0);
+      fully_obs[parent] = rv_val;
       if (seen.count(parent) == 0) queue.push_back(parent);
     } else if (f_type == "AND" && rv_val == true) {
       const size_t inp1 = inputs.at(0);

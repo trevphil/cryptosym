@@ -26,22 +26,6 @@ def sample(nbits):
     return BitVector(intVal=num, size=nbits)
 
 
-def hashAlgos():
-    return {
-        'sha256': hash_funcs.SHA256Hash(),
-        'lossyPseudoHash': hash_funcs.LossyPseudoHash(),
-        'nonLossyPseudoHash': hash_funcs.NonLossyPseudoHash(),
-        'xorConst': hash_funcs.XorConst(),
-        'shiftLeft': hash_funcs.ShiftLeft(),
-        'shiftRight': hash_funcs.ShiftRight(),
-        'invert': hash_funcs.Invert(),
-        'andConst': hash_funcs.AndConst(),
-        'orConst': hash_funcs.OrConst(),
-        'addConst': hash_funcs.AddConst(),
-        'add': hash_funcs.Add(),
-    }
-
-
 def extend(dataset, data):
     dataset.resize(dataset.shape[0] + 1, axis=0)
     dataset[-1] = data
@@ -51,7 +35,7 @@ def main():
     random.seed(0)
     np.random.seed(0)
 
-    hash_algos = hashAlgos()
+    hash_algos = hash_funcs.hash_algorithms()
 
     parser = argparse.ArgumentParser(
         description='Hash reversal dataset generator')
@@ -62,7 +46,7 @@ def main():
     parser.add_argument('--num-input-bits', type=int, default=64,
                         help='Number of bits in each input message to the hash function')
     parser.add_argument('--hash-algo', type=str, default='sha256',
-                        choices=list(sorted(hashAlgos().keys())),
+                        choices=list(sorted(hash_algos.keys())),
                         help='Choose the hashing algorithm to apply to the input data')
     parser.add_argument('--difficulty', type=int, default=1,
                         help='SHA-256 difficulty (an interger between 1 and 64 inclusive)')
@@ -112,14 +96,14 @@ def main():
 
     # Generate symbolic dependencies as factors
     algo = hash_algos[args.hash_algo]
-    algo(sample(num_input_bits), difficulty=args.difficulty)
-    n = algo.bitsPerSample()
-    hash_rv_indices = algo.hashIndices()
-    num_useful_factors = algo.numUsefulFactors()
-    n_target = len(hash_rv_indices)
+    h = algo(sample(num_input_bits), difficulty=args.difficulty)
+    n = algo.bits_per_sample()
+    hash_rv_indices = algo.hash_indices()
+    num_useful_factors = algo.num_useful_factors()
+    hash_len = len(h)
 
     print('Saving hash function symbolically as a factor graph...')
-    algo.saveFactors(graph_file)
+    algo.save_factors(graph_file)
 
     datasets = {
         'train': (h5py.File(train_file, 'w'), N_train),
@@ -132,22 +116,21 @@ def main():
         print('Creating %s split...' % split)
         dset, num_samples = datasets[split]
         bits = dset.create_dataset('bits', (0, n),
-            maxshape=(num_samples, n), dtype=float)
-        target = dset.create_dataset('target', (0, n_target),
-            maxshape=(num_samples, n_target), dtype=float)
+            maxshape=(num_samples, n), dtype=bool)
+        target = dset.create_dataset('target', (0, hash_len),
+            maxshape=(num_samples, hash_len), dtype=bool)
         for sample_idx in range(num_samples):
             hash_input = sample(num_input_bits)
-            algo(hash_input, difficulty=args.difficulty)
-            bitvals = algo.allBits()
+            hash_out = algo(hash_input, difficulty=args.difficulty)
+            bitvals = algo.all_bits()
             bv += bitvals
-            targetvals = algo.forwardPropagateInput(hash_input)
             if len(bv) % 8 == 0:
                 # Wait until the BitVector is a multiple of 8
                 with open(data_file, 'ab') as bin_file:
                     bv.write_to_file(bin_file)
                 bv = BitVector(size=0)  # Reset the BitVector
             extend(bits, np.array(bitvals, dtype=bool))
-            extend(target, np.array(targetvals, dtype=bool))
+            extend(target, np.array(hash_out, dtype=bool))
         dset.close()
     assert len(bv) == 0, 'Data is garbage, not a multiple of 8'
 
@@ -161,11 +144,12 @@ def main():
         'num_val': N_val,
         'num_test': N_test,
         'observed_rv_indices': hash_rv_indices,
-        'difficulty': args.difficulty
+        'difficulty': args.difficulty,
+        'num_hash_bits': hash_len
     }
 
     with open(params_file, 'w') as f:
-        yaml.dump(params, f, default_flow_style=None)
+        yaml.dump(params, f, default_flow_style=None, width=int(1e5))
 
     print('Generated dataset with parameters:')
     for key in sorted(params.keys()):
