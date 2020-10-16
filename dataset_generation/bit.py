@@ -44,6 +44,8 @@ class Bit(object):
         result_val = a.val ^ b.val
 
         if a.is_rv and b.is_rv:
+            if a.index == b.index:
+                return Bit(result_val, False)  # a ^ a is always zero
             tmp1 = ~(a & b)
             tmp2 = ~(a & tmp1)
             tmp3 = ~(b & tmp1)
@@ -76,6 +78,8 @@ class Bit(object):
             return Bit(result_val, False)
 
         if a.is_rv and b.is_rv:
+            if a.index == b.index:
+                return a  # (0 | 0 = 0), (1 | 1 = 1)
             tmp1 = ~(a & a)
             tmp2 = ~(b & b)
             return ~(tmp1 & tmp2)
@@ -100,7 +104,7 @@ class Bit(object):
 
         if a.is_rv and b.is_rv:
             if a.index == b.index:
-                return a
+                return a  # (0 & 0 = 0), (1 & 1 = 1)
             result = Bit(result_val, True)
             Bit.factors.append(Factor(FactorType.AND, result, [a, b]))
             return result

@@ -11,13 +11,17 @@
 
 # Disclaimers
 
-1. The implementation of this code works in theory, but I do not claim that it breaks the security of any cryptographic hash functions. To reverse an entire hash, it may still require infinite compute. I tested this code on high-performant Google Cloud servers; after 1 week of running, the program did not terminate or yield a successful pre-image attack.
-
-2. I wrote this code without doing research on methods other people have tried for breaking cryptographic hash functions. This is because I wanted to have fresh, creative ideas without being influenced by prior research. However I did some research afterwards, and a list of relevant papers and topics are provided at the end of the README.
+The implementation of this code works in theory, but I do not claim that it breaks the security of any cryptographic hash functions. To reverse something like a 64-round SHA-256 algorithm, it's probably still infeasible.
 
 # Description
 
-This repository contains my attempts at pre-image attacks on SHA-256, MD5, and BitCoin. It tries to solve the following questions **deterministically** (with a SAT solver) and **probabilistically** (with Bayesian networks and loopy belief propagation):
+This repository contains my attempts at pre-image attacks on SHA-256, or more in general, recovering the set of input bits X given known output bits Y and the relationship between X and Y, f(X) = Y.
+
+The repository also provides a generalized way of implementing hash functions to symbolically "trace" all bits that flow through the function. The results are stored in a standardized way to a **dataset** directory, which can then be used by different techniques to recover the initial input bits to the hash function.
+
+In the code, bits may often be referred to as **random variables (RVs)** and operations between bits like AND gates or INV (= inversion = NOT gates) may often be referred to as **factors**.
+
+Some questions that this code tries to answer include...
 
 - Given a SHA-256 hash, can one find the input used to generate the hash?
 - Given a partially known hash input and constraints on the (unknown) hash output, can the unknown section of the hash input be recovered?
@@ -36,7 +40,9 @@ conda activate preimage
 pip install -r requirements.txt
 ```
 
-For Cplex, make sure to do:
+Some of the solvers use fancy backends like [Gurobi](https://www.gurobi.com/) or [Cplex](https://www.ibm.com/analytics/cplex-optimizer). These will not be installed with the requirements. If you wish to install them, an academic license is usually avaialable for free.
+
+For Cplex on Mac OS X, make sure to do:
 ```
 export PYTHONPATH=/Applications/CPLEX_Studio1210/cplex/python/3.6/x86-64_osx
 ```
