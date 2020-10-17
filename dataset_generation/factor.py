@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import sympy
 import networkx as nx
 from enum import Enum, unique
 
@@ -55,3 +56,22 @@ class Factor(object):
             input_str = ';'.join(str(inp.index) for inp in self.inputs)
             return '{};{};{}'.format(
                 self.factor_type.value, self.out.index, input_str)
+
+    def cnf(self, rv2idx):
+        X = lambda i: 'x%d' % (rv2idx[i] + 1)  # 1-indexed, not 0-indexed
+        out = sympy.Symbol(X(self.out.index))
+        inp = [sympy.Symbol(X(i.index)) for i in self.inputs]
+
+        if self.factor_type == FactorType.INV:
+            s = str(sympy.to_cnf(sympy.Equivalent(out, ~inp[0])))
+        elif self.factor_type == FactorType.SAME:
+            s = str(sympy.to_cnf(sympy.Equivalent(out, inp[0])))
+        elif self.factor_type == FactorType.AND:
+            s = str(sympy.to_cnf(sympy.Equivalent(inp[0] & inp[1], out)))
+        else:
+            err = 'No supported conjunctive normal form for %s' % self.factor_type
+            raise NotImplementedError(err)
+
+        s = s.replace('~', '-').replace(' & ', '\n').replace('(', '').replace(')', '')
+        s = s.replace('x', '').replace(' |', '')
+        return s.split('\n')

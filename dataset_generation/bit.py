@@ -133,8 +133,25 @@ class Bit(object):
         return sum2, carry_out
 
 
-def save_factors(filename, ignore):
-    with open(filename, 'w') as f:
-        for factor in Bit.factors:
-            if factor.out.index not in ignore:
-                f.write(str(factor) + '\n')
+def save_factors(factor_file, cnf_file, ignore):
+    factors = [f for f in Bit.factors if f.out.index not in ignore]
+    rvs = list(sorted([f.out.index for f in factors]))
+    rv2idx = {rv: i for i, rv in enumerate(rvs)}
+
+    with open(factor_file, 'w') as f:
+        for factor in factors:
+            f.write(str(factor) + '\n')
+
+    with open(cnf_file, 'w') as f:
+        # https://logic.pdmi.ras.ru/~basolver/dimacs.html
+        num_variables = len(factors)
+        num_clauses = 0
+        f.write(' ' * 50 + '\n')  # first line will be replaced later
+        for factor in factors:
+            if factor.factor_type == FactorType.PRIOR:
+                continue
+            for clause in factor.cnf(rv2idx):
+                f.write(clause + '\n')
+                num_clauses += 1
+        f.seek(0)
+        f.write('p cnf %d %d' % (num_variables, num_clauses))
