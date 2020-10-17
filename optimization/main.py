@@ -18,6 +18,8 @@ from optimization.ortools_cp_solver import OrtoolsCpSolver
 from optimization.ortools_milp_solver import OrtoolsMILPSolver
 from optimization.cplex_cp_solver import CplexCPSolver
 from optimization.gurobi_milp_solver import GurobiMILPSolver
+from optimization.minisat_solver import MinisatSolver
+from optimization.cryptominisat_solver import CryptoMinisatSolver
 
 
 def load_factors(factor_file):
@@ -66,6 +68,10 @@ def select_solver(solver_type):
         return OrtoolsMILPSolver()
     elif solver_type == 'gurobi_milp':
         return GurobiMILPSolver()
+    elif solver_type == 'minisat':
+        return MinisatSolver()
+    elif solver_type == 'crypto_minisat':
+        return CryptoMinisatSolver()
     else:
         raise NotImplementedError('Invalid solver: %s' % solver_type)
 
@@ -102,6 +108,7 @@ def verify(true_input, predicted_input, config):
 def main(dataset, solver_type):
     config_file = os.path.join(dataset, 'params.yaml')
     factor_file = os.path.join(dataset, 'factors.txt')
+    cnf_file = os.path.join(dataset, 'factors.cnf')
     data_file = os.path.join(dataset, 'data.bits')
 
     config = load_config(config_file)
@@ -132,6 +139,8 @@ def main(dataset, solver_type):
         start = time()
         if len(observed) == len(factors):
             predictions = observed  # Everything was solved already :)
+        elif solver_type in ('minisat', 'crypto_minisat'):
+            predictions = solver.solve(factors, observed, cnf_file)
         else:
             predictions = solver.solve(factors, observed, config, sample)
 
@@ -157,8 +166,8 @@ if __name__ == '__main__':
     parser.add_argument('dataset', type=str,
         help='Path to the dataset directory')
     choices = ['gradient', 'gnc', 'cplex_milp', 'cplex_cp',
-        'ortools_cp', 'ortools_milp', 'gurobi_milp']
-    parser.add_argument('--solver', type=str, default='ortools_cp',
+        'ortools_cp', 'ortools_milp', 'gurobi_milp', 'minisat', 'crypto_minisat']
+    parser.add_argument('--solver', type=str, default='crypto_minisat',
         help='The solving technique', choices=choices)
     args = parser.parse_args()
     _ = main(args.dataset, args.solver)

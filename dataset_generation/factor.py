@@ -74,4 +74,5 @@ class Factor(object):
 
         s = s.replace('~', '-').replace(' & ', '\n').replace('(', '').replace(')', '')
         s = s.replace('x', '').replace(' |', '')
-        return s.split('\n')
+        clauses = s.split('\n')
+        return [clause + ' 0' for clause in clauses]
