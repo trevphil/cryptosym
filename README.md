@@ -1,10 +1,26 @@
+![Bit relationships for 4 rounds of SHA-256](./images/sha256_d4.png)
+Bit relationships after 4-round SHA-256. 17806 nodes, 26383 edges.
+
+# Contents
+
+- [Description](#description)
+- [Installation](#installation)
+	- [Python](#python)
+	- [C++](#c++)
+- [Quickstart](#quickstart)
+	- [Writing your own hash function](#writing-your-own-hash-function)
+- [How it works](#how-it-works)
+	- [Dataset generation](#dataset-generation)
+	- [Dataset format](#dataset-format)
+- [References and Resources](#references-and-resources)
+
 # Description
 
-This repository contains Python and C++ code which attempts to reverse one-way cryptographic hash functions, with specific focus on [SHA-256](https://en.bitcoinwiki.org/wiki/SHA-256). A hash function `f` can be thought of as an operation on bits `X` to produce output bits `Y`: `f(X) = Y`. Given knowledge of `Y` and how `f` works, we want to recover `X`. This is commonly known as a [pre-image attack](https://en.wikipedia.org/wiki/Preimage_attack).
+This repository contains Python and C++ code which attempts to reverse one-way cryptographic hash functions, with specific focus on [SHA-256](https://en.bitcoinwiki.org/wiki/SHA-256). A hash function `f` can be thought of as an operation on bits `X` to produce output bits `Y`: `f(X) = Y`. Given knowledge of `Y` and how `f` works, we want to recover `X`. This is commonly known as a [preimage attack](https://en.wikipedia.org/wiki/Preimage_attack).
 
-A successful pre-image attack has serious implications for basically the entire Internet, financial community, and national defense of major governments. Hash functions are used in all kinds of domains: from BitCoin mining and transactions, to HTTPS encryption, to storage of user passwords in server databases.
+A successful preimage attack has serious implications for basically the entire Internet, financial community, and national defense of major governments. Hash functions are used in all kinds of domains: from BitCoin mining and transactions, to HTTPS encryption, to storage of user passwords in server databases.
 
-I've spent over a year trying to solve this "impossible" problem using a variety of methods, detailed below. As a **disclaimer**: I do not claim that any of these methods break the security of the full 64-round SHA-256 hash function. It's probably still infeasible. Prove me wrong :)
+I've spent a long time (too long!) trying to solve this "impossible" problem using a variety of methods, detailed below. As a **disclaimer**: I do not claim that any of these methods break the security of the full 64-round SHA-256 hash function. It's probably still infeasible. Prove me wrong :)
 
 # Installation
 
@@ -203,3 +219,21 @@ Note that no information is lost during the INV operation (we can always recover
 ### Dataset Format
 
 TODO
+
+
+
+
+
+
+
+
+
+
+
+# References and Resources
+
+- [SAT-based preimage attacks on SHA-1, Masters Thesis of Vegard Nossum](https://www.duo.uio.no/bitstream/handle/10852/34912/thesis-output.pdf?sequence=1&isAllowed=y)
+- [Explanation on using SAT solver with BitCoin](http://jheusser.github.io/2013/02/03/satcoin.html)
+- [SAT Solvers for Cryptanalysis](https://www.microsoft.com/en-us/research/publication/applications-of-sat-solvers-to-cryptanalysis-of-hash-functions/)
+- [Loopy Belief Propagation Explanation](http://nghiaho.com/?page_id=1366)
+- [md5 Implementation](https://github.com/narkkil/md5)
