@@ -22,9 +22,10 @@ class MinisatSolver(object):
         rv2idx = {rv: i for i, rv in enumerate(rvs)}
 
         modified_cnf = '/tmp/data.cnf'
+        simplified_cnf = '/tmp/simplified.cnf'
         output_file = '/tmp/out.txt'
 
-        for f in (modified_cnf, output_file):
+        for f in (modified_cnf, simplified_cnf, output_file):
             if os.path.exists(f):
                 os.remove(f)
 
@@ -35,7 +36,14 @@ class MinisatSolver(object):
                     '' if rv_val else '-', rv2idx[rv] + 1)
                 f.write(s)
 
-        cmd = ['minisat', modified_cnf, output_file]
+        # simplify
+        cmd = ['minisat', '-no-solve',
+            '-dimacs=%s' % simplified_cnf, modified_cnf]
+        output = subprocess.run(cmd,
+            stdout=subprocess.PIPE).stdout.decode('utf-8')
+        print(output)
+
+        cmd = ['minisat', simplified_cnf, output_file]
         output = subprocess.run(cmd,
             stdout=subprocess.PIPE).stdout.decode('utf-8')
         print(output)

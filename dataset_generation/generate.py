@@ -84,6 +84,7 @@ def main():
     factor_file = os.path.join(dataset_dir, 'factors.txt')
     cnf_file = os.path.join(dataset_dir, 'factors.cnf')
     viz_file = os.path.join(dataset_dir, 'graph.pdf')
+    graphml_file = os.path.join(dataset_dir, 'graph.graphml')
     train_file = os.path.join(dataset_dir, 'train.hdf5')
     val_file = os.path.join(dataset_dir, 'val.hdf5')
     test_file = os.path.join(dataset_dir, 'test.hdf5')
@@ -91,7 +92,7 @@ def main():
     Path(dataset_dir).mkdir(parents=True, exist_ok=True)
 
     for f in [data_file, params_file, factor_file, cnf_file,
-        viz_file, train_file, val_file, test_file]:
+        viz_file, graphml_file, train_file, val_file, test_file]:
         if os.path.exists(f):
             os.remove(f)
 
@@ -104,7 +105,7 @@ def main():
     hash_len = len(h)
 
     print('Saving hash function symbolically...')
-    algo.save_factors(factor_file, cnf_file)
+    algo.save_factors(factor_file, cnf_file, graphml_file)
 
     datasets = {
         'train': (h5py.File(train_file, 'w'), N_train),

@@ -13,13 +13,8 @@ from optimization import utils
 from optimization.factor import Factor
 from optimization.gradient_solver import GradientSolver
 from optimization.gnc_solver import GNCSolver
-from optimization.cplex_milp_solver import CplexMILPSolver
 from optimization.ortools_cp_solver import OrtoolsCpSolver
 from optimization.ortools_milp_solver import OrtoolsMILPSolver
-from optimization.cplex_cp_solver import CplexCPSolver
-from optimization.gurobi_milp_solver import GurobiMILPSolver
-from optimization.minisat_solver import MinisatSolver
-from optimization.cryptominisat_solver import CryptoMinisatSolver
 
 
 def load_factors(factor_file):
@@ -55,9 +50,17 @@ def load_bitvectors(data_file, config):
 
 def select_solver(solver_type):
     if solver_type == 'cplex_milp':
-        return CplexMILPSolver()
+        try:
+            from optimization.cplex_milp_solver import CplexMILPSolver
+            return CplexMILPSolver()
+        except ImportError:
+            raise 'Cplex solver not installed or installation not found'
     elif solver_type == 'cplex_cp':
-        return CplexCPSolver()
+        try:
+            from optimization.cplex_cp_solver import CplexCPSolver
+            return CplexCPSolver()
+        except ImportError:
+            raise 'Cplex solver not installed or installation not found'
     elif solver_type == 'gradient':
         return GradientSolver()
     elif solver_type == 'gnc':
@@ -67,11 +70,23 @@ def select_solver(solver_type):
     elif solver_type == 'ortools_milp':
         return OrtoolsMILPSolver()
     elif solver_type == 'gurobi_milp':
-        return GurobiMILPSolver()
+        try:
+            from optimization.gurobi_milp_solver import GurobiMILPSolver
+            return GurobiMILPSolver()
+        except ImportError:
+            raise 'Gurobi solver not installed or installation not found'
     elif solver_type == 'minisat':
-        return MinisatSolver()
+        try:
+            from optimization.minisat_solver import MinisatSolver
+            return MinisatSolver()
+        except ImportError:
+            raise 'Minisat solver not installed or installation not found'
     elif solver_type == 'crypto_minisat':
-        return CryptoMinisatSolver()
+        try:
+            from optimization.cryptominisat_solver import CryptoMinisatSolver
+            return CryptoMinisatSolver()
+        except ImportError:
+            raise 'CryptoMinisat solver not installed or installation not found'
     else:
         raise NotImplementedError('Invalid solver: %s' % solver_type)
 

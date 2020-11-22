@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import networkx as nx
+
 from dataset_generation.factor import Factor, FactorType
 
 
@@ -133,14 +135,25 @@ class Bit(object):
         return sum2, carry_out
 
 
-def save_factors(factor_file, cnf_file, ignore):
-    factors = [f for f in Bit.factors if f.out.index not in ignore]
-    rvs = list(sorted([f.out.index for f in factors]))
-    rv2idx = {rv: i for i, rv in enumerate(rvs)}
+def save_factors(factor_file, cnf_file, graphml_file, ignore):
+    factors = []
+    rvs = set()
+    g = nx.DiGraph()
+
+    for f in Bit.factors:
+        if f.out.index in ignore:
+            continue
+        factors.append(f)
+        rvs.add(f.out.index)
+        for inp in f.inputs:
+            g.add_edge(inp.index, f.out.index)
 
     with open(factor_file, 'w') as f:
         for factor in factors:
             f.write(str(factor) + '\n')
+
+    nx.write_graphml(g, graphml_file)
+    rv2idx = {rv: i for i, f in enumerate()}
 
     with open(cnf_file, 'w') as f:
         # https://logic.pdmi.ras.ru/~basolver/dimacs.html
@@ -150,7 +163,7 @@ def save_factors(factor_file, cnf_file, ignore):
         for factor in factors:
             if factor.factor_type == FactorType.PRIOR:
                 continue
-            for clause in factor.cnf(rv2idx):
+            for clause in factor.cnf():
                 f.write(clause + '\n')
                 num_clauses += 1
         f.seek(0)

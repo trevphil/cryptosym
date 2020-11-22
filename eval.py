@@ -43,8 +43,7 @@ def plot_stats(stats):
         print('%s: problem size %d is predicted to take %.0f minutes' % (
             solver, MAX_SIZE, np.round(np.power(10, y_pred) / 60)))
 
-        c = [colors[i] for _ in range(x.shape[0])]
-        ax.scatter(x, y, c=c, label=solver)
+        ax.scatter(x, y, c=colors[i], label=solver)
         ax.plot(x_fit, y_fit, c=colors[i])
         i += 1
 
