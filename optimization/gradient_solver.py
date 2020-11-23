@@ -12,98 +12,88 @@ class GradientSolver(object):
         rv_indices = list(sorted(rv for rv in factors.keys()))
         rv2idx = {rv_index: i for i, rv_index in enumerate(rv_indices)}
         num_rvs = len(rv_indices)
-        init_guess = np.ones(num_rvs) # * 0.5
-        for rv, val in observed.items():
-            init_guess[rv2idx[rv]] = float(val)
 
-        factors_per_rv = {rv: set([rv]) for rv in rv_indices}
-        for factor_idx, factor in factors.items():
-            for ref in factor.referenced_rvs:
-                factors_per_rv[ref].add(factor_idx)
-
-        # Ax = b (for INV and SAME) --> Ax - b = 0
-        A = np.zeros((num_rvs, num_rvs))
-        b = np.zeros((num_rvs, 1))
-
-        # A_obs * x = b_obs
-        A_obs = np.zeros((num_rvs, num_rvs))
-        b_obs = np.zeros((num_rvs, 1))
-        for rv, val in observed.items():
-            i = rv2idx[rv]
-            A_obs[i, i] = 1.0
-            b_obs[i] = float(val)
-
-        for rv in rv_indices:
-            factor = factors[rv]
+        A_eq = np.zeros((0, num_rvs))  # Ax + b = 0
+        b_eq = np.zeros((0, ))
+        A_ineq = np.zeros((0, num_rvs))  # Ax + b >= 0
+        b_ineq = np.zeros((0, ))
+        for rv, factor in factors.items():
+            rv = rv2idx[rv]
             if factor.factor_type in ('INV', 'SAME'):
-                inp, out = factor.input_rvs[0], factor.output_rv
-                inp, out = rv2idx[inp], rv2idx[out]
+                row = np.zeros(num_rvs)
+                row[rv] = 1
+                inp = rv2idx[factor.input_rvs[0]]
                 if factor.factor_type == 'INV':
-                    # x_i + x_j = 1.0 since the RVs are inverses
-                    A[out, out] = 1.0
-                    A[out, inp] = 1.0
-                    b[out] = 1.0
-                else:
-                    # x_i - x_j = 0.0 since the RVs are the same
-                    A[out, out] = -1.0
-                    A[out, inp] = 1.0
+                    row[inp] = 1  # X = 1 - Y
+                    b_eq = np.concatenate((b_eq, (-1, )))
+                elif factor.factor_type == 'SAME':
+                    row[inp] = -1  # X = Y
+                    b_eq = np.concatenate((b_eq, (0, )))
+                A_eq = np.vstack((A_eq, row))
+            elif factor.factor_type == 'AND':
+                inp1, inp2 = factor.input_rvs
+                inp1, inp2 = rv2idx[inp1], rv2idx[inp2]
+                row1 = np.zeros(num_rvs)
+                row1[rv] = -1
+                row1[inp1] = 1
+                b1 = (0, )  # X <= Y
+                row2 = np.zeros(num_rvs)
+                row2[rv] = -1
+                row2[inp2] = 1
+                b2 = (0, )  # X <= Z
+                row3 = np.zeros(num_rvs)
+                row3[rv] = 1
+                row3[inp1] = -1
+                row3[inp2] = -1
+                b3 = (-1, )  # X >= Y + Z - 1
+                A_ineq = np.vstack((A_ineq, row1, row2, row3))
+                b_ineq = np.concatenate((b_ineq, b1, b2, b3))
 
-        and_factor_indices = [rv for rv in rv_indices
-                            if factors[rv].factor_type == 'AND']
+        # x >= 0
+        A_ineq = np.vstack((A_ineq, np.eye(num_rvs)))
+        b_ineq = np.concatenate((b_ineq, np.zeros(num_rvs)))
+
+        init_guess = np.ones(num_rvs) * 0.5
+        c = np.zeros(num_rvs)  # x = c
+        E = np.zeros((num_rvs, num_rvs))
+        for rv, val in observed.items():
+            rv = rv2idx[rv]
+            init_guess[rv] = float(val)
+            c[rv] = float(val)
+            E[rv, rv] = 1
+
+        def eq_cons_fn(x):
+            return A_eq @ x + b_eq
+
+        def eq_cons_jac(x):
+            return A_eq
+
+        def ineq_cons_fn(x):
+            return A_ineq @ x + b_ineq
+
+        def ineq_cons_jac(x):
+            return A_ineq
 
         def f(x):
-            for i in and_factor_indices:
-                factor = factors[i]
-                inp1, inp2 = factor.input_rvs
-                out = factor.output_rv
-                inp1, inp2, out = rv2idx[inp1], rv2idx[inp2], rv2idx[out]
-                # Update the A matrix s.t. inp1 * inp2 - out = 0.0
-                A[out, out] = -1.0
-                A[out, inp1] = x[inp2]
+            y = x - c
+            feval = y.T @ E @ y
+            jac = 2 * E @ y
+            return feval, jac
 
-            x = x.reshape((-1, 1))
-            err_sq = (A @ x - b) ** 2
-            obs_err_sq = (A_obs @ x - b_obs) ** 2
-            return np.sum(err_sq) + np.sum(obs_err_sq)
+        cons = (
+            {'type': 'eq', 'fun': eq_cons_fn, 'jac': eq_cons_jac},
+            {'type': 'ineq', 'fun': ineq_cons_fn, 'jac': ineq_cons_jac}
+        )
 
-        # Jacobian: J[i] = derivative of f(x) w.r.t. variable `i`
-        def jacobian(x):
-            J = np.zeros(num_rvs)
-            for rv in rv_indices:
-                for factor_idx in factors_per_rv[rv]:
-                    i = rv2idx[rv]
-                    J[i] += factors[factor_idx].first_order(rv, x, rv2idx)
-            for rv, val in observed.items():
-                i = rv2idx[rv]
-                J[i] += 2 * (x[i] - float(val))
-            return J
-
-        # Hessian: H[i, j] = derivative of J[j] w.r.t. variable `i`
-        def hessian(x):
-            H = np.zeros((num_rvs, num_rvs))
-            for rv_j in rv_indices:
-                for factor_idx in factors_per_rv[rv_j]:
-                    factor = factors[factor_idx]
-                    for rv_i in factor.referenced_rvs:
-                        i, j = rv2idx[rv_i], rv2idx[rv_j]
-                        H[i, j] += factor.second_order(rv_j, rv_i, x, rv2idx)
-            for rv, val in observed.items():
-                i = rv2idx[rv]
-                H[i, i] += 2.0
-            assert np.sum(np.abs(H - H.T)) < 1e-5, 'Hessian is not symmetric'
-            return H
-
-        method = 'trust-ncg'
+        method = 'SLSQP'
         options = {'maxiter': 400, 'disp': False}
 
         start = time()
         print('Starting optimization...')
-        result = minimize(f, init_guess, method=method, options=options,
-                        jac=jacobian, hess=hessian)
+        result = minimize(f, init_guess, method=method, constraints=cons,
+                          jac=True, options=options)
         print('Optimization finished in %.2f s' % (time() - start))
-        # print('\tsuccess: {}'.format(result['success']))
-        print('\tstatus:  {}'.format(result['message']))
-        print('\terror:   {:.2f}'.format(result['fun']))
+        print(result)
 
-        pred = lambda rv: result['x'][rv2idx[rv]]
+        pred = lambda rv: result.x[rv2idx[rv]]
         return {rv: (1.0 if pred(rv) > 0.5 else 0.0) for rv in rv_indices}
