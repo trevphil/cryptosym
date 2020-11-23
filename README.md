@@ -259,13 +259,13 @@ Below is an outline of what each file contains:
 
 Using the latest and greatest as of November 2020, the solving methods are listed from what I believe to be most effective to least effective. Even the best methods seem to fail on the 17th round of SHA-256 (discussed below).
 
-1. [CryptoMiniSat](): I didn't even take advantage of CryptoMiniSat's optimized treatment of XOR since all operations were reduced to AND and INV logic gates
-2. [MiniSat]()
-3. [Gurobi MILP]()
-4. [Google `ortools` MILP]()
-5. [Google `ortools` constraint programming]()
-6. [Cplex constraint programming]()
-7. [Cplex MILP]()
+1. [CryptoMiniSat](https://www.msoos.org/cryptominisat5/): I didn't even take advantage of CryptoMiniSat's optimized treatment of XOR since all operations were reduced to AND and INV logic gates
+2. [MiniSat](http://minisat.se/)
+3. [Gurobi MILP](https://www.gurobi.com/documentation/9.0/quickstart_mac/py_python_interface.html#section:Python)
+4. [Google `ortools` MILP](https://developers.google.com/optimization/mip/mip)
+5. [Google `ortools` constraint programming](https://developers.google.com/optimization/cp)
+6. [Cplex constraint programming](https://www.ibm.com/analytics/cplex-cp-optimizer)
+7. [Cplex MILP](https://www.ibm.com/support/knowledgecenter/SSSA5P_12.7.1/ilog.odms.cplex.help/CPLEX/UsrMan/topics/discr_optim/mip/01_mip_title_synopsis.html)
 8. Least-squares optimization
 9. [Graduated non-convexity](https://arxiv.org/pdf/1909.08605)
 10. Loopy belief propagation
@@ -309,31 +309,22 @@ What exactly is a "message"? It's hard to explain, to be honest. It's quite math
 
 A factor graph is a bipartite graph wherein one side of the graph has RVs (bits) as nodes, and the other side has all of the "factors" as nodes (AND, INV logic gates). Each factor represents a conditional probability distribution and has a "query" RV (output of the logic gate) as well as a list of "dependency" RVs (inputs to the logic gate).
 
-For example, a factor `f` may represent `P(rv1 | rv5, rv10, rv21)`, i.e. the probability of observing `RV 1 = 0` or `RV 1 = 1`, given that we know the values of `RV 5`, `RV 10`, and `RV 21`.
+For example, let `C = A & B`. Then a factor `f` may represent `P(C | A, B)`, i.e. the probability of observing `C = 0` or `C = 1`, given that we know the values of `A` and `B`.
 
-Each factor has a table which contains the probability of the query, given all possible values of the dependencies. If there are N dependencies in a factor, the table size is 2^N, so you can see how it is beneficial to keep the size of each factor low.
+Each factor has a table which contains the [conditional probability distribution](https://en.wikipedia.org/wiki/Conditional_probability_distribution) (CPD) of the query bit, given all possible values of the dependencies. The table is used during the message-passing algorithm. If there are N dependencies in a factor, the table size is 2^N, so you can see how it is beneficial to keep the size of each factor low. Our factor `f` would have a table such as:
 
-Let's take an example. Factor `f` has query `hash_bit_5` and dependencies `[bit_13, bit_21]`. It represents the [conditional probability distribution](https://en.wikipedia.org/wiki/Conditional_probability_distribution) (CPD) `P(hash_bit_5 | bit_13, bit_21)`.
-
-Our factor `f` would have a table such as:
-
-
-| `bit_13`        | `bit_21`        | `P(hash_bit_5 = 1 ｜  bit_13, bit_21)` |
+| `A`        | `B`        | `P(C = 1 ｜  A, B)` |
 | --------------- | --------------- | ------------------------------------ |
-| 0             | 0             | `P(1 ｜ 0, 0) = ?`                    |
-| 0             | 1             | `P(1 ｜ 0, 1) = ?`                    |
-| 1             | 0             | `P(1 ｜ 1, 0) = ?`                    |
-| 1             | 1             | `P(1 ｜ 1, 1) = ?`                    |
+| 0             | 0             | `P(1 ｜ 0, 0) = 0`                    |
+| 0             | 1             | `P(1 ｜ 0, 1) = 0`                    |
+| 1             | 0             | `P(1 ｜ 1, 0) = 0`                    |
+| 1             | 1             | `P(1 ｜ 1, 1) = 1`                    |
 
+**Note**: It's not necessary to compute `P(C = 0 | A, B)` because it can be derived by `1.0 - P(C = 1 | A, B)`.
 
-**Note**: It's not necessary to compute `P(hash_bit_5 = 0 | bit_13, bit_21)` because it can be derived by `1.0 - P(hash_bit_5 = 1 | bit_13, bit_21)`.
+I have implemented the belief propagation algorithm in C++ since it can be quite slow in Python with a large problem size. However I found that this method performs poorly in practice. Belief propagation on a tree structure will always converge, but there are no convergence guarantees for a cyclic factor graph (so-called "loopy belief propagation").
 
-
-Let's say we want to calculate a CPD. How would we calculate, for example, `P(hash_bit_5 = 1 | bit_13 = 0, bit_21 = 1)`?
-
-It's simple actually: go through each item in the dataset. Count how many items have `hash_bit_5 = 1 AND bit_13 = 0 AND bit_21 = 1`. Let's call this value **x**.
-
-Now count how many items have `bit_13 = 0 AND bit_21 = 1`. Let's call this value **y**. The CPD we want can be approximated with **x / y**.
+What often ends up happening is divergence of the message values because of the cyclic message passing, and we run into numerical overflow/underflow errors. A possible solution could be a logarithmic version of the sum-product algorithm, which I _tried_ to implement but gave up on (see [here](https://www.researchgate.net/publication/3924103_Efficient_implementations_of_the_sum-product_algorithm_for_decoding_LDPC_codes), TODO: try [this one](https://www2.cs.duke.edu/research/AI/papers/Felzenszwalb06.pdf)).
 
 ### Machine Learning
 
@@ -353,3 +344,7 @@ You can always try to contact me (trevphil3 -at- gmail -dot- com) and I will do 
 - [SAT Solvers for Cryptanalysis](https://www.microsoft.com/en-us/research/publication/applications-of-sat-solvers-to-cryptanalysis-of-hash-functions/)
 - [Visualizing cryptographic hash functions](http://blog.sophisticatedways.net/2018/11/visualising-sha-1.html)
 - [md5 Implementation](https://github.com/narkkil/md5)
+- [Survey of modeling and optimization strategies
+to solve high-dimensional design problems
+with computationally-expensive black-box functions](http://www.sfu.ca/~gwa5/pdf/2009_01.pdf)
+- [Single-Trace Attacks on Keccak](https://eprint.iacr.org/2020/371.pdf)
