@@ -1,7 +1,7 @@
 ![Bit relationships for 4 rounds of SHA-256](./images/sha256_d4.png)
 Bit relationships after 4-round SHA-256. 17806 nodes, 26383 edges.
 
-![Lossy "pseudo-hash" visualization](./images/lossy_pseudohash.pdf)
+![Lossy "pseudo-hash" visualization](./images/lossy_pseudohash.png)
 Lossy "pseudo-hash" used to validate solver accuracy, showing relationship between input and output bits.
 
 # Contents
@@ -275,13 +275,13 @@ These strategies can be broken into a few general categories that I will discuss
 
 First, here is a log-log plot of problem size (# unknown variables) vs. runtime for a select number of solvers, as well as a linear regression on this log-log data. The problem sizes correspond to SHA-256 rounds of 1, 4, 8, 12, and 16. These solvers were run on my weak dual-core 16 GB MacBook Air, and none were allowed to run for more than 24 hours.
 
-![solve times](./images/solve_times.pdf)
+![solve times](./images/solve_times.png)
 
 I think it is interesting to see how the SHA-256 algorithm's complexity increases with the number of rounds. Something happens in the 17th round that causes a major spike in complexity. My best guess is that an AND gate between bits "very far apart" in the computation is the issue. If you look at the maximum distance between the indices of random variable bits which are inputs to an AND gate, the maximum gap is around 126,000 bits apart up to 16 rounds. At 17 rounds, the gap increases to 197,000 bits. For a SAT solver, this could mean that it doesn't detect an invalid variable assignment until values have been propagated a long way. For the full 64-round SHA-256, the maximum gap is 386,767.
 
 Below, we can see that the number of INV and AND gates grow relatively linearly, at the same rate, as the number of rounds increases. The prior factors correspond to hash input bits, so naturally they stay constant.
 
-![complexity growth](./images/sha256_factors.pdf)
+![complexity growth](./images/sha256_factors.png)
 
 ### SAT Solver
 
