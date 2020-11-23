@@ -46,10 +46,10 @@ class SymbolicHash(object):
         assert len(Bit.factors) == len(Bit.rv_bits)
         return len(Bit.factors) - len(self.ignorable)
 
-    def save_factors(self, filename):
+    def save_factors(self, factor_file, cnf_file, graphml_file):
         if self.ignorable is None:
             self.ignorable = self.find_ignorable_rvs()
-        save_factors(filename, self.ignorable)
+        save_factors(factor_file, cnf_file, graphml_file, self.ignorable)
 
     def hash(self, hash_input, difficulty):
         raise NotImplementedError  # Override in sub-classes

@@ -13,11 +13,8 @@ from optimization import utils
 from optimization.factor import Factor
 from optimization.gradient_solver import GradientSolver
 from optimization.gnc_solver import GNCSolver
-from optimization.cplex_milp_solver import CplexMILPSolver
 from optimization.ortools_cp_solver import OrtoolsCpSolver
 from optimization.ortools_milp_solver import OrtoolsMILPSolver
-from optimization.cplex_cp_solver import CplexCPSolver
-from optimization.gurobi_milp_solver import GurobiMILPSolver
 
 
 def load_factors(factor_file):
@@ -53,9 +50,17 @@ def load_bitvectors(data_file, config):
 
 def select_solver(solver_type):
     if solver_type == 'cplex_milp':
-        return CplexMILPSolver()
+        try:
+            from optimization.cplex_milp_solver import CplexMILPSolver
+            return CplexMILPSolver()
+        except ImportError:
+            raise 'Cplex solver not installed or installation not found'
     elif solver_type == 'cplex_cp':
-        return CplexCPSolver()
+        try:
+            from optimization.cplex_cp_solver import CplexCPSolver
+            return CplexCPSolver()
+        except ImportError:
+            raise 'Cplex solver not installed or installation not found'
     elif solver_type == 'gradient':
         return GradientSolver()
     elif solver_type == 'gnc':
@@ -65,7 +70,23 @@ def select_solver(solver_type):
     elif solver_type == 'ortools_milp':
         return OrtoolsMILPSolver()
     elif solver_type == 'gurobi_milp':
-        return GurobiMILPSolver()
+        try:
+            from optimization.gurobi_milp_solver import GurobiMILPSolver
+            return GurobiMILPSolver()
+        except ImportError:
+            raise 'Gurobi solver not installed or installation not found'
+    elif solver_type == 'minisat':
+        try:
+            from optimization.minisat_solver import MinisatSolver
+            return MinisatSolver()
+        except ImportError:
+            raise 'Minisat solver not installed or installation not found'
+    elif solver_type == 'crypto_minisat':
+        try:
+            from optimization.cryptominisat_solver import CryptoMinisatSolver
+            return CryptoMinisatSolver()
+        except ImportError:
+            raise 'CryptoMinisat solver not installed or installation not found'
     else:
         raise NotImplementedError('Invalid solver: %s' % solver_type)
 
@@ -102,6 +123,7 @@ def verify(true_input, predicted_input, config):
 def main(dataset, solver_type):
     config_file = os.path.join(dataset, 'params.yaml')
     factor_file = os.path.join(dataset, 'factors.txt')
+    cnf_file = os.path.join(dataset, 'factors.cnf')
     data_file = os.path.join(dataset, 'data.bits')
 
     config = load_config(config_file)
@@ -132,6 +154,8 @@ def main(dataset, solver_type):
         start = time()
         if len(observed) == len(factors):
             predictions = observed  # Everything was solved already :)
+        elif solver_type in ('minisat', 'crypto_minisat'):
+            predictions = solver.solve(factors, observed, cnf_file)
         else:
             predictions = solver.solve(factors, observed, config, sample)
 
@@ -157,7 +181,7 @@ if __name__ == '__main__':
     parser.add_argument('dataset', type=str,
         help='Path to the dataset directory')
     choices = ['gradient', 'gnc', 'cplex_milp', 'cplex_cp',
-        'ortools_cp', 'ortools_milp', 'gurobi_milp']
+        'ortools_cp', 'ortools_milp', 'gurobi_milp', 'minisat', 'crypto_minisat']
     parser.add_argument('--solver', type=str, default='ortools_cp',
         help='The solving technique', choices=choices)
     args = parser.parse_args()

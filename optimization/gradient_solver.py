@@ -3,6 +3,7 @@ import numpy as np
 from time import time
 from scipy.optimize import minimize
 
+
 class GradientSolver(object):
     def __init__(self):
         pass

@@ -8,8 +8,6 @@ from collections import defaultdict
 
 from optimization.main import main, load_factors
 
-MAX_SIZE = 500791  # for SHA-256 at full difficulty
-
 
 def log_ticks(x):
     x_min = int(np.round(np.min(x)) - 1)
@@ -26,26 +24,23 @@ def plot_stats(stats):
 
     ax = plt.axes()
     all_x, all_y = np.array([]), np.array([])
-    colors = [(0.8, 0.2, 0.3), (0.3, 0.7, 0), (0, 0, 1), (0.6, 0.2, 0.8)]
+    cmap = plt.get_cmap('gnuplot')
+    colors = [cmap(i) for i in np.linspace(0, 1, len(stats))]
     i = 0
 
     for solver, solver_stats in stats.items():
         x = np.log10(solver_stats['problem_size'])
         y = np.log10(solver_stats['runtime'])
+        if x.size == 0 or y.size == 0:
+            print('Skipping %s' % solver)
+            continue
+
         m, b = np.polyfit(x, y, 1)  # y = mx + b
         x_fit = x.copy()
         y_fit = m * x_fit + b
 
-        # Predict the solve time for the maximum problem size
-        x = np.hstack((x, np.log10(MAX_SIZE)))
-        y_pred = m * np.log10(MAX_SIZE) + b
-        y = np.hstack((y, y_pred))
-        print('%s: problem size %d is predicted to take %.0f minutes' % (
-            solver, MAX_SIZE, np.round(np.power(10, y_pred) / 60)))
-
-        c = [colors[i] for _ in range(x.shape[0])]
-        ax.scatter(x, y, c=c, label=solver)
-        ax.plot(x_fit, y_fit, c=colors[i])
+        ax.scatter(x, y, color=colors[i], label=solver)
+        ax.plot(x_fit, y_fit, color=colors[i])
         i += 1
 
         all_x = np.hstack((all_x, x))
@@ -127,15 +122,17 @@ def eval_solver(solver, datasets, difficulties):
 
 
 if __name__ == '__main__':
-    difficulties = [1, 4, 8, 12, 17, 18, 19, 20, 21, 22, 23, 24, 32, 64]
+    difficulties = [1, 4, 8, 12, 16] # 17, 18, 19, 20, 21, 22, 23, 24, 32, 64]
     datasets = ['data/sha256_d%d' % d for d in difficulties]
     plot_factors_vs_difficulty(datasets, difficulties,
         save_to='images/sha256_factors.pdf')
 
     stats = {
         'gurobi_milp': eval_solver('gurobi_milp', datasets, difficulties),
-        # 'cplex_milp': eval_solver('cplex_milp', datasets, difficulties),
-        # 'cplex_cp': eval_solver('cplex_cp', datasets, difficulties),
-        # 'ortools_cp': eval_solver('ortools_cp', datasets, difficulties),
+        'cplex_milp': eval_solver('cplex_milp', datasets, difficulties),
+        'ortools_cp': eval_solver('ortools_cp', datasets, difficulties),
+        'ortools_milp': eval_solver('ortools_milp', datasets, difficulties),
+        'minisat': eval_solver('minisat', datasets, difficulties),
+        'crypto_minisat': eval_solver('crypto_minisat', datasets, difficulties)
     }
     plot_stats(stats)

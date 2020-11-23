@@ -5,6 +5,7 @@ from scipy.optimize import minimize
 
 from optimization.gnc import GNC
 
+
 class GNCSolver(object):
     def __init__(self):
         # C should be set to be the maximum error expected for inliers

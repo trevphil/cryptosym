@@ -1,269 +1,350 @@
+![Bit relationships for 4 rounds of SHA-256](./images/sha256_d4.png)
+Bit relationships after 4-round SHA-256. 17806 nodes, 26383 edges.
+
+![Lossy "pseudo-hash" visualization](./images/lossy_pseudohash.png)
+Lossy "pseudo-hash" used to validate solver accuracy, showing relationship between input and output bits.
+
 # Contents
 
-- [Disclaimers](#disclaimers)
 - [Description](#description)
-- [Dependencies and Installation](#dependencies-and-installation)
-- [Deterministic SHA-256 Reversal](#deterministic-sha-256-reversal)
-- [Probabilistic SHA-256 Reversal](#probabilistic-sha-256-reversal)
-- [Deterministic MD5 Reversal](#deterministic-md5-reversal)
-- [Future Work and Extensions](#future-work-and-extensions)
+- [Installation](#installation)
+	- [Python](#python)
+	- [C++](#c)
+- [Quickstart](#quickstart)
+	- [Writing your own hash function](#writing-your-own-hash-function)
+- [How it works](#how-it-works)
+	- [Dataset generation](#dataset-generation)
+	- [Dataset format](#dataset-format)
+- [Solving Methods](#solving-methods)
+	- [SAT Solvers](#sat-solver)
+	- [MILP](#milp)
+	- [Optimization](#optimization)
+	- [Belief Propagation](#belief-propagation)
+	- [Machine Learning](#machine-learning)
 - [References and Resources](#references-and-resources)
-
-# Disclaimers
-
-1. The implementation of this code works in theory, but I do not claim that it breaks the security of any cryptographic hash functions. To reverse an entire hash, it may still require infinite compute. I tested this code on high-performant Google Cloud servers; after 1 week of running, the program did not terminate or yield a successful pre-image attack.
-
-2. I wrote this code without doing research on methods other people have tried for breaking cryptographic hash functions. This is because I wanted to have fresh, creative ideas without being influenced by prior research. However I did some research afterwards, and a list of relevant papers and topics are provided at the end of the README.
 
 # Description
 
-This repository contains my attempts at pre-image attacks on SHA-256, MD5, and BitCoin. It tries to solve the following questions **deterministically** (with a SAT solver) and **probabilistically** (with Bayesian networks and loopy belief propagation):
+This repository contains Python and C++ code which attempts to reverse one-way cryptographic hash functions, with specific focus on [SHA-256](https://en.bitcoinwiki.org/wiki/SHA-256). A hash function `f` can be thought of as an operation on bits `X` to produce output bits `Y`: `f(X) = Y`. Given knowledge of `Y` and how `f` works, we want to find some bits `X'` such that `f(X') = Y`. This is commonly known as a [preimage attack](https://en.wikipedia.org/wiki/Preimage_attack). Note that `X` does not necessarily need to equal `X'`.
 
-- Given a SHA-256 hash, can one find the input used to generate the hash?
-- Given a partially known hash input and constraints on the (unknown) hash output, can the unknown section of the hash input be recovered?
-- Given a SHA-256 hash, can a single bit of the hash input be predicted with high accuracy?
+A successful preimage attack has serious implications for basically the entire Internet, financial community, and national defense of major governments. Hash functions are used in all kinds of domains: from BitCoin mining and transactions, to HTTPS encryption, to storage of user passwords in server databases.
 
+I've spent a long time (too long!) trying to solve this "impossible" problem using a variety of methods, detailed below. As a **disclaimer**: I do not claim that any of these methods break the security of the full 64-round SHA-256 hash function. It's probably still infeasible. Prove me wrong :)
 
-# Dependencies and Installation
+# Installation
 
-I recommend using [Anaconda](https://www.anaconda.com/) to create a Python environment, and then install the necessary libraries with `pip`.
+It is not necessary to install everything listed here. If you just want to run certain parts of the code (e.g. C++ vs. Python) you can skip some steps. I developed everything on a Mac, so most things will translate well to Linux but maybe not to Windows.
 
-Use Python 3.6 and install from `requirements.txt`:
+### Python
+Use Python 3.6 with [Anaconda](https://docs.anaconda.com/anaconda/install/). Start by creating and activating a new environment:
 
 ```
 conda create -n preimage python=3.6
 conda activate preimage
+python --version  # Should show 3.6
+```
+
+Install project dependencies:
+
+```
 pip install -r requirements.txt
 ```
 
-For Cplex, make sure to do:
+Not all of the solving methods will work out-of-the-box from here. If you want certain solvers, you will need to install them individually:
+
+- [Gurobi](https://www.gurobi.com/)
+- [Cplex](https://www.ibm.com/analytics/cplex-optimizer)
+- [MiniSat](http://minisat.se/)
+- [CryptoMiniSat](https://www.msoos.org/cryptominisat5)
+
+For Cplex on Mac OS X, make sure to do:
+
 ```
 export PYTHONPATH=/Applications/CPLEX_Studio1210/cplex/python/3.6/x86-64_osx
 ```
 
-# Deterministic SHA-256 Reversal
+### C++
 
-## Explanation
-
-The idea here is to build the entire SHA-256 function symbolically, set constraints on the input and output of the hash function, and then feed this problem to a satisfiability (SAT) solver. It turns out that this approach has already been extensively researched for breaking cryptographic hash functions [1], [2], [3].
-
-Instead of the hash input being a bit stream, it is a _variable_ of fixed length. Some of the bits in the input may be known and other unknown. For example, in BitCoin, the first 608 bits of a block are known and the remaining 32 bits (the nonce) are unknown. The block is fed to SHA-256 twice, and the resulting hash should be less than some pre-defined value (the "[difficulty](https://en.bitcoin.it/wiki/Difficulty)"). From this we can form constraints on our problem: only the 32-bit nonce is an unknown input variable, and the output is constrained to have a certain number of zeros in the least-significant bits (LSB).
-
-The SAT solver I chose is the [z3 Theorem Prover](https://github.com/Z3Prover/z3) from Microsoft Research. I used the [BitVec](https://z3prover.github.io/api/html/classz3py_1_1_bit_vec_ref.html) primitive from this library, which represents a bit stream symbolically.
-
-The problem can be formulated as follows:
+You need to install [cmake](https://cmake.org/install/) and [`cpp-yaml`](https://github.com/jbeder/yaml-cpp). Then to compile the code in this repository, nagivate to the [`belief_propagation`](./belief_propagation) directory and run:
 
 ```
-# Instantiate the solver
-solver = Solver()
-
-# Create a fixed BitVecVal for the KNOWN beginning of the block
-prefix = BitVecVal(block_header_no_nonce, 608)
-
-# Create a BitVec for the nonce, whose bits are UNKNOWN
-nonce = BitVec('nonce', 32)
-
-# Hash input is formed by concatenating the prefix with the nonce
-input_message = Concat(prefix, nonce)
-
-# Run the input through SHA-256 to get a SYMBOLIC BitVec hash
-digest = sha256.hash(input_message)
-
-# Run through SHA-256 a second time
-second_digest = sha256.hash(digest)
-
-# Create a variable for the hash output, which is UNKNOWN
-hash_guess = BitVec('hash_guess', 256)
-
-# Add solver constraint that this variable must equal the digest
-solver.add(hash_guess == second_digest)
-
-# Now add a constraint to the solver that the beginning
-# of the hash must have some number of zeros, e.g. 64
-hash_beginning = Extract(63, 0, hash_guess)
-solver.add(hash_beginning == 0)
-
-# Check if the problem has a solution, and print it
-if solver.check() == sat:
-  print(solver.model())
+$ ./kompile
 ```
 
-For a great explanation of how SAT solvers work, I recommend [1].
+# Quickstart
 
-## A note on endianness and z3
+Generate datasets:
 
-Keeping track of [endianness](https://en.wikipedia.org/wiki/Endianness) with respect to the z3 `BitVec` can be confusing at times, but it is absolutely critical for a functioning algorithm.
+```
+$ ./generate_all_hashes.sh
+```
 
-Let's say we have the binary number `0b1101 = 13`. I just expressed this number in Big Endian. We put the number into a variable: `b = BitVecVal(0b1101, 4)`.
+Choose a dataset:
 
-Now I want to extract the 2nd LSB, the 0. I use z3's `Extract(upper_index, lower_index, bit_vec)` function. Note that these indices are _inclusive_. To retrieve the bit, I would use `Extract(1, 1, b)`.
+```
+$ ls -la ./data
+drwxr-xr-x  27 trevphil  staff  864 Nov  3 23:04 .
+drwxr-xr-x  15 trevphil  staff  480 Nov 22 12:29 ..
+drwxr-xr-x  11 trevphil  staff  352 Nov  3 22:54 addConst_d1
+drwxr-xr-x  11 trevphil  staff  352 Nov  3 22:53 add_d1
+drwxr-xr-x  11 trevphil  staff  352 Nov  3 22:54 andConst_d1
+drwxr-xr-x  10 trevphil  staff  320 Nov  3 22:54 sha256_d1
+...
+```
 
-It sounds simple, but it can often be confusing when working with indices and different endianness.
+The "d1" at the end means that the difficulty level is "1". The full SHA-256 algorithm uses a difficulty of 64 (because it has 64 rounds). Run a solver on the dataset of your choice:
 
-## How to run
+```
+$ python -m optimization.main data/addConst_d1 --solver ortools_cp
+```
 
-The code for this section is in the `sha256` directory. You can run tests with `python test.py`. Be prepared to wait _at least_ until the death of the Sun for the tests to finish :)
+To see the available solvers and usage of the tool:
 
-For more reasonable tests you may adjust test parameters. For example: reduce the number of bits in the hash input message, reduce the required number of leading zeros in the hash, run the input through SHA-256 once (not twice), or even add a hash as a solver constraint and verify that the correct input message used to generate the hash is returned.
+```
+$ python -m optimization.main --help
+usage: main.py [-h]
+               [--solver {gradient,gnc,cplex_milp,cplex_cp,ortools_cp,ortools_milp,gurobi_milp,minisat,crypto_minisat}]
+               dataset
 
-The tests are currently configured to predict the 32-bit nonce for the [Genesis block](https://en.bitcoin.it/wiki/Genesis_block) of BitCoin, given the other 608 bits. This requires 64 zeros in the hash and two passes through SHA-256, which is not the easiest of problems for a SAT solver...
+Hash reversal via optimization
 
-# Probabilistic SHA-256 Reversal
+positional arguments:
+  dataset               Path to the dataset directory
 
-## Dataset
+optional arguments:
+  -h, --help            Show this help message and exit
+  --solver {gradient,gnc,cplex_milp,cplex_cp,ortools_cp,ortools_milp,gurobi_milp,minisat,crypto_minisat}
+                        The solving technique
+```
 
-The probabilistic approaches require a dataset. I formed a dataset by generating random 64-bit messages, feeding them to SHA-256, and writing the output to a CSV file. In real life, a message is usually much larger than 64 bits, but this is just for proof-of-concept.
+### Writing your own hash function
 
-Each line in the CSV file consists of 256 + 64 = 320 values, each 0 or 1. The first 256 entries are the SHA-256 hash and the remaining 64 are the hash input.
+Take a look at the existing hash functions in [`dataset_generation/hash_funcs.py`](./dataset_generation/hash_funcs.py). For example, this function simply adds a constant value to the input:
 
-The script to create a dataset is [`generate_dataset.py`](./ml/generate_dataset.py).
+```
+class AddConst(SymbolicHash):
+    def hash(self, hash_input: SymBitVec, difficulty: int):
+        n = len(hash_input)
+        A = SymBitVec(0x4F65D4D99B70EF1B, size=n)
+        return hash_input + A
+```
 
-## Neural network (NN)
+Implement your own hash function class which inherits from `SymbolicHash` and has the function `hash(...)`, and add your class to the dictionary returned by the function `hash_algorithms()` in [`dataset_generation/hash_funcs.py`](./dataset_generation/hash_funcs.py). The following operations are supported for primitives ([`SymBitVec`](./dataset_generation/sym_bit_vec.py) objects) in the hash function:
 
-Neural networks boil down to complex function approximators. So maybe it is reasonable that we can approximate `reverse(SHA256(message))` with a neural network.
+- AND: `C = A & B`
+- OR: `C = A | B`
+- XOR: `C = A ^ B`
+- NOT (aka INV for "inverse"): `B = ~A`
+- Addition: `C = A + B`
+	- `A`, `B`, and `C` should have the same number of bits, overflow is ignored
+- Shift left: `B = (A << n)`
+	- `B` will have the same number of bits as `A`
+- Shift right: `B = (A >> n)`
+	- `B` will have the same number of bits as `A`
 
-See [`train_ml.py`](./ml/train_ml.py) for my attempt at doing this with TensorFlow. The NN attempts to predict a single bit of the input message, given all bits of the SHA-256 hash.
+To generate a dataset using your hash function, run a command like the following:
 
-In short, it doesn't work--at least not with the simple network architectures I tried out. Test accuracy and loss don't budge, they are constant.
+```
+$ python -m dataset_generation.generate --num-samples 64 --num-input-bits 64 --hash-algo my_custom_hash --visualize --difficulty 4
+```
 
-p.s. neural networks like this one are technically **deterministic**, not probabilistic, I know :)
+The dataset is explained more in-depth below. To see the usage of the dataset generation tool, run:
 
-## Bayesian network (BN)
+```
+python -m dataset_generation.generate --help
+usage: generate.py [-h] [--data-dir DATA_DIR] [--num-samples NUM_SAMPLES]
+                   [--num-input-bits NUM_INPUT_BITS]
+                   [--hash-algo {add,addConst,andConst,invert,lossyPseudoHash,nonLossyPseudoHash,orConst,sha256,shiftLeft,shiftRight,xorConst}]
+                   [--difficulty DIFFICULTY] [--visualize]
+                   [--hash-input HASH_INPUT] [--pct-val PCT_VAL]
+                   [--pct-test PCT_TEST]
 
-The NN approach was doomed to fail in my opinion. It would require an enormously complex model to even begin to approximate a SHA-256 reversal function.
+Hash reversal dataset generator
 
-I think the more interesting approach lies in exploiting [conditional probability distributions](https://en.wikipedia.org/wiki/Conditional_probability_distribution) (CPDs) between hash input and output bits. For example, what is the probability of the input message's first bit being 1, given that hash bits 5, 32, and 67 are 0?
+optional arguments:
+  -h, --help            Show this help message and exit
+  --data-dir DATA_DIR   Path to the directory where the dataset should be
+                        stored
+  --num-samples NUM_SAMPLES
+                        Number of samples to use in the dataset
+  --num-input-bits NUM_INPUT_BITS
+                        Number of bits in each input message to the hash
+                        function
+  --hash-algo {add,addConst,andConst,invert,lossyPseudoHash,nonLossyPseudoHash,orConst,sha256,shiftLeft,shiftRight,xorConst}
+                        Choose the hashing algorithm to apply to the input
+                        data
+  --difficulty DIFFICULTY
+                        SHA-256 difficulty (an interger between 1 and 64
+                        inclusive)
+  --visualize           Visualize the symbolic graph of bit dependencies
+  --hash-input HASH_INPUT
+                        Give input message in hex to simply print the hash of
+                        the input
+  --pct-val PCT_VAL     Percent of samples used for validation dataset
+  --pct-test PCT_TEST   Percent of samples used for test dataset
+``` 
 
-For a perfect hash function, the probability of any hash bit being 1 or 0 should be completely independent from other hash bits and from the input message. However this is real life, and I think it's reasonable to assume that there exist _extremely small_ conditional dependencies between bits. The question is, how to exploit them?
+# How it works
 
-To attempt to exploit CPDs, I built a [Bayesian network](https://en.wikipedia.org/wiki/Bayesian_network) from the dataset, converted it to a [factor graph](https://en.wikipedia.org/wiki/Factor_graph), performed loopy belief propagation [4], and used the converged message values for inference.
+### Dataset generation
 
-#### Creating the undirected BN
+The first thing we need in order to approach this problem is to find out how the hash function `f` operates on input bits `X` to produce output bits `Y` without making any assumptions about `X`. To this end, I make the hash functions operate on symbolic bit vectors, i.e. `SymBitVec` objects. These objects track the relationship between input and output bits for all computations in the hash function, e.g. if `C = A & B`, we track the relationship that bit `C` is the result of AND-ing `A` and `B`. Ultimately after all of the computations, we will have the relationship between each bit of `Y` and each bit of `X` in the function `f(X) = Y`.
 
-A Bayesian network models conditional dependencies between random variables (RVs). In our case, there are 256 binary RVs for the hash bits, and 64 binary RVs for the input message bits. The BN should prefer to create edges between RVs which have a stronger conditional dependence rather than those which are conditionally independent.
+Some simplifications can be made during this process. For example, let's say that bit `A` is a bit from the unknown input `X` and bit `B` is a _constant_ in the hash algorithm equal to 0. Well then we know that `C = A & 0 = 0` so `C = 0` no matter the value of `A`. Some more simplifications for operations on single bits are listed below:
 
-We can get an idea of the conditional dependence between two RVs using their [mutual information score](https://en.wikipedia.org/wiki/Mutual_information). The first step is to calculate the mutual information score between all pairs of our RVs. We can skip the mutual information scores between input message RVs because we already know that we've generated them randomly and independently.
+- `B = A & 1 = A`
+- `B = A | 0 = A`
+- `B = A | 1 = 1`
+- `B = A ^ 1 = ~A`
+- `B = A ^ 0 = A`
+- `B = A ^ A = 0`
+- `B = A & A = A | A = A`
 
-In the undirected graph, each RV is a node. We make an edge between every possible pair of nodes (except if two nodes are both input message RVs). The weight of an edge is the mutual information score between the two RVs which it connects.
+These simplifications help to reduce the size of the symbolic representation of the hash function, since the output bit `B` is sometimes a constant or equal to the unknown input `A`. When this happens, we don't need to introduce a new unknown variable. 
 
-Then the graph is pruned, because having too many edges leads to divergence of loopy belief propagation and also rare events (see [Future Work and Extensions](#future-work-and-extensions)). I prune the graph by removing the lowest-weighted edges from each node until it has no more than `max_connections` edges to other nodes. This `max_connections` is a hyperparameter, but setting it too high will cause the issues that I mentioned earlier.
+Furthermore, the problem can be made easier to handle by reducing all operations (XOR, OR, addition) to only using AND and INV logic gates. For example, `C = A ^ B` is equivalent to:
 
-**Note**: The method I have described for generating the graph's structure is a heuristic, and there may be better ways out there (for example, the [Bayesian information criterion](Bayesian_information_criterion)). In general, to consider all possible graph architectures is an exponentially hard problem.
+```
+X = ~(A & B)
+Y = ~(A & X)
+Z = ~(B & X)
+C = ~(Y & Z)
+```
 
-#### Assigning directions to the BN
+This _does_ introduce intermediate variables, but critically, the AND and INV operations can be **linearized** and also represented in the continuous domain, which is important mathematically. Normally in the discrete domain, we would consider each bit as a binary "[random variable](https://en.wikipedia.org/wiki/Random_variable)" taking the value 0 or 1.
 
-Now we want to assign directions to the undirected graph. This will help us answer the question, "Is A conditionally dependent on B, or is B conditionally dependent on A"?
+The AND operation can be represented with multiplication: `C = A & B = A * B`, and the INV operation with subtraction: `B = ~A = 1 - A`. To linearize the AND operation, we can use [the following method](https://or.stackexchange.com/questions/37/how-to-linearize-the-product-of-two-binary-variables):
 
-If there exists a directed edge from A to B, it means that B is conditionally dependent on A.
+```
+C = A & B = A * B
+Equivalent to:
+C <= A
+C <= B
+C >= A + B - 1
+```
 
-Note that we do not want the hash input RVs to be conditionally dependent on anything, so no arrows should point to them. To assign edges, I use a breadth-first search starting from all hash input bits (these nodes are "first in line" for the BFS). Since none of them are connected to each other, no arrows will point _towards_ a hash input bit.
+Note that no information is lost during the INV operation (we can always recover the input from the output of INV), but there _is_ information lost during AND when the output is 0. When the output is 1, we know that both inputs must have been 1. But when the output is 0, there are three possible inputs: `0 = 0 & 0 = 0 & 1 = 1 & 0`. **Thus, all complexity in reversing a hash function comes from AND gates whose output is 0**.
 
-Below is a visualization of the directed graph. It's quite messy.
+### Dataset Format
 
-![directed_graph](./images/directed.png)
+When you create a dataset using the command `python -m dataset_generation.generate [args]`, it will create a sub-directory under `./data` with a name like `hashFunc_dX` where "hashFunc" is the name of the hash function and "X" will be replaced with an integer difficulty level used by the hash function. Within this directory, the following files will be created:
 
-#### Creating a factor graph
+```
+hashFunc_dX
+├── data.bits
+├── factors.cnf
+├── factors.txt
+├── graph.graphml
+├── graph.pdf
+├── params.yaml
+├── test.hdf5
+├── train.hdf5
+└── val.hdf5
+```
 
-The next step is to build a factor graph, which is a bipartite graph. One side of the graph has all of the random variables as nodes, and the other side has all of the "factors" as node. Each factor represents a conditional probability distribution and has a "query" RV as well as a list of "dependency" RVs.
+Below is an outline of what each file contains:
 
-For example, a factor `f` may represent `P(rv1 | rv5, rv10, rv21)`, i.e. the probability of observing `RV 1 = 0` or `RV 1 = 1`, given that we know the values of `RV 5`, `RV 10`, and `RV 21`.
+- `params.yaml`: Information about the dataset like the name of the hash algorithm, number of input bits `X`, and indices of the hash output bits `Y` with respect to all of the random variable bits tracked in the hash computation
+- `data.bits`: This is a binary file. Let's say you chose the options `--num-samples 64 --num-input-bits 128`, then the hash function will execute 64 times, each time with a random 128-bit input to the hash function. Let's say 1 pass of the hash function generates 2000 random variable bits, starting with the hash input bits `X` directly and (generally) ending with the hash output bits `Y`, although the `Y` bits might not be grouped together consecutively at the end. This file will contain 64*2000 bits which result from concatenating 2000 bits 64 times. When I say that a bit has index _i_, it means the _i_-th bit of 2000 bits. **The number of samples should always be a multiple of 8 to avoid filesystem errors** where the file length does not fit into an integer number of bytes.
+- `factors.txt`: Encodes the relationship between input and output bits of logic gates. Some examples follow...
+	- `PRIOR;10`: The random variable bit with index 10 is a prior, i.e.  a bit from the unknown input `X`
+	- `INV;94;93`: The random variable bit with index 94 is a result of the INV operation on bit 93, i.e. `B94 = ~B93`
+	- `AND;95;61;29`: Bit 95 is the result of AND-ing bits 61 and 29, i.e. `B95 = B61 & B29`
+- `factors.cnf`: An alternative representation of the relationship between random variable bits using [DIMACS Conjunctive Normal Form](https://people.sc.fsu.edu/~jburkardt/data/cnf/cnf.html) (CNF). All logic gates can be converted to this form, see [`factor.py`](./dataset_generation/factor.py). The bit indices in CNF are all +1 relative to their indices in the other representations, so keep that in mind.
+- `graph.pdf`: If you specify the optional `--visualize` argument to the dataset generation tool, it will create a visualization of the hash function like the one shown in the beginning of the README. Hash input bits are shown in black, and output bits in green.
+- `graph.graphml`: This is another representation of the directed graph in [graphml](http://graphml.graphdrawing.org/) format showing relationships between bits, useful for visualizing in tools like [Gephi](https://gephi.org/)
+- `test.hdf5`, `train.hdf5`, `val.hdf5`: These contain the same data as `data.bits` but in [HDF5 format](https://docs.h5py.org/en/stable/) which is convenient for machine learning. The samples from the `--num-samples` option are distributed among train, test, and validation sets.
 
-A factor is created for each node in the directed graph. The "query" RV is the node itself, and the list of dependencies are all nodes which have an outgoing arrow to the query node.
+# Solving Methods
 
-Below is a visualization of the factor graph:
+Using the latest and greatest as of November 2020, the solving methods are listed from what I believe to be most effective to least effective. Even the best methods seem to fail on the 17th round of SHA-256 (discussed below).
 
-![factor_graph](./images/factor.png)
+1. [CryptoMiniSat](https://www.msoos.org/cryptominisat5/): I didn't even take advantage of CryptoMiniSat's optimized treatment of XOR since all operations were reduced to AND and INV logic gates
+2. [MiniSat](http://minisat.se/)
+3. [Gurobi MILP](https://www.gurobi.com/documentation/9.0/quickstart_mac/py_python_interface.html#section:Python)
+4. [Google `ortools` MILP](https://developers.google.com/optimization/mip/mip)
+5. [Google `ortools` constraint programming](https://developers.google.com/optimization/cp)
+6. [Cplex constraint programming](https://www.ibm.com/analytics/cplex-cp-optimizer)
+7. [Cplex MILP](https://www.ibm.com/support/knowledgecenter/SSSA5P_12.7.1/ilog.odms.cplex.help/CPLEX/UsrMan/topics/discr_optim/mip/01_mip_title_synopsis.html)
+8. Least-squares optimization
+9. [Graduated non-convexity](https://arxiv.org/pdf/1909.08605)
+10. Loopy belief propagation
+11. Graph-based neural network
 
-Each factor has a table which contains the probability of the query, given all possible values of the dependencies. If there are N dependencies in a factor, the table size is 2^N, so you can see how it is beneficial to keep the size of each factor low.
+These strategies can be broken into a few general categories that I will discuss soon.
 
-Let's take an example. Factor `f` has query `hash_bit_5` and dependencies `[input_message_bit_13, input_message_bit_21]`. It represents the CPD `P(hash_bit_5 | input_message_bit_13, input_message_bit_21)`.
+First, here is a log-log plot of problem size (# unknown variables) vs. runtime for a select number of solvers, as well as a linear regression on this log-log data. The problem sizes correspond to SHA-256 rounds of 1, 4, 8, 12, and 16. These solvers were run on my weak dual-core 16 GB MacBook Air, and none were allowed to run for more than 24 hours.
 
-Our factor `f` would have a table such as:
+![solve times](./images/solve_times.png)
 
+I think it is interesting to see how the SHA-256 algorithm's complexity increases with the number of rounds. Something happens in the 17th round that causes a major spike in complexity. My best guess is that an AND gate between bits "very far apart" in the computation is the issue. If you look at the maximum distance between the indices of random variable bits which are inputs to an AND gate, the maximum gap is around 126,000 bits apart up to 16 rounds. At 17 rounds, the gap increases to 197,000 bits. For a SAT solver, this could mean that it doesn't detect an invalid variable assignment until values have been propagated a long way. For the full 64-round SHA-256, the maximum gap is 386,767.
 
-| `bit_13`        | `bit_21`        | `P(hash_bit_5 = 1 ｜  bit_13, bit_21)` |
-| --------------- | --------------- | ------------------------------------ |
-| 0             | 0             | `P(1 ｜ 0, 0) = ?`                    |
-| 0             | 1             | `P(1 ｜ 0, 1) = ?`                    |
-| 1             | 0             | `P(1 ｜ 1, 0) = ?`                    |
-| 1             | 1             | `P(1 ｜ 1, 1) = ?`                    |
+Below, we can see that the number of INV and AND gates grow relatively linearly, at the same rate, as the number of rounds increases. The prior factors correspond to hash input bits, so naturally they stay constant.
 
+![complexity growth](./images/sha256_factors.png)
 
-**Note**: It's not necessary to compute `P(hash_bit_5 = 0 | bit_13, bit_21)` because it can be derived by `1.0 - P(hash_bit_5 = 1 | bit_13, bit_21)`.
+### SAT Solvers
 
+Satisfiability (SAT) solvers operate on boolean logic relationships to find a satisfying assignment for free boolean variables. I would put solvers like MiniSat, CryptoMiniSat, `ortools` constraint programming, and Cplex constraint programming in this category. These types of solvers generally work by assigning fixed values to free variables until there is a logical conflict, and then backtracking until the conflict is resolved and trying new variable assignments in the conflict region. This is a gross simplification though. There are a lot of tricks people have come up with to speed up the process, heuristics to pick the order of variable assignments, learning from conflicts, etc. [Here](https://www.msoos.org/minisat-faq/) is a nice website to get started learning, and [this guy](https://www.youtube.com/watch?v=d76e4hV1iJY&ab_channel=ClojureTV) gives a nice talk.
 
-Let's say we want to calculate a CPD. How would we calculate, for example, `P(hash_bit_5 = 1 | input_message_bit_13 = 0, input_message_bit_21 = 1)`?
+From what I can tell, this is one of the best methods for preimage attacks to date. A lot of the solvers are implemented in C or C++ so they run extremely fast, and they are heavily optimized with heuristics. People have already tried to use SAT solvers to break cryptographic hash functions, but you do eventually hit a limit on the feasible problem size.
 
-It's simple actually: go through each item in the dataset. Count how many items have `hash_bit_5 = 1 AND input_message_bit_13 = 0 AND input_message_bit_21 = 1`. Let's call this value **x**.
+### MILP
 
-Now count how many items have `input_message_bit_13 = 0 AND input_message_bit_21 = 1`. Let's call this value **y**.
+Mixed-integer linear programming (MILP) is a form of optimization where the optimization variables may be integer-valued, rather than the usual real-valued. Gurobi MILP, Cplex MILP, and `ortools` MILP fall into this category. The theory underpinning MILP solvers is honestly pretty complex (or should I say... simplex). However, if you want to read more, Google terms like "linear programming relaxations," "branch and bound," or "cutting planes." A good place to start is [Gurobi's introduction to MIP](https://www.gurobi.com/resource/mip-basics/).
 
-The CPD we want can be approximated with **x / y**.
+Solvers from the major players like Gurobi, Cplex, and [coin-or](https://www.coin-or.org/) work well (much like the SAT solvers) until 17 rounds of SHA-256.
 
-Hopefully you can see that as the number of variables in the CPD increases, the chance that our dataset contains an entry where all variables are assigned the values we want will decrease. This would be called a "rare event."
+### Optimization
 
-#### Loopy belief propagation (LBP)
+I've done a fair bit of work on graph-based [SLAM](https://en.wikipedia.org/wiki/Simultaneous_localization_and_mapping) and had an idea to apply something from robust estimation techniques to solving the preimage problem. This something is called "Graduated Non-Convexity" (GNC), introduced in [this](https://arxiv.org/abs/1909.08605) paper.
 
-LBP is an iterative "message passing" algorithm in which messages are passed between factors and RVs in the factor graph. We say the algorithm has _converged_ when none of the messages change by more than some small value ε.
+### Belief Propagation
+
+Belif propagation (BP) is an iterative "message passing" algorithm in which messages are passed between factors and random variables (RVs) in a factor graph. We say the algorithm has _converged_ when none of the messages change by more than some small value ε.
 
 Once the messages have converged, we can use them to perform queries on the factor graph, for example to answer the question "What is the probability that the input message bit 0 is a 1, given that I know all of the hash bits?"
 
-What exactly is a "message"? It's hard to explain, to be honest. It's quite mathematical, theoretical, and unintuitive. I recommend [4] for understanding LBP, but I won't go into detail here.
+What exactly is a "message"? It's hard to explain, to be honest. It's quite mathematical, theoretical, and unintuitive. I would recommend [this article](http://nghiaho.com/?page_id=1366) to understand it.
 
-Alternatively, just look at the code: [`factor_graph.py`](./ml/graphs/factor_graph.py)
+A factor graph is a bipartite graph wherein one side of the graph has RVs (bits) as nodes, and the other side has all of the "factors" as nodes (AND, INV logic gates). Each factor represents a conditional probability distribution and has a "query" RV (output of the logic gate) as well as a list of "dependency" RVs (inputs to the logic gate).
 
-#### Inference
+For example, let `C = A & B`. Then a factor `f` may represent `P(C | A, B)`, i.e. the probability of observing `C = 0` or `C = 1`, given that we know the values of `A` and `B`.
 
-If the only unknown variable were the hash input bit we are trying to predict, our lives would be easy. We could use the method described in [Creating a factor graph](#creating-a-factor-graph) to get the probability `P(input message bit | all other input message bits and hash bits)`.
+Each factor has a table which contains the [conditional probability distribution](https://en.wikipedia.org/wiki/Conditional_probability_distribution) (CPD) of the query bit, given all possible values of the dependencies. The table is used during the message-passing algorithm. If there are N dependencies in a factor, the table size is 2^N, so you can see how it is beneficial to keep the size of each factor low. Our factor `f` would have a table such as:
 
-However, we don't know the values of all other hash input bits, which is why we have to go to the trouble of LBP.
+| `A`        | `B`        | `P(C = 1 ｜  A, B)` |
+| --------------- | --------------- | ------------------------------------ |
+| 0             | 0             | `P(1 ｜ 0, 0) = 0`                    |
+| 0             | 1             | `P(1 ｜ 0, 1) = 0`                    |
+| 1             | 0             | `P(1 ｜ 1, 0) = 0`                    |
+| 1             | 1             | `P(1 ｜ 1, 1) = 1`                    |
 
-Let's say we want to know the probability of an input message bit being 1, given values (0 or 1) for all hash bits. Let's call our input message bit B.
+**Note**: It's not necessary to compute `P(C = 0 | A, B)` because it can be derived by `1.0 - P(C = 1 | A, B)`.
 
-First find all factors who reference B, either as their query RV or in their dependency RVs. Multiply together the message from each of these factors to B when **B=1** and store the product in X. Now multiply together the message from each factor to B when **B=0** and store the product in Y.
+I have implemented the belief propagation algorithm in C++ since it can be quite slow in Python with a large problem size. However I found that this method performs poorly in practice. Belief propagation on a tree structure will always converge, but there are no convergence guarantees for a cyclic factor graph (so-called "loopy belief propagation").
 
-The probability of B=1 given all of the hash bits is then X / (X + Y).
+What often ends up happening is divergence of the message values because of the cyclic message passing, and we run into numerical overflow/underflow errors. A possible solution could be a logarithmic version of the sum-product algorithm, which I _tried_ to implement but gave up on (see [here](https://www.researchgate.net/publication/3924103_Efficient_implementations_of_the_sum-product_algorithm_for_decoding_LDPC_codes), TODO: try [this one](https://www2.cs.duke.edu/research/AI/papers/Felzenszwalb06.pdf)).
 
-Note that each time the hash changes, the values of the "observed" RVs change, so loopy belief propagation must be re-run. Additionally, there are no guarantees of convergence with LBP, especially the more loops in the graph.
+### Machine Learning
 
-#### Result
+The idea here is that one could train a neural network to predict a valid hash input `X` given knowledge of hash output `Y` and the hash function `f` where `f(X) = Y`. In other words, a neural network should learn an inverse function `g` where `f(g(Y)) = Y` by observing many instances of random inputs and outputs. To this end, I (painfully) modified the [`SymBitVec`](./dataset_generation/sym_bit_vec.py) primitive to support [PyTorch](https://pytorch.org/) tensors and work 100% with backpropagation. I also modified the dataset generation tool to split samples into train, validation, and test files in HDF5 format.
 
-The best prediction accuracy I could achieve was around 50.3%. Although this may be statistically significant given 20,000 samples, it is not useful. For example, with a 64-bit message and 99% prediction accuracy per bit, the chances of predicting the entire message correctly are 0.99^64 = 52.6%. As accuracy drops to 50%, the probability of guessing the entire input message becomes basically zero.
+The neural network architecture needs more work and thought put into it. As of now it doesn't perform well at all. I have struggled with enforcing "hard" relationships between bits, for example the network tries to learn valid assignments for all bits in the hash computation, but at the same time needs to be aware that if two bits are related by an INV operation, then `B = 1 - A`. Graph-based neural networks are one possible approach, but I recently saw this [talk](https://www.youtube.com/watch?v=EqvzIGY_bI4&ab_channel=MicrosoftResearch) and corresponding [code](https://github.com/dselsam/neurosat/tree/master/python) for a network called "NeuroSAT", which is extremely interesting and possibly promising.
 
-The idea for this "attack" came after taking the course [Probabilistic Artificial Intelligence](https://las.inf.ethz.ch/pai-f19) at ETH Zürich.
+Backpropagation through the hash function (and more in general, training a network on a large problem) is unfortunately quite slow. I believe this is a result of the complex [Autograd](https://pytorch.org/docs/stable/autograd.html) graph that the hash function creates, due to all of the slicing and moving around of individual tensor elements (bits).
 
-## How to run
-
-The code for this section is in the `ml` directory. You can run everything with `python main.py`, but make sure you've generated the dataset first.
-
-# Deterministic MD5 Reversal
-
-## Explanation
-
-Before trying to break SHA-256 with a SAT solver, I wanted to test out the approach on the "already broken" MD5 hash function. Basically everything I've written in [Deterministic SHA-256 Reversal](#deterministic-sha-256-reversal) also applies here.
-
-The regular MD5 implementation comes from [5].
-
-## How to run
-
-The code for this section is in the `md5` directory. You can run tests with `python test.py`.
-
-# Future Work and Extensions
-
-- **Using internal states of the SHA-256 algorithm**: add solver constraints from the internal state, or for the probabilistic approach, add random variables for the internal state.
-- **Using a more complex neural network model**: perhaps the neural network approach would work better with a larger, more complex model, however I haven't spent much time on this area because I don't believe it would work.
-- **Finding the truly optimal BN structure is a NP-hard problem**. The current structure is just a heuristic I came up with, but there are probably better ways out there. Note that creating a maximum spanning tree (e.g. with [Kruskal's algorithm](https://en.wikipedia.org/wiki/Kruskal%27s_algorithm)) is not sufficient, because it implies that hash bits are conditionally dependent on only 1 other hash bit or input message bit. Clearly this is not true: each hash bit is dependent on many (if not all) input message bits.
-- **Handling rare events**: there may be cases where the probabilistic algorithm needs to know the conditional probability of a rare event. For example, `P(hash0=b0 | hash1=b1, hash2=b2, ..., hashN=bN)`. Here `hashi` is a random variable for the i-th hash bit, and `bi` is a bit value, 0 or 1. The probability of a single entry in the dataset having this combination of bits is approximately `2^(-N)`. Having a large dataset is good, because it increases your odds of having an instance of a rare event like this. But it's not always possible, in which case I use 0.5 as the probability (implicitly assuming conditional independence).
 
 # References and Resources
 
-- [1] [SAT-based preimage attacks on SHA-1, Masters Thesis of Vegard Nossum](https://www.duo.uio.no/bitstream/handle/10852/34912/thesis-output.pdf?sequence=1&isAllowed=y)
+You can always try to contact me (trevphil3 -at- gmail -dot- com) and I will do my best to respond. I have spent over a year working on this problem in my free time and I'm quite passionate about it. Besides the links in the body of the README, here are some more helpful articles and papers:
 
-- [2] [Explanation on using SAT solver with BitCoin](http://jheusser.github.io/2013/02/03/satcoin.html)
-
-- [3] [SAT Solvers for Cryptanalysis](https://www.microsoft.com/en-us/research/publication/applications-of-sat-solvers-to-cryptanalysis-of-hash-functions/)
-
-- [4] [Loopy Belief Propagation Explanation](http://nghiaho.com/?page_id=1366)
-
-- [5] [md5 Implementation](https://github.com/narkkil/md5)
-
+- [SAT-based preimage attacks on SHA-1, Masters Thesis of Vegard Nossum](https://www.duo.uio.no/bitstream/handle/10852/34912/thesis-output.pdf?sequence=1&isAllowed=y)
+- [Explanation on using SAT solver with BitCoin](http://jheusser.github.io/2013/02/03/satcoin.html)
+- [SAT Solvers for Cryptanalysis](https://www.microsoft.com/en-us/research/publication/applications-of-sat-solvers-to-cryptanalysis-of-hash-functions/)
+- [Visualizing cryptographic hash functions](http://blog.sophisticatedways.net/2018/11/visualising-sha-1.html)
+- [md5 Implementation](https://github.com/narkkil/md5)
+- [Survey of modeling and optimization strategies
+to solve high-dimensional design problems
+with computationally-expensive black-box functions](http://www.sfu.ca/~gwa5/pdf/2009_01.pdf)
+- [Single-Trace Attacks on Keccak](https://eprint.iacr.org/2020/371.pdf)
