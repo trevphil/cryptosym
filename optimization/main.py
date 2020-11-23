@@ -182,7 +182,7 @@ if __name__ == '__main__':
         help='Path to the dataset directory')
     choices = ['gradient', 'gnc', 'cplex_milp', 'cplex_cp',
         'ortools_cp', 'ortools_milp', 'gurobi_milp', 'minisat', 'crypto_minisat']
-    parser.add_argument('--solver', type=str, default='crypto_minisat',
+    parser.add_argument('--solver', type=str, default='ortools_cp',
         help='The solving technique', choices=choices)
     args = parser.parse_args()
     _ = main(args.dataset, args.solver)

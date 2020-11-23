@@ -153,7 +153,8 @@ def save_factors(factor_file, cnf_file, graphml_file, ignore):
             f.write(str(factor) + '\n')
 
     nx.write_graphml(g, graphml_file)
-    rv2idx = {rv: i for i, f in enumerate()}
+    rvs = list(sorted(rvs))
+    rv2idx = {rv: i for i, rv in enumerate(rvs)}
 
     with open(cnf_file, 'w') as f:
         # https://logic.pdmi.ras.ru/~basolver/dimacs.html
@@ -163,7 +164,7 @@ def save_factors(factor_file, cnf_file, graphml_file, ignore):
         for factor in factors:
             if factor.factor_type == FactorType.PRIOR:
                 continue
-            for clause in factor.cnf():
+            for clause in factor.cnf(rv2idx):
                 f.write(clause + '\n')
                 num_clauses += 1
         f.seek(0)

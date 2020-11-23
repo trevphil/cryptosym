@@ -1,22 +1,31 @@
 ![Bit relationships for 4 rounds of SHA-256](./images/sha256_d4.png)
 Bit relationships after 4-round SHA-256. 17806 nodes, 26383 edges.
 
+![Lossy "pseudo-hash" visualization](./images/lossy_pseudohash.pdf)
+Lossy "pseudo-hash" used to validate solver accuracy, showing relationship between input and output bits.
+
 # Contents
 
 - [Description](#description)
 - [Installation](#installation)
 	- [Python](#python)
-	- [C++](#c++)
+	- [C++](#c)
 - [Quickstart](#quickstart)
 	- [Writing your own hash function](#writing-your-own-hash-function)
 - [How it works](#how-it-works)
 	- [Dataset generation](#dataset-generation)
 	- [Dataset format](#dataset-format)
+- [Solving Methods](#solving-methods)
+	- [SAT Solver](#sat-solver)
+	- [MILP](#milp)
+	- [Optimization](#optimization)
+	- [Belief Propagation](#belief-propagation)
+	- [Machine Learning](#machine-learning)
 - [References and Resources](#references-and-resources)
 
 # Description
 
-This repository contains Python and C++ code which attempts to reverse one-way cryptographic hash functions, with specific focus on [SHA-256](https://en.bitcoinwiki.org/wiki/SHA-256). A hash function `f` can be thought of as an operation on bits `X` to produce output bits `Y`: `f(X) = Y`. Given knowledge of `Y` and how `f` works, we want to recover `X`. This is commonly known as a [preimage attack](https://en.wikipedia.org/wiki/Preimage_attack).
+This repository contains Python and C++ code which attempts to reverse one-way cryptographic hash functions, with specific focus on [SHA-256](https://en.bitcoinwiki.org/wiki/SHA-256). A hash function `f` can be thought of as an operation on bits `X` to produce output bits `Y`: `f(X) = Y`. Given knowledge of `Y` and how `f` works, we want to find some bits `X'` such that `f(X') = Y`. This is commonly known as a [preimage attack](https://en.wikipedia.org/wiki/Preimage_attack). Note that `X` does not necessarily need to equal `X'`.
 
 A successful preimage attack has serious implications for basically the entire Internet, financial community, and national defense of major governments. Hash functions are used in all kinds of domains: from BitCoin mining and transactions, to HTTPS encryption, to storage of user passwords in server databases.
 
@@ -24,7 +33,7 @@ I've spent a long time (too long!) trying to solve this "impossible" problem usi
 
 # Installation
 
-It is not necessary to install everything listed here. If you just want to run certain parts of the code (e.g. C++ vs. Python) you can skip some steps. I developed everything on a Mac, so most things will translate well to Linux but unfortunately not to Windows.
+It is not necessary to install everything listed here. If you just want to run certain parts of the code (e.g. C++ vs. Python) you can skip some steps. I developed everything on a Mac, so most things will translate well to Linux but maybe not to Windows.
 
 ### Python
 Use Python 3.6 with [Anaconda](https://docs.anaconda.com/anaconda/install/). Start by creating and activating a new environment:
@@ -83,7 +92,7 @@ drwxr-xr-x  10 trevphil  staff  320 Nov  3 22:54 sha256_d1
 ...
 ```
 
-The "d1" at the end means that the difficulty level is "1". Run a solver on the dataset of your choice:
+The "d1" at the end means that the difficulty level is "1". The full SHA-256 algorithm uses a difficulty of 64 (because it has 64 rounds). Run a solver on the dataset of your choice:
 
 ```
 $ python -m optimization.main data/addConst_d1 --solver ortools_cp
@@ -139,7 +148,7 @@ To generate a dataset using your hash function, run a command like the following
 $ python -m dataset_generation.generate --num-samples 64 --num-input-bits 64 --hash-algo my_custom_hash --visualize --difficulty 4
 ```
 
-The dataset is explain more in depth below. To see the usage of the dataset generation tool, run:
+The dataset is explained more in-depth below. To see the usage of the dataset generation tool, run:
 
 ```
 python -m dataset_generation.generate --help
@@ -179,7 +188,7 @@ optional arguments:
 
 ### Dataset generation
 
-The first thing we need in order to approach this problem is to find out how the hash function `f` operates on input bits `X` to produce output bits `Y` without making any assumptions about `X`. To this end, I make the hash functions operate on symbolic bit vectors, i.e. `SymBitVec` objects. These objects track the relationship between input and output bits for all computations in the hash function, e.g. if `C = A & B`, we track the relationship that bit `C` is the result of AND-ing `A` and `B`.
+The first thing we need in order to approach this problem is to find out how the hash function `f` operates on input bits `X` to produce output bits `Y` without making any assumptions about `X`. To this end, I make the hash functions operate on symbolic bit vectors, i.e. `SymBitVec` objects. These objects track the relationship between input and output bits for all computations in the hash function, e.g. if `C = A & B`, we track the relationship that bit `C` is the result of AND-ing `A` and `B`. Ultimately after all of the computations, we will have the relationship between each bit of `Y` and each bit of `X` in the function `f(X) = Y`.
 
 Some simplifications can be made during this process. For example, let's say that bit `A` is a bit from the unknown input `X` and bit `B` is a _constant_ in the hash algorithm equal to 0. Well then we know that `C = A & 0 = 0` so `C = 0` no matter the value of `A`. Some more simplifications for operations on single bits are listed below:
 
@@ -202,7 +211,7 @@ Z = ~(B & X)
 C = ~(Y & Z)
 ```
 
-This introduces intermediate variables, but critically, the AND and INV operations can be **linearized** and also represented in the continuous domain, which is important mathematically. Normally in the discrete domain, we would consider each bit as a binary "[random variable](https://en.wikipedia.org/wiki/Random_variable)" taking the value 0 or 1.
+This _does_ introduce intermediate variables, but critically, the AND and INV operations can be **linearized** and also represented in the continuous domain, which is important mathematically. Normally in the discrete domain, we would consider each bit as a binary "[random variable](https://en.wikipedia.org/wiki/Random_variable)" taking the value 0 or 1.
 
 The AND operation can be represented with multiplication: `C = A & B = A * B`, and the INV operation with subtraction: `B = ~A = 1 - A`. To linearize the AND operation, we can use [the following method](https://or.stackexchange.com/questions/37/how-to-linearize-the-product-of-two-binary-variables):
 
@@ -214,19 +223,75 @@ C <= B
 C >= A + B - 1
 ```
 
-Note that no information is lost during the INV operation (we can always recover the input from the output of INV), but there _is_ information lost during AND when the output is 0. When the output is 1, we know that both input must have been 1. But when the output is 0, there are three possible inputs: `0 = 0 & 0 = 0 & 1 = 1 & 0`. **Thus, all complexity in reversing a hash function comes from AND gates whose output is 0**.
+Note that no information is lost during the INV operation (we can always recover the input from the output of INV), but there _is_ information lost during AND when the output is 0. When the output is 1, we know that both inputs must have been 1. But when the output is 0, there are three possible inputs: `0 = 0 & 0 = 0 & 1 = 1 & 0`. **Thus, all complexity in reversing a hash function comes from AND gates whose output is 0**.
 
 ### Dataset Format
 
-TODO
+When you create a dataset using the command `python -m dataset_generation.generate [args]`, it will create a sub-directory under `./data` with a name like `hashFunc_dX` where "hashFunc" is the name of the hash function and "X" will be replaced with an integer difficulty level used by the hash function. Within this directory, the following files will be created:
 
+```
+hashFunc_dX
+├── data.bits
+├── factors.cnf
+├── factors.txt
+├── graph.graphml
+├── graph.pdf
+├── params.yaml
+├── test.hdf5
+├── train.hdf5
+└── val.hdf5
+```
 
+Below is an outline of what each file contains:
 
+- `params.yaml`: Information about the dataset like the name of the hash algorithm, number of input bits `X`, and indices of the hash output bits `Y` with respect to all of the random variable bits tracked in the hash computation
+- `data.bits`: This is a binary file. Let's say you chose the options `--num-samples 64 --num-input-bits 128`, then the hash function will execute 64 times, each time with a random 128-bit input to the hash function. Let's say 1 pass of the hash function generates 2000 random variable bits, starting with the hash input bits `X` directly and (generally) ending with the hash output bits `Y`, although the `Y` bits might not be grouped together consecutively at the end. This file will contain 64*2000 bits which result from concatenating 2000 bits 64 times. When I say that a bit has index _i_, it means the _i_-th bit of 2000 bits. **The number of samples should always be a multiple of 8 to avoid filesystem errors** where the file length does not fit into an integer number of bytes.
+- `factors.txt`: Encodes the relationship between input and output bits of logic gates. Some examples follow...
+	- `PRIOR;10`: The random variable bit with index 10 is a prior, i.e.  a bit from the unknown input `X`
+	- `INV;94;93`: The random variable bit with index 94 is a result of the INV operation on bit 93, i.e. `B94 = ~B93`
+	- `AND;95;61;29`: Bit 95 is the result of AND-ing bits 61 and 29, i.e. `B95 = B61 & B29`
+- `factors.cnf`: An alternative representation of the relationship between random variable bits using [DIMACS Conjunctive Normal Form](https://people.sc.fsu.edu/~jburkardt/data/cnf/cnf.html) (CNF). All logic gates can be converted to this form, see [`factor.py`](./dataset_generation/factor.py). The bit indices in CNF are all +1 relative to their indices in the other representations, so keep that in mind.
+- `graph.pdf`: If you specify the optional `--visualize` argument to the dataset generation tool, it will create a visualization of the hash function like the one shown in the beginning of the README. Hash input bits are shown in black, and output bits in green.
+- `graph.graphml`: This is another representation of the directed graph in [graphml](http://graphml.graphdrawing.org/) format showing relationships between bits, useful for visualizing in tools like [Gephi](https://gephi.org/)
+- `test.hdf5`, `train.hdf5`, `val.hdf5`: These contain the same data as `data.bits` but in [HDF5 format](https://docs.h5py.org/en/stable/) which is convenient for machine learning. The samples from the `--num-samples` option are distributed among train, test, and validation sets.
 
+# Solving Methods
 
+Using the latest and greatest as of November 2020, the solving methods are listed from what I believe to be most effective to least effective. Even the best methods seem to fail on the 17th round of SHA-256 (discussed below).
 
+1. [CryptoMiniSat](): I didn't even take advantage of CryptoMiniSat's optimized treatment of XOR since all operations were reduced to AND and INV logic gates
+2. [MiniSat]()
+3. [Gurobi MILP]()
+4. [Google `ortools` MILP]()
+5. [Google `ortools` constraint programming]()
+6. [Cplex constraint programming]()
+7. [Cplex MILP]()
+8. Least-squares optimization
+9. [Graduated non-convexity](https://arxiv.org/pdf/1909.08605.pdf)
+10. Loopy belief propagation
+11. Graph-based neural network
 
+These strategies can be broken into a few general categories that I will discuss soon.
 
+First, here is a log-log plot of problem size (# unknown variables) vs. runtime for a select number of solvers, as well as a linear regression on this log-log data. The problem sizes correspond to SHA-256 rounds of 1, 4, 8, 12, and 16. These solvers were run on my weak dual-core 16 GB MacBook Air, and none were allowed to run for more than 24 hours.
+
+![solve times](./images/solve_times.pdf)
+
+I think it is interesting to see how the SHA-256 algorithm's complexity increases with the number of rounds. Something happens in the 17th round that causes a major spike in complexity. My best guess is that an AND gate between bits "very far apart" in the computation is the issue. If you look at the maximum distance between the indices of random variable bits which are inputs to an AND gate, the maximum gap is around 126,000 bits apart up to 16 rounds. At 17 rounds, the gap increases to 197,000 bits. For a SAT solver, this could mean that it doesn't detect an invalid variable assignment until values have been propagated a long way. For the full 64-round SHA-256, the maximum gap is 386,767.
+
+Below, we can see that the number of INV and AND gates grow relatively linearly, at the same rate, as the number of rounds increases. The prior factors correspond to hash input bits, so naturally they stay constant.
+
+![complexity growth](./images/sha256_factors.pdf)
+
+### SAT Solver
+
+### MILP
+
+### Optimization
+
+### Belief Propagation
+
+### Machine Learning
 
 
 
