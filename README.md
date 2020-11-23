@@ -16,7 +16,7 @@ Lossy "pseudo-hash" used to validate solver accuracy, showing relationship betwe
 	- [Dataset generation](#dataset-generation)
 	- [Dataset format](#dataset-format)
 - [Solving Methods](#solving-methods)
-	- [SAT Solver](#sat-solver)
+	- [SAT Solvers](#sat-solver)
 	- [MILP](#milp)
 	- [Optimization](#optimization)
 	- [Belief Propagation](#belief-propagation)
@@ -129,7 +129,7 @@ class AddConst(SymbolicHash):
         return hash_input + A
 ```
 
-Implement your own hash function class which inherits from `SymbolicHash` and has the function `hash(...)`, and add your class to the dictionary returned by the function `hash_algorithms()` in [`dataset_generation/hash_funcs.py`](./dataset_generation/hash_funcs.py). The following operations are supported for primitives (`SymBitVec` objects) in the hash function:
+Implement your own hash function class which inherits from `SymbolicHash` and has the function `hash(...)`, and add your class to the dictionary returned by the function `hash_algorithms()` in [`dataset_generation/hash_funcs.py`](./dataset_generation/hash_funcs.py). The following operations are supported for primitives ([`SymBitVec`](./dataset_generation/sym_bit_vec.py) objects) in the hash function:
 
 - AND: `C = A & B`
 - OR: `C = A | B`
@@ -267,7 +267,7 @@ Using the latest and greatest as of November 2020, the solving methods are liste
 6. [Cplex constraint programming]()
 7. [Cplex MILP]()
 8. Least-squares optimization
-9. [Graduated non-convexity](https://arxiv.org/pdf/1909.08605.pdf)
+9. [Graduated non-convexity](https://arxiv.org/pdf/1909.08605)
 10. Loopy belief propagation
 11. Graph-based neural network
 
@@ -283,22 +283,73 @@ Below, we can see that the number of INV and AND gates grow relatively linearly,
 
 ![complexity growth](./images/sha256_factors.png)
 
-### SAT Solver
+### SAT Solvers
+
+Satisfiability (SAT) solvers operate on boolean logic relationships to find a satisfying assignment for free boolean variables. I would put solvers like MiniSat, CryptoMiniSat, `ortools` constraint programming, and Cplex constraint programming in this category. These types of solvers generally work by assigning fixed values to free variables until there is a logical conflict, and then backtracking until the conflict is resolved and trying new variable assignments in the conflict region. This is a gross simplification though. There are a lot of tricks people have come up with to speed up the process, heuristics to pick the order of variable assignments, learning from conflicts, etc. [Here](https://www.msoos.org/minisat-faq/) is a nice website to get started learning, and [this guy](https://www.youtube.com/watch?v=d76e4hV1iJY&ab_channel=ClojureTV) gives a nice talk.
+
+From what I can tell, this is one of the best methods for preimage attacks to date. A lot of the solvers are implemented in C or C++ so they run extremely fast, and they are heavily optimized with heuristics. People have already tried to use SAT solvers to break cryptographic hash functions, but you do eventually hit a limit on the feasible problem size.
 
 ### MILP
 
+Mixed-integer linear programming (MILP) is a form of optimization where the optimization variables may be integer-valued, rather than the usual real-valued. Gurobi MILP, Cplex MILP, and `ortools` MILP fall into this category. The theory underpinning MILP solvers is honestly pretty complex (or should I say... simplex). However, if you want to read more, Google terms like "linear programming relaxations," "branch and bound," or "cutting planes." A good place to start is [Gurobi's introduction to MIP](https://www.gurobi.com/resource/mip-basics/).
+
+Solvers from the major players like Gurobi, Cplex, and [coin-or](https://www.coin-or.org/) work well (much like the SAT solvers) until 17 rounds of SHA-256.
+
 ### Optimization
+
+I've done a fair bit of work on graph-based [SLAM](https://en.wikipedia.org/wiki/Simultaneous_localization_and_mapping) and had an idea to apply something from robust estimation techniques to solving the preimage problem. This something is called "Graduated Non-Convexity" (GNC), introduced in [this](https://arxiv.org/abs/1909.08605) paper.
 
 ### Belief Propagation
 
+Belif propagation (BP) is an iterative "message passing" algorithm in which messages are passed between factors and random variables (RVs) in a factor graph. We say the algorithm has _converged_ when none of the messages change by more than some small value ε.
+
+Once the messages have converged, we can use them to perform queries on the factor graph, for example to answer the question "What is the probability that the input message bit 0 is a 1, given that I know all of the hash bits?"
+
+What exactly is a "message"? It's hard to explain, to be honest. It's quite mathematical, theoretical, and unintuitive. I would recommend [this article](http://nghiaho.com/?page_id=1366) to understand it.
+
+A factor graph is a bipartite graph wherein one side of the graph has RVs (bits) as nodes, and the other side has all of the "factors" as nodes (AND, INV logic gates). Each factor represents a conditional probability distribution and has a "query" RV (output of the logic gate) as well as a list of "dependency" RVs (inputs to the logic gate).
+
+For example, a factor `f` may represent `P(rv1 | rv5, rv10, rv21)`, i.e. the probability of observing `RV 1 = 0` or `RV 1 = 1`, given that we know the values of `RV 5`, `RV 10`, and `RV 21`.
+
+Each factor has a table which contains the probability of the query, given all possible values of the dependencies. If there are N dependencies in a factor, the table size is 2^N, so you can see how it is beneficial to keep the size of each factor low.
+
+Let's take an example. Factor `f` has query `hash_bit_5` and dependencies `[bit_13, bit_21]`. It represents the [conditional probability distribution](https://en.wikipedia.org/wiki/Conditional_probability_distribution) (CPD) `P(hash_bit_5 | bit_13, bit_21)`.
+
+Our factor `f` would have a table such as:
+
+
+| `bit_13`        | `bit_21`        | `P(hash_bit_5 = 1 ｜  bit_13, bit_21)` |
+| --------------- | --------------- | ------------------------------------ |
+| 0             | 0             | `P(1 ｜ 0, 0) = ?`                    |
+| 0             | 1             | `P(1 ｜ 0, 1) = ?`                    |
+| 1             | 0             | `P(1 ｜ 1, 0) = ?`                    |
+| 1             | 1             | `P(1 ｜ 1, 1) = ?`                    |
+
+
+**Note**: It's not necessary to compute `P(hash_bit_5 = 0 | bit_13, bit_21)` because it can be derived by `1.0 - P(hash_bit_5 = 1 | bit_13, bit_21)`.
+
+
+Let's say we want to calculate a CPD. How would we calculate, for example, `P(hash_bit_5 = 1 | bit_13 = 0, bit_21 = 1)`?
+
+It's simple actually: go through each item in the dataset. Count how many items have `hash_bit_5 = 1 AND bit_13 = 0 AND bit_21 = 1`. Let's call this value **x**.
+
+Now count how many items have `bit_13 = 0 AND bit_21 = 1`. Let's call this value **y**. The CPD we want can be approximated with **x / y**.
+
 ### Machine Learning
 
+The idea here is that one could train a neural network to predict a valid hash input `X` given knowledge of hash output `Y` and the hash function `f` where `f(X) = Y`. In other words, a neural network should learn an inverse function `g` where `f(g(Y)) = Y` by observing many instances of random inputs and outputs. To this end, I (painfully) modified the [`SymBitVec`](./dataset_generation/sym_bit_vec.py) primitive to support [PyTorch](https://pytorch.org/) tensors and work 100% with backpropagation. I also modified the dataset generation tool to split samples into train, validation, and test files in HDF5 format.
+
+The neural network architecture needs more work and thought put into it. As of now it doesn't perform well at all. I have struggled with enforcing "hard" relationships between bits, for example the network tries to learn valid assignments for all bits in the hash computation, but at the same time needs to be aware that if two bits are related by an INV operation, then `B = 1 - A`. Graph-based neural networks are one possible approach, but I recently saw this [talk](https://www.youtube.com/watch?v=EqvzIGY_bI4&ab_channel=MicrosoftResearch) and corresponding [code](https://github.com/dselsam/neurosat/tree/master/python) for a network called "NeuroSAT", which is extremely interesting and possibly promising.
+
+Backpropagation through the hash function (and more in general, training a network on a large problem) is unfortunately quite slow. I believe this is a result of the complex [Autograd](https://pytorch.org/docs/stable/autograd.html) graph that the hash function creates, due to all of the slicing and moving around of individual tensor elements (bits).
 
 
 # References and Resources
 
+You can always try to contact me (trevphil3 -at- gmail -dot- com) and I will do my best to respond. I have spent over a year working on this problem in my free time and I'm quite passionate about it. Besides the links in the body of the README, here are some more helpful articles and papers:
+
 - [SAT-based preimage attacks on SHA-1, Masters Thesis of Vegard Nossum](https://www.duo.uio.no/bitstream/handle/10852/34912/thesis-output.pdf?sequence=1&isAllowed=y)
 - [Explanation on using SAT solver with BitCoin](http://jheusser.github.io/2013/02/03/satcoin.html)
 - [SAT Solvers for Cryptanalysis](https://www.microsoft.com/en-us/research/publication/applications-of-sat-solvers-to-cryptanalysis-of-hash-functions/)
-- [Loopy Belief Propagation Explanation](http://nghiaho.com/?page_id=1366)
+- [Visualizing cryptographic hash functions](http://blog.sophisticatedways.net/2018/11/visualising-sha-1.html)
 - [md5 Implementation](https://github.com/narkkil/md5)
