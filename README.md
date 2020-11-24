@@ -297,7 +297,22 @@ Solvers from the major players like Gurobi, Cplex, and [coin-or](https://www.coi
 
 ### Optimization
 
-I've done a fair bit of work on graph-based [SLAM](https://en.wikipedia.org/wiki/Simultaneous_localization_and_mapping) and had an idea to apply something from robust estimation techniques to solving the preimage problem. This something is called "Graduated Non-Convexity" (GNC), introduced in [this](https://arxiv.org/abs/1909.08605) paper.
+As opposed to mixed-integer optimization, I also tried out plain-ol' regular optimization with real-valued optimization variables. A vector `x` with N elements is optimized, which represents the value of each bit in the hash computation. To convert to boolean values, I set bit _i_ to 1 if `x[i] > 0.5`, otherwise 0. Bit inversions are represented as equality constraints in the optimization, `Ax = b`, and AND gates are represented by 3 inequalities (described earlier), giving inequality constraints `Cx <= d`. Upper and lower bounds on `x` can also be added to the inequality constraints, enforcing `0 <= x <= 1`.
+
+For an example of a bit inversion constraint, let's say `bit_1 = ~bit_0 = 1 - bit_0`. Then we would have a row in `A` like `[1 1 0 ... 0]` and the corresponding element in the `b` vector would be `1`. Then `Ax = b` gives `bit_0 + bit_1 = 1`.
+
+The initial guess for `x` is initialized to `0.5` except for the observed hash output bits, which are initialied to their observed values. I didn't add the observed bits to the equality constraints because [SLSQP](https://docs.scipy.org/doc/scipy/reference/optimize.minimize-slsqp.html) complains that the system is overdetermined.
+
+This method turns out to perform poorly if the problem gets even moderately complex. Approximating boolean values by rounding real numbers doesn't translate well into a valid solution.
+
+**Robust Estimation and Graduated Non-Convexity**
+
+I've done [a fair bit of work](https://driverless.amzracing.ch/) on graph-based [SLAM](https://en.wikipedia.org/wiki/Simultaneous_localization_and_mapping) and had an idea to apply something from robust estimation techniques to solving the preimage problem. This something is called "Graduated Non-Convexity" (GNC), introduced in [this](https://arxiv.org/abs/1909.08605) paper.
+
+In GraphSLAM, a lot of research has gone into rejecting outliers that are incorrectly added to the graph. When the graph is optimized, certain techniques like [dynamic covariance scaling](http://www2.informatik.uni-freiburg.de/~stachnis/pdf/agarwal13icra.pdf) (DCS) can help the graph optimization to ignore outlies that influence the objective function. GNC achieves a similar outcome but works by turning a non-convex optimization problem into a convex one, and then gradually _decreasing_ the convexity with a hyperparameter which changes after each iteration. My idea was to apply the same thing to the preimage problem. For each AND gate, we can add "conflicting" constraints which make different assumptions about the AND gate variables (think: `0 & 0`, `0 & 1`, `1 & 0`, `1 & 1`), some of which will be incorrect. As the optimization proceeds, the robust estimation technique will reject the bad constraints and keep the good ones.
+
+Unfortunately, much like before, this turned out to not work very well for even moderate problems. However, if this technique could be extended for MIP optimization, maybe we would see quite different results (TODO).
+
 
 ### Belief Propagation
 
