@@ -47,7 +47,8 @@ python --version  # Should show 3.6
 Install project dependencies:
 
 ```
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
+python -m pip install -i https://pypi.gurobi.com gurobipy
 ```
 
 Not all of the solving methods will work out-of-the-box from here. If you want certain solvers, you will need to install them individually:
@@ -115,6 +116,12 @@ optional arguments:
   -h, --help            Show this help message and exit
   --solver {gradient,gnc,cplex_milp,cplex_cp,ortools_cp,ortools_milp,gurobi_milp,minisat,crypto_minisat}
                         The solving technique
+```
+
+To run the C++ belief propagation code after having compiled it with `./kompile`, choose one of the [config files](./belief_propagation/config) and run the following command from the [`belief_propagation`](./belief_propagation) directory:
+
+```
+$ ./main config/config_file_name.yaml
 ```
 
 ### Writing your own hash function

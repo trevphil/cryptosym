@@ -9,7 +9,6 @@ decorator==4.4.2
 docplex==2.15.194
 ecos==2.0.7.post1
 future==0.18.2
-gurobipy==9.0.1
 h5py==2.10.0
 idna==2.10
 kiwisolver==1.2.0
