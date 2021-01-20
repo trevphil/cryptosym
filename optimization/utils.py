@@ -35,10 +35,18 @@ def set_implicit_observed(factors, observed, all_bits, verbose=True):
             if factor.factor_type in ('INV', 'SAME'):
                 inp = factor.input_rvs[0]
                 queue.append(inp)
-            elif factor.factor_type == 'AND' and observed[rv] == True:
+            elif factor.factor_type == 'AND':
                 inp1, inp2 = factor.input_rvs[:2]
-                queue.append(inp1)
-                queue.append(inp2)
+                if observed[rv] == True:
+                    # Output is observed to be 1, so inputs must be 1
+                    queue.append(inp1)
+                    queue.append(inp2)
+                elif inp1 in observed.keys() and observed[inp1] == True:
+                    # Output is 0, inp1 is 1, so inp2 must be 0
+                    queue.append(inp2)
+                elif inp2 in observed.keys() and observed[inp2] == True:
+                    # Output is 0, inp2 is 1, so inp1 must be 0
+                    queue.append(inp1)
 
         return observed, smallest_obs
 
