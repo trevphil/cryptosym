@@ -14,9 +14,9 @@
 
 #include <string>
 
-#include "hash_reversal/inference_tool.hpp"
+#include "belief_propagation/inference_tool.hpp"
 
-namespace hash_reversal {
+namespace belief_propagation {
 
 class FactorGraph : public InferenceTool {
  public:
@@ -41,4 +41,4 @@ class FactorGraph : public InferenceTool {
   std::vector<InferenceTool::Prediction> previous_marginals_;
 };
 
-}  // end namespace hash_reversal
+}  // end namespace belief_propagation

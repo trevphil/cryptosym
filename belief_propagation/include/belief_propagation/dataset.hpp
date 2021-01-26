@@ -19,12 +19,12 @@
 #include <utility>
 #include <vector>
 
-#include "hash_reversal/factor.hpp"
-#include "hash_reversal/variable_assignments.hpp"
+#include "belief_propagation/factor.hpp"
+#include "belief_propagation/variable_assignments.hpp"
 #include "utils/config.hpp"
 #include "utils/convenience.hpp"
 
-namespace hash_reversal {
+namespace belief_propagation {
 
 class Dataset {
  public:
@@ -48,4 +48,4 @@ class Dataset {
   std::vector<boost::dynamic_bitset<>> samples_;
 };
 
-}  // end namespace hash_reversal
+}  // end namespace belief_propagation

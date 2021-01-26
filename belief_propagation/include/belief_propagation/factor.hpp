@@ -18,10 +18,10 @@
 #include <string>
 #include <utility>
 
-#include "hash_reversal/variable_assignments.hpp"
+#include "belief_propagation/variable_assignments.hpp"
 #include "utils/config.hpp"
 
-namespace hash_reversal {
+namespace belief_propagation {
 
 /*****************************************
  *********** FACTOR GRAPH NODE ***********
@@ -74,4 +74,4 @@ class Factor : public FactorGraphNode {
   std::set<size_t> referenced_rvs;
 };
 
-}  // end namespace hash_reversal
+}  // end namespace belief_propagation

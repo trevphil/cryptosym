@@ -10,14 +10,14 @@
  * Proprietary and confidential
  */
 
-#include "hash_reversal/dataset.hpp"
+#include "belief_propagation/dataset.hpp"
 
 #include <spdlog/spdlog.h>
 
 #include <fstream>
 #include <iostream>
 
-namespace hash_reversal {
+namespace belief_propagation {
 
 Dataset::Dataset(std::shared_ptr<utils::Config> config) : config_(config) {
   spdlog::info("Loading dataset...");
@@ -156,4 +156,4 @@ boost::dynamic_bitset<> Dataset::getFullSample(size_t sample_index) const {
   return all_bits;
 }
 
-}  // end namespace hash_reversal
+}  // end namespace belief_propagation

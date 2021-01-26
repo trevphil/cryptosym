@@ -14,8 +14,8 @@
 
 #include <map>
 
-namespace hash_reversal {
+namespace belief_propagation {
 
 typedef std::map<size_t, bool> VariableAssignments;
 
-}  // end namespace hash_reversal
+}  // end namespace belief_propagation

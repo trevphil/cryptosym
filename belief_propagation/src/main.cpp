@@ -16,10 +16,10 @@
 #include <memory>
 #include <vector>
 
-#include "hash_reversal/dataset.hpp"
-#include "hash_reversal/factor_graph.hpp"
-#include "hash_reversal/inference_tool.hpp"
-#include "hash_reversal/probability.hpp"
+#include "belief_propagation/dataset.hpp"
+#include "belief_propagation/factor_graph.hpp"
+#include "belief_propagation/inference_tool.hpp"
+#include "belief_propagation/probability.hpp"
 #include "utils/config.hpp"
 #include "utils/stats.hpp"
 
@@ -38,16 +38,16 @@ int main(int argc, char** argv) {
   }
 
   // Initialize objects used by the algorithm
-  const std::shared_ptr<hash_reversal::Dataset> dataset(
-      new hash_reversal::Dataset(config));
-  const std::shared_ptr<hash_reversal::Probability> prob(
-      new hash_reversal::Probability(config));
+  const std::shared_ptr<belief_propagation::Dataset> dataset(
+      new belief_propagation::Dataset(config));
+  const std::shared_ptr<belief_propagation::Probability> prob(
+      new belief_propagation::Probability(config));
 
-  std::shared_ptr<hash_reversal::InferenceTool> inference_tool;
+  std::shared_ptr<belief_propagation::InferenceTool> inference_tool;
 
   if (config->method == "lbp") {
-    inference_tool = std::shared_ptr<hash_reversal::InferenceTool>(
-        new hash_reversal::FactorGraph(prob, dataset, config));
+    inference_tool = std::shared_ptr<belief_propagation::InferenceTool>(
+        new belief_propagation::FactorGraph(prob, dataset, config));
   } else {
     spdlog::error("Unsupported method: {}", config->method);
     return 1;

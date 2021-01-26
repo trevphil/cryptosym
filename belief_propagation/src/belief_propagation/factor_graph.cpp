@@ -10,7 +10,7 @@
  * Proprietary and confidential
  */
 
-#include "hash_reversal/factor_graph.hpp"
+#include "belief_propagation/factor_graph.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -18,7 +18,7 @@
 #include <cmath>
 #include <string>
 
-namespace hash_reversal {
+namespace belief_propagation {
 
 FactorGraph::FactorGraph(std::shared_ptr<Probability> prob,
                          std::shared_ptr<Dataset> dataset,
@@ -180,4 +180,4 @@ void FactorGraph::updateRandomVariableMessages(bool forward) {
   }
 }
 
-}  // end namespace hash_reversal
+}  // end namespace belief_propagation

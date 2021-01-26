@@ -15,14 +15,14 @@
 #include <memory>
 #include <vector>
 
-#include "hash_reversal/dataset.hpp"
-#include "hash_reversal/factor.hpp"
-#include "hash_reversal/probability.hpp"
-#include "hash_reversal/variable_assignments.hpp"
+#include "belief_propagation/dataset.hpp"
+#include "belief_propagation/factor.hpp"
+#include "belief_propagation/probability.hpp"
+#include "belief_propagation/variable_assignments.hpp"
 #include "utils/config.hpp"
 #include "utils/convenience.hpp"
 
-namespace hash_reversal {
+namespace belief_propagation {
 
 class InferenceTool {
  public:
@@ -59,4 +59,4 @@ class InferenceTool {
   void printConnections() const;
 };
 
-}  // end namespace hash_reversal
+}  // end namespace belief_propagation

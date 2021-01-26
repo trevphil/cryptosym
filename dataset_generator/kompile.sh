@@ -12,4 +12,4 @@ cmake -D CMAKE_C_COMPILER=gcc -D CMAKE_CXX_COMPILER=g++ ..
 
 make
 
-mv belief_propagation ../main
+mv dataset_generator ../main

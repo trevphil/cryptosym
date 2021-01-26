@@ -18,11 +18,11 @@
 #include <memory>
 #include <vector>
 
-#include "hash_reversal/factor.hpp"
-#include "hash_reversal/variable_assignments.hpp"
+#include "belief_propagation/factor.hpp"
+#include "belief_propagation/variable_assignments.hpp"
 #include "utils/config.hpp"
 
-namespace hash_reversal {
+namespace belief_propagation {
 
 class Probability {
  public:
@@ -35,4 +35,4 @@ class Probability {
   std::shared_ptr<utils::Config> config_;
 };
 
-}  // end namespace hash_reversal
+}  // end namespace belief_propagation

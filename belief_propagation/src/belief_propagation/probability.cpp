@@ -10,9 +10,9 @@
  * Proprietary and confidential
  */
 
-#include "hash_reversal/probability.hpp"
+#include "belief_propagation/probability.hpp"
 
-namespace hash_reversal {
+namespace belief_propagation {
 
 Probability::Probability(std::shared_ptr<utils::Config> config) : config_(config) {}
 
@@ -54,4 +54,4 @@ double Probability::probOne(const Factor &factor, const VariableAssignments &ass
   return std::max(eps, std::min(1.0 - eps, assignment_prob));
 }
 
-}  // end namespace hash_reversal
+}  // end namespace belief_propagation

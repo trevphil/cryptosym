@@ -10,11 +10,11 @@
  * Proprietary and confidential
  */
 
-#include "hash_reversal/factor.hpp"
+#include "belief_propagation/factor.hpp"
 
 #include <spdlog/spdlog.h>
 
-namespace hash_reversal {
+namespace belief_propagation {
 
 /*****************************************
  *********** FACTOR GRAPH NODE ***********
@@ -82,4 +82,4 @@ std::vector<size_t> Factor::inputRVs() const {
   return inputs;
 }
 
-}  // end namespace hash_reversal
+}  // end namespace belief_propagation

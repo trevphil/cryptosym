@@ -10,13 +10,13 @@
  * Proprietary and confidential
  */
 
-#include "hash_reversal/inference_tool.hpp"
+#include "belief_propagation/inference_tool.hpp"
 
 #include <list>
 
 #include <spdlog/spdlog.h>
 
-namespace hash_reversal {
+namespace belief_propagation {
 
 InferenceTool::InferenceTool(std::shared_ptr<Probability> prob,
                              std::shared_ptr<Dataset> dataset,
@@ -112,4 +112,4 @@ void InferenceTool::printConnections() const {
   }
 }
 
-}  // end namespace hash_reversal
+}  // end namespace belief_propagation
