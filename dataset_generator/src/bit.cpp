@@ -11,6 +11,7 @@
  */
 
 #include "bit.hpp"
+
 #include "config.hpp"
 
 namespace dataset_generator {

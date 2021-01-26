@@ -10,16 +10,15 @@
  * Proprietary and confidential
  */
 
-#include <spdlog/spdlog.h>
-
 #include "solver.hpp"
+
+#include <spdlog/spdlog.h>
 
 namespace dataset_generator {
 
 Solver::Solver(const std::vector<Factor> &factors,
                const std::vector<size_t> &input_indices)
-  : factors_(factors), input_indices_(input_indices) {
-}
+    : factors_(factors), input_indices_(input_indices) {}
 
 Solver::~Solver() {}
 
@@ -31,17 +30,12 @@ std::map<size_t, bool> Solver::solve(const std::map<size_t, bool> &observed) {
   return solution;
 }
 
-void Solver::reset() {
-  observed_.clear();
-}
+void Solver::reset() { observed_.clear(); }
 
-void Solver::setImplicitObserved() {
-}
+void Solver::setImplicitObserved() {}
 
-void Solver::propagateBackward() {
-}
+void Solver::propagateBackward() {}
 
-void Solver::propagateForward() {
-}
+void Solver::propagateForward() {}
 
 }  // end namespace dataset_generator

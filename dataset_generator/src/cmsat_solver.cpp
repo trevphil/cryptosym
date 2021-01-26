@@ -10,16 +10,15 @@
  * Proprietary and confidential
  */
 
-#include <spdlog/spdlog.h>
-
 #include "cmsat_solver.hpp"
+
+#include <spdlog/spdlog.h>
 
 namespace dataset_generator {
 
 CMSatSolver::CMSatSolver(const std::vector<Factor> &factors,
                          const std::vector<size_t> &input_indices)
-  : Solver(factors, input_indices) {
-
+    : Solver(factors, input_indices) {
   rv2idx_ = {};
   const unsigned int n = factors_.size();
   for (unsigned int i = 0; i < n; ++i) rv2idx_[factors_.at(i).output] = i;
@@ -34,63 +33,54 @@ CMSatSolver::CMSatSolver(const std::vector<Factor> &factors,
 
   for (const Factor &f : factors) {
     switch (f.t) {
-    case Factor::Type::PriorFactor:
-      break;
-    case Factor::Type::SameFactor:
-      clause = {  // -out inp 0
-        CMSat::Lit(rv2idx_[f.output], true),
-        CMSat::Lit(rv2idx_[f.inputs.at(0)], false)
-      };
-      solver_->add_clause(clause);
-      clause = {  // out -inp 0
-        CMSat::Lit(rv2idx_[f.output], false),
-        CMSat::Lit(rv2idx_[f.inputs.at(0)], true)
-      };
-      solver_->add_clause(clause);
-      break;
-    case Factor::Type::NotFactor:
-      clause = {  // out inp 0
-        CMSat::Lit(rv2idx_[f.output], false),
-        CMSat::Lit(rv2idx_[f.inputs.at(0)], false)
-      };
-      solver_->add_clause(clause);
-      clause = {  // -out -inp 0
-        CMSat::Lit(rv2idx_[f.output], true),
-        CMSat::Lit(rv2idx_[f.inputs.at(0)], true)
-      };
-      solver_->add_clause(clause);
-      break;
-    case Factor::Type::AndFactor:
-      clause = {  // -out inp1 0
-        CMSat::Lit(rv2idx_[f.output], true),
-        CMSat::Lit(rv2idx_[f.inputs.at(0)], false)
-      };
-      solver_->add_clause(clause);
-      clause = {  // -out inp2 0
-        CMSat::Lit(rv2idx_[f.output], true),
-        CMSat::Lit(rv2idx_[f.inputs.at(1)], false)
-      };
-      solver_->add_clause(clause);
-      clause = {  // out -inp1 -inp2 0
-        CMSat::Lit(rv2idx_[f.output], false),
-        CMSat::Lit(rv2idx_[f.inputs.at(0)], true),
-        CMSat::Lit(rv2idx_[f.inputs.at(1)], true)
-      };
-      solver_->add_clause(clause);
-      break;
-    case Factor::Type::XorFactor:
-      xor_clause = {
-        rv2idx_[f.output],
-        rv2idx_[f.inputs.at(0)],
-        rv2idx_[f.inputs.at(1)]
-      };
-      solver_->add_xor_clause(xor_clause, 0);
-      break;
+      case Factor::Type::PriorFactor:
+        break;
+      case Factor::Type::SameFactor:
+        clause = {// -out inp 0
+                  CMSat::Lit(rv2idx_[f.output], true),
+                  CMSat::Lit(rv2idx_[f.inputs.at(0)], false)};
+        solver_->add_clause(clause);
+        clause = {// out -inp 0
+                  CMSat::Lit(rv2idx_[f.output], false),
+                  CMSat::Lit(rv2idx_[f.inputs.at(0)], true)};
+        solver_->add_clause(clause);
+        break;
+      case Factor::Type::NotFactor:
+        clause = {// out inp 0
+                  CMSat::Lit(rv2idx_[f.output], false),
+                  CMSat::Lit(rv2idx_[f.inputs.at(0)], false)};
+        solver_->add_clause(clause);
+        clause = {// -out -inp 0
+                  CMSat::Lit(rv2idx_[f.output], true),
+                  CMSat::Lit(rv2idx_[f.inputs.at(0)], true)};
+        solver_->add_clause(clause);
+        break;
+      case Factor::Type::AndFactor:
+        clause = {// -out inp1 0
+                  CMSat::Lit(rv2idx_[f.output], true),
+                  CMSat::Lit(rv2idx_[f.inputs.at(0)], false)};
+        solver_->add_clause(clause);
+        clause = {// -out inp2 0
+                  CMSat::Lit(rv2idx_[f.output], true),
+                  CMSat::Lit(rv2idx_[f.inputs.at(1)], false)};
+        solver_->add_clause(clause);
+        clause = {// out -inp1 -inp2 0
+                  CMSat::Lit(rv2idx_[f.output], false),
+                  CMSat::Lit(rv2idx_[f.inputs.at(0)], true),
+                  CMSat::Lit(rv2idx_[f.inputs.at(1)], true)};
+        solver_->add_clause(clause);
+        break;
+      case Factor::Type::XorFactor:
+        xor_clause = {rv2idx_[f.output], rv2idx_[f.inputs.at(0)],
+                      rv2idx_[f.inputs.at(1)]};
+        solver_->add_xor_clause(xor_clause, 0);
+        break;
     }
   }
 }
 
-std::map<size_t, bool> CMSatSolver::solve(const std::map<size_t, bool> &observed) {
+std::map<size_t, bool> CMSatSolver::solve(
+    const std::map<size_t, bool> &observed) {
   std::vector<CMSat::Lit> assumptions;
   for (const auto &itr : observed) {
     const unsigned int idx = rv2idx_[itr.first];

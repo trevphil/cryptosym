@@ -12,8 +12,9 @@
 
 #pragma once
 
-#include <map>
 #include <cryptominisat5/cryptominisat.h>
+
+#include <map>
 
 #include "solver.hpp"
 
@@ -27,7 +28,7 @@ class CMSatSolver : public Solver {
   std::map<size_t, bool> solve(const std::map<size_t, bool> &observed) override;
 
  private:
-  CMSat::SATSolver* solver_;
+  CMSat::SATSolver *solver_;
   std::map<size_t, unsigned int> rv2idx_;
 };
 

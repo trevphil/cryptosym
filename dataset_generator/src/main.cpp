@@ -13,14 +13,14 @@
 #include <spdlog/spdlog.h>
 
 #include <boost/dynamic_bitset.hpp>
-#include <string>
 #include <map>
+#include <string>
 
+#include "cmsat_solver.hpp"
 #include "hash_funcs.hpp"
 #include "sha256.hpp"
 #include "sym_bit_vec.hpp"
 #include "utils.hpp"
-#include "cmsat_solver.hpp"
 
 namespace dataset_generator {
 
@@ -136,7 +136,7 @@ void allTests() {
   // bitcoinGenesisBlockTest();
 }
 
-void run(int argc, char** argv) {
+void run(int argc, char **argv) {
   // allTests();
 
   const size_t input_size = 64;
@@ -192,7 +192,7 @@ void run(int argc, char** argv) {
 
 }  // end namespace dataset_generator
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   dataset_generator::run(argc, argv);
   return 0;
 }

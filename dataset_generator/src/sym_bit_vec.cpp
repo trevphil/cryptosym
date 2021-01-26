@@ -73,13 +73,9 @@ boost::dynamic_bitset<> SymBitVec::bits() const {
   return b;
 }
 
-std::string SymBitVec::bin() const {
-  return Utils::binstr(bits());
-}
+std::string SymBitVec::bin() const { return Utils::binstr(bits()); }
 
-std::string SymBitVec::hex() const {
-  return Utils::hexstr(bits());
-}
+std::string SymBitVec::hex() const { return Utils::hexstr(bits()); }
 
 Bit SymBitVec::at(size_t index) const {
   const size_t n = size();
