@@ -117,7 +117,9 @@ void SymHash::saveFactors(const std::string &factor_filename,
 }
 
 SymBitVec SymHash::hash(const SymBitVec &hash_input, int difficulty) {
-  throw "This function should be implemented in subclasses.";
+  spdlog::error("Calling hash() from generic superclass");
+  assert(false);
+  return hash_input;
 }
 
 SymBitVec SymHash::call(const boost::dynamic_bitset<> &hash_input,

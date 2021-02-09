@@ -89,23 +89,7 @@ std::map<size_t, bool> CMSatSolver::solve(
   }
 
   spdlog::info("Solving...");
-
-  size_t fixed_inputs = input_indices_.size();
-  for (size_t i = 0; i < fixed_inputs; ++i) {
-    assumptions.push_back(CMSat::Lit(rv2idx_[i], false));
-  }
-
-  CMSat::lbool ret = CMSat::l_False;
-  while (ret == CMSat::l_False && fixed_inputs >= 0) {
-    spdlog::info("Fixing {} input(s)", fixed_inputs);
-    ret = solver_->solve(&assumptions);
-    if (ret == CMSat::l_False && fixed_inputs > 0) {
-      spdlog::info("\tunsat");
-      assumptions.pop_back();
-      fixed_inputs--;
-    }
-  }
-
+  CMSat::lbool ret = solver_->solve(&assumptions);
   assert(ret == CMSat::l_True);
   const auto model = solver_->get_model();
 

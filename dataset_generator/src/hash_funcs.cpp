@@ -20,11 +20,11 @@ SymBitVec LossyPseudoHash::hash(const SymBitVec &hash_input, int difficulty) {
   const size_t n = hash_input.size();
   const size_t n4 = n / 4;
 
-  Utils::seed(1);
-  const SymBitVec A(Utils::randomBits(n));
-  const SymBitVec B(Utils::randomBits(n));
-  const SymBitVec C(Utils::randomBits(n));
-  const SymBitVec D(Utils::randomBits(n));
+  // Utils::seed(1);
+  const SymBitVec A(Utils::randomBits(n, 3));
+  const SymBitVec B(Utils::randomBits(n, 7));
+  const SymBitVec C(Utils::randomBits(n, 11));
+  const SymBitVec D(Utils::randomBits(n, 13));
 
   const SymBitVec mask((1 << n4) - 1, n);
   SymBitVec h = hash_input;

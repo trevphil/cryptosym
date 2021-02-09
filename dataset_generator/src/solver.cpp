@@ -25,7 +25,7 @@ Solver::~Solver() {}
 std::map<size_t, bool> Solver::solve(const std::map<size_t, bool> &observed) {
   reset();
   observed_ = observed;
-  spdlog::warn("Calling solve() from generic superclass");
+  spdlog::error("Calling solve() from generic superclass");
   std::map<size_t, bool> solution;
   return solution;
 }

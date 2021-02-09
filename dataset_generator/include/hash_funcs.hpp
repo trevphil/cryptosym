@@ -18,6 +18,7 @@
 namespace dataset_generator {
 
 class LossyPseudoHash : public SymHash {
+ public:
   SymBitVec hash(const SymBitVec &hash_input, int difficulty) override;
 };
 

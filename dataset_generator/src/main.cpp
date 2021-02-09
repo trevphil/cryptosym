@@ -21,6 +21,8 @@
 #include "sha256.hpp"
 #include "sym_bit_vec.hpp"
 #include "utils.hpp"
+#include "factor.hpp"
+#include "solver.hpp"
 
 namespace dataset_generator {
 
@@ -136,21 +138,48 @@ void allTests() {
   // bitcoinGenesisBlockTest();
 }
 
+SymHash* selectHashFunction(const std::string &name) {
+  if (name.compare("sha256") == 0) {
+    return new SHA256();
+  } else if (name.compare("lossyPseudoHash") == 0) {
+    return new LossyPseudoHash();
+  } else {
+    spdlog::error("Unrecognized hash function: {}", name);
+    throw "Unrecognized hash function";
+  }
+}
+
+Solver* selectSolver(const std::string &solving_method,
+                     const std::vector<Factor> &factors,
+                     const std::vector<size_t> hash_input_indices) {
+  if (solving_method.compare("cmsat") == 0) {
+    return new CMSatSolver(factors, hash_input_indices);
+  } else {
+    spdlog::error("Unsupported solver: {}", solving_method);
+    throw "Unsupported solver";
+  }
+}
+
 void run(int argc, char **argv) {
   // allTests();
 
+  const std::string hash_algo = "lossyPseudoHash";
+  const std::string solving_method = "cmsat";
   const size_t input_size = 64;
-  const int difficulty = 17;
+  const int difficulty = 1;
 
-  spdlog::info("Hash algorithm:\t{}", "SHA256");
+  spdlog::info("Hash algorithm:\t{}", hash_algo);
+  spdlog::info("Solver:\t\t{}", solving_method);
   spdlog::info("Input message size:\t{} bits", input_size);
   spdlog::info("Difficulty level:\t{}", difficulty);
 
   // Execute hash algorithm on random input
-  SHA256 sha256;
+  SymHash *h = selectHashFunction(hash_algo);
   boost::dynamic_bitset<> input = Utils::randomBits(input_size, 0);
-  SymBitVec output_bits = sha256.call(input, difficulty);
+  SymBitVec output_bits = h->call(input, difficulty);
   const std::string output_hash = output_bits.hex();
+
+  // TODO: cull ignorable RVs
 
   // Collect observed bits
   std::map<size_t, bool> observed;
@@ -165,8 +194,9 @@ void run(int argc, char **argv) {
   for (size_t i = 0; i < n; ++i) assert(i == factors.at(i).output);
 
   // Solve and extract the predicted input bits
-  CMSatSolver solver(factors, sha256.hashInputIndices());
-  const std::map<size_t, bool> assignments = solver.solve(observed);
+  Solver *solver = selectSolver(solving_method, factors,
+                                h->hashInputIndices());
+  const std::map<size_t, bool> assignments = solver->solve(observed);
   boost::dynamic_bitset<> pred_input(input_size);
   for (const auto &itr : assignments) {
     const size_t bit_idx = itr.first;
@@ -178,7 +208,7 @@ void run(int argc, char **argv) {
   spdlog::info("Reconstructed input:\t{}", Utils::hexstr(pred_input));
 
   // Check if prediction yields the same hash
-  std::string pred_output = sha256.call(pred_input, difficulty).hex();
+  std::string pred_output = h->call(pred_input, difficulty).hex();
   if (output_hash.compare(pred_output) == 0) {
     spdlog::info("Success! Hashes match:\t{}", output_hash);
   } else {
@@ -188,6 +218,12 @@ void run(int argc, char **argv) {
   }
 
   spdlog::info("Done.");
+
+  // Free pointers and de-allocate memory
+  delete h;
+  h = NULL;
+  delete solver;
+  solver = NULL;
 }
 
 }  // end namespace dataset_generator
