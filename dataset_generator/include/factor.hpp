@@ -29,6 +29,8 @@ class Factor {
     XorFactor = 'X'
   };
 
+  Factor();
+
   Factor(Type t, const size_t output, const std::vector<size_t> &inputs = {});
 
   virtual ~Factor();
@@ -45,6 +47,7 @@ class Factor {
   size_t output;
   std::vector<size_t> inputs;
   size_t n_inputs;
+  bool valid;
 };
 
 }  // end namespace dataset_generator

@@ -22,10 +22,11 @@ namespace dataset_generator {
 
 class CMSatSolver : public Solver {
  public:
-  CMSatSolver(const std::vector<Factor> &factors,
+  CMSatSolver(const std::map<size_t, Factor> &factors,
               const std::vector<size_t> &input_indices);
 
-  std::map<size_t, bool> solve(const std::map<size_t, bool> &observed) override;
+ protected:
+  std::map<size_t, bool> solveInternal() override;
 
  private:
   CMSat::SATSolver *solver_;

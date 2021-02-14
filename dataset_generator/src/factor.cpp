@@ -19,9 +19,11 @@ namespace dataset_generator {
 
 std::vector<Factor> Factor::global_factors = {};
 
+Factor::Factor() : valid(false) {}
+
 Factor::Factor(Factor::Type typ, const size_t out,
                const std::vector<size_t> &inp)
-    : t(typ), output(out), inputs(inp) {
+    : t(typ), output(out), inputs(inp), valid(true) {
   n_inputs = Factor::numInputs(t);
   if (n_inputs != inp.size()) {
     spdlog::info("Factor {} requires {} input(s) but got {}", char(t), n_inputs,

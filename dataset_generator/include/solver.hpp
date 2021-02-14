@@ -16,29 +16,32 @@
 #include <vector>
 
 #include "factor.hpp"
+#include "bit.hpp"
 
 namespace dataset_generator {
 
 class Solver {
  public:
-  Solver(const std::vector<Factor> &factors,
+  Solver(const std::map<size_t, Factor> &factors,
          const std::vector<size_t> &input_indices);
 
   virtual ~Solver();
 
-  virtual std::map<size_t, bool> solve(const std::map<size_t, bool> &observed);
+  std::map<size_t, bool> solve(const std::map<size_t, bool> &observed);
 
  protected:
   void reset();
 
-  std::vector<Factor> factors_;
+  virtual std::map<size_t, bool> solveInternal();
+
+  std::map<size_t, Factor> factors_;
   std::map<size_t, bool> observed_;
   std::vector<size_t> input_indices_;
 
  private:
   void setImplicitObserved();
-  void propagateBackward();
-  void propagateForward();
+  size_t propagateBackward();
+  void propagateForward(size_t smallest_obs);
 };
 
 }  // end namespace dataset_generator

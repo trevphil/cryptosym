@@ -150,7 +150,7 @@ SymHash* selectHashFunction(const std::string &name) {
 }
 
 Solver* selectSolver(const std::string &solving_method,
-                     const std::vector<Factor> &factors,
+                     const std::map<size_t, Factor> &factors,
                      const std::vector<size_t> hash_input_indices) {
   if (solving_method.compare("cmsat") == 0) {
     return new CMSatSolver(factors, hash_input_indices);
@@ -163,10 +163,11 @@ Solver* selectSolver(const std::string &solving_method,
 void run(int argc, char **argv) {
   // allTests();
 
-  const std::string hash_algo = "lossyPseudoHash";
+  const std::string hash_algo = "sha256";
+  // const std::string hash_algo = "lossyPseudoHash";
   const std::string solving_method = "cmsat";
   const size_t input_size = 64;
-  const int difficulty = 1;
+  const int difficulty = 4;
 
   spdlog::info("Hash algorithm:\t{}", hash_algo);
   spdlog::info("Solver:\t\t{}", solving_method);
@@ -179,8 +180,6 @@ void run(int argc, char **argv) {
   SymBitVec output_bits = h->call(input, difficulty);
   const std::string output_hash = output_bits.hex();
 
-  // TODO: cull ignorable RVs
-
   // Collect observed bits
   std::map<size_t, bool> observed;
   for (size_t i = 0; i < output_bits.size(); ++i) {
@@ -188,17 +187,31 @@ void run(int argc, char **argv) {
     observed[b.index] = b.val;
   }
 
-  // Collect factors
-  const std::vector<Factor> &factors = Factor::global_factors;
-  const size_t n = factors.size();
-  for (size_t i = 0; i < n; ++i) assert(i == factors.at(i).output);
+  // Collect factors in a mapping from RV index --> factor
+  const size_t n = Factor::global_factors.size();
+  std::map<size_t, Factor> factors;
+  for (size_t i = 0; i < n; ++i) {
+    const Factor &f = Factor::global_factors.at(i);
+    assert(i == f.output);
+    // Skip bits which are not ancestors of observed bits
+    if (!h->canIgnore(i)) factors[i] = f;
+  }
 
   // Solve and extract the predicted input bits
   Solver *solver = selectSolver(solving_method, factors,
                                 h->hashInputIndices());
   const std::map<size_t, bool> assignments = solver->solve(observed);
   boost::dynamic_bitset<> pred_input(input_size);
+
+  // Fill input prediction with assignments from the solver
   for (const auto &itr : assignments) {
+    const size_t bit_idx = itr.first;
+    const bool bit_val = itr.second;
+    if (bit_idx < input_size) pred_input[bit_idx] = bit_val;
+  }
+
+  // Fill with observed bits, if any input bits made it directly to output
+  for (const auto &itr : observed) {
     const size_t bit_idx = itr.first;
     const bool bit_val = itr.second;
     if (bit_idx < input_size) pred_input[bit_idx] = bit_val;

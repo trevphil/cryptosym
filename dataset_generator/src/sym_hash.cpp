@@ -126,12 +126,18 @@ SymBitVec SymHash::call(const boost::dynamic_bitset<> &hash_input,
                         int difficulty) {
   Bit::reset();
   Factor::reset();
+  did_find_ignorable_ = false;
   SymBitVec inp(hash_input, true);
   hash_input_indices_ = inp.rvIndices();
   SymBitVec out = hash(inp, difficulty);
   assert(Factor::global_factors.size() == Bit::global_bits.size());
   hash_output_indices_ = out.rvIndices();
   return out;
+}
+
+bool SymHash::canIgnore(size_t rv) {
+  findIgnorableRVs();
+  return ignorable_.count(rv) > 0;
 }
 
 void SymHash::findIgnorableRVs() {

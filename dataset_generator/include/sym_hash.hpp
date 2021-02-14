@@ -40,9 +40,11 @@ class SymHash {
 
   SymBitVec call(const boost::dynamic_bitset<> &hash_input, int difficulty);
 
-  void findIgnorableRVs();
+  bool canIgnore(size_t rv);
 
  private:
+  void findIgnorableRVs();
+
   std::set<size_t> ignorable_;
   bool did_find_ignorable_;
   std::vector<size_t> hash_input_indices_;

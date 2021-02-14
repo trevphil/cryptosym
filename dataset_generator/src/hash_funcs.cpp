@@ -20,11 +20,10 @@ SymBitVec LossyPseudoHash::hash(const SymBitVec &hash_input, int difficulty) {
   const size_t n = hash_input.size();
   const size_t n4 = n / 4;
 
-  // Utils::seed(1);
-  const SymBitVec A(Utils::randomBits(n, 3));
-  const SymBitVec B(Utils::randomBits(n, 7));
-  const SymBitVec C(Utils::randomBits(n, 11));
-  const SymBitVec D(Utils::randomBits(n, 13));
+  const SymBitVec A(0xDEADBEEF12345678, n);
+  const SymBitVec B(0xFADBADB00BEAD321, n);
+  const SymBitVec C(0x1123579A00423CDF, n);
+  const SymBitVec D(0x0987654321FEDCBA, n);
 
   const SymBitVec mask((1 << n4) - 1, n);
   SymBitVec h = hash_input;
@@ -34,10 +33,10 @@ SymBitVec LossyPseudoHash::hash(const SymBitVec &hash_input, int difficulty) {
     SymBitVec b = ((h >> (n4 * 1)) & mask) ^ B;
     SymBitVec c = ((h >> (n4 * 2)) & mask) ^ C;
     SymBitVec d = ((h >> (n4 * 3)) & mask) ^ D;
-    a = (a | b);
-    b = (b & c);
-    c = (c ^ d);
-    h = a | (b << (n4 * 1)) | (c << (n4 * 2)) | (d << (n4 * 3));
+    SymBitVec e = (a | b);
+    SymBitVec f = (b & c);
+    SymBitVec g = (c ^ d);
+    h = e | (f << (n4 * 1)) | (g << (n4 * 2)) | (d << (n4 * 3));
   }
 
   return h;
