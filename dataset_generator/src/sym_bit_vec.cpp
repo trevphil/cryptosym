@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <ostream>
 
 #include "utils.hpp"
 
@@ -73,13 +74,25 @@ boost::dynamic_bitset<> SymBitVec::bits() const {
   return b;
 }
 
-std::string SymBitVec::bin() const { return Utils::binstr(bits()); }
+std::string SymBitVec::bin(bool colored) const {
+  if (!colored) return Utils::binstr(bits());
+  std::stringstream bit_stream;
+  const size_t n = size();
+  for (size_t i = 0; i < n; ++i) {
+    if (at(i).is_rv) {
+      bit_stream << "\033[32m" << (at(i).val ? '1' : '0') << "\033[0m";
+    } else {
+      bit_stream << (at(i).val ? '1' : '0');
+    }
+  }
+  return bit_stream.str();
+}
 
 std::string SymBitVec::hex() const { return Utils::hexstr(bits()); }
 
 Bit SymBitVec::at(size_t index) const {
   const size_t n = size();
-  if (index > n) spdlog::error("Index {} o.o.b. for SymBitVec[{}]", index, n);
+  if (index >= n) spdlog::error("Index {} o.o.b. for SymBitVec[{}]", index, n);
   assert(index < n);
   return bits_.at(index);
 }

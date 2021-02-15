@@ -51,7 +51,7 @@ void Solver::setImplicitObserved() {
     if (before == after) break;
   }
   const size_t diff = observed_.size() - initial;
-  spdlog::info("Able to solve for {} additional bits", diff);
+  spdlog::info("Pre-solved for {} additional bits", diff);
 }
 
 size_t Solver::propagateBackward() {

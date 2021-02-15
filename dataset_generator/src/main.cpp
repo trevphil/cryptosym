@@ -139,10 +139,16 @@ void allTests() {
 }
 
 SymHash* selectHashFunction(const std::string &name) {
-  if (name.compare("sha256") == 0) {
+  if (name.compare("SHA256") == 0) {
     return new SHA256();
-  } else if (name.compare("lossyPseudoHash") == 0) {
+  } else if (name.compare("SameIOHash") == 0) {
+    return new SameIOHash();
+  } else if (name.compare("NotHash") == 0) {
+    return new NotHash();
+  } else if (name.compare("LossyPseudoHash") == 0) {
     return new LossyPseudoHash();
+  } else if (name.compare("NonLossyPseudoHash") == 0) {
+    return new NonLossyPseudoHash();
   } else {
     spdlog::error("Unrecognized hash function: {}", name);
     throw "Unrecognized hash function";
@@ -163,11 +169,13 @@ Solver* selectSolver(const std::string &solving_method,
 void run(int argc, char **argv) {
   // allTests();
 
-  const std::string hash_algo = "sha256";
-  // const std::string hash_algo = "lossyPseudoHash";
+  // const std::string hash_algo = "SHA256";
+  // const std::string hash_algo = "NonLossyPseudoHash";
+  // const std::string hash_algo = "LossyPseudoHash";
+  const std::string hash_algo = "NotHash";
   const std::string solving_method = "cmsat";
   const size_t input_size = 64;
-  const int difficulty = 4;
+  const int difficulty = 1;
 
   spdlog::info("Hash algorithm:\t{}", hash_algo);
   spdlog::info("Solver:\t\t{}", solving_method);
@@ -190,12 +198,23 @@ void run(int argc, char **argv) {
   // Collect factors in a mapping from RV index --> factor
   const size_t n = Factor::global_factors.size();
   std::map<size_t, Factor> factors;
+  std::map<Factor::Type, size_t> factor_count;
   for (size_t i = 0; i < n; ++i) {
     const Factor &f = Factor::global_factors.at(i);
     assert(i == f.output);
     // Skip bits which are not ancestors of observed bits
-    if (!h->canIgnore(i)) factors[i] = f;
+    if (!h->canIgnore(i)) {
+      factors[i] = f;
+      factor_count[f.t]++;
+    }
   }
+
+  spdlog::info("Logic gate statistics:");
+  spdlog::info(" --> # PRIOR: {}", factor_count[Factor::Type::PriorFactor]);
+  spdlog::info(" --> # SAME: {}", factor_count[Factor::Type::SameFactor]);
+  spdlog::info(" --> # NOT: {}", factor_count[Factor::Type::NotFactor]);
+  spdlog::info(" --> # AND: {}", factor_count[Factor::Type::AndFactor]);
+  spdlog::info(" --> # XOR: {}", factor_count[Factor::Type::XorFactor]);
 
   // Solve and extract the predicted input bits
   Solver *solver = selectSolver(solving_method, factors,
@@ -203,15 +222,15 @@ void run(int argc, char **argv) {
   const std::map<size_t, bool> assignments = solver->solve(observed);
   boost::dynamic_bitset<> pred_input(input_size);
 
-  // Fill input prediction with assignments from the solver
-  for (const auto &itr : assignments) {
+  // Fill with observed bits, if any input bits made it directly to output
+  for (const auto &itr : observed) {
     const size_t bit_idx = itr.first;
     const bool bit_val = itr.second;
     if (bit_idx < input_size) pred_input[bit_idx] = bit_val;
   }
 
-  // Fill with observed bits, if any input bits made it directly to output
-  for (const auto &itr : observed) {
+  // Fill input prediction with assignments from the solver
+  for (const auto &itr : assignments) {
     const size_t bit_idx = itr.first;
     const bool bit_val = itr.second;
     if (bit_idx < input_size) pred_input[bit_idx] = bit_val;

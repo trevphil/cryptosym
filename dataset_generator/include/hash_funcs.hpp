@@ -17,7 +17,22 @@
 
 namespace dataset_generator {
 
+class SameIOHash : public SymHash {
+ public:
+  SymBitVec hash(const SymBitVec &hash_input, int difficulty) override;
+};
+
+class NotHash : public SymHash {
+ public:
+  SymBitVec hash(const SymBitVec &hash_input, int difficulty) override;
+};
+
 class LossyPseudoHash : public SymHash {
+ public:
+  SymBitVec hash(const SymBitVec &hash_input, int difficulty) override;
+};
+
+class NonLossyPseudoHash : public SymHash {
  public:
   SymBitVec hash(const SymBitVec &hash_input, int difficulty) override;
 };
