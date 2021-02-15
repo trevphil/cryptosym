@@ -11,8 +11,9 @@
  */
 
 #include "hash_funcs.hpp"
-
 #include "utils.hpp"
+
+#include <spdlog/spdlog.h>
 
 namespace dataset_generator {
 
@@ -35,16 +36,17 @@ SymBitVec LossyPseudoHash::hash(const SymBitVec &hash_input, int difficulty) {
 
   const SymBitVec mask((1 << n4) - 1, n);
   SymBitVec h = hash_input;
+  SymBitVec a, b, c, d;
 
   for (int i = 0; i < difficulty; i++) {
-    SymBitVec a = ((h >> (n4 * 0)) & mask) ^ A;
-    SymBitVec b = ((h >> (n4 * 1)) & mask) ^ B;
-    SymBitVec c = ((h >> (n4 * 2)) & mask) ^ C;
-    SymBitVec d = ((h >> (n4 * 3)) & mask) ^ D;
-    SymBitVec e = (a | b);
-    SymBitVec f = (b & c);
-    SymBitVec g = (c ^ d);
-    h = e | (f << (n4 * 1)) | (g << (n4 * 2)) | (d << (n4 * 3));
+    a = ((h >> (n4 * 0)) & mask) ^ A;
+    b = ((h >> (n4 * 1)) & mask) ^ B;
+    c = ((h >> (n4 * 2)) & mask) ^ C;
+    d = ((h >> (n4 * 3)) & mask) ^ D;
+    a = (a | b);
+    b = (b & c);
+    c = (c ^ d);
+    h = a | (b << (n4 * 1)) | (c << (n4 * 2)) | (d << (n4 * 3));
   }
 
   return h;

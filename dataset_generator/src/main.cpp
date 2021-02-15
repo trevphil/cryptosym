@@ -15,6 +15,7 @@
 #include <boost/dynamic_bitset.hpp>
 #include <map>
 #include <string>
+#include <stdio.h>
 
 #include "cmsat_solver.hpp"
 #include "hash_funcs.hpp"
@@ -166,24 +167,53 @@ Solver* selectSolver(const std::string &solving_method,
   }
 }
 
+std::string hash_func = "SHA256";
+std::string solving_method = "cmsat";
+size_t input_size = 64;
+int difficulty = 1;
+
+int parseArgument(char* arg) {
+	int option;
+	unsigned int uoption;
+	char buf[1024];
+
+  if (1 == sscanf(arg, "hash=%s", buf)) {
+    hash_func = buf;
+  } else if (1 == sscanf(arg, "d=%d", &option)) {
+    difficulty = option;
+  } else if (1 == sscanf(arg, "i=%u", &uoption)) {
+    input_size = size_t(uoption);
+  } else if (1 == sscanf(arg, "solver=%s", buf)) {
+    solving_method = buf;
+  } else {
+    std::stringstream help_msg;
+    help_msg << std::endl << "Command-line arguments:" << std::endl;
+    help_msg << "\thash=HASH_FUNCTION" << std::endl;
+    help_msg << "\t -> one of: SHA256, LossyPseudoHash, NonLossyPseudoHash, NotHash, SameIOHash" << std::endl;
+    help_msg << "\td=DIFFICULTY (1-64)" << std::endl;
+    help_msg << "\ti=NUM_INPUT_BITS (8-512 or more, best to choose a multiple of 8)" << std::endl;
+    help_msg << "\tsolver=SOLVER (cmsat)" << std::endl;
+    spdlog::info(help_msg.str());
+    return 1;
+  }
+
+  return 0;
+}
+
 void run(int argc, char **argv) {
   // allTests();
 
-  // const std::string hash_algo = "SHA256";
-  // const std::string hash_algo = "NonLossyPseudoHash";
-  // const std::string hash_algo = "LossyPseudoHash";
-  const std::string hash_algo = "NotHash";
-  const std::string solving_method = "cmsat";
-  const size_t input_size = 64;
-  const int difficulty = 1;
+  for (int i = 1; i < argc; i++) {
+    if (parseArgument(argv[i])) return;
+  }
 
-  spdlog::info("Hash algorithm:\t{}", hash_algo);
+  spdlog::info("Hash algorithm:\t{}", hash_func);
   spdlog::info("Solver:\t\t{}", solving_method);
   spdlog::info("Input message size:\t{} bits", input_size);
   spdlog::info("Difficulty level:\t{}", difficulty);
 
   // Execute hash algorithm on random input
-  SymHash *h = selectHashFunction(hash_algo);
+  SymHash *h = selectHashFunction(hash_func);
   boost::dynamic_bitset<> input = Utils::randomBits(input_size, 0);
   SymBitVec output_bits = h->call(input, difficulty);
   const std::string output_hash = output_bits.hex();
@@ -192,7 +222,7 @@ void run(int argc, char **argv) {
   std::map<size_t, bool> observed;
   for (size_t i = 0; i < output_bits.size(); ++i) {
     const Bit &b = output_bits.at(i);
-    observed[b.index] = b.val;
+    if (b.is_rv) observed[b.index] = b.val;
   }
 
   // Collect factors in a mapping from RV index --> factor
