@@ -17,7 +17,7 @@
 #include <cstdlib>
 #include <string>
 
-namespace dataset_generator {
+namespace preimage {
 
 class Utils {
  public:
@@ -74,4 +74,4 @@ class Utils {
   }
 };
 
-}  // end namespace dataset_generator
+}  // end namespace preimage

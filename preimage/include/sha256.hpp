@@ -18,7 +18,7 @@
 #include "sym_bit_vec.hpp"
 #include "sym_hash.hpp"
 
-namespace dataset_generator {
+namespace preimage {
 
 class SHA256 : public SymHash {
  public:
@@ -43,4 +43,4 @@ class SHA256 : public SymHash {
   std::vector<SymBitVec> w_, words_, data_, digest_;
 };
 
-}  // end namespace dataset_generator
+}  // end namespace preimage

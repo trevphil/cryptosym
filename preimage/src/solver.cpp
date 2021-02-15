@@ -17,7 +17,7 @@
 
 #include <spdlog/spdlog.h>
 
-namespace dataset_generator {
+namespace preimage {
 
 Solver::Solver(const std::map<size_t, Factor> &factors,
                const std::vector<size_t> &input_indices)
@@ -173,4 +173,4 @@ void Solver::propagateForward(size_t smallest_obs) {
   }
 }
 
-}  // end namespace dataset_generator
+}  // end namespace preimage

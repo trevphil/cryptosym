@@ -13,7 +13,7 @@
 #include "bit.hpp"
 #include "config.hpp"
 
-namespace dataset_generator {
+namespace preimage {
 
 size_t Bit::global_index = 0;
 std::vector<Bit> Bit::global_bits = {};
@@ -140,4 +140,4 @@ std::pair<Bit, Bit> Bit::add(const Bit &a, const Bit &b, const Bit &carry_in) {
   return {sum2, carry_out};
 }
 
-}  // end namespace dataset_generator
+}  // end namespace preimage

@@ -22,7 +22,7 @@
 #include "factor.hpp"
 #include "utils.hpp"
 
-namespace dataset_generator {
+namespace preimage {
 
 SymHash::SymHash()
     : ignorable_(), did_find_ignorable_(false), hash_output_indices_() {}
@@ -166,4 +166,4 @@ void SymHash::findIgnorableRVs() {
   did_find_ignorable_ = true;
 }
 
-}  // end namespace dataset_generator
+}  // end namespace preimage

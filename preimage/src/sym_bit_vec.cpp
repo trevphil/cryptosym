@@ -20,7 +20,7 @@
 
 #include "utils.hpp"
 
-namespace dataset_generator {
+namespace preimage {
 
 SymBitVec::SymBitVec() : bits_({}) {}
 
@@ -236,4 +236,4 @@ SymBitVec SymBitVec::operator>>(size_t n) const {
   return result;
 }
 
-}  // end namespace dataset_generator
+}  // end namespace preimage

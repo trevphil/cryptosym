@@ -17,7 +17,7 @@
 
 #include "factor.hpp"
 
-namespace dataset_generator {
+namespace preimage {
 
 class Bit {
  public:
@@ -47,4 +47,4 @@ class Bit {
   size_t index;
 };
 
-}  // end namespace dataset_generator
+}  // end namespace preimage

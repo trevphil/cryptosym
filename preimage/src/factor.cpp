@@ -15,7 +15,7 @@
 #include <iomanip>
 #include <sstream>
 
-namespace dataset_generator {
+namespace preimage {
 
 std::vector<Factor> Factor::global_factors = {};
 
@@ -59,4 +59,4 @@ size_t Factor::numInputs(Factor::Type t) {
   }
 }
 
-}  // end namespace dataset_generator
+}  // end namespace preimage

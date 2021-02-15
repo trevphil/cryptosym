@@ -17,7 +17,7 @@
 
 #include "sym_bit_vec.hpp"
 
-namespace dataset_generator {
+namespace preimage {
 
 class SymHash {
  public:
@@ -51,4 +51,4 @@ class SymHash {
   std::vector<size_t> hash_output_indices_;
 };
 
-}  // end namespace dataset_generator
+}  // end namespace preimage

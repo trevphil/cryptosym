@@ -14,7 +14,7 @@
 
 #include <spdlog/spdlog.h>
 
-namespace dataset_generator {
+namespace preimage {
 
 CMSatSolver::CMSatSolver(const std::map<size_t, Factor> &factors,
                          const std::vector<size_t> &input_indices)
@@ -110,4 +110,4 @@ std::map<size_t, bool> CMSatSolver::solveInternal() {
   return solution;
 }
 
-}  // end namespace dataset_generator
+}  // end namespace preimage

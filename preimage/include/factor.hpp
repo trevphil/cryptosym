@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-namespace dataset_generator {
+namespace preimage {
 
 class Factor {
  public:
@@ -50,4 +50,4 @@ class Factor {
   bool valid;
 };
 
-}  // end namespace dataset_generator
+}  // end namespace preimage

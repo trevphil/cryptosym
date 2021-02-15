@@ -15,7 +15,7 @@
 
 #include <spdlog/spdlog.h>
 
-namespace dataset_generator {
+namespace preimage {
 
 SymBitVec SameIOHash::hash(const SymBitVec &hash_input, int difficulty) {
   return hash_input;
@@ -75,4 +75,4 @@ SymBitVec NonLossyPseudoHash::hash(const SymBitVec &hash_input, int difficulty) 
 
   return h;
 }
-}  // end namespace dataset_generator
+}  // end namespace preimage

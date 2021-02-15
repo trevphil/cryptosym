@@ -15,7 +15,7 @@
 #include "sym_bit_vec.hpp"
 #include "sym_hash.hpp"
 
-namespace dataset_generator {
+namespace preimage {
 
 class SameIOHash : public SymHash {
  public:
@@ -37,4 +37,4 @@ class NonLossyPseudoHash : public SymHash {
   SymBitVec hash(const SymBitVec &hash_input, int difficulty) override;
 };
 
-}  // end namespace dataset_generator
+}  // end namespace preimage

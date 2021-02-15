@@ -18,7 +18,7 @@
 
 #include "solver.hpp"
 
-namespace dataset_generator {
+namespace preimage {
 
 class CMSatSolver : public Solver {
  public:
@@ -33,4 +33,4 @@ class CMSatSolver : public Solver {
   std::map<size_t, unsigned int> rv2idx_;
 };
 
-}  // end namespace dataset_generator
+}  // end namespace preimage

@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.8)
 
 # Name of the project
-project(dataset_generator)
+project(preimage)
 
 add_definitions(-std=c++17 -Wall -Werror -O3)
 set(CMAKE_CXX_STANDARD 17)
@@ -18,7 +18,7 @@ endif()
 find_package(cryptominisat5 REQUIRED)
 
 # Add all the source files needed to build the executable
-add_executable(dataset_generator
+add_executable(preimage
                src/main.cpp
                src/bit.cpp
                src/factor.cpp
@@ -29,5 +29,5 @@ add_executable(dataset_generator
                src/solver.cpp
                src/cmsat_solver.cpp)
 
-target_link_libraries(dataset_generator PRIVATE spdlog::spdlog)
-target_link_libraries(dataset_generator PUBLIC cryptominisat5)
+target_link_libraries(preimage PRIVATE spdlog::spdlog)
+target_link_libraries(preimage PUBLIC cryptominisat5)

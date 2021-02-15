@@ -18,7 +18,7 @@
 #include "factor.hpp"
 #include "bit.hpp"
 
-namespace dataset_generator {
+namespace preimage {
 
 class Solver {
  public:
@@ -44,4 +44,4 @@ class Solver {
   void propagateForward(size_t smallest_obs);
 };
 
-}  // end namespace dataset_generator
+}  // end namespace preimage

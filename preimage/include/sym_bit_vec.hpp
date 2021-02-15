@@ -18,7 +18,7 @@
 
 #include "bit.hpp"
 
-namespace dataset_generator {
+namespace preimage {
 
 /*
 Consider the number 0b1101 = 13.
@@ -77,4 +77,4 @@ class SymBitVec {
   std::vector<Bit> bits_;
 };
 
-}  // end namespace dataset_generator
+}  // end namespace preimage

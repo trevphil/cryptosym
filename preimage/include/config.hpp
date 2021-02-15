@@ -12,7 +12,7 @@
 
 #pragma once
 
-namespace dataset_generator {
+namespace preimage {
 
 namespace config {
 
@@ -20,4 +20,4 @@ bool use_xor = true;
 
 }  // end namespace config
 
-}  // end namespace dataset_generator
+}  // end namespace preimage

@@ -25,7 +25,7 @@
 #include "factor.hpp"
 #include "solver.hpp"
 
-namespace dataset_generator {
+namespace preimage {
 
 void simpleTests() {
   boost::dynamic_bitset<> bits(64, 0xDEADBEEF);
@@ -288,9 +288,9 @@ void run(int argc, char **argv) {
   solver = NULL;
 }
 
-}  // end namespace dataset_generator
+}  // end namespace preimage
 
 int main(int argc, char **argv) {
-  dataset_generator::run(argc, argv);
+  preimage::run(argc, argv);
   return 0;
 }

@@ -16,7 +16,7 @@
 
 #include "utils.hpp"
 
-namespace dataset_generator {
+namespace preimage {
 
 #define Ch(x, y, z) (z ^ (x & (y ^ z)))
 #define Maj(x, y, z) (((x | y) & z) | (x & y))
@@ -214,4 +214,4 @@ SymBitVec SHA256::hash(const SymBitVec &hash_input, int difficulty) {
 #undef Gamma0
 #undef Gamma1
 
-}  // end namespace dataset_generator
+}  // end namespace preimage

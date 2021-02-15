@@ -12,4 +12,4 @@ cmake -D CMAKE_C_COMPILER=gcc -D CMAKE_CXX_COMPILER=g++ ..
 
 make
 
-mv dataset_generator ../main
+mv preimage ../main
