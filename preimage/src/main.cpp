@@ -18,6 +18,7 @@
 #include <stdio.h>
 
 #include "cmsat_solver.hpp"
+#include "lbp/factor_graph.hpp"
 #include "hash_funcs.hpp"
 #include "sha256.hpp"
 #include "sym_bit_vec.hpp"
@@ -161,6 +162,8 @@ Solver* selectSolver(const std::string &solving_method,
                      const std::vector<size_t> hash_input_indices) {
   if (solving_method.compare("cmsat") == 0) {
     return new CMSatSolver(factors, hash_input_indices);
+  } else if (solving_method.compare("lbp") == 0) {
+    return new lbp::FactorGraph(factors, hash_input_indices);
   } else {
     spdlog::error("Unsupported solver: {}", solving_method);
     throw "Unsupported solver";
@@ -192,7 +195,8 @@ int parseArgument(char* arg) {
     help_msg << "\t -> one of: SHA256, LossyPseudoHash, NonLossyPseudoHash, NotHash, SameIOHash" << std::endl;
     help_msg << "\td=DIFFICULTY (1-64)" << std::endl;
     help_msg << "\ti=NUM_INPUT_BITS (8-512 or more, best to choose a multiple of 8)" << std::endl;
-    help_msg << "\tsolver=SOLVER (cmsat)" << std::endl;
+    help_msg << "\tsolver=SOLVER" << std::endl;
+    help_msg << "\t -> one of: cmsat, lbp" << std::endl;
     spdlog::info(help_msg.str());
     return 1;
   }

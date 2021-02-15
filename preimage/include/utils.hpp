@@ -13,9 +13,17 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <boost/dynamic_bitset.hpp>
+#include <chrono>
+#include <cstdio>
 #include <cstdlib>
+#include <iostream>
+#include <memory>
+#include <set>
+#include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace preimage {
 
@@ -71,6 +79,58 @@ class Utils {
     std::string bitset_str;
     boost::to_string(bs, bitset_str);
     return bitset_str;
+  }
+
+  static std::chrono::system_clock::rep time_since_epoch() {
+    static_assert(std::is_integral<std::chrono::system_clock::rep>::value,
+                  "Representation of ticks isn't an integral value.");
+
+    const auto now = std::chrono::system_clock::now().time_since_epoch();
+    return std::chrono::duration_cast<std::chrono::seconds>(now).count();
+  }
+
+  template <typename T>
+  static std::string vec2str(const std::vector<T> &v, bool brackets = true) {
+    auto begin = v.begin();
+    auto end = v.end();
+    std::stringstream ss;
+    if (brackets) ss << "[";
+    bool first = true;
+    for (; begin != end; ++begin) {
+      if (!first) ss << ", ";
+      ss << *begin;
+      first = false;
+    }
+    if (brackets) ss << "]";
+    return ss.str();
+  }
+
+  template <typename T>
+  static std::string set2str(const std::set<T> &s, bool brackets = true) {
+    auto begin = s.begin();
+    auto end = s.end();
+    std::stringstream ss;
+    if (brackets) ss << "[";
+    bool first = true;
+    for (; begin != end; ++begin) {
+      if (!first) ss << ", ";
+      ss << *begin;
+      first = false;
+    }
+    if (brackets) ss << "]";
+    return ss.str();
+  }
+
+  static std::string exec(const std::string &cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
+    if (!pipe) throw std::runtime_error("popen() failed!");
+
+    while (std::fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
+      result += buffer.data();
+
+    return result;
   }
 };
 

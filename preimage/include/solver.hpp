@@ -30,7 +30,7 @@ class Solver {
   std::map<size_t, bool> solve(const std::map<size_t, bool> &observed);
 
  protected:
-  void reset();
+  virtual void reset();
 
   virtual std::map<size_t, bool> solveInternal();
 
