@@ -29,18 +29,22 @@ class SymHash {
 
   std::vector<size_t> hashOutputIndices() const;
 
-  size_t numUnknownsPerHash() const;
-
   size_t numUsefulFactors();
 
-  void saveFactors(const std::string &factor_filename,
-                   const std::string &cnf_filename);
+  void saveStatistics(const std::string &stats_filename);
 
-  virtual SymBitVec hash(const SymBitVec &hash_input, int difficulty);
+  void saveFactors(const std::string &factor_filename);
+
+  void saveFactorsCNF(const std::string &cnf_filename);
 
   SymBitVec call(const boost::dynamic_bitset<> &hash_input, int difficulty);
 
   bool canIgnore(size_t rv);
+
+ protected:
+  size_t numUnknownsPerHash() const;
+
+  virtual SymBitVec hash(const SymBitVec &hash_input, int difficulty);
 
  private:
   void findIgnorableRVs();

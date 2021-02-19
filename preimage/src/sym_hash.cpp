@@ -17,6 +17,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <algorithm>
 
 #include "bit.hpp"
 #include "factor.hpp"
@@ -44,18 +45,91 @@ size_t SymHash::numUsefulFactors() {
   return Bit::global_bits.size() - ignorable_.size();
 }
 
-void SymHash::saveFactors(const std::string &factor_filename,
-                          const std::string &cnf_filename) {
+void SymHash::saveStatistics(const std::string &stats_filename) {
   findIgnorableRVs();
+  const size_t n = Factor::global_factors.size();
+  std::map<Factor::Type, size_t> factor_count;
+  std::map<size_t, size_t> and_gap_count;
+  std::map<size_t, size_t> xor_gap_count;
 
+  for (size_t i = 0; i < n; ++i) {
+    const Factor &f = Factor::global_factors.at(i);
+    assert(i == f.output);
+    if (canIgnore(i)) continue;
+    factor_count[f.t]++;
+    if (f.t == Factor::Type::AndFactor || f.t == Factor::Type::XorFactor) {
+      const size_t inp1 = std::min(f.inputs.at(0), f.inputs.at(1));
+      const size_t inp2 = std::max(f.inputs.at(0), f.inputs.at(1));
+      const size_t gap = inp2 - inp1;
+      if (f.t == Factor::Type::AndFactor) {
+        and_gap_count[gap]++;
+      } else if (f.t == Factor::Type::XorFactor) {
+        xor_gap_count[gap]++;
+      }
+    }
+  }
+
+  std::ofstream stats_file;
+  stats_file.open(stats_filename);
+  stats_file << "factors " << factor_count.size() << std::endl;
+  for (const auto &itr : factor_count) {
+    const Factor::Type t = itr.first;
+    const size_t cnt = itr.second;
+    switch (t) {
+    case Factor::Type::PriorFactor:
+      stats_file << "P " << cnt << std::endl;
+      break;
+    case Factor::Type::SameFactor:
+      stats_file << "S " << cnt << std::endl;
+      break;
+    case Factor::Type::NotFactor:
+      stats_file << "N " << cnt << std::endl;
+      break;
+    case Factor::Type::AndFactor:
+      stats_file << "A " << cnt << std::endl;
+      break;
+    case Factor::Type::XorFactor:
+      stats_file << "X " << cnt << std::endl;
+      break;
+    }
+  }
+
+  stats_file << "and_gap_count " << and_gap_count.size() << std::endl;
+  for (const auto &itr : and_gap_count) {
+    const size_t gap = itr.first;
+    const size_t cnt = itr.second;
+    stats_file << gap << " " << cnt << std::endl;
+  }
+
+  stats_file << "xor_gap_count " << xor_gap_count.size() << std::endl;
+  for (const auto &itr : xor_gap_count) {
+    const size_t gap = itr.first;
+    const size_t cnt = itr.second;
+    stats_file << gap << " " << cnt << std::endl;
+  }
+
+  stats_file.close();
+}
+
+void SymHash::saveFactors(const std::string &factor_filename) {
+  findIgnorableRVs();
   std::ofstream factor_file;
   factor_file.open(factor_filename);
+  for (const Factor &f : Factor::global_factors) {
+    if (ignorable_.count(f.output) > 0) continue;
+    factor_file << f.toString() << "\n";
+  }
+  factor_file.close();
+}
+
+void SymHash::saveFactorsCNF(const std::string &cnf_filename) {
+  findIgnorableRVs();
+
   std::set<size_t> rvs;
   uint64_t n_clauses = 0;
 
   for (const Factor &f : Factor::global_factors) {
     if (ignorable_.count(f.output) > 0) continue;
-    factor_file << f.toString() << "\n";
     rvs.insert(f.output);
     for (size_t inp : f.inputs) rvs.insert(inp);
     if (f.t == Factor::Type::AndFactor)
@@ -67,7 +141,6 @@ void SymHash::saveFactors(const std::string &factor_filename,
     else if (f.t == Factor::Type::XorFactor)
       n_clauses += 1;
   }
-  factor_file.close();
 
   std::map<size_t, size_t> rv2idx;
   size_t idx = 1;
