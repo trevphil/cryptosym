@@ -60,7 +60,7 @@ LbpFactor::LbpFactor(const Factor &factor)
 LbpFactor::Values LbpFactor::extract(const std::map<size_t, bool> &assignments) const {
   Values v;
   bool did_set_in1 = false;
-  for (size_t rv_index : inputs) {
+  for (size_t rv_index : referenced_rvs) {
     if (rv_index == output) {
       v.out = assignments.at(rv_index);
     } else if (!did_set_in1) {

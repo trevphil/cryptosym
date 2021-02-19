@@ -29,8 +29,9 @@ double Probability::probOne(const LbpFactor &factor,
   double assignment_prob = 0.5;
   const auto values = factor.extract(assignments);
   const bool is_observed = observed.count(factor.output) > 0u;
-  const bool observed_val = is_observed ? observed.at(factor.output) : false;
-  if (is_observed && values.out != observed_val) return eps;
+
+  // TODO: should this be here?
+  if (is_observed && values.out != observed.at(factor.output)) return eps;
 
   if (factor.t == Factor::Type::AndFactor) {
     if (values.out == 0) {
@@ -38,16 +39,19 @@ double Probability::probOne(const LbpFactor &factor,
     } else {
       assignment_prob = values.out == (values.in1 & values.in2);
     }
-  // TODO: XorFactor
+
+  } else if (factor.t == Factor::Type::XorFactor) {
+    assignment_prob = values.out == (values.in1 ^ values.in2) ? 0.5 : 0;
+
   } else if (factor.t == Factor::Type::NotFactor) {
-    assignment_prob = values.out != values.in1;
+    assignment_prob = (values.out != values.in1);
 
   } else if (factor.t == Factor::Type::SameFactor) {
-    assignment_prob = values.out == values.in1;
+    assignment_prob = (values.out == values.in1);
 
   } else if (factor.t == Factor::Type::PriorFactor) {
     if (is_observed) {
-      assignment_prob = observed_val ? 1.0 - eps : eps;
+      assignment_prob = (values.out == observed.at(factor.output));
     } else {
       assignment_prob = 0.5;
     }

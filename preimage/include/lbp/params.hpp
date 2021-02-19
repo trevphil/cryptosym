@@ -21,6 +21,7 @@ struct LbpParams {
   size_t max_iter = 50;
   double damping = 0.75;
   double epsilon = 0.0001;
+  double convergence_tol = 1e-4;
 };
 
 }  // end namespace lbp

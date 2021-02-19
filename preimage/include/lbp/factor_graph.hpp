@@ -50,8 +50,7 @@ class FactorGraph : public Solver {
   void updateRandomVariableMessages(bool forward);
 
   bool equal(const std::vector<Prediction> &marginals1,
-             const std::vector<Prediction> &marginals2,
-             double tol = 1e-4) const;
+             const std::vector<Prediction> &marginals2) const;
 
   std::map<size_t, RandomVariable> rvs_;
   std::map<size_t, LbpFactor> lbp_factors_;

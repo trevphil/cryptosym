@@ -109,8 +109,7 @@ std::map<size_t, bool> FactorGraph::solveInternal() {
 }
 
 bool FactorGraph::equal(const std::vector<FactorGraph::Prediction> &marginals1,
-                        const std::vector<FactorGraph::Prediction> &marginals2,
-                        double tol) const {
+                        const std::vector<FactorGraph::Prediction> &marginals2) const {
   const size_t n = marginals1.size();
   if (n != marginals2.size()) return false;
 
@@ -120,7 +119,7 @@ bool FactorGraph::equal(const std::vector<FactorGraph::Prediction> &marginals1,
     if (rv1 != rv2) return false;
     const double p1 = marginals1.at(i).prob_one;
     const double p2 = marginals2.at(i).prob_one;
-    if (std::abs(p1 - p2) > tol) return false;
+    if (std::abs(p1 - p2) > params_.convergence_tol) return false;
   }
 
   return true;
