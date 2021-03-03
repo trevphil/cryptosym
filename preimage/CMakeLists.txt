@@ -17,6 +17,12 @@ endif()
 
 find_package(cryptominisat5 REQUIRED)
 
+# Eigen
+find_package(Eigen3 REQUIRED)
+set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
+set(EIGEN3_LIBRARIES ${EIGEN3_LIBRARIES})
+include_directories(${EIGEN3_INCLUDE_DIR})
+
 # Add all the source files needed to build the executable
 add_executable(preimage
                src/main.cpp
@@ -30,7 +36,8 @@ add_executable(preimage
                src/cmsat_solver.cpp
                src/lbp/factor_graph.cpp
                src/lbp/lbp_factor.cpp
-               src/lbp/probability.cpp)
+               src/lbp/probability.cpp
+               src/bp/node.cpp)
 
 target_link_libraries(preimage PRIVATE spdlog::spdlog)
 target_link_libraries(preimage PUBLIC cryptominisat5)
