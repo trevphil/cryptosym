@@ -25,7 +25,11 @@ namespace preimage {
 namespace bp {
 
 enum IODirection : uint8_t {
-  inp = 0, out = 1, prior = 2
+  none = 0, inp = 1, out = 2, prior = 3
+};
+
+enum FactorType : uint8_t {
+  priorBit = 0
 };
 
 class GraphNode;
@@ -33,8 +37,8 @@ class GraphFactor;
 
 class GraphEdge {
  public:
-  GraphEdge(const std::shared_ptr<GraphNode> &n,
-            const std::shared_ptr<GraphFactor> &f,
+  GraphEdge(std::shared_ptr<GraphNode> n,
+            std::shared_ptr<GraphFactor> f,
             IODirection dir, const std::vector<size_t> &node_is);
 
   std::string toString() const;
@@ -50,9 +54,15 @@ class GraphEdge {
 
 class GraphFactor {
  public:
-  GraphFactor();
+  explicit GraphFactor(size_t i, FactorType t);
 
   std::string toString() const;
+
+  size_t index() const;
+
+  bool isLeaf() const;
+
+  FactorType type() const;
 
   void initMessages();
 
@@ -60,24 +70,34 @@ class GraphFactor {
 
   void factor2node();
 
+  void addEdge(std::shared_ptr<GraphEdge> e);
+
  private:
   bool is_leaf_;
+  size_t index_;
+  FactorType t_;
   std::vector<std::shared_ptr<GraphEdge>> edges_;
 };
 
 class GraphNode {
  public:
-  GraphNode(size_t node_index);
+  explicit GraphNode(size_t i);
 
   std::string toString() const;
+
+  size_t index() const;
 
   void initMessages();
 
   Eigen::MatrixXd gatherIncoming() const;
 
-  void node2factor();
+  void node2factor(IODirection target = IODirection::none);
+
   void norm();
+
   void inlineNorm(const Eigen::MatrixXd &msg);
+
+  void addEdge(std::shared_ptr<GraphEdge> e);
 
  private:
   bool bit_;

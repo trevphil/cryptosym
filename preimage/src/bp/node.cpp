@@ -22,8 +22,8 @@ namespace bp {
  ******* GRAPH EDGE ********
  ***************************/
 
-GraphEdge::GraphEdge(const std::shared_ptr<GraphNode> &n,
-                     const std::shared_ptr<GraphFactor> &f,
+GraphEdge::GraphEdge(std::shared_ptr<GraphNode> n,
+                     std::shared_ptr<GraphFactor> f,
                      IODirection dir, const std::vector<size_t> &node_is)
     : node(n), factor(f), direction(dir), node_indices(node_is) {}
 
@@ -37,13 +37,18 @@ std::string GraphEdge::toString() const {
  ****** GRAPH FACTOR *******
  ***************************/
 
-GraphFactor::GraphFactor() : is_leaf_(false) {
-  (void)is_leaf_;  // TODO: this is here for unused warning
+GraphFactor::GraphFactor(size_t i, FactorType t)
+    : is_leaf_(false), index_(i), t_(t) {
+  // TODO: is_leaf_ should not always be false
 }
 
-std::string GraphFactor::toString() const {
-  return "Factor";
-}
+std::string GraphFactor::toString() const { return "Factor"; }
+
+size_t GraphFactor::index() const { return index_; }
+
+bool GraphFactor::isLeaf() const { return is_leaf_; }
+
+FactorType GraphFactor::type() const { return t_; }
 
 void GraphFactor::initMessages() {
   for (std::shared_ptr<GraphEdge> edge : edges_) {
@@ -66,11 +71,15 @@ void GraphFactor::factor2node() {
   spdlog::warn("This method should be implemented in child classes!");
 }
 
+void GraphFactor::addEdge(std::shared_ptr<GraphEdge> e) {
+  edges_.push_back(e);
+}
+
 /***************************
  ******* GRAPH NODE ********
  ***************************/
 
-GraphNode::GraphNode(size_t node_index) : index_(node_index) {}
+GraphNode::GraphNode(size_t i) : index_(i) {}
 
 std::string GraphNode::toString() const {
   std::stringstream ss;
@@ -78,6 +87,8 @@ std::string GraphNode::toString() const {
   ss << ", " << final_dist_(1) << ")";
   return ss.str();
 }
+
+size_t GraphNode::index() const { return index_; }
 
 void GraphNode::initMessages() {
   for (std::shared_ptr<GraphEdge> edge : edges_) {
@@ -95,6 +106,8 @@ void GraphNode::initMessages() {
       break;
     case IODirection::prior:
       n_prior++;
+      break;
+    case IODirection::none:
       break;
     }
   }
@@ -119,7 +132,8 @@ Eigen::MatrixXd GraphNode::gatherIncoming() const {
   return msg_in;
 }
 
-void GraphNode::node2factor() {
+void GraphNode::node2factor(IODirection target) {
+  // TODO: target is not used yet
   const size_t l = edges_.size();
   const Eigen::MatrixXd msg = gatherIncoming();
   const double d = BP_DAMPING;
@@ -172,6 +186,10 @@ void GraphNode::inlineNorm(const Eigen::MatrixXd &msg) {
   const Eigen::ArrayXd P = Zn / Zn.sum();
   final_dist_ = P;
   bit_ = final_dist_(1) > final_dist_(0) ? true : false;
+}
+
+void GraphNode::addEdge(std::shared_ptr<GraphEdge> e) {
+  edges_.push_back(e);
 }
 
 }  // end namespace bp

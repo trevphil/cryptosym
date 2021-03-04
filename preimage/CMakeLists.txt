@@ -37,7 +37,8 @@ add_executable(preimage
                src/lbp/factor_graph.cpp
                src/lbp/lbp_factor.cpp
                src/lbp/probability.cpp
-               src/bp/node.cpp)
+               src/bp/node.cpp
+               src/bp/graph.cpp)
 
 target_link_libraries(preimage PRIVATE spdlog::spdlog)
 target_link_libraries(preimage PUBLIC cryptominisat5)

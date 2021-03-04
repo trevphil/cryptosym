@@ -220,8 +220,10 @@ void SymHash::findIgnorableRVs() {
   size_t num_bits = numUnknownsPerHash();
   std::set<size_t> seen = {};
   ignorable_ = {};
+  // At first we assume that ALL bits can be ignored
   for (size_t i = 0; i < num_bits; ++i) ignorable_.insert(i);
 
+  // Random variables in the queue cannot be ignored
   std::vector<size_t> queue;
   for (size_t i : hash_output_indices_) queue.push_back(i);
 
