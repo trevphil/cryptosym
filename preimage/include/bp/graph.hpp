@@ -26,22 +26,31 @@ class Graph {
  public:
   Graph();
 
+  virtual ~Graph();
+
   void addFactor(std::shared_ptr<GraphFactor> factor);
 
   void addNode(std::shared_ptr<GraphNode> node);
 
-  void connectFactorNode(size_t fi, size_t ni, IODirection dir,
-                         const std::vector<size_t> &node_indices = {});
+  bool hasNode(size_t index) const;
+
+  bool hasFactor(size_t index) const;
+
+  std::shared_ptr<GraphNode> getNode(size_t index) const;
+
+  std::shared_ptr<GraphFactor> getFactor(size_t index) const;
+
+  double entropySum() const;
+
+  double maxChange() const;
+
+  void connectFactorNode(std::shared_ptr<GraphFactor> factor,
+                         std::shared_ptr<GraphNode> node,
+                         IODirection dir);
+
+  size_t iterations() const;
 
   void norm();
-
-  void factor2node();
-
-  void node2factor();
-
-  void f2n2f();
-
-  void n2f2n();
 
   void initMessages();
 
@@ -49,16 +58,16 @@ class Graph {
 
   void spreadPriors();
 
+  std::vector<std::vector<std::shared_ptr<GraphNode>>> schedule_variable;
+  std::vector<std::vector<std::shared_ptr<GraphFactor>>> schedule_factor;
+  std::vector<std::vector<std::shared_ptr<GraphFactor>>> schedule_prior;
+
  private:
   size_t iter_;
   std::vector<std::shared_ptr<GraphFactor>> factors_;
-  // TODO: are the map variables actually used?
   std::map<size_t, std::shared_ptr<GraphFactor>> factor_map_;
   std::vector<std::shared_ptr<GraphNode>> nodes_;
   std::map<size_t, std::shared_ptr<GraphNode>> node_map_;
-  std::vector<std::vector<std::shared_ptr<GraphNode>>> schedule_variable_;
-  std::vector<std::vector<std::shared_ptr<GraphFactor>>> schedule_factor_;
-  std::vector<std::vector<std::shared_ptr<GraphFactor>>> schedule_prior_;
 };
 
 }  // end namespace bp

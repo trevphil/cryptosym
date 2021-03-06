@@ -19,17 +19,18 @@
 #include <eigen3/Eigen/Eigen>
 
 #include "bp/params.hpp"
+#include "factor.hpp"
 
 namespace preimage {
 
 namespace bp {
 
-enum IODirection : uint8_t {
-  none = 0, inp = 1, out = 2, prior = 3
+enum class IODirection : uint8_t {
+  None = 0, Input = 1, Output = 2, Prior = 3
 };
 
-enum FactorType : uint8_t {
-  priorBit = 0
+enum class FType : uint8_t {
+  None = 0, Prior = 1, And = 2, Not = 3, Same = 4, Xor = 5
 };
 
 class GraphNode;
@@ -39,30 +40,26 @@ class GraphEdge {
  public:
   GraphEdge(std::shared_ptr<GraphNode> n,
             std::shared_ptr<GraphFactor> f,
-            IODirection dir, const std::vector<size_t> &node_is);
+            IODirection dir);
 
   std::string toString() const;
 
   std::shared_ptr<GraphNode> node;
   std::shared_ptr<GraphFactor> factor;
-  size_t cardinality;
   IODirection direction;
-  std::vector<size_t> node_indices;
   Eigen::Vector2d m2f;
-  Eigen::VectorXd m2n;  // TODO: can this be a Vector2d ?
+  Eigen::Vector2d m2n;
 };
 
 class GraphFactor {
  public:
-  explicit GraphFactor(size_t i, FactorType t);
+  GraphFactor(size_t i, FType t);
 
   std::string toString() const;
 
   size_t index() const;
 
-  bool isLeaf() const;
-
-  FactorType type() const;
+  FType type() const;
 
   void initMessages();
 
@@ -73,9 +70,8 @@ class GraphFactor {
   void addEdge(std::shared_ptr<GraphEdge> e);
 
  private:
-  bool is_leaf_;
   size_t index_;
-  FactorType t_;
+  FType t_;
   std::vector<std::shared_ptr<GraphEdge>> edges_;
 };
 
@@ -87,11 +83,17 @@ class GraphNode {
 
   size_t index() const;
 
+  bool bit() const;
+
+  double entropy() const;
+
+  double change() const;
+
   void initMessages();
 
   Eigen::MatrixXd gatherIncoming() const;
 
-  void node2factor(IODirection target = IODirection::none);
+  void node2factor(IODirection target = IODirection::None);
 
   void norm();
 
@@ -101,6 +103,7 @@ class GraphNode {
 
  private:
   bool bit_;
+  double entropy_;
   double change_;
   size_t index_;
   std::vector<std::shared_ptr<GraphEdge>> edges_;

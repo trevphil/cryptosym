@@ -17,14 +17,14 @@
 #include <string>
 #include <stdio.h>
 
-#include "cmsat_solver.hpp"
-#include "lbp/factor_graph.hpp"
 #include "hash_funcs.hpp"
 #include "sha256.hpp"
 #include "sym_bit_vec.hpp"
 #include "utils.hpp"
 #include "factor.hpp"
 #include "solver.hpp"
+#include "cmsat/cmsat_solver.hpp"
+#include "bp/bp_solver.hpp"
 
 namespace preimage {
 
@@ -162,8 +162,8 @@ Solver* selectSolver(const std::string &solving_method,
                      const std::vector<size_t> hash_input_indices) {
   if (solving_method.compare("cmsat") == 0) {
     return new CMSatSolver(factors, hash_input_indices);
-  } else if (solving_method.compare("lbp") == 0) {
-    return new lbp::FactorGraph(factors, hash_input_indices);
+  } else if (solving_method.compare("bp") == 0) {
+    return new bp::BPSolver(factors, hash_input_indices);
   } else {
     spdlog::error("Unsupported solver: {}", solving_method);
     throw "Unsupported solver";
@@ -171,7 +171,7 @@ Solver* selectSolver(const std::string &solving_method,
 }
 
 std::string hash_func = "SHA256";
-std::string solving_method = "cmsat";
+std::string solving_method = "bp";
 size_t input_size = 64;
 int difficulty = 1;
 
@@ -196,7 +196,7 @@ int parseArgument(char* arg) {
     help_msg << "\td=DIFFICULTY (1-64)" << std::endl;
     help_msg << "\ti=NUM_INPUT_BITS (8-512 or more, best to choose a multiple of 8)" << std::endl;
     help_msg << "\tsolver=SOLVER" << std::endl;
-    help_msg << "\t -> one of: cmsat, lbp" << std::endl;
+    help_msg << "\t -> one of: cmsat, bp" << std::endl;
     spdlog::info(help_msg.str());
     return 1;
   }
@@ -220,7 +220,7 @@ void run(int argc, char **argv) {
   SymHash *h = selectHashFunction(hash_func);
   boost::dynamic_bitset<> input = Utils::randomBits(input_size, 0);
   SymBitVec output_bits = h->call(input, difficulty);
-  const std::string output_hash = output_bits.hex();
+  const std::string output_hash = output_bits.bin();
 
   // Collect observed bits
   std::map<size_t, bool> observed;
@@ -270,11 +270,11 @@ void run(int argc, char **argv) {
     if (bit_idx < input_size) pred_input[bit_idx] = bit_val;
   }
 
-  spdlog::info("True input:\t\t{}", Utils::hexstr(input));
-  spdlog::info("Reconstructed input:\t{}", Utils::hexstr(pred_input));
+  spdlog::info("True input:\t\t{}", Utils::binstr(input));
+  spdlog::info("Reconstructed input:\t{}", Utils::binstr(pred_input));
 
   // Check if prediction yields the same hash
-  std::string pred_output = h->call(pred_input, difficulty).hex();
+  std::string pred_output = h->call(pred_input, difficulty).bin();
   if (output_hash.compare(pred_output) == 0) {
     spdlog::info("Success! Hashes match:\t{}", output_hash);
   } else {

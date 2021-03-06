@@ -10,6 +10,7 @@
  * Proprietary and confidential
  */
 
+#include <algorithm>
 #include <spdlog/spdlog.h>
 
 #include "bp/graph.hpp"
@@ -19,6 +20,25 @@ namespace preimage {
 namespace bp {
 
 Graph::Graph() {}
+
+Graph::~Graph() {
+  schedule_factor.clear();
+  schedule_prior.clear();
+  schedule_variable.clear();
+
+  for (auto &f : factors_) {
+    if (f) f.reset();
+  }
+  for (auto &itr : factor_map_) {
+    if (itr.second) itr.second.reset();
+  }
+  for (auto &n : nodes_) {
+    if (n) n.reset();
+  }
+  for (auto &itr : node_map_) {
+    if (itr.second) itr.second.reset();
+  }
+}
 
 void Graph::addFactor(std::shared_ptr<GraphFactor> factor) {
   factors_.push_back(factor);
@@ -30,40 +50,46 @@ void Graph::addNode(std::shared_ptr<GraphNode> node) {
   node_map_[node->index()] = node;
 }
 
-void Graph::connectFactorNode(size_t fi, size_t ni, IODirection dir,
-                              const std::vector<size_t> &node_indices) {
-  std::shared_ptr<GraphFactor> target_factor = factor_map_.at(fi);
-  std::shared_ptr<GraphNode> target_node = node_map_.at(ni);
-  std::shared_ptr<GraphEdge> e(new GraphEdge(target_node,
-      target_factor, dir, node_indices));
-  target_factor->addEdge(e);
-  target_node->addEdge(e);
+bool Graph::hasNode(size_t index) const {
+  return node_map_.count(index) > 0;
 }
+
+bool Graph::hasFactor(size_t index) const {
+  return factor_map_.count(index) > 0;
+}
+
+std::shared_ptr<GraphNode> Graph::getNode(size_t index) const {
+  return node_map_.at(index);
+}
+
+std::shared_ptr<GraphFactor> Graph::getFactor(size_t index) const {
+  return factor_map_.at(index);
+}
+
+double Graph::entropySum() const {
+  double e = 0.0;
+  for (auto &n : nodes_) e += n->entropy();
+  return e;
+}
+
+double Graph::maxChange() const {
+  double max_c = 0.0;
+  for (auto &n : nodes_) max_c = std::max(max_c, n->change());
+  return max_c;
+}
+
+void Graph::connectFactorNode(std::shared_ptr<GraphFactor> factor,
+                              std::shared_ptr<GraphNode> node,
+                              IODirection dir) {
+  std::shared_ptr<GraphEdge> e(new GraphEdge(node, factor, dir));
+  factor->addEdge(e);
+  node->addEdge(e);
+}
+
+size_t Graph::iterations() const { return iter_; }
 
 void Graph::norm() {
   for (auto &node : nodes_) node->norm();
-}
-
-void Graph::factor2node() {
-  for (auto &factor : factors_) factor->factor2node();
-}
-
-void Graph::node2factor() {
-  for (auto &node : nodes_) node->node2factor();
-}
-
-void Graph::f2n2f() {
-  // TODO: is this used?
-  factor2node();
-  node2factor();
-  iter_++;
-}
-
-void Graph::n2f2n() {
-  // TODO: is this used?
-  node2factor();
-  factor2node();
-  iter_++;
 }
 
 void Graph::initMessages() {
@@ -73,86 +99,80 @@ void Graph::initMessages() {
 
 void Graph::scheduledUpdate() {
   iter_++;
-  const size_t n_layers = schedule_factor_.size();
+  const size_t n_layers = schedule_factor.size();
 
   // Variables in the first layer are treated separately
-  for (auto &node : schedule_variable_.at(0)) {
-    node->node2factor(IODirection::inp);
+  for (auto &node : schedule_variable.at(0)) {
+    node->node2factor(IODirection::Input);
   }
 
   // ################# FORWARD  #################
   for (size_t r = 0; r < n_layers; r++) {
-    const bool has_priors = (schedule_prior_.at(r + 1).size() > 0);
-    for (auto &factor : schedule_factor_.at(r)) {
+    const bool has_priors = (schedule_prior.at(r).size() > 0);
+    // const bool has_priors = (schedule_prior.at(r + 1).size() > 0);
+    for (auto &factor : schedule_factor.at(r)) {
       factor->factor2node();
     }
 
-    for (auto &node : schedule_variable_.at(r + 1)) {
+    for (auto &node : schedule_variable.at(r)) {
+    // for (auto &node : schedule_variable.at(r + 1)) {
       if (has_priors) {
-        node->node2factor(IODirection::prior);
+        node->node2factor(IODirection::Prior);
       } else {
-        node->node2factor(IODirection::inp);
+        node->node2factor(IODirection::Input);
       }
     }
 
     if (has_priors) {
-      for (auto &factor : schedule_prior_.at(r + 1)) {
+      for (auto &factor : schedule_prior.at(r)) {
+      // for (auto &factor : schedule_prior.at(r + 1)) {
         factor->factor2node();
       }
-      for (auto &node : schedule_variable_.at(r + 1)) {
-        node->node2factor(IODirection::inp);
+      for (auto &node : schedule_variable.at(r)) {
+      // for (auto &node : schedule_variable.at(r + 1)) {
+        node->node2factor(IODirection::Input);
       }
     }
   }
 
-  for (auto &node : schedule_variable_.back()) {
-    node->node2factor(IODirection::out);
+  for (auto &node : schedule_variable.back()) {
+    node->node2factor(IODirection::Output);
   }
 
   // ################# BACKWARD  #################
-  for (int r = n_layers - 1; r >= 0; r--) {
-    const bool has_priors = (schedule_prior_.at(r).size() > 0);
-    for (auto &factor : schedule_factor_.at(r)) {
+  for (int r = (int)n_layers - 1; r >= 0; r--) {
+    const bool has_priors = (schedule_prior.at(r).size() > 0);
+    for (auto &factor : schedule_factor.at(r)) {
       factor->factor2node();
     }
 
-    for (auto &node : schedule_variable_.at(r)) {
+    for (auto &node : schedule_variable.at(r)) {
       if (has_priors) {
-        node->node2factor(IODirection::prior);
+        node->node2factor(IODirection::Prior);
       } else {
-        node->node2factor(IODirection::out);
+        node->node2factor(IODirection::Output);
       }
     }
 
     if (has_priors) {
-      for (auto &factor : schedule_prior_.at(r)) {
+      for (auto &factor : schedule_prior.at(r)) {
         factor->factor2node();
       }
-      for (auto &node : schedule_variable_.at(r)) {
-        node->node2factor(IODirection::out);
+      for (auto &node : schedule_variable.at(r)) {
+        node->node2factor(IODirection::Output);
       }
     }
   }
 }
 
 void Graph::spreadPriors() {
-  const size_t n = schedule_prior_.size();
-  for (size_t i = 0; i < n; i++) {
-    // Filter out all factors which are leafs from the schedule
-    std::vector<std::shared_ptr<GraphFactor>> tmp;
-    for (auto &factor : schedule_prior_.at(i)) {
-      if (!factor->isLeaf()) tmp.push_back(factor);
-    }
-    schedule_prior_[i] = tmp;
-  }
-
   for (auto &factor : factors_) {
-    if (factor->type() == FactorType::priorBit) {
+    if (factor->type() == FType::Prior) {
       factor->factor2node();
     }
   }
 
-  for (auto &factor : schedule_prior_.at(0)) {
+  for (auto &factor : schedule_prior.at(0)) {
     factor->factor2node();
   }
 

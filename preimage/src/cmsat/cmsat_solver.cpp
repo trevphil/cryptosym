@@ -10,7 +10,7 @@
  * Proprietary and confidential
  */
 
-#include "cmsat_solver.hpp"
+#include "cmsat/cmsat_solver.hpp"
 
 #include <spdlog/spdlog.h>
 

@@ -10,6 +10,8 @@
  * Proprietary and confidential
  */
 
+#include <math.h>
+#include <assert.h>
 #include <spdlog/spdlog.h>
 
 #include "bp/node.hpp"
@@ -24,8 +26,8 @@ namespace bp {
 
 GraphEdge::GraphEdge(std::shared_ptr<GraphNode> n,
                      std::shared_ptr<GraphFactor> f,
-                     IODirection dir, const std::vector<size_t> &node_is)
-    : node(n), factor(f), direction(dir), node_indices(node_is) {}
+                     IODirection dir)
+    : node(n), factor(f), direction(dir) {}
 
 std::string GraphEdge::toString() const {
   std::stringstream ss;
@@ -37,24 +39,20 @@ std::string GraphEdge::toString() const {
  ****** GRAPH FACTOR *******
  ***************************/
 
-GraphFactor::GraphFactor(size_t i, FactorType t)
-    : is_leaf_(false), index_(i), t_(t) {
-  // TODO: is_leaf_ should not always be false
+GraphFactor::GraphFactor(size_t i, FType t)
+    : index_(i), t_(t) {
+  assert(t_ != FType::None);
 }
 
 std::string GraphFactor::toString() const { return "Factor"; }
 
 size_t GraphFactor::index() const { return index_; }
 
-bool GraphFactor::isLeaf() const { return is_leaf_; }
-
-FactorType GraphFactor::type() const { return t_; }
+FType GraphFactor::type() const { return t_; }
 
 void GraphFactor::initMessages() {
   for (std::shared_ptr<GraphEdge> edge : edges_) {
-    const size_t numbits = edge->cardinality;
-    const size_t vals = (1 << numbits);
-    edge->m2n = Eigen::VectorXd(vals) * (1.0 / vals);
+    edge->m2n = Eigen::Vector2d::Ones() * 0.5;
   }
 }
 
@@ -90,6 +88,12 @@ std::string GraphNode::toString() const {
 
 size_t GraphNode::index() const { return index_; }
 
+bool GraphNode::bit() const { return bit_; }
+
+double GraphNode::entropy() const { return entropy_; }
+
+double GraphNode::change() const { return change_; }
+
 void GraphNode::initMessages() {
   for (std::shared_ptr<GraphEdge> edge : edges_) {
     edge->m2f = Eigen::Vector2d::Ones() * 0.5;
@@ -98,16 +102,16 @@ void GraphNode::initMessages() {
   size_t n_in = 0, n_out = 0, n_prior = 0;
   for (IODirection direction : directions_) {
     switch (direction) {
-    case IODirection::inp:
+    case IODirection::Input:
       n_in++;
       break;
-    case IODirection::out:
+    case IODirection::Output:
       n_out++;
       break;
-    case IODirection::prior:
+    case IODirection::Prior:
       n_prior++;
       break;
-    case IODirection::none:
+    case IODirection::None:
       break;
     }
   }
@@ -155,8 +159,8 @@ void GraphNode::node2factor(IODirection target) {
     assert(false);
   }
 
-  p0 = p0.array() / s.array();
-  p1 = p1.array() / s.array();
+  p0 = (p0.array() / s.array()).matrix();
+  p1 = (p1.array() / s.array()).matrix();
   p0 = (p0 * d) + (prev_p0_ * (1 - d));
   p1 = (p1 * d) + (prev_p1_ * (1 - d));
 
@@ -176,6 +180,11 @@ void GraphNode::norm() {
   const Eigen::ArrayXd Zn = Mm.colwise().prod();
   const Eigen::ArrayXd P = Zn / Zn.sum();
   final_dist_ = P;
+  double e = 0.0;
+  for (size_t i = 0; i < P.cols(); i++) {
+    if (P(i) != 0) e += -P(i) * log2(P(i));
+  }
+  entropy_ = e > 0 ? e : 0.0;
   change_ = fabs(final_dist_(0) - prev_dist_(0));
   prev_dist_ = final_dist_.replicate(1, 1);
   bit_ = final_dist_(1) > final_dist_(0) ? true : false;
@@ -185,6 +194,11 @@ void GraphNode::inlineNorm(const Eigen::MatrixXd &msg) {
   const Eigen::ArrayXd Zn = msg.colwise().prod();
   const Eigen::ArrayXd P = Zn / Zn.sum();
   final_dist_ = P;
+  double e = 0.0;
+  for (size_t i = 0; i < P.cols(); i++) {
+    if (P(i) != 0) e += -P(i) * log2(P(i));
+  }
+  entropy_ = e > 0 ? e : 0.0;
   bit_ = final_dist_(1) > final_dist_(0) ? true : false;
 }
 

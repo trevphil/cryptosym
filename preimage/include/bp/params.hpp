@@ -14,6 +14,5 @@
 
 #define BP_MAX_ITER (50)
 #define BP_DAMPING (0.75)
-#define BP_EPSILON (0.0001)
-#define BP_ CONVERGENCE_TOL (1e-4)
-
+#define BP_ENTROPY_THRESHOLD (1.0)
+#define BP_CHANGE_THRESHOLD (0.001)

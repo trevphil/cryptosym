@@ -15,6 +15,7 @@
 #include <cryptominisat5/cryptominisat.h>
 
 #include <map>
+#include <vector>
 
 #include "solver.hpp"
 

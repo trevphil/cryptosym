@@ -21,7 +21,7 @@ namespace preimage {
 
 class Factor {
  public:
-  enum Type {
+  enum Type : char {
     PriorFactor = 'P',
     NotFactor = 'N',
     SameFactor = 'S',

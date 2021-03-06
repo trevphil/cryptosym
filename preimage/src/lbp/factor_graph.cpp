@@ -165,6 +165,7 @@ void FactorGraph::updateFactorMessages(bool forward) {
         for (size_t rv_index : factor.referenced_rvs) {
           if (rv_index == to_rv) continue;
           const bool rv_val = assignments[rv_index];
+          // does this make sense?
           message_product0 *= rvs_.at(rv_index).prevMessage(factor_index, rv_val);
           message_product1 *= rvs_.at(rv_index).prevMessage(factor_index, rv_val);
         }

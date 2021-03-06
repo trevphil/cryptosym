@@ -30,18 +30,18 @@ double Probability::probOne(const LbpFactor &factor,
   const auto values = factor.extract(assignments);
   const bool is_observed = observed.count(factor.output) > 0u;
 
-  // TODO: should this be here?
+  // should this be here?
   if (is_observed && values.out != observed.at(factor.output)) return eps;
 
   if (factor.t == Factor::Type::AndFactor) {
     if (values.out == 0) {
-      assignment_prob = values.out == (values.in1 & values.in2) ? 1.0 / 3.0 : 0;
+      assignment_prob = values.out == (values.in1 & values.in2); // ? 1.0 / 3.0 : 0;
     } else {
       assignment_prob = values.out == (values.in1 & values.in2);
     }
 
   } else if (factor.t == Factor::Type::XorFactor) {
-    assignment_prob = values.out == (values.in1 ^ values.in2) ? 0.5 : 0;
+    assignment_prob = values.out == (values.in1 ^ values.in2); // ? 0.5 : 0;
 
   } else if (factor.t == Factor::Type::NotFactor) {
     assignment_prob = (values.out != values.in1);
@@ -60,7 +60,7 @@ double Probability::probOne(const LbpFactor &factor,
     spdlog::error("Unsupported factor: {}", factor.toString());
   }
 
-  return std::max(eps, std::min(1.0 - eps, assignment_prob));
+  return std::max(eps, assignment_prob);
 }
 
 }  // end namespace lbp
