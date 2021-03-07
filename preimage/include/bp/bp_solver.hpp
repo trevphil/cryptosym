@@ -33,7 +33,7 @@ class BPSolver : public Solver {
   std::map<size_t, bool> solveInternal() override;
 
  private:
-  FType convertFactorType(Factor::Type t) const;
+  BPFactorType convertFactorType(Factor::Type t) const;
 
   Graph g_;
 };

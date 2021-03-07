@@ -34,11 +34,11 @@ class Graph {
 
   bool hasNode(size_t index) const;
 
-  bool hasFactor(size_t index) const;
+  bool hasFactor(size_t index, BPFactorType t) const;
 
   std::shared_ptr<GraphNode> getNode(size_t index) const;
 
-  std::shared_ptr<GraphFactor> getFactor(size_t index) const;
+  std::shared_ptr<GraphFactor> getFactor(size_t index, BPFactorType t) const;
 
   double entropySum() const;
 
@@ -65,7 +65,7 @@ class Graph {
  private:
   size_t iter_;
   std::vector<std::shared_ptr<GraphFactor>> factors_;
-  std::map<size_t, std::shared_ptr<GraphFactor>> factor_map_;
+  std::map<std::string, std::shared_ptr<GraphFactor>> factor_map_;
   std::vector<std::shared_ptr<GraphNode>> nodes_;
   std::map<size_t, std::shared_ptr<GraphNode>> node_map_;
 };

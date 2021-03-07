@@ -34,9 +34,6 @@ add_executable(preimage
                src/sha256.cpp
                src/solver.cpp
                src/cmsat/cmsat_solver.cpp
-               src/lbp/factor_graph.cpp
-               src/lbp/lbp_factor.cpp
-               src/lbp/probability.cpp
                src/bp/node.cpp
                src/bp/graph.cpp
                src/bp/bp_solver.cpp)

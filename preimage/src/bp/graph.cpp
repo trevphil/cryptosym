@@ -42,7 +42,7 @@ Graph::~Graph() {
 
 void Graph::addFactor(std::shared_ptr<GraphFactor> factor) {
   factors_.push_back(factor);
-  factor_map_[factor->index()] = factor;
+  factor_map_[factor->toString()] = factor;
 }
 
 void Graph::addNode(std::shared_ptr<GraphNode> node) {
@@ -54,16 +54,18 @@ bool Graph::hasNode(size_t index) const {
   return node_map_.count(index) > 0;
 }
 
-bool Graph::hasFactor(size_t index) const {
-  return factor_map_.count(index) > 0;
+bool Graph::hasFactor(size_t index, BPFactorType t) const {
+  const std::string s = GraphFactor::makeString(index, t);
+  return factor_map_.count(s) > 0;
 }
 
 std::shared_ptr<GraphNode> Graph::getNode(size_t index) const {
   return node_map_.at(index);
 }
 
-std::shared_ptr<GraphFactor> Graph::getFactor(size_t index) const {
-  return factor_map_.at(index);
+std::shared_ptr<GraphFactor> Graph::getFactor(size_t index, BPFactorType t) const {
+  const std::string s = GraphFactor::makeString(index, t);
+  return factor_map_.at(s);
 }
 
 double Graph::entropySum() const {
@@ -101,10 +103,11 @@ void Graph::scheduledUpdate() {
   iter_++;
   const size_t n_layers = schedule_factor.size();
 
+  // TODO: important?
   // Variables in the first layer are treated separately
-  for (auto &node : schedule_variable.at(0)) {
-    node->node2factor(IODirection::Input);
-  }
+  // for (auto &node : schedule_variable.at(0)) {
+  //   node->node2factor(IODirection::Input);
+  // }
 
   // ################# FORWARD  #################
   for (size_t r = 0; r < n_layers; r++) {
@@ -167,11 +170,12 @@ void Graph::scheduledUpdate() {
 
 void Graph::spreadPriors() {
   for (auto &factor : factors_) {
-    if (factor->type() == FType::Prior) {
+    if (factor->type() == BPFactorType::Prior) {
       factor->factor2node();
     }
   }
 
+  // TODO: remove? (duplicate)
   for (auto &factor : schedule_prior.at(0)) {
     factor->factor2node();
   }

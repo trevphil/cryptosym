@@ -29,7 +29,7 @@ enum class IODirection : uint8_t {
   None = 0, Input = 1, Output = 2, Prior = 3
 };
 
-enum class FType : uint8_t {
+enum class BPFactorType : uint8_t {
   None = 0, Prior = 1, And = 2, Not = 3, Same = 4, Xor = 5
 };
 
@@ -53,31 +53,40 @@ class GraphEdge {
 
 class GraphFactor {
  public:
-  GraphFactor(size_t i, FType t);
+  GraphFactor(size_t i, BPFactorType t);
+
+  virtual ~GraphFactor();
+
+  static std::string ftype2str(BPFactorType t);
+
+  static std::string makeString(size_t index, BPFactorType t);
 
   std::string toString() const;
 
   size_t index() const;
 
-  FType type() const;
+  BPFactorType type() const;
 
   void initMessages();
 
   Eigen::MatrixXd gatherIncoming() const;
 
-  void factor2node();
+  virtual void factor2node();
 
   void addEdge(std::shared_ptr<GraphEdge> e);
 
- private:
+ protected:
   size_t index_;
-  FType t_;
+  BPFactorType t_;
   std::vector<std::shared_ptr<GraphEdge>> edges_;
+  Eigen::MatrixXd table_;
 };
 
 class GraphNode {
  public:
   explicit GraphNode(size_t i);
+
+  virtual ~GraphNode();
 
   std::string toString() const;
 
@@ -105,12 +114,15 @@ class GraphNode {
   bool bit_;
   double entropy_;
   double change_;
+  bool is_first_msg_;
   size_t index_;
   std::vector<std::shared_ptr<GraphEdge>> edges_;
   std::vector<IODirection> directions_;
-  Eigen::VectorXd in_factors_, out_factors_, prior_factors_;
-  Eigen::MatrixXd prev_msg_;
-  Eigen::VectorXd prev_p0_, prev_p1_;
+  std::vector<size_t> in_factor_idx_;
+  std::vector<size_t> out_factor_idx_;
+  std::vector<size_t> prior_factor_idx_;
+  std::vector<size_t> all_factor_idx_;
+  Eigen::MatrixXd prev_in_, prev_out_;
   Eigen::Vector2d prev_dist_, final_dist_;
 };
 

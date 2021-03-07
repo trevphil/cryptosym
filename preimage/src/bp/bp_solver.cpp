@@ -14,6 +14,7 @@
 #include <assert.h>
 
 #include "bp/bp_solver.hpp"
+#include "bp/prior_factor.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -25,23 +26,28 @@ BPSolver::BPSolver(const std::map<size_t, Factor> &factors,
                    const std::vector<size_t> &input_indices)
     : Solver(factors, input_indices) {
   g_ = Graph();
+  g_.schedule_variable.clear();
+  g_.schedule_variable.push_back({});
+  g_.schedule_factor.clear();
+  g_.schedule_factor.push_back({});
   size_t max_rv = 0;
 
   for (const auto &itr : factors_) {
     const size_t rv = itr.first;
     const Factor &f = itr.second;
     if (!f.valid) continue;
-    FType t = convertFactorType(f.t);
-    if (t == FType::None) continue;
+    BPFactorType t = convertFactorType(f.t);
+    if (t == BPFactorType::None) continue;
 
-    max_rv = std::max(max_rv, rv);
     std::shared_ptr<GraphFactor> fac(new GraphFactor(rv, t));
     g_.addFactor(fac);
+    g_.schedule_factor[0].push_back(fac);
 
     std::shared_ptr<GraphNode> out_node;
     if (!g_.hasNode(f.output)) {
       out_node = std::shared_ptr<GraphNode>(new GraphNode(f.output));
       g_.addNode(out_node);
+      max_rv = std::max(max_rv, f.output);
     } else {
       out_node = g_.getNode(f.output);
     }
@@ -52,6 +58,7 @@ BPSolver::BPSolver(const std::map<size_t, Factor> &factors,
       if (!g_.hasNode(inp)) {
         inp_node = std::shared_ptr<GraphNode>(new GraphNode(inp));
         g_.addNode(inp_node);
+        max_rv = std::max(max_rv, inp);
       } else {
         inp_node = g_.getNode(inp);
       }
@@ -59,30 +66,24 @@ BPSolver::BPSolver(const std::map<size_t, Factor> &factors,
     }
   }
 
-  g_.schedule_variable.clear();
-  g_.schedule_variable.push_back({});
-  g_.schedule_factor.clear();
-  g_.schedule_factor.push_back({});
-
   for (size_t rv = 0; rv < max_rv; rv++) {
     if (g_.hasNode(rv)) g_.schedule_variable[0].push_back(g_.getNode(rv));
-    if (g_.hasFactor(rv)) g_.schedule_factor[0].push_back(g_.getFactor(rv));
   }
 }
 
-FType BPSolver::convertFactorType(Factor::Type t) const {
+BPFactorType BPSolver::convertFactorType(Factor::Type t) const {
   switch (t) {
   case Factor::Type::PriorFactor:
-    // "Prior factors" (hash input bits) have no probabilistic interpretation
-    return FType::None;
+    // "Prior factors" (hash input bits) have no probabilistic prior
+    return BPFactorType::None;
   case Factor::Type::AndFactor:
-    return FType::And;
+    return BPFactorType::And;
   case Factor::Type::NotFactor:
-    return FType::Not;
+    return BPFactorType::Not;
   case Factor::Type::SameFactor:
-    return FType::Same;
+    return BPFactorType::Same;
   case Factor::Type::XorFactor:
-    return FType::Xor;
+    return BPFactorType::Xor;
   }
 }
 
@@ -91,11 +92,10 @@ std::map<size_t, bool> BPSolver::solveInternal() {
   g_.schedule_prior.push_back({});
   for (const auto &itr : observed_) {
     const size_t rv = itr.first;
-    const bool val = itr.second; // TODO: val is not used
-    (void)val;
+    const bool bit_val = itr.second;
     assert(g_.hasNode(rv));
     std::shared_ptr<GraphNode> node = g_.getNode(rv);
-    std::shared_ptr<GraphFactor> fac(new GraphFactor(rv, FType::Prior));
+    std::shared_ptr<GraphFactor> fac(new GraphPriorFactor(rv, bit_val));
     g_.addFactor(fac);
     g_.connectFactorNode(fac, node, IODirection::Prior);
     g_.schedule_prior[0].push_back(fac);
