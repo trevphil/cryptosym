@@ -114,7 +114,6 @@ class GraphNode {
   bool bit_;
   double entropy_;
   double change_;
-  bool is_first_msg_;
   size_t index_;
   std::vector<std::shared_ptr<GraphEdge>> edges_;
   std::vector<IODirection> directions_;

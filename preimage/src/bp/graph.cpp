@@ -38,6 +38,11 @@ Graph::~Graph() {
   for (auto &itr : node_map_) {
     if (itr.second) itr.second.reset();
   }
+
+  nodes_.clear();
+  node_map_.clear();
+  factors_.clear();
+  factor_map_.clear();
 }
 
 void Graph::addFactor(std::shared_ptr<GraphFactor> factor) {
@@ -103,38 +108,23 @@ void Graph::scheduledUpdate() {
   iter_++;
   const size_t n_layers = schedule_factor.size();
 
-  // TODO: important?
-  // Variables in the first layer are treated separately
-  // for (auto &node : schedule_variable.at(0)) {
-  //   node->node2factor(IODirection::Input);
-  // }
+  for (auto &node : schedule_variable.at(0)) {
+    node->node2factor(IODirection::Input);
+  }
 
   // ################# FORWARD  #################
   for (size_t r = 0; r < n_layers; r++) {
-    const bool has_priors = (schedule_prior.at(r).size() > 0);
-    // const bool has_priors = (schedule_prior.at(r + 1).size() > 0);
     for (auto &factor : schedule_factor.at(r)) {
       factor->factor2node();
     }
-
     for (auto &node : schedule_variable.at(r)) {
-    // for (auto &node : schedule_variable.at(r + 1)) {
-      if (has_priors) {
-        node->node2factor(IODirection::Prior);
-      } else {
-        node->node2factor(IODirection::Input);
-      }
+      node->node2factor(IODirection::Prior);
     }
-
-    if (has_priors) {
-      for (auto &factor : schedule_prior.at(r)) {
-      // for (auto &factor : schedule_prior.at(r + 1)) {
-        factor->factor2node();
-      }
-      for (auto &node : schedule_variable.at(r)) {
-      // for (auto &node : schedule_variable.at(r + 1)) {
-        node->node2factor(IODirection::Input);
-      }
+    for (auto &factor : schedule_prior.at(r)) {
+      factor->factor2node();
+    }
+    for (auto &node : schedule_variable.at(r)) {
+      node->node2factor(IODirection::Input);
     }
   }
 
@@ -144,49 +134,39 @@ void Graph::scheduledUpdate() {
 
   // ################# BACKWARD  #################
   for (int r = (int)n_layers - 1; r >= 0; r--) {
-    const bool has_priors = (schedule_prior.at(r).size() > 0);
-    for (auto &factor : schedule_factor.at(r)) {
-      factor->factor2node();
+    for (size_t i = schedule_factor.at(r).size(); i-- > 0;) {
+    // for (auto &factor : schedule_factor.at(r)) {
+      // factor->factor2node();
+      schedule_factor.at(r).at(i)->factor2node();
     }
-
-    for (auto &node : schedule_variable.at(r)) {
-      if (has_priors) {
-        node->node2factor(IODirection::Prior);
-      } else {
-        node->node2factor(IODirection::Output);
-      }
+    for (size_t i = schedule_variable.at(r).size(); i-- > 0;) {
+    // for (auto &node : schedule_variable.at(r)) {
+      // node->node2factor(IODirection::Prior);
+      schedule_variable.at(r).at(i)->node2factor(IODirection::Prior);
     }
-
-    if (has_priors) {
-      for (auto &factor : schedule_prior.at(r)) {
-        factor->factor2node();
-      }
-      for (auto &node : schedule_variable.at(r)) {
-        node->node2factor(IODirection::Output);
-      }
+    for (size_t i = schedule_prior.at(r).size(); i-- > 0;) {
+    // for (auto &factor : schedule_prior.at(r)) {
+      // factor->factor2node();
+      schedule_prior.at(r).at(i)->factor2node();
+    }
+    for (size_t i = schedule_variable.at(r).size(); i-- > 0;) {
+    // for (auto &node : schedule_variable.at(r)) {
+      // node->node2factor(IODirection::Output);
+      schedule_variable.at(r).at(i)->node2factor(IODirection::Output);
     }
   }
 }
 
 void Graph::spreadPriors() {
-  for (auto &factor : factors_) {
-    if (factor->type() == BPFactorType::Prior) {
-      factor->factor2node();
-    }
-  }
-
-  // TODO: remove? (duplicate)
   for (auto &factor : schedule_prior.at(0)) {
     factor->factor2node();
   }
 
-  /*
-  TODO: important?
-  for (auto &node : filter_nodes_t_.at(0)) {
-    node->node2factor();
-    node->norm();
-  }
-  */
+  // TODO: important?
+  // for (auto &node : schedule_variable.at(0)) {
+  //   node->node2factor();
+  //   node->norm();
+  // }
 }
 
 }  // end namespace bp

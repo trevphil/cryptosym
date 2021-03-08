@@ -13,6 +13,7 @@
 #include <math.h>
 #include <assert.h>
 #include <algorithm>
+#include <iostream>
 
 #include <spdlog/spdlog.h>
 
@@ -70,27 +71,27 @@ GraphFactor::GraphFactor(size_t i, BPFactorType t)
     table_ = Eigen::MatrixXd::Zero(8, 4);
     // P(output = C | input1 = A, input2 = B)
     //        A  B  C  prob
-    table_ << 0, 0, 0, 1.0,
-              0, 0, 1, 0.0,
-              0, 1, 0, 1.0,
-              0, 1, 1, 0.0,
-              1, 0, 0, 1.0,
-              1, 0, 1, 0.0,
-              1, 1, 0, 0.0,
-              1, 1, 1, 1.0;
+    table_ << 0, 0, 0, BP_ONE,
+              0, 0, 1, BP_ZERO,
+              0, 1, 0, BP_ONE,
+              0, 1, 1, BP_ZERO,
+              1, 0, 0, BP_ONE,
+              1, 0, 1, BP_ZERO,
+              1, 1, 0, BP_ZERO,
+              1, 1, 1, BP_ONE;
     break;
   case BPFactorType::Xor:
     table_ = Eigen::MatrixXd::Zero(8, 4);
     // P(output = C | input1 = A, input2 = B)
     //        A  B  C  prob
-    table_ << 0, 0, 0, 1.0,
-              0, 0, 1, 0.0,
-              0, 1, 0, 0.0,
-              0, 1, 1, 1.0,
-              1, 0, 0, 0.0,
-              1, 0, 1, 1.0,
-              1, 1, 0, 1.0,
-              1, 1, 1, 0.0;
+    table_ << 0, 0, 0, BP_ONE,
+              0, 0, 1, BP_ZERO,
+              0, 1, 0, BP_ZERO,
+              0, 1, 1, BP_ONE,
+              1, 0, 0, BP_ZERO,
+              1, 0, 1, BP_ONE,
+              1, 1, 0, BP_ONE,
+              1, 1, 1, BP_ZERO;
     break;
   }
 }
@@ -241,20 +242,19 @@ void GraphNode::initMessages() {
 
   change_ = 0.0;
   entropy_ = 0.0;
-  is_first_msg_ = true;
   prev_dist_ = Eigen::Vector2d::Ones() * 0.5;
   final_dist_ = Eigen::Vector2d::Ones() * 0.5;
 
   const size_t l = edges_.size();
-  prev_in_ = Eigen::MatrixXd::Ones(l, 2) * 0.5;
-  prev_out_ = Eigen::MatrixXd::Ones(l, 2) * 0.5;
+  prev_in_ = Eigen::MatrixXd::Zero(l, 2);
+  prev_out_ = Eigen::MatrixXd::Zero(l, 2);
 }
 
 Eigen::MatrixXd GraphNode::gatherIncoming() const {
   const size_t l = edges_.size();
   Eigen::MatrixXd msg_in = Eigen::MatrixXd::Zero(l, 2);
   for (size_t i = 0; i < l; ++i) {
-    // Clip to be >= 0 in case messages behavior is funny
+    // Clip to be >= 0 in case message behavior is funny
     msg_in(i, 0) = std::max(0.0, edges_.at(i)->m2n(0));
     msg_in(i, 1) = std::max(0.0, edges_.at(i)->m2n(1));
   }
@@ -265,7 +265,7 @@ void GraphNode::node2factor(IODirection target) {
   const size_t l = edges_.size();
   Eigen::MatrixXd msg_in = gatherIncoming();
   const double d = BP_DAMPING;
-  if (!is_first_msg_) {
+  if (prev_in_.any()) {
     // Apply damping to the input
     msg_in = (msg_in * d) + (prev_in_ * (1 - d));
   }
@@ -301,28 +301,29 @@ void GraphNode::node2factor(IODirection target) {
     msg_out.row(i) = p / s;
   }
 
-  if (!is_first_msg_) {
-    // Apply damping to the output
-    for (size_t i : targets) {
+  for (size_t i : targets) {
+    if (prev_out_.row(i).sum() > 0) {
+      // Apply damping to the output
       msg_out.row(i) = (msg_out.row(i) * d) + (prev_out_.row(i) * (1 - d));
     }
-  }
-
-  // Propagate to the edges
-  for (size_t i = 0; i < l; i++) {
+    prev_out_.row(i) = msg_out.row(i);
+    // Propagate to the edges
     edges_.at(i)->m2f = msg_out.row(i);
   }
 
   inlineNorm(msg_in);
-  prev_out_ = msg_out;
   prev_in_ = msg_in;
-  is_first_msg_ = false;
 }
 
 void GraphNode::norm() {
   const Eigen::MatrixXd Mm = gatherIncoming();
   const Eigen::ArrayXd Zn = Mm.colwise().prod();
-  const Eigen::ArrayXd P = Zn / Zn.sum();
+  const double divisor = Zn.sum();
+  if (divisor == 0.0) {
+    spdlog::error("Zero-sum for node {}. Is there a contradiction?", index_);
+    assert(false);
+  }
+  const Eigen::ArrayXd P = Zn / divisor;
   final_dist_ = P;
   double e = 0.0;
   for (size_t i = 0; i < P.cols(); i++) {
@@ -336,7 +337,12 @@ void GraphNode::norm() {
 
 void GraphNode::inlineNorm(const Eigen::MatrixXd &msg) {
   const Eigen::ArrayXd Zn = msg.colwise().prod();
-  const Eigen::ArrayXd P = Zn / Zn.sum();
+  const double divisor = Zn.sum();
+  if (divisor == 0.0) {
+    spdlog::error("Zero-sum for node {}. Is there a contradiction?", index_);
+    assert(false);
+  }
+  const Eigen::ArrayXd P = Zn / divisor;
   final_dist_ = P;
   double e = 0.0;
   for (size_t i = 0; i < P.cols(); i++) {

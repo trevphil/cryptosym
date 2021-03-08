@@ -131,6 +131,7 @@ std::map<size_t, bool> BPSolver::solveInternal() {
     const Factor &f = itr.second;
     if (!f.valid) continue;
     solution[f.output] = g_.getNode(f.output)->bit();
+    // spdlog::info("{}", g_.getNode(f.output)->toString());
   }
   return solution;
 }
