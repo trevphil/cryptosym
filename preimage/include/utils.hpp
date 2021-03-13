@@ -86,7 +86,7 @@ class Utils {
                   "Representation of ticks isn't an integral value.");
 
     const auto now = std::chrono::system_clock::now().time_since_epoch();
-    return std::chrono::duration_cast<std::chrono::seconds>(now).count();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
   }
 
   template <typename T>

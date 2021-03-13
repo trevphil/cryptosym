@@ -94,6 +94,8 @@ class GraphNode {
 
   virtual ~GraphNode();
 
+  void rescaleMatrix(Eigen::MatrixXd &m);
+
   std::string toString() const;
 
   size_t index() const;

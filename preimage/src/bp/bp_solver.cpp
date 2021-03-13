@@ -15,6 +15,7 @@
 
 #include "bp/bp_solver.hpp"
 #include "bp/prior_factor.hpp"
+#include "utils.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -98,9 +99,12 @@ std::map<size_t, bool> BPSolver::solveInternal() {
   g_.spreadPriors(prior_rvs);
 
   while (g_.iterations() < BP_MAX_ITER) {
-    spdlog::info("Iteration {}/{}", g_.iterations() + 1, BP_MAX_ITER);
+    const auto start = Utils::time_since_epoch();
     g_.scheduledUpdate();
     g_.norm();
+    const auto end = Utils::time_since_epoch();
+    spdlog::info("Iteration {}/{} finished in {} ms",
+                 g_.iterations() + 1, BP_MAX_ITER, end - start);
 
     // TODO: set damping to 1.0 if entropy threshold in 1st layer is reached?
 

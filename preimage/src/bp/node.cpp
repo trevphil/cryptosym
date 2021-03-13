@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <algorithm>
 #include <iostream>
+#include <limits>
 
 #include <spdlog/spdlog.h>
 
@@ -245,6 +246,22 @@ GraphNode::~GraphNode() {
   for (auto &e : edges_) e.reset();
 }
 
+void GraphNode::rescaleMatrix(Eigen::MatrixXd &m) {
+  if (m.size() == 0) return;
+
+  const Eigen::MatrixXd nonzero = (m.array() == 0.0).select(1.0, m);
+  // const double dmin = std::numeric_limits<double>::epsilon();
+  const double min_val = nonzero.minCoeff();
+  // if (min_val < 100 * dmin) spdlog::warn("Very close to EPS!");
+
+  const double max_val = m.maxCoeff();
+  // const double dmax = std::numeric_limits<double>::max();
+  // if (max_val > dmax / 100) spdlog::warn("Very close to DBL_MAX!");
+
+  const double exp = (log10(max_val) - log10(min_val)) / (edges_.size() + 1);
+  m *= pow(10, exp);
+}
+
 std::string GraphNode::toString() const {
   std::stringstream ss;
   ss << "Node " << index_ << ": (" << final_dist_(0);
@@ -345,11 +362,15 @@ void GraphNode::node2factor(IODirection target) {
     // Remove row "i"
     tmp.block(i, 0, l - i - 1, 2) = tmp.block(i + 1, 0, l - i - 1, 2);
     tmp.conservativeResize(l - 1, 2);
-    const Eigen::ArrayXd p = tmp.colwise().prod();
-    const double s = p.sum();
+    rescaleMatrix(tmp);  // for numerical stability
+    Eigen::Array2d p = tmp.colwise().prod();
+    double s = p.sum();
     if (s == 0.0) {
-      spdlog::error("Node {}: zero-sum! Is there a contradiction in the graph?");
-      assert(false);
+      // spdlog::error("Zero-sum for {}. Is there a contradiction?", toString());
+      // std::cout << tmp << std::endl;
+      // assert(false);
+      p = Eigen::Array2d::Ones();
+      s = p.sum();
     }
     msg_out.row(i) = p / s;
 
@@ -379,19 +400,22 @@ void GraphNode::node2factor(IODirection target) {
 }
 
 void GraphNode::norm() {
-  const Eigen::MatrixXd Mm = gatherIncoming();
-  const Eigen::ArrayXd Zn = Mm.colwise().prod();
-  const double divisor = Zn.sum();
+  Eigen::MatrixXd Mm = gatherIncoming();
+  rescaleMatrix(Mm);  // for numerical stability
+  Eigen::Array2d Zn = Mm.colwise().prod();
+  double divisor = Zn.sum();
   if (divisor == 0.0) {
-    spdlog::error("Zero-sum for node {}. Is there a contradiction?", index_);
-    assert(false);
+    // spdlog::error("Zero-sum for {}. Is there a contradiction?", toString());
+    // std::cout << Mm << std::endl;
+    // assert(false);
+    Zn = Eigen::Array2d::Ones();
+    divisor = Zn.sum();
   }
-  const Eigen::ArrayXd P = Zn / divisor;
+  const Eigen::Array2d P = Zn / divisor;
   final_dist_ = P;
   double e = 0.0;
-  for (size_t i = 0; i < P.cols(); i++) {
-    if (P(i) != 0) e += -P(i) * log2(P(i));
-  }
+  if (P(0) != 0) e += -P(0) * log2(P(0));
+  if (P(1) != 0) e += -P(1) * log2(P(1));
   entropy_ = e > 0 ? e : 0.0;
   change_ = std::max(fabs(final_dist_(0) - prev_dist_(0)),
                      fabs(final_dist_(1) - prev_dist_(1)));
@@ -400,18 +424,17 @@ void GraphNode::norm() {
 }
 
 void GraphNode::inlineNorm(const Eigen::MatrixXd &msg) {
-  Eigen::ArrayXd Zn = msg.colwise().prod();
+  Eigen::Array2d Zn = msg.colwise().prod();
   double divisor = Zn.sum();
   if (divisor == 0.0) {
-    Zn = Eigen::ArrayXd::Ones(Zn.rows());
+    Zn = Eigen::Array2d::Ones();
     divisor = Zn.sum();
   }
-  const Eigen::ArrayXd P = Zn / divisor;
+  const Eigen::Array2d P = Zn / divisor;
   final_dist_ = P;
   double e = 0.0;
-  for (size_t i = 0; i < P.cols(); i++) {
-    if (P(i) != 0) e += -P(i) * log2(P(i));
-  }
+  if (P(0) != 0) e += -P(0) * log2(P(0));
+  if (P(1) != 0) e += -P(1) * log2(P(1));
   entropy_ = e > 0 ? e : 0.0;
   bit_ = final_dist_(1) > final_dist_(0) ? true : false;
 }
