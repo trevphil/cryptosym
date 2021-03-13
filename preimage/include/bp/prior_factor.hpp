@@ -29,10 +29,15 @@ class GraphPriorFactor : public GraphFactor {
     for (auto &e : edges_) e.reset();
   }
 
-  void factor2node() override {
+  void initMessages() override {
+    assert(edges_.size() == 1);
     std::shared_ptr<GraphEdge> e = edges_.at(0);
     e->m2n(0) = (bit_ == false ? 1.0 : 0.0);
     e->m2n(1) = (bit_ == true ? 1.0 : 0.0);
+  }
+
+  void factor2node() override {
+    // Do nothing: message is already out
   }
 
  private:

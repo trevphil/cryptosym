@@ -19,11 +19,10 @@ namespace preimage {
 
 namespace bp {
 
-Graph::Graph() {}
+Graph::Graph() : iter_(0) {}
 
 Graph::~Graph() {
   schedule_factor.clear();
-  schedule_prior.clear();
   schedule_variable.clear();
 
   for (auto &f : factors_) {
@@ -43,6 +42,28 @@ Graph::~Graph() {
   node_map_.clear();
   factors_.clear();
   factor_map_.clear();
+}
+
+void Graph::printGraph() const {
+  spdlog::info("--------- GRAPH ---------");
+  spdlog::info(">>> nodes <<<");
+
+  for (auto &n : nodes_) {
+    spdlog::info("{}", n->toString());
+    for (auto &e : n->edges()) {
+      spdlog::info("\t{} : m2f=[{}, {}]", e->toString(),
+                   e->m2f(0), e->m2f(1));
+    }
+  }
+  spdlog::info(">>> factors <<<");
+  for (auto &f : schedule_factor.at(0)) {
+    spdlog::info("{}", f->toString());
+    for (auto &e : f->edges()) {
+      spdlog::info("\t{} : m2n=[{}, {}]", e->toString(),
+                   e->m2n(0), e->m2n(1));
+    }
+  }
+  spdlog::info("---------------------");
 }
 
 void Graph::addFactor(std::shared_ptr<GraphFactor> factor) {
@@ -104,13 +125,29 @@ void Graph::initMessages() {
   for (auto &node : nodes_) node->initMessages();
 }
 
+void Graph::spreadPriors(const std::vector<size_t> &prior_rvs) {
+  for (size_t rv : prior_rvs) {
+    if (hasNode(rv)) getNode(rv)->node2factor();
+  }
+}
+
 void Graph::scheduledUpdate() {
   iter_++;
   const size_t n_layers = schedule_factor.size();
 
+#ifdef PRINT_DEBUG
+  spdlog::info("A: starting scheduledUpdate()");
+  printGraph();
+#endif
+
   for (auto &node : schedule_variable.at(0)) {
     node->node2factor(IODirection::Input);
   }
+
+#ifdef PRINT_DEBUG
+  spdlog::info("B: scheduledUpdate() after node2factor[Input]");
+  printGraph();
+#endif
 
   // ################# FORWARD  #################
   for (size_t r = 0; r < n_layers; r++) {
@@ -118,55 +155,37 @@ void Graph::scheduledUpdate() {
       factor->factor2node();
     }
     for (auto &node : schedule_variable.at(r)) {
-      node->node2factor(IODirection::Prior);
-    }
-    for (auto &factor : schedule_prior.at(r)) {
-      factor->factor2node();
-    }
-    for (auto &node : schedule_variable.at(r)) {
       node->node2factor(IODirection::Input);
     }
   }
+
+#ifdef PRINT_DEBUG
+  spdlog::info("C: scheduledUpdate() after f2n --> n2f[Input]");
+  printGraph();
+#endif
 
   for (auto &node : schedule_variable.back()) {
     node->node2factor(IODirection::Output);
   }
 
+#ifdef PRINT_DEBUG
+  spdlog::info("D: scheduledUpdate() after node2factor[Output]");
+  printGraph();
+#endif
+
   // ################# BACKWARD  #################
   for (int r = (int)n_layers - 1; r >= 0; r--) {
     for (size_t i = schedule_factor.at(r).size(); i-- > 0;) {
-    // for (auto &factor : schedule_factor.at(r)) {
-      // factor->factor2node();
       schedule_factor.at(r).at(i)->factor2node();
     }
     for (size_t i = schedule_variable.at(r).size(); i-- > 0;) {
-    // for (auto &node : schedule_variable.at(r)) {
-      // node->node2factor(IODirection::Prior);
-      schedule_variable.at(r).at(i)->node2factor(IODirection::Prior);
-    }
-    for (size_t i = schedule_prior.at(r).size(); i-- > 0;) {
-    // for (auto &factor : schedule_prior.at(r)) {
-      // factor->factor2node();
-      schedule_prior.at(r).at(i)->factor2node();
-    }
-    for (size_t i = schedule_variable.at(r).size(); i-- > 0;) {
-    // for (auto &node : schedule_variable.at(r)) {
-      // node->node2factor(IODirection::Output);
       schedule_variable.at(r).at(i)->node2factor(IODirection::Output);
     }
   }
-}
-
-void Graph::spreadPriors() {
-  for (auto &factor : schedule_prior.at(0)) {
-    factor->factor2node();
-  }
-
-  // TODO: important?
-  // for (auto &node : schedule_variable.at(0)) {
-  //   node->node2factor();
-  //   node->norm();
-  // }
+#ifdef PRINT_DEBUG
+  spdlog::info("E: scheduledUpdate() after f2n --> n2f[Output]");
+  printGraph();
+#endif
 }
 
 }  // end namespace bp

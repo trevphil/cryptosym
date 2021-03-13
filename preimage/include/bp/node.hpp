@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <map>
 #include <vector>
 #include <string>
 #include <iostream>
@@ -67,7 +68,9 @@ class GraphFactor {
 
   BPFactorType type() const;
 
-  void initMessages();
+  std::vector<std::shared_ptr<GraphEdge>> edges() const;
+
+  virtual void initMessages();
 
   Eigen::MatrixXd gatherIncoming() const;
 
@@ -80,6 +83,9 @@ class GraphFactor {
   BPFactorType t_;
   std::vector<std::shared_ptr<GraphEdge>> edges_;
   Eigen::MatrixXd table_;
+
+ private:
+  std::map<size_t, size_t> edge_index_for_table_column_;
 };
 
 class GraphNode {
@@ -97,6 +103,8 @@ class GraphNode {
   double entropy() const;
 
   double change() const;
+
+  std::vector<std::shared_ptr<GraphEdge>> edges() const;
 
   void initMessages();
 
@@ -119,7 +127,6 @@ class GraphNode {
   std::vector<IODirection> directions_;
   std::vector<size_t> in_factor_idx_;
   std::vector<size_t> out_factor_idx_;
-  std::vector<size_t> prior_factor_idx_;
   std::vector<size_t> all_factor_idx_;
   Eigen::MatrixXd prev_in_, prev_out_;
   Eigen::Vector2d prev_dist_, final_dist_;

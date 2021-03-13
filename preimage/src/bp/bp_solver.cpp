@@ -36,7 +36,7 @@ BPSolver::BPSolver(const std::map<size_t, Factor> &factors,
     const size_t rv = itr.first;
     const Factor &f = itr.second;
     if (!f.valid) continue;
-    BPFactorType t = convertFactorType(f.t);
+    const BPFactorType t = convertFactorType(f.t);
     if (t == BPFactorType::None) continue;
 
     std::shared_ptr<GraphFactor> fac(new GraphFactor(rv, t));
@@ -73,36 +73,29 @@ BPSolver::BPSolver(const std::map<size_t, Factor> &factors,
 
 BPFactorType BPSolver::convertFactorType(Factor::Type t) const {
   switch (t) {
-  case Factor::Type::PriorFactor:
     // "Prior factors" (hash input bits) have no probabilistic prior
-    return BPFactorType::None;
-  case Factor::Type::AndFactor:
-    return BPFactorType::And;
-  case Factor::Type::NotFactor:
-    return BPFactorType::Not;
-  case Factor::Type::SameFactor:
-    return BPFactorType::Same;
-  case Factor::Type::XorFactor:
-    return BPFactorType::Xor;
+    case Factor::Type::PriorFactor: return BPFactorType::None;
+    case Factor::Type::AndFactor: return BPFactorType::And;
+    case Factor::Type::NotFactor: return BPFactorType::Not;
+    case Factor::Type::SameFactor: return BPFactorType::Same;
+    case Factor::Type::XorFactor: return BPFactorType::Xor;
   }
 }
 
 std::map<size_t, bool> BPSolver::solveInternal() {
-  g_.schedule_prior.clear();
-  g_.schedule_prior.push_back({});
+  std::vector<size_t> prior_rvs = {};
   for (const auto &itr : observed_) {
     const size_t rv = itr.first;
     const bool bit_val = itr.second;
     assert(g_.hasNode(rv));
-    std::shared_ptr<GraphNode> node = g_.getNode(rv);
     std::shared_ptr<GraphFactor> fac(new GraphPriorFactor(rv, bit_val));
     g_.addFactor(fac);
-    g_.connectFactorNode(fac, node, IODirection::Prior);
-    g_.schedule_prior[0].push_back(fac);
+    g_.connectFactorNode(fac, g_.getNode(rv), IODirection::Prior);
+    prior_rvs.push_back(rv);
   }
 
   g_.initMessages();
-  g_.spreadPriors();
+  g_.spreadPriors(prior_rvs);
 
   while (g_.iterations() < BP_MAX_ITER) {
     spdlog::info("Iteration {}/{}", g_.iterations() + 1, BP_MAX_ITER);

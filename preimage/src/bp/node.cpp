@@ -33,8 +33,15 @@ GraphEdge::GraphEdge(std::shared_ptr<GraphNode> n,
     : node(n), factor(f), direction(dir) {}
 
 std::string GraphEdge::toString() const {
+  std::string dir_str = "";
+  switch (direction) {
+    case IODirection::None: dir_str = "None"; break;
+    case IODirection::Input: dir_str = "Input"; break;
+    case IODirection::Output: dir_str = "Output"; break;
+    case IODirection::Prior: dir_str = "Prior"; break;
+  }
   std::stringstream ss;
-  ss << node->toString() << " <-> " << factor->toString();
+  ss << node->toString() << " <-[" << dir_str << "]-> " << factor->toString();
   return ss.str();
 }
 
@@ -102,12 +109,12 @@ GraphFactor::~GraphFactor() {
 
 std::string GraphFactor::ftype2str(BPFactorType t) {
   switch (t) {
-  case BPFactorType::None: return "None";
-  case BPFactorType::And: return "And";
-  case BPFactorType::Not: return "Not";
-  case BPFactorType::Prior: return "Prior";
-  case BPFactorType::Same: return "Same";
-  case BPFactorType::Xor: return "Xor";
+    case BPFactorType::None: return "None";
+    case BPFactorType::And: return "And";
+    case BPFactorType::Not: return "Not";
+    case BPFactorType::Prior: return "Prior";
+    case BPFactorType::Same: return "Same";
+    case BPFactorType::Xor: return "Xor";
   }
 }
 
@@ -125,10 +132,38 @@ size_t GraphFactor::index() const { return index_; }
 
 BPFactorType GraphFactor::type() const { return t_; }
 
+std::vector<std::shared_ptr<GraphEdge>> GraphFactor::edges() const {
+  return edges_;
+}
+
 void GraphFactor::initMessages() {
-  for (std::shared_ptr<GraphEdge> edge : edges_) {
-    edge->m2n = Eigen::Vector2d::Ones() * 0.5;
+  assert(t_ != BPFactorType::None);
+  assert(t_ != BPFactorType::Prior);
+  const size_t l = edges_.size();
+  size_t input_column = 0;
+  for (size_t edge_idx = 0; edge_idx < l; edge_idx++) {
+    std::shared_ptr<GraphEdge> edge = edges_.at(edge_idx);
+    edge->m2n = Eigen::Vector2d::Ones() * 0.5; // Init message
+
+    switch (edge->direction) {
+    case IODirection::None:
+    case IODirection::Prior:
+      assert(false);  // This should not happen
+      break;
+    case IODirection::Input:
+      // The first columns of the probability table are for input variables
+      // Important! We assume the input order doesn't matter (symmetric!)
+      edge_index_for_table_column_[input_column] = edge_idx;
+      input_column++;
+      break;
+    case IODirection::Output:
+      // The second-last column (there are l + 1 columns) is the output
+      edge_index_for_table_column_[l - 1] = edge_idx;
+      break;
+    }
   }
+  // Each edge should map to a unique column
+  assert(l == edge_index_for_table_column_.size());
 }
 
 Eigen::MatrixXd GraphFactor::gatherIncoming() const {
@@ -151,34 +186,48 @@ void GraphFactor::factor2node() {
   Eigen::MatrixXd tfill = table_.replicate(1, 1);
   const size_t n_rows = tfill.rows();
 
-  for (size_t node_idx = 0; node_idx < l; node_idx++) {
-    Eigen::Array2d m = msg_in.row(node_idx);
+  for (size_t col = 0; col < l; col++) {
+    Eigen::Array2d m = msg_in.row(edge_index_for_table_column_.at(col));
     for (size_t row = 0; row < n_rows; row++) {
-      if (table_(row, node_idx) == 0) {
-        tfill(row, node_idx) = m(0);
+      if (table_(row, col) == 0) {
+        tfill(row, col) = m(0);
       } else {
-        tfill(row, node_idx) = m(1);
+        tfill(row, col) = m(1);
       }
     }
   }
 
-  for (size_t i = 0; i < l; i++) {
+#ifdef PRINT_DEBUG
+  std::cout << "factor2node for factor: " << toString() << std::endl;
+  std::cout << "msg_in = " << std::endl << msg_in << std::endl;
+  std::cout << "tfill = " << std::endl << tfill << std::endl;
+#endif
+
+  for (size_t col = 0; col < l; col++) {
     Eigen::MatrixXd tmp = tfill.replicate(1, 1);
-    // Remove column "i" from tmp
-    tmp.block(0, i, n_rows, l - i) = tmp.block(0, i + 1, n_rows, l - i);
+    // Remove column "col" from tmp
+    tmp.block(0, col, n_rows, l - col) = tmp.block(0, col + 1, n_rows, l - col);
     tmp.conservativeResize(n_rows, l);
+#ifdef PRINT_DEBUG
+    std::cout << "tmp = " << std::endl << tmp << std::endl;
+#endif
     const Eigen::VectorXd p = tmp.rowwise().prod();
     double s0 = 0;
     double s1 = 0;
     for (size_t row = 0; row < table_.rows(); row++) {
-      if (table_(row, i) == 0) {
+      if (table_(row, col) == 0) {
         s0 += p(row);
       } else {
         s1 += p(row);
       }
     }
-    edges_.at(i)->m2n(0) = s0;
-    edges_.at(i)->m2n(1) = s1;
+    edges_.at(edge_index_for_table_column_.at(col))->m2n(0) = s0;
+    edges_.at(edge_index_for_table_column_.at(col))->m2n(1) = s1;
+#ifdef PRINT_DEBUG
+    std::cout << "factor2node, col=" << col << ", " <<
+      edges_.at(edge_index_for_table_column_.at(col))->toString() <<
+      " (s0,s1)=[" << s0 << ", " << s1 << "]" << std::endl;
+#endif
   }
 }
 
@@ -211,6 +260,10 @@ double GraphNode::entropy() const { return entropy_; }
 
 double GraphNode::change() const { return change_; }
 
+std::vector<std::shared_ptr<GraphEdge>> GraphNode::edges() const {
+  return edges_;
+}
+
 void GraphNode::initMessages() {
   directions_ = {};
   for (std::shared_ptr<GraphEdge> edge : edges_) {
@@ -220,23 +273,14 @@ void GraphNode::initMessages() {
 
   in_factor_idx_ = {};
   out_factor_idx_ = {};
-  prior_factor_idx_ = {};
   all_factor_idx_ = {};
   for (size_t i = 0; i < directions_.size(); i++) {
     all_factor_idx_.push_back(i);
     switch (directions_.at(i)) {
-    case IODirection::Input:
-      in_factor_idx_.push_back(i);
-      break;
-    case IODirection::Output:
-      out_factor_idx_.push_back(i);
-      break;
-    case IODirection::Prior:
-      prior_factor_idx_.push_back(i);
-      break;
-    case IODirection::None:
-      assert(false); // This should not happen
-      break;
+      case IODirection::Input: in_factor_idx_.push_back(i); break;
+      case IODirection::Output: out_factor_idx_.push_back(i); break;
+      case IODirection::Prior: break;
+      case IODirection::None: assert(false); break; // This should not happen
     }
   }
 
@@ -262,6 +306,31 @@ Eigen::MatrixXd GraphNode::gatherIncoming() const {
 }
 
 void GraphNode::node2factor(IODirection target) {
+  std::string dstr = "None";
+  std::vector<size_t> targets;
+  switch (target) {
+  case IODirection::None:
+    dstr = "None";
+    targets = all_factor_idx_;
+    break;
+  case IODirection::Input:
+    dstr = "Input";
+    targets = in_factor_idx_;
+    break;
+  case IODirection::Output:
+    dstr = "Output";
+    targets = out_factor_idx_;
+    break;
+  case IODirection::Prior:
+    dstr = "Prior";
+    assert(false);  // This should not happen
+    break;
+  }
+#ifdef PRINT_DEBUG
+  std::cout << "node2factor[" << dstr << "] for node " << index_
+    << " with " << edges_.size() << " edges" << std::endl;
+#endif
+  if (targets.size() == 0) return;
   const size_t l = edges_.size();
   Eigen::MatrixXd msg_in = gatherIncoming();
   const double d = BP_DAMPING;
@@ -270,22 +339,6 @@ void GraphNode::node2factor(IODirection target) {
     msg_in = (msg_in * d) + (prev_in_ * (1 - d));
   }
   Eigen::MatrixXd msg_out = Eigen::MatrixXd::Zero(l, 2);
-
-  std::vector<size_t> targets;
-  switch (target) {
-  case IODirection::None:
-    targets = all_factor_idx_;
-    break;
-  case IODirection::Input:
-    targets = in_factor_idx_;
-    break;
-  case IODirection::Output:
-    targets = out_factor_idx_;
-    break;
-  case IODirection::Prior:
-    targets = prior_factor_idx_;
-    break;
-  }
 
   for (size_t i : targets) {
     Eigen::MatrixXd tmp = msg_in.replicate(1, 1);
@@ -299,6 +352,13 @@ void GraphNode::node2factor(IODirection target) {
       assert(false);
     }
     msg_out.row(i) = p / s;
+
+#ifdef PRINT_DEBUG
+    std::cout << "node2factor: " << edges_.at(i)->toString() << std::endl;
+    std::cout << "msg_in = " << std::endl << msg_in << std::endl;
+    std::cout << "tmp = " << std::endl << tmp << std::endl;
+    std::cout << "p = [" << p(0) << ", " << p(1) << "]" << std::endl;
+#endif
   }
 
   for (size_t i : targets) {
@@ -313,6 +373,9 @@ void GraphNode::node2factor(IODirection target) {
 
   inlineNorm(msg_in);
   prev_in_ = msg_in;
+#ifdef PRINT_DEBUG
+  std::cout << "final dist = [" << final_dist_(0) << ", " << final_dist_(1) << "]" << std::endl;
+#endif
 }
 
 void GraphNode::norm() {
@@ -330,17 +393,18 @@ void GraphNode::norm() {
     if (P(i) != 0) e += -P(i) * log2(P(i));
   }
   entropy_ = e > 0 ? e : 0.0;
-  change_ = fabs(final_dist_(0) - prev_dist_(0));
+  change_ = std::max(fabs(final_dist_(0) - prev_dist_(0)),
+                     fabs(final_dist_(1) - prev_dist_(1)));
   prev_dist_ = final_dist_.replicate(1, 1);
   bit_ = final_dist_(1) > final_dist_(0) ? true : false;
 }
 
 void GraphNode::inlineNorm(const Eigen::MatrixXd &msg) {
-  const Eigen::ArrayXd Zn = msg.colwise().prod();
-  const double divisor = Zn.sum();
+  Eigen::ArrayXd Zn = msg.colwise().prod();
+  double divisor = Zn.sum();
   if (divisor == 0.0) {
-    spdlog::error("Zero-sum for node {}. Is there a contradiction?", index_);
-    assert(false);
+    Zn = Eigen::ArrayXd::Ones(Zn.rows());
+    divisor = Zn.sum();
   }
   const Eigen::ArrayXd P = Zn / divisor;
   final_dist_ = P;

@@ -4,7 +4,14 @@ cmake_minimum_required(VERSION 3.8)
 # Name of the project
 project(preimage)
 
+set(PRINT_DEBUG false)
+
 add_definitions(-std=c++17 -Wall -Werror -O3)
+
+if(PRINT_DEBUG)
+  add_definitions(-DPRINT_DEBUG)
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -16,6 +23,8 @@ if(NOT TARGET spdlog)
 endif()
 
 find_package(cryptominisat5 REQUIRED)
+
+find_package(CryptoPP REQUIRED)
 
 # Eigen
 find_package(Eigen3 REQUIRED)
@@ -40,3 +49,4 @@ add_executable(preimage
 
 target_link_libraries(preimage PRIVATE spdlog::spdlog)
 target_link_libraries(preimage PUBLIC cryptominisat5)
+target_link_libraries(preimage PUBLIC cryptopp-shared)

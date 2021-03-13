@@ -28,6 +28,8 @@ class Graph {
 
   virtual ~Graph();
 
+  void printGraph() const;
+
   void addFactor(std::shared_ptr<GraphFactor> factor);
 
   void addNode(std::shared_ptr<GraphNode> node);
@@ -54,13 +56,12 @@ class Graph {
 
   void initMessages();
 
-  void scheduledUpdate();
+  void spreadPriors(const std::vector<size_t> &prior_rvs);
 
-  void spreadPriors();
+  void scheduledUpdate();
 
   std::vector<std::vector<std::shared_ptr<GraphNode>>> schedule_variable;
   std::vector<std::vector<std::shared_ptr<GraphFactor>>> schedule_factor;
-  std::vector<std::vector<std::shared_ptr<GraphFactor>>> schedule_prior;
 
  private:
   size_t iter_;

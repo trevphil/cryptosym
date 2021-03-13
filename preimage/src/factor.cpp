@@ -26,8 +26,8 @@ Factor::Factor(Factor::Type typ, const size_t out,
     : t(typ), output(out), inputs(inp), valid(true) {
   n_inputs = Factor::numInputs(t);
   if (n_inputs != inp.size()) {
-    spdlog::info("Factor {} requires {} input(s) but got {}", char(t), n_inputs,
-                 inp.size());
+    spdlog::info("Factor {} requires {} input(s) but got {}",
+                 char(t), n_inputs, inp.size());
   }
   assert(n_inputs == inp.size());
 }
