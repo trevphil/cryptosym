@@ -14,6 +14,7 @@
 #include <algorithm>
 
 #include "solver.hpp"
+#include "utils.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -26,10 +27,14 @@ Solver::Solver(const std::map<size_t, Factor> &factors,
 Solver::~Solver() {}
 
 std::map<size_t, bool> Solver::solve(const std::map<size_t, bool> &observed) {
+  const auto start = Utils::sec_since_epoch();
   reset();
   observed_ = observed;
   setImplicitObserved();
-  return solveInternal();
+  const auto solution = solveInternal();
+  const auto end = Utils::sec_since_epoch();
+  spdlog::info("Solution found in {} s", end - start);
+  return solution;
 }
 
 std::map<size_t, bool> Solver::solveInternal() {

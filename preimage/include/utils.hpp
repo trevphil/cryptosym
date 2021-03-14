@@ -81,12 +81,20 @@ class Utils {
     return bitset_str;
   }
 
-  static std::chrono::system_clock::rep time_since_epoch() {
+  static std::chrono::system_clock::rep ms_since_epoch() {
     static_assert(std::is_integral<std::chrono::system_clock::rep>::value,
                   "Representation of ticks isn't an integral value.");
 
     const auto now = std::chrono::system_clock::now().time_since_epoch();
     return std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+  }
+
+  static std::chrono::system_clock::rep sec_since_epoch() {
+    static_assert(std::is_integral<std::chrono::system_clock::rep>::value,
+                  "Representation of ticks isn't an integral value.");
+
+    const auto now = std::chrono::system_clock::now().time_since_epoch();
+    return std::chrono::duration_cast<std::chrono::seconds>(now).count();
   }
 
   template <typename T>

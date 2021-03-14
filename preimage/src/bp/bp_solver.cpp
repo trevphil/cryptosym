@@ -98,13 +98,13 @@ std::map<size_t, bool> BPSolver::solveInternal() {
   g_.initMessages();
   g_.spreadPriors(prior_rvs);
 
-  while (g_.iterations() < BP_MAX_ITER) {
-    const auto start = Utils::time_since_epoch();
+  while (true) { // (g_.iterations() < BP_MAX_ITER) {
+    const auto start = Utils::ms_since_epoch();
     g_.scheduledUpdate();
     g_.norm();
-    const auto end = Utils::time_since_epoch();
+    const auto end = Utils::ms_since_epoch();
     spdlog::info("Iteration {}/{} finished in {} ms",
-                 g_.iterations() + 1, BP_MAX_ITER, end - start);
+                 g_.iterations(), BP_MAX_ITER, end - start);
 
     // TODO: set damping to 1.0 if entropy threshold in 1st layer is reached?
 
