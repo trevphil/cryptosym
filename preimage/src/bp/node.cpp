@@ -240,6 +240,8 @@ void GraphFactor::addEdge(std::shared_ptr<GraphEdge> e) {
  ******* GRAPH NODE ********
  ***************************/
 
+size_t GraphNode::num_resets = 0;
+
 GraphNode::GraphNode(size_t i) : index_(i) {}
 
 GraphNode::~GraphNode() {
@@ -262,6 +264,64 @@ void GraphNode::rescaleMatrix(Eigen::MatrixXd &m) {
   m *= pow(10, exp);
 }
 
+Eigen::Array2d GraphNode::stableColwiseProduct(const Eigen::MatrixXd &m) {
+  Eigen::Array2d result = m.colwise().prod();
+  return result;
+  /*
+  assert(m.cols() == 2);
+  const size_t n_rows = m.rows();
+  assert(n_rows >= 1);
+
+  if (n_rows == 1) {
+    Eigen::Array2d result;
+    result(0) = m(0, 0);
+    result(1) = m(0, 1);
+    return result;
+  }
+
+  std::vector<double> col0, col1;
+  col0.reserve(n_rows);
+  col1.reserve(n_rows);
+
+  for (size_t i = 0; i < n_rows; i++) {
+    col0.push_back(m(i, 0)); col1.push_back(m(i, 1));
+  }
+
+  std::sort(col0.begin(), col0.end());
+  std::sort(col1.begin(), col1.end());
+  double prod0 = 1.0, prod1 = 1.0;
+
+  if (col0.at(0) == 0 && col1.at(0) == 0) {
+    // spdlog::error("Zero-sum for {}. Is there a contradiction?", toString());
+    // assert(false);
+    prod0 = 0.0;
+    prod1 = 0.0;
+  } else if (col0.at(0) == 0) {
+    prod0 = 0.0;
+    prod1 = 1.0;
+  } else if (col1.at(0) == 0) {
+    prod0 = 1.0;
+    prod1 = 0.0;
+  } else {
+    for (size_t i = 0; i < n_rows; i++) {
+      prod0 *= col0.at(i);
+      prod1 *= col1.at(i);
+      const double min_val = std::min(prod0, prod1);
+      const double max_val = std::max(prod0, prod1);
+      const double exp = (log10(max_val) - log10(min_val)) / 2;
+      const double scalar = pow(10, exp);
+      prod0 *= scalar;
+      prod1 *= scalar;
+    }
+  }
+
+  Eigen::Array2d result;
+  result(0) = prod0;
+  result(1) = prod1;
+  return result;
+  */
+}
+
 std::string GraphNode::toString() const {
   std::stringstream ss;
   ss << "Node " << index_ << ": (" << final_dist_(0);
@@ -276,6 +336,11 @@ bool GraphNode::bit() const { return bit_; }
 double GraphNode::entropy() const { return entropy_; }
 
 double GraphNode::change() const { return change_; }
+
+double GraphNode::distanceFromUndetermined() const {
+  return std::min(fabs(final_dist_(0) - 0.5),
+                  fabs(final_dist_(1) - 0.5));
+}
 
 std::vector<std::shared_ptr<GraphEdge>> GraphNode::edges() const {
   return edges_;
@@ -323,35 +388,28 @@ Eigen::MatrixXd GraphNode::gatherIncoming() const {
 }
 
 void GraphNode::node2factor(IODirection target) {
-  std::string dstr = "None";
   std::vector<size_t> targets;
   switch (target) {
   case IODirection::None:
-    dstr = "None";
     targets = all_factor_idx_;
     break;
   case IODirection::Input:
-    dstr = "Input";
     targets = in_factor_idx_;
     break;
   case IODirection::Output:
-    dstr = "Output";
     targets = out_factor_idx_;
     break;
   case IODirection::Prior:
-    dstr = "Prior";
     assert(false);  // This should not happen
     break;
   }
-#ifdef PRINT_DEBUG
-  std::cout << "node2factor[" << dstr << "] for node " << index_
-    << " with " << edges_.size() << " edges" << std::endl;
-#endif
-  if (targets.size() == 0) return;
+
   const size_t l = edges_.size();
+  if (targets.size() == 0 || l <= 1) return;
   Eigen::MatrixXd msg_in = gatherIncoming();
+
   const double d = BP_DAMPING;
-  if (prev_in_.any()) {
+  if (d < 1 && prev_in_.any()) {
     // Apply damping to the input
     msg_in = (msg_in * d) + (prev_in_ * (1 - d));
   }
@@ -362,8 +420,8 @@ void GraphNode::node2factor(IODirection target) {
     // Remove row "i"
     tmp.block(i, 0, l - i - 1, 2) = tmp.block(i + 1, 0, l - i - 1, 2);
     tmp.conservativeResize(l - 1, 2);
-    rescaleMatrix(tmp);  // for numerical stability
-    Eigen::Array2d p = tmp.colwise().prod();
+    // rescaleMatrix(tmp);  // for numerical stability
+    Eigen::Array2d p = stableColwiseProduct(tmp); // tmp.colwise().prod();
     double s = p.sum();
     if (s == 0.0) {
       // spdlog::error("Zero-sum for {}. Is there a contradiction?", toString());
@@ -371,6 +429,7 @@ void GraphNode::node2factor(IODirection target) {
       // assert(false);
       p = Eigen::Array2d::Ones();
       s = p.sum();
+      GraphNode::num_resets++;
     }
     msg_out.row(i) = p / s;
 
@@ -383,7 +442,7 @@ void GraphNode::node2factor(IODirection target) {
   }
 
   for (size_t i : targets) {
-    if (prev_out_.row(i).sum() > 0) {
+    if (d < 1 && prev_out_.row(i).sum() > 0) {
       // Apply damping to the output
       msg_out.row(i) = (msg_out.row(i) * d) + (prev_out_.row(i) * (1 - d));
     }
@@ -401,8 +460,8 @@ void GraphNode::node2factor(IODirection target) {
 
 void GraphNode::norm() {
   Eigen::MatrixXd Mm = gatherIncoming();
-  rescaleMatrix(Mm);  // for numerical stability
-  Eigen::Array2d Zn = Mm.colwise().prod();
+  // rescaleMatrix(Mm);  // for numerical stability
+  Eigen::Array2d Zn = stableColwiseProduct(Mm); // Mm.colwise().prod();
   double divisor = Zn.sum();
   if (divisor == 0.0) {
     // spdlog::error("Zero-sum for {}. Is there a contradiction?", toString());
@@ -410,6 +469,7 @@ void GraphNode::norm() {
     // assert(false);
     Zn = Eigen::Array2d::Ones();
     divisor = Zn.sum();
+    GraphNode::num_resets++;
   }
   const Eigen::Array2d P = Zn / divisor;
   final_dist_ = P;
@@ -429,6 +489,7 @@ void GraphNode::inlineNorm(const Eigen::MatrixXd &msg) {
   if (divisor == 0.0) {
     Zn = Eigen::Array2d::Ones();
     divisor = Zn.sum();
+    GraphNode::num_resets++;
   }
   const Eigen::Array2d P = Zn / divisor;
   final_dist_ = P;

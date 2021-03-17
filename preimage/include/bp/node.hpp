@@ -96,6 +96,8 @@ class GraphNode {
 
   void rescaleMatrix(Eigen::MatrixXd &m);
 
+  Eigen::Array2d stableColwiseProduct(const Eigen::MatrixXd &m);
+
   std::string toString() const;
 
   size_t index() const;
@@ -105,6 +107,8 @@ class GraphNode {
   double entropy() const;
 
   double change() const;
+
+  double distanceFromUndetermined() const;
 
   std::vector<std::shared_ptr<GraphEdge>> edges() const;
 
@@ -119,6 +123,8 @@ class GraphNode {
   void inlineNorm(const Eigen::MatrixXd &msg);
 
   void addEdge(std::shared_ptr<GraphEdge> e);
+
+  static size_t num_resets;
 
  private:
   bool bit_;

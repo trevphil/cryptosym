@@ -30,6 +30,8 @@ class Graph {
 
   void printGraph() const;
 
+  void writeNodes() const;
+
   void addFactor(std::shared_ptr<GraphFactor> factor);
 
   void addNode(std::shared_ptr<GraphNode> node);

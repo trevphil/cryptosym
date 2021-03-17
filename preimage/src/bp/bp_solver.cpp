@@ -98,37 +98,38 @@ std::map<size_t, bool> BPSolver::solveInternal() {
   g_.initMessages();
   g_.spreadPriors(prior_rvs);
 
-  while (true) { // (g_.iterations() < BP_MAX_ITER) {
+  while (g_.iterations() < BP_MAX_ITER) {
     const auto start = Utils::ms_since_epoch();
     g_.scheduledUpdate();
     g_.norm();
+    g_.writeNodes();
     const auto end = Utils::ms_since_epoch();
-    spdlog::info("Iteration {}/{} finished in {} ms",
-                 g_.iterations(), BP_MAX_ITER, end - start);
-
-    // TODO: set damping to 1.0 if entropy threshold in 1st layer is reached?
-
     const double e = g_.entropySum();
+    const double c = g_.maxChange();
+    spdlog::info("Iter {}/{} - {} ms, entropy sum {:.3f}, max change {:.3f}",
+                 g_.iterations(), BP_MAX_ITER, end - start, e, c);
+
     if (e < BP_ENTROPY_THRESHOLD) {
       spdlog::info("Entropy thresh reached ({}), abort after iteration {}",
-                   e, g_.iterations() + 1);
+                   e, g_.iterations());
       break;
     }
 
-    const double c = g_.maxChange();
     if (c < BP_CHANGE_THRESHOLD) {
       spdlog::info("Change thresh reached ({}), converged after iteration {}",
-                   c, g_.iterations() + 1);
+                   c, g_.iterations());
       break;
     }
   }
+
+  spdlog::warn("Graph node number of resets: {}", GraphNode::num_resets);
 
   std::map<size_t, bool> solution;
   for (const auto &itr : factors_) {
     const Factor &f = itr.second;
     if (!f.valid) continue;
     solution[f.output] = g_.getNode(f.output)->bit();
-    // spdlog::info("{}", g_.getNode(f.output)->toString());
+    if (f.output < 64) spdlog::info("{}", g_.getNode(f.output)->toString());
   }
   return solution;
 }

@@ -11,6 +11,9 @@
  */
 
 #include <algorithm>
+#include <iostream>
+#include <fstream>
+
 #include <spdlog/spdlog.h>
 
 #include "bp/graph.hpp"
@@ -19,7 +22,9 @@ namespace preimage {
 
 namespace bp {
 
-Graph::Graph() : iter_(0) {}
+Graph::Graph() : iter_(0) {
+  GraphNode::num_resets = 0;
+}
 
 Graph::~Graph() {
   schedule_factor.clear();
@@ -64,6 +69,25 @@ void Graph::printGraph() const {
     }
   }
   spdlog::info("---------------------");
+}
+
+void Graph::writeNodes() const {
+  std::ofstream outfile;
+  outfile.open("/tmp/bp_dist.txt", std::ios::out | std::ios::app);
+  for (size_t i = 0; i < nodes_.size(); i++) {
+    outfile << nodes_.at(i)->distanceFromUndetermined();
+    if (i != nodes_.size() - 1) outfile << ",";
+  }
+  outfile << std::endl;
+  outfile.close();
+
+  outfile.open("/tmp/bp_bits.txt", std::ios::out | std::ios::app);
+  for (size_t i = 0; i < nodes_.size(); i++) {
+    outfile << (int)nodes_.at(i)->bit();
+    if (i != nodes_.size() - 1) outfile << ",";
+  }
+  outfile << std::endl;
+  outfile.close();
 }
 
 void Graph::addFactor(std::shared_ptr<GraphFactor> factor) {
