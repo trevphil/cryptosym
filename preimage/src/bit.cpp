@@ -113,9 +113,16 @@ Bit Bit::operator|(const Bit &b) const {
   if (is_rv && b.is_rv) {
     // (0 | 0 = 0), (1 | 1 = 1)
     if (index == b.index) return a;
-    Bit tmp1 = ~(a & a);
-    Bit tmp2 = ~(b & b);
-    return ~(tmp1 & tmp2);
+    if (config::use_or) {
+      Bit result(val | b.val, true);
+      Factor f(Factor::Type::OrFactor, result.index, {index, b.index});
+      Factor::global_factors.push_back(f);
+      return result;
+    } else {
+      Bit tmp1 = ~(a & a);
+      Bit tmp2 = ~(b & b);
+      return ~(tmp1 & tmp2);
+    }
   } else if (is_rv) {
     // Here, "b" is a constant equal to 0, so result is directly "a"
     return a;

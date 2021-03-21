@@ -148,6 +148,7 @@ void run(int argc, char **argv) {
   spdlog::info(" --> # NOT: {}", factor_count[Factor::Type::NotFactor]);
   spdlog::info(" --> # AND: {}", factor_count[Factor::Type::AndFactor]);
   spdlog::info(" --> # XOR: {}", factor_count[Factor::Type::XorFactor]);
+  spdlog::info(" --> # OR: {}", factor_count[Factor::Type::OrFactor]);
 
   // Solve and extract the predicted input bits
   Solver *solver = selectSolver(solving_method, factors,

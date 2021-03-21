@@ -124,6 +124,28 @@ size_t Solver::propagateBackward() {
         smallest_obs = std::min(smallest_obs, inp1);
       }
       break;
+    case Factor::Type::OrFactor:
+      inp1 = f.inputs.at(0);
+      inp2 = f.inputs.at(1);
+      if (observed_.at(rv) == false) {
+        // Output is observed to be 0, so both inputs must have been 0
+        observed_[inp1] = false;
+        observed_[inp2] = false;
+        queue.push_back(inp1);
+        queue.push_back(inp2);
+        smallest_obs = std::min(inp1, std::min(inp2, smallest_obs));
+      } else if (observed_.count(inp1) > 0 && observed_.at(inp1) == false) {
+        // Output is 1, inp1 is 0, so inp2 must be 1
+        observed_[inp2] = true;
+        queue.push_back(inp2);
+        smallest_obs = std::min(smallest_obs, inp2);
+      } else if (observed_.count(inp2) > 0 && observed_.at(inp2) == false) {
+        // Output is 1, inp2 is 0, so inp1 must be 1
+        observed_[inp1] = true;
+        queue.push_back(inp1);
+        smallest_obs = std::min(smallest_obs, inp1);
+      }
+      break;
     case Factor::Type::PriorFactor:
       break;
     }
@@ -170,6 +192,19 @@ void Solver::propagateForward(size_t smallest_obs) {
       inp2 = f.inputs.at(1);
       if (observed_.count(inp1) > 0 && observed_.count(inp2) > 0) {
         observed_[rv] = observed_.at(inp1) ^ observed_.at(inp2);
+      }
+      break;
+    case Factor::Type::OrFactor:
+      inp1 = f.inputs.at(0);
+      inp2 = f.inputs.at(1);
+      inp1_obs = observed_.count(inp1) > 0;
+      inp2_obs = observed_.count(inp2) > 0;
+      if (inp1_obs && inp2_obs) {
+        observed_[rv] = observed_.at(inp1) | observed_.at(inp2);
+      } else if (inp1_obs && observed_.at(inp1) == true) {
+        observed_[rv] = true;
+      } else if (inp2_obs && observed_.at(inp2) == true) {
+        observed_[rv] = true;
       }
       break;
     case Factor::Type::PriorFactor:

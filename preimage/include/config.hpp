@@ -18,6 +18,8 @@ namespace config {
 
 bool use_xor = true;
 
+bool use_or = true;
+
 }  // end namespace config
 
 }  // end namespace preimage

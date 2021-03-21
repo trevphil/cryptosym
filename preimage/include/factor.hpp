@@ -26,7 +26,8 @@ class Factor {
     NotFactor = 'N',
     SameFactor = 'S',
     AndFactor = 'A',
-    XorFactor = 'X'
+    XorFactor = 'X',
+    OrFactor = 'O'
   };
 
   Factor();

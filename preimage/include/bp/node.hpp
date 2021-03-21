@@ -31,7 +31,7 @@ enum class IODirection : uint8_t {
 };
 
 enum class BPFactorType : uint8_t {
-  None = 0, Prior = 1, And = 2, Not = 3, Same = 4, Xor = 5
+  None = 0, Prior = 1, And = 2, Not = 3, Same = 4, Xor = 5, Or = 6
 };
 
 class GraphNode;

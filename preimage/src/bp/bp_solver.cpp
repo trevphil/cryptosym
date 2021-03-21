@@ -80,6 +80,7 @@ BPFactorType BPSolver::convertFactorType(Factor::Type t) const {
     case Factor::Type::NotFactor: return BPFactorType::Not;
     case Factor::Type::SameFactor: return BPFactorType::Same;
     case Factor::Type::XorFactor: return BPFactorType::Xor;
+    case Factor::Type::OrFactor: return BPFactorType::Or;
   }
 }
 

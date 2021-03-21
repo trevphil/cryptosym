@@ -51,13 +51,14 @@ void SymHash::saveStatistics(const std::string &stats_filename) {
   std::map<Factor::Type, size_t> factor_count;
   std::map<size_t, size_t> and_gap_count;
   std::map<size_t, size_t> xor_gap_count;
-
+  std::map<size_t, size_t> or_gap_count;
   for (size_t i = 0; i < n; ++i) {
     const Factor &f = Factor::global_factors.at(i);
     assert(i == f.output);
     if (canIgnore(i)) continue;
     factor_count[f.t]++;
-    if (f.t == Factor::Type::AndFactor || f.t == Factor::Type::XorFactor) {
+    if (f.t == Factor::Type::AndFactor || f.t == Factor::Type::XorFactor ||
+        f.t == Factor::Type::OrFactor) {
       const size_t inp1 = std::min(f.inputs.at(0), f.inputs.at(1));
       const size_t inp2 = std::max(f.inputs.at(0), f.inputs.at(1));
       const size_t gap = inp2 - inp1;
@@ -65,6 +66,8 @@ void SymHash::saveStatistics(const std::string &stats_filename) {
         and_gap_count[gap]++;
       } else if (f.t == Factor::Type::XorFactor) {
         xor_gap_count[gap]++;
+      } else if (f.t == Factor::Type::OrFactor) {
+        or_gap_count[gap]++;
       }
     }
   }
@@ -91,6 +94,8 @@ void SymHash::saveStatistics(const std::string &stats_filename) {
     case Factor::Type::XorFactor:
       stats_file << "X " << cnt << std::endl;
       break;
+    case Factor::Type::OrFactor:
+      stats_file << "O " << cnt << std::endl;
     }
   }
 
@@ -103,6 +108,13 @@ void SymHash::saveStatistics(const std::string &stats_filename) {
 
   stats_file << "xor_gap_count " << xor_gap_count.size() << std::endl;
   for (const auto &itr : xor_gap_count) {
+    const size_t gap = itr.first;
+    const size_t cnt = itr.second;
+    stats_file << gap << " " << cnt << std::endl;
+  }
+
+  stats_file << "or_gap_count " << or_gap_count.size() << std::endl;
+  for (const auto &itr : or_gap_count) {
     const size_t gap = itr.first;
     const size_t cnt = itr.second;
     stats_file << gap << " " << cnt << std::endl;
@@ -140,6 +152,8 @@ void SymHash::saveFactorsCNF(const std::string &cnf_filename) {
       n_clauses += 2;
     else if (f.t == Factor::Type::XorFactor)
       n_clauses += 1;
+    else if (f.t == Factor::Type::OrFactor)
+      n_clauses += 3;
   }
 
   std::map<size_t, size_t> rv2idx;
@@ -181,6 +195,15 @@ void SymHash::saveFactorsCNF(const std::string &cnf_filename) {
         // https://www.msoos.org/xor-clauses/
         cnf_file << "x" << rv2idx[f.output] << " ";
         cnf_file << "-" << rv2idx[f.inputs.at(0)] << " ";
+        cnf_file << rv2idx[f.inputs.at(1)] << " 0" << std::endl;
+        break;
+      case Factor::Type::OrFactor:
+        cnf_file << "-" << rv2idx[f.inputs.at(0)] << " ";
+        cnf_file << rv2idx[f.output] << " 0" << std::endl;
+        cnf_file << "-" << rv2idx[f.inputs.at(1)] << " ";
+        cnf_file << rv2idx[f.output] << " 0" << std::endl;
+        cnf_file << "-" << rv2idx[f.output] << " ";
+        cnf_file << rv2idx[f.inputs.at(0)] << " ";
         cnf_file << rv2idx[f.inputs.at(1)] << " 0" << std::endl;
         break;
     }

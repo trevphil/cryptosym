@@ -101,6 +101,19 @@ GraphFactor::GraphFactor(size_t i, BPFactorType t)
               1, 1, 0, BP_ONE,
               1, 1, 1, BP_ZERO;
     break;
+  case BPFactorType::Or:
+    table_ = Eigen::MatrixXd::Zero(8, 4);
+    // P(output = C | input1 = A, input2 = B)
+    //        A  B  C  prob
+    table_ << 0, 0, 0, BP_ONE,
+              0, 0, 1, BP_ZERO,
+              0, 1, 0, BP_ZERO,
+              0, 1, 1, BP_ONE,
+              1, 0, 0, BP_ZERO,
+              1, 0, 1, BP_ONE,
+              1, 1, 0, BP_ZERO,
+              1, 1, 1, BP_ONE;
+    break;
   }
 }
 
@@ -116,6 +129,7 @@ std::string GraphFactor::ftype2str(BPFactorType t) {
     case BPFactorType::Prior: return "Prior";
     case BPFactorType::Same: return "Same";
     case BPFactorType::Xor: return "Xor";
+    case BPFactorType::Or: return "Or";
   }
 }
 

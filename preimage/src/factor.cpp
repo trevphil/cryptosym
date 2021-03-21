@@ -56,6 +56,8 @@ size_t Factor::numInputs(Factor::Type t) {
       return 2;
     case Type::XorFactor:
       return 2;
+    case Type::OrFactor:
+      return 2;
   }
 }
 

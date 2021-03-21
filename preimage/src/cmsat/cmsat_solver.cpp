@@ -82,6 +82,21 @@ CMSatSolver::CMSatSolver(const std::map<size_t, Factor> &factors,
                       rv2idx_.at(f.inputs.at(1))};
         solver_->add_xor_clause(xor_clause, 0);
         break;
+      case Factor::Type::OrFactor:
+        clause = {// out -inp1 0
+                  CMSat::Lit(rv2idx_.at(f.output), false),
+                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), true)};
+        solver_->add_clause(clause);
+        clause = {// out -inp2 0
+                  CMSat::Lit(rv2idx_.at(f.output), false),
+                  CMSat::Lit(rv2idx_.at(f.inputs.at(1)), true)};
+        solver_->add_clause(clause);
+        clause = {// -out inp1 inp2 0
+                  CMSat::Lit(rv2idx_.at(f.output), true),
+                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), false),
+                  CMSat::Lit(rv2idx_.at(f.inputs.at(1)), false)};
+        solver_->add_clause(clause);
+        break;
     }
   }
 }
