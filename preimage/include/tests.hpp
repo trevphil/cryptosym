@@ -100,17 +100,22 @@ void sha256Tests() {
   Utils::seed(1);
   const std::vector<size_t> inp_sizes{0, 8, 32, 64, 512, 640, 1024};
   for (size_t inp_size : inp_sizes) {
-    for (size_t i = 0; i < 10; i++) {
+    for (size_t sample_idx = 0; sample_idx < 10; sample_idx++) {
       // Generate a random input of length "inp_size"
       const boost::dynamic_bitset<> bits = Utils::randomBits(inp_size);
-      std::string bitstr;
-      boost::to_string(bits, bitstr);
+      const size_t n_bytes = inp_size / 8;
+      uint8_t byte_arr[n_bytes];
+      for (size_t byte_idx = 0; byte_idx < n_bytes; byte_idx++) {
+        byte_arr[byte_idx] = 0;
+        for (size_t k = 0; k < 8; k++) {
+          byte_arr[byte_idx] += bits[(byte_idx * 8) + k] << k;
+        }
+      }
 
       // Call SHA256 using Crypto++
       CryptoPP::SHA256 cryptopp_sha256;
       uint8_t digest[CryptoPP::SHA256::DIGESTSIZE];
-      cryptopp_sha256.CalculateDigest(digest,
-          (uint8_t *)bitstr.c_str(), inp_size / 8);
+      cryptopp_sha256.CalculateDigest(digest, byte_arr, n_bytes);
 
       // Convert output to lowercase hexadecimal
       CryptoPP::HexEncoder encoder;
@@ -123,9 +128,9 @@ void sha256Tests() {
       // Call SHA256 using custom hash function
       h = sha256.call(bits, difficulty).hex();
 
-      if (true || h.compare(expected_output) != 0) {
-        spdlog::info("inp_size={}, i={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
-                     inp_size, i, Utils::hexstr(bits), expected_output, h);
+      if (h.compare(expected_output) != 0) {
+        spdlog::info("inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
+                     inp_size, sample_idx, Utils::hexstr(bits), expected_output, h);
       }
     }
   }
@@ -286,9 +291,9 @@ void bpTests() {
 void allTests() {
   simpleTests();
   symBitVecTests();
-  // sha256Tests();
+  sha256Tests();
   md5Tests();
-  // cmsatTests();
+  cmsatTests();
   // bpTests();
   // bitcoinBlockTest();
 }
