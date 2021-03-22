@@ -21,6 +21,7 @@
 #include "hash_funcs.hpp"
 #include "tests.hpp"
 #include "sym_sha256.hpp"
+#include "sym_md5.hpp"
 #include "sym_bit_vec.hpp"
 #include "utils.hpp"
 #include "factor.hpp"
@@ -33,6 +34,8 @@ namespace preimage {
 SymHash* selectHashFunction(const std::string &name) {
   if (name.compare("SHA256") == 0) {
     return new SHA256();
+  } else if (name.compare("MD5") == 0) {
+    return new MD5();
   } else if (name.compare("SameIOHash") == 0) {
     return new SameIOHash();
   } else if (name.compare("NotHash") == 0) {
@@ -60,7 +63,7 @@ Solver* selectSolver(const std::string &solving_method,
   }
 }
 
-std::string hash_func = "SHA256";
+std::string hash_func = "MD5";
 std::string solving_method = "bp";
 size_t input_size = 64;
 int difficulty = 1;
@@ -85,7 +88,7 @@ int parseArgument(char* arg) {
     std::stringstream help_msg;
     help_msg << std::endl << "Command-line arguments:" << std::endl;
     help_msg << "\thash=HASH_FUNCTION" << std::endl;
-    help_msg << "\t -> one of: SHA256, LossyPseudoHash, NonLossyPseudoHash, NotHash, SameIOHash" << std::endl;
+    help_msg << "\t -> one of: SHA256, MD5, LossyPseudoHash, NonLossyPseudoHash, NotHash, SameIOHash" << std::endl;
     help_msg << "\td=DIFFICULTY (1-64)" << std::endl;
     help_msg << "\ti=NUM_INPUT_BITS (8-512 or more, best to choose a multiple of 8)" << std::endl;
     help_msg << "\tsolver=SOLVER" << std::endl;
