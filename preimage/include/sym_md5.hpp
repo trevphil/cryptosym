@@ -12,6 +12,8 @@
 
 #pragma once
 
+// Based off of: http://www.zedwood.com/article/cpp-md5-function
+
 #include <utility>
 #include <vector>
 #include <assert.h>
@@ -42,6 +44,31 @@ namespace preimage {
 class MD5 : public SymHash {
  public:
   MD5() {
+    init();
+  }
+
+  SymBitVec hash(const SymBitVec &hash_input, int difficulty) override {
+    // Input size must be byte-aligned
+    assert(hash_input.size() % 8 == 0);
+    const size_t n_bytes = hash_input.size() / 8;
+    SymBitVec input[n_bytes];
+    for (size_t i = 0; i < n_bytes; i++) {
+      input[i] = hash_input.extract(i * 8, (i + 1) * 8);
+    }
+
+    init();
+    update(input, n_bytes);
+    finalize();
+
+    SymBitVec combined_digest;
+    for (size_t i = 0; i < 16; i++) {
+      combined_digest = digest[i].concat(combined_digest);
+    }
+    return combined_digest;
+  }
+
+ private:
+  void init() {
     finalized = false;
 
     count[0] = 0;
@@ -51,6 +78,9 @@ class MD5 : public SymHash {
     state[1] = SymBitVec(0xefcdab89, 32);
     state[2] = SymBitVec(0x98badcfe, 32);
     state[3] = SymBitVec(0x10325476, 32);
+
+    for (size_t i = 0; i < MD5_BLOCK_SIZE; i++) buffer[i] = SymBitVec(0, 8);
+    for (size_t i = 0; i < 16; i++) digest[i] = SymBitVec(0, 8);
 
     const std::vector<uint32_t> raw_constants = {
       0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee, 0xf57c0faf, 0x4787c62a,
@@ -69,26 +99,6 @@ class MD5 : public SymHash {
     for (uint32_t c : raw_constants) constants_.push_back(SymBitVec(c, 32));
   }
 
-  SymBitVec hash(const SymBitVec &hash_input, int difficulty) override {
-    // Input size must be byte-aligned
-    assert(hash_input.size() % 8 == 0);
-    const size_t n_bytes = hash_input.size() / 8;
-    SymBitVec input[n_bytes];
-    for (size_t i = 0; i < n_bytes; i++) {
-      input[i] = hash_input.extract(i * 8, (i + 1) * 8);
-    }
-
-    update(input, n_bytes);
-    finalize();
-
-    SymBitVec combined_digest;
-    for (size_t i = 0; i < 16; i++) {
-      combined_digest = digest[i].concat(combined_digest);
-    }
-    return combined_digest;
-  }
-
- private:
   void decode(SymBitVec output[], const SymBitVec input[], size_t len) {
     // Decode input (8 bits per SymBitVec) into output (32 bits per SymBitVec)
     assert(len % 4 == 0);

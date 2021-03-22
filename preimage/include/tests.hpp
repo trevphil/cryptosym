@@ -71,7 +71,7 @@ void symBitVecTests() {
   SymBitVec summed = t0 + t1;
   assert(t1.intVal() == summed.intVal());
 
-  spdlog::info("SymBitVec tests passed");
+  spdlog::info("SymBitVec tests passed.");
 }
 
 void sha256Tests() {
@@ -140,17 +140,22 @@ void md5Tests() {
   Utils::seed(1);
   const std::vector<size_t> inp_sizes{0, 8, 32, 64, 512, 640, 1024};
   for (size_t inp_size : inp_sizes) {
-    for (size_t i = 0; i < 10; i++) {
-      // Generate a random input of length "inp_size"
+    for (size_t sample_idx = 0; sample_idx < 10; sample_idx++) {
+      // Generate a random input of length "inp_size" bits
       const boost::dynamic_bitset<> bits = Utils::randomBits(inp_size);
-      std::string bitstr;
-      boost::to_string(bits, bitstr);
+      const size_t n_bytes = inp_size / 8;
+      uint8_t byte_arr[n_bytes];
+      for (size_t byte_idx = 0; byte_idx < n_bytes; byte_idx++) {
+        byte_arr[byte_idx] = 0;
+        for (size_t k = 0; k < 8; k++) {
+          byte_arr[byte_idx] += bits[(byte_idx * 8) + k] << k;
+        }
+      }
 
       // Call MD5 using Crypto++
       CryptoPP::Weak::MD5 cryptopp_md5;
       uint8_t digest[CryptoPP::Weak::MD5::DIGESTSIZE];
-      cryptopp_md5.CalculateDigest(digest,
-          (uint8_t *)bitstr.c_str(), inp_size / 8);
+      cryptopp_md5.CalculateDigest(digest, byte_arr, n_bytes);
 
       // Convert output to lowercase hexadecimal
       CryptoPP::HexEncoder encoder;
@@ -163,9 +168,10 @@ void md5Tests() {
       // Call MD5 using custom hash function
       const std::string h = md5.call(bits, difficulty).hex();
 
-      if (true || h.compare(expected_output) != 0) {
-        spdlog::info("inp_size={}, i={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
-                     inp_size, i, Utils::hexstr(bits), expected_output, h);
+      if (h.compare(expected_output) != 0) {
+        spdlog::info("inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
+                     inp_size, sample_idx, Utils::hexstr(bits), expected_output, h);
+        assert(false);
       }
     }
   }
@@ -278,8 +284,8 @@ void bpTests() {
 }
 
 void allTests() {
-  // simpleTests();
-  // symBitVecTests();
+  simpleTests();
+  symBitVecTests();
   // sha256Tests();
   md5Tests();
   // cmsatTests();
