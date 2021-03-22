@@ -44,7 +44,7 @@ namespace preimage {
 class MD5 : public SymHash {
  public:
   MD5() {
-    init();
+    init(64);
   }
 
   SymBitVec hash(const SymBitVec &hash_input, int difficulty) override {
@@ -56,7 +56,7 @@ class MD5 : public SymHash {
       input[i] = hash_input.extract(i * 8, (i + 1) * 8);
     }
 
-    init();
+    init(difficulty);
     update(input, n_bytes);
     finalize();
 
@@ -68,7 +68,8 @@ class MD5 : public SymHash {
   }
 
  private:
-  void init() {
+  void init(int difficulty) {
+    difficulty_ = difficulty;
     finalized = false;
 
     count[0] = 0;
@@ -163,89 +164,158 @@ class MD5 : public SymHash {
   }
 
   void transform(const SymBitVec block[MD5_BLOCK_SIZE]) {
-    // Each SymBitVec in `block` is 8 bits
     SymBitVec a = state[0], b = state[1], c = state[2], d = state[3];
-    SymBitVec x[16];
-    decode(x, block, MD5_BLOCK_SIZE);
-
-    size_t i = 0;
-
-    /* Round 1 */
-    FF(a, b, c, d, x[ 0], S11, constants_.at(i)); i++; /* 1 */
-    FF(d, a, b, c, x[ 1], S12, constants_.at(i)); i++; /* 2 */
-    FF(c, d, a, b, x[ 2], S13, constants_.at(i)); i++; /* 3 */
-    FF(b, c, d, a, x[ 3], S14, constants_.at(i)); i++; /* 4 */
-    FF(a, b, c, d, x[ 4], S11, constants_.at(i)); i++; /* 5 */
-    FF(d, a, b, c, x[ 5], S12, constants_.at(i)); i++; /* 6 */
-    FF(c, d, a, b, x[ 6], S13, constants_.at(i)); i++; /* 7 */
-    FF(b, c, d, a, x[ 7], S14, constants_.at(i)); i++; /* 8 */
-    FF(a, b, c, d, x[ 8], S11, constants_.at(i)); i++; /* 9 */
-    FF(d, a, b, c, x[ 9], S12, constants_.at(i)); i++; /* 10 */
-    FF(c, d, a, b, x[10], S13, constants_.at(i)); i++; /* 11 */
-    FF(b, c, d, a, x[11], S14, constants_.at(i)); i++; /* 12 */
-    FF(a, b, c, d, x[12], S11, constants_.at(i)); i++; /* 13 */
-    FF(d, a, b, c, x[13], S12, constants_.at(i)); i++; /* 14 */
-    FF(c, d, a, b, x[14], S13, constants_.at(i)); i++; /* 15 */
-    FF(b, c, d, a, x[15], S14, constants_.at(i)); i++; /* 16 */
-
-    /* Round 2 */
-    GG(a, b, c, d, x[ 1], S21, constants_.at(i)); i++; /* 17 */
-    GG(d, a, b, c, x[ 6], S22, constants_.at(i)); i++; /* 18 */
-    GG(c, d, a, b, x[11], S23, constants_.at(i)); i++; /* 19 */
-    GG(b, c, d, a, x[ 0], S24, constants_.at(i)); i++; /* 20 */
-    GG(a, b, c, d, x[ 5], S21, constants_.at(i)); i++; /* 21 */
-    GG(d, a, b, c, x[10], S22, constants_.at(i)); i++; /* 22 */
-    GG(c, d, a, b, x[15], S23, constants_.at(i)); i++; /* 23 */
-    GG(b, c, d, a, x[ 4], S24, constants_.at(i)); i++; /* 24 */
-    GG(a, b, c, d, x[ 9], S21, constants_.at(i)); i++; /* 25 */
-    GG(d, a, b, c, x[14], S22, constants_.at(i)); i++; /* 26 */
-    GG(c, d, a, b, x[ 3], S23, constants_.at(i)); i++; /* 27 */
-    GG(b, c, d, a, x[ 8], S24, constants_.at(i)); i++; /* 28 */
-    GG(a, b, c, d, x[13], S21, constants_.at(i)); i++; /* 29 */
-    GG(d, a, b, c, x[ 2], S22, constants_.at(i)); i++; /* 30 */
-    GG(c, d, a, b, x[ 7], S23, constants_.at(i)); i++; /* 31 */
-    GG(b, c, d, a, x[12], S24, constants_.at(i)); i++; /* 32 */
-
-    /* Round 3 */
-    HH(a, b, c, d, x[ 5], S31, constants_.at(i)); i++; /* 33 */
-    HH(d, a, b, c, x[ 8], S32, constants_.at(i)); i++; /* 34 */
-    HH(c, d, a, b, x[11], S33, constants_.at(i)); i++; /* 35 */
-    HH(b, c, d, a, x[14], S34, constants_.at(i)); i++; /* 36 */
-    HH(a, b, c, d, x[ 1], S31, constants_.at(i)); i++; /* 37 */
-    HH(d, a, b, c, x[ 4], S32, constants_.at(i)); i++; /* 38 */
-    HH(c, d, a, b, x[ 7], S33, constants_.at(i)); i++; /* 39 */
-    HH(b, c, d, a, x[10], S34, constants_.at(i)); i++; /* 40 */
-    HH(a, b, c, d, x[13], S31, constants_.at(i)); i++; /* 41 */
-    HH(d, a, b, c, x[ 0], S32, constants_.at(i)); i++; /* 42 */
-    HH(c, d, a, b, x[ 3], S33, constants_.at(i)); i++; /* 43 */
-    HH(b, c, d, a, x[ 6], S34, constants_.at(i)); i++; /* 44 */
-    HH(a, b, c, d, x[ 9], S31, constants_.at(i)); i++; /* 45 */
-    HH(d, a, b, c, x[12], S32, constants_.at(i)); i++; /* 46 */
-    HH(c, d, a, b, x[15], S33, constants_.at(i)); i++; /* 47 */
-    HH(b, c, d, a, x[ 2], S34, constants_.at(i)); i++; /* 48 */
-
-    /* Round 4 */
-    II(a, b, c, d, x[ 0], S41, constants_.at(i)); i++; /* 49 */
-    II(d, a, b, c, x[ 7], S42, constants_.at(i)); i++; /* 50 */
-    II(c, d, a, b, x[14], S43, constants_.at(i)); i++; /* 51 */
-    II(b, c, d, a, x[ 5], S44, constants_.at(i)); i++; /* 52 */
-    II(a, b, c, d, x[12], S41, constants_.at(i)); i++; /* 53 */
-    II(d, a, b, c, x[ 3], S42, constants_.at(i)); i++; /* 54 */
-    II(c, d, a, b, x[10], S43, constants_.at(i)); i++; /* 55 */
-    II(b, c, d, a, x[ 1], S44, constants_.at(i)); i++; /* 56 */
-    II(a, b, c, d, x[ 8], S41, constants_.at(i)); i++; /* 57 */
-    II(d, a, b, c, x[15], S42, constants_.at(i)); i++; /* 58 */
-    II(c, d, a, b, x[ 6], S43, constants_.at(i)); i++; /* 59 */
-    II(b, c, d, a, x[13], S44, constants_.at(i)); i++; /* 60 */
-    II(a, b, c, d, x[ 4], S41, constants_.at(i)); i++; /* 61 */
-    II(d, a, b, c, x[11], S42, constants_.at(i)); i++; /* 62 */
-    II(c, d, a, b, x[ 2], S43, constants_.at(i)); i++; /* 63 */
-    II(b, c, d, a, x[ 9], S44, constants_.at(i)); i++; /* 64 */
-
+    transformInternal(block, a, b, c, d);
     state[0] = state[0] + a;
     state[1] = state[1] + b;
     state[2] = state[2] + c;
     state[3] = state[3] + d;
+  }
+
+  void transformInternal(const SymBitVec block[MD5_BLOCK_SIZE],
+                         SymBitVec &a, SymBitVec &b,
+                         SymBitVec &c, SymBitVec &d) {
+    // Each SymBitVec in `block` is 8 bits
+    SymBitVec x[16];
+    decode(x, block, MD5_BLOCK_SIZE);
+
+    int i = 0;
+
+    /* Round 1 */
+    FF(a, b, c, d, x[ 0], S11, constants_.at(i)); i++; /* 1 */
+    if (i >= difficulty_) return;
+    FF(d, a, b, c, x[ 1], S12, constants_.at(i)); i++; /* 2 */
+    if (i >= difficulty_) return;
+    FF(c, d, a, b, x[ 2], S13, constants_.at(i)); i++; /* 3 */
+    if (i >= difficulty_) return;
+    FF(b, c, d, a, x[ 3], S14, constants_.at(i)); i++; /* 4 */
+    if (i >= difficulty_) return;
+    FF(a, b, c, d, x[ 4], S11, constants_.at(i)); i++; /* 5 */
+    if (i >= difficulty_) return;
+    FF(d, a, b, c, x[ 5], S12, constants_.at(i)); i++; /* 6 */
+    if (i >= difficulty_) return;
+    FF(c, d, a, b, x[ 6], S13, constants_.at(i)); i++; /* 7 */
+    if (i >= difficulty_) return;
+    FF(b, c, d, a, x[ 7], S14, constants_.at(i)); i++; /* 8 */
+    if (i >= difficulty_) return;
+    FF(a, b, c, d, x[ 8], S11, constants_.at(i)); i++; /* 9 */
+    if (i >= difficulty_) return;
+    FF(d, a, b, c, x[ 9], S12, constants_.at(i)); i++; /* 10 */
+    if (i >= difficulty_) return;
+    FF(c, d, a, b, x[10], S13, constants_.at(i)); i++; /* 11 */
+    if (i >= difficulty_) return;
+    FF(b, c, d, a, x[11], S14, constants_.at(i)); i++; /* 12 */
+    if (i >= difficulty_) return;
+    FF(a, b, c, d, x[12], S11, constants_.at(i)); i++; /* 13 */
+    if (i >= difficulty_) return;
+    FF(d, a, b, c, x[13], S12, constants_.at(i)); i++; /* 14 */
+    if (i >= difficulty_) return;
+    FF(c, d, a, b, x[14], S13, constants_.at(i)); i++; /* 15 */
+    if (i >= difficulty_) return;
+    FF(b, c, d, a, x[15], S14, constants_.at(i)); i++; /* 16 */
+    if (i >= difficulty_) return;
+
+    /* Round 2 */
+    GG(a, b, c, d, x[ 1], S21, constants_.at(i)); i++; /* 17 */
+    if (i >= difficulty_) return;
+    GG(d, a, b, c, x[ 6], S22, constants_.at(i)); i++; /* 18 */
+    if (i >= difficulty_) return;
+    GG(c, d, a, b, x[11], S23, constants_.at(i)); i++; /* 19 */
+    if (i >= difficulty_) return;
+    GG(b, c, d, a, x[ 0], S24, constants_.at(i)); i++; /* 20 */
+    if (i >= difficulty_) return;
+    GG(a, b, c, d, x[ 5], S21, constants_.at(i)); i++; /* 21 */
+    if (i >= difficulty_) return;
+    GG(d, a, b, c, x[10], S22, constants_.at(i)); i++; /* 22 */
+    if (i >= difficulty_) return;
+    GG(c, d, a, b, x[15], S23, constants_.at(i)); i++; /* 23 */
+    if (i >= difficulty_) return;
+    GG(b, c, d, a, x[ 4], S24, constants_.at(i)); i++; /* 24 */
+    if (i >= difficulty_) return;
+    GG(a, b, c, d, x[ 9], S21, constants_.at(i)); i++; /* 25 */
+    if (i >= difficulty_) return;
+    GG(d, a, b, c, x[14], S22, constants_.at(i)); i++; /* 26 */
+    if (i >= difficulty_) return;
+    GG(c, d, a, b, x[ 3], S23, constants_.at(i)); i++; /* 27 */
+    if (i >= difficulty_) return;
+    GG(b, c, d, a, x[ 8], S24, constants_.at(i)); i++; /* 28 */
+    if (i >= difficulty_) return;
+    GG(a, b, c, d, x[13], S21, constants_.at(i)); i++; /* 29 */
+    if (i >= difficulty_) return;
+    GG(d, a, b, c, x[ 2], S22, constants_.at(i)); i++; /* 30 */
+    if (i >= difficulty_) return;
+    GG(c, d, a, b, x[ 7], S23, constants_.at(i)); i++; /* 31 */
+    if (i >= difficulty_) return;
+    GG(b, c, d, a, x[12], S24, constants_.at(i)); i++; /* 32 */
+    if (i >= difficulty_) return;
+
+    /* Round 3 */
+    HH(a, b, c, d, x[ 5], S31, constants_.at(i)); i++; /* 33 */
+    if (i >= difficulty_) return;
+    HH(d, a, b, c, x[ 8], S32, constants_.at(i)); i++; /* 34 */
+    if (i >= difficulty_) return;
+    HH(c, d, a, b, x[11], S33, constants_.at(i)); i++; /* 35 */
+    if (i >= difficulty_) return;
+    HH(b, c, d, a, x[14], S34, constants_.at(i)); i++; /* 36 */
+    if (i >= difficulty_) return;
+    HH(a, b, c, d, x[ 1], S31, constants_.at(i)); i++; /* 37 */
+    if (i >= difficulty_) return;
+    HH(d, a, b, c, x[ 4], S32, constants_.at(i)); i++; /* 38 */
+    if (i >= difficulty_) return;
+    HH(c, d, a, b, x[ 7], S33, constants_.at(i)); i++; /* 39 */
+    if (i >= difficulty_) return;
+    HH(b, c, d, a, x[10], S34, constants_.at(i)); i++; /* 40 */
+    if (i >= difficulty_) return;
+    HH(a, b, c, d, x[13], S31, constants_.at(i)); i++; /* 41 */
+    if (i >= difficulty_) return;
+    HH(d, a, b, c, x[ 0], S32, constants_.at(i)); i++; /* 42 */
+    if (i >= difficulty_) return;
+    HH(c, d, a, b, x[ 3], S33, constants_.at(i)); i++; /* 43 */
+    if (i >= difficulty_) return;
+    HH(b, c, d, a, x[ 6], S34, constants_.at(i)); i++; /* 44 */
+    if (i >= difficulty_) return;
+    HH(a, b, c, d, x[ 9], S31, constants_.at(i)); i++; /* 45 */
+    if (i >= difficulty_) return;
+    HH(d, a, b, c, x[12], S32, constants_.at(i)); i++; /* 46 */
+    if (i >= difficulty_) return;
+    HH(c, d, a, b, x[15], S33, constants_.at(i)); i++; /* 47 */
+    if (i >= difficulty_) return;
+    HH(b, c, d, a, x[ 2], S34, constants_.at(i)); i++; /* 48 */
+    if (i >= difficulty_) return;
+
+    /* Round 4 */
+    II(a, b, c, d, x[ 0], S41, constants_.at(i)); i++; /* 49 */
+    if (i >= difficulty_) return;
+    II(d, a, b, c, x[ 7], S42, constants_.at(i)); i++; /* 50 */
+    if (i >= difficulty_) return;
+    II(c, d, a, b, x[14], S43, constants_.at(i)); i++; /* 51 */
+    if (i >= difficulty_) return;
+    II(b, c, d, a, x[ 5], S44, constants_.at(i)); i++; /* 52 */
+    if (i >= difficulty_) return;
+    II(a, b, c, d, x[12], S41, constants_.at(i)); i++; /* 53 */
+    if (i >= difficulty_) return;
+    II(d, a, b, c, x[ 3], S42, constants_.at(i)); i++; /* 54 */
+    if (i >= difficulty_) return;
+    II(c, d, a, b, x[10], S43, constants_.at(i)); i++; /* 55 */
+    if (i >= difficulty_) return;
+    II(b, c, d, a, x[ 1], S44, constants_.at(i)); i++; /* 56 */
+    if (i >= difficulty_) return;
+    II(a, b, c, d, x[ 8], S41, constants_.at(i)); i++; /* 57 */
+    if (i >= difficulty_) return;
+    II(d, a, b, c, x[15], S42, constants_.at(i)); i++; /* 58 */
+    if (i >= difficulty_) return;
+    II(c, d, a, b, x[ 6], S43, constants_.at(i)); i++; /* 59 */
+    if (i >= difficulty_) return;
+    II(b, c, d, a, x[13], S44, constants_.at(i)); i++; /* 60 */
+    if (i >= difficulty_) return;
+    II(a, b, c, d, x[ 4], S41, constants_.at(i)); i++; /* 61 */
+    if (i >= difficulty_) return;
+    II(d, a, b, c, x[11], S42, constants_.at(i)); i++; /* 62 */
+    if (i >= difficulty_) return;
+    II(c, d, a, b, x[ 2], S43, constants_.at(i)); i++; /* 63 */
+    if (i >= difficulty_) return;
+    II(b, c, d, a, x[ 9], S44, constants_.at(i)); i++; /* 64 */
+    if (i >= difficulty_) return;
   }
 
   void finalize() {
@@ -328,6 +398,8 @@ class MD5 : public SymHash {
                         const SymBitVec &ac) {
     a = rotateLeft(a + I(b, c, d) + x + ac, s) + b;
   }
+
+  int difficulty_;
 
   bool finalized;
 
