@@ -20,7 +20,7 @@
 
 #include "hash_funcs.hpp"
 #include "tests.hpp"
-#include "sha256.hpp"
+#include "sym_sha256.hpp"
 #include "sym_bit_vec.hpp"
 #include "utils.hpp"
 #include "factor.hpp"

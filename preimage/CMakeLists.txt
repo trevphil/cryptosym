@@ -40,7 +40,7 @@ add_executable(preimage
                src/sym_bit_vec.cpp
                src/sym_hash.cpp
                src/hash_funcs.cpp
-               src/sha256.cpp
+               src/sym_sha256.cpp
                src/solver.cpp
                src/cmsat/cmsat_solver.cpp
                src/bp/node.cpp

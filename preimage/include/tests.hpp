@@ -13,9 +13,12 @@
 #pragma once
 
 #include <spdlog/spdlog.h>
-#include <cryptopp/dll.h>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/algorithm/string.hpp>
+
+#include <cryptopp/dll.h>
+#define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
+#include <cryptopp/md5.h>
 
 #include <map>
 #include <vector>
@@ -24,7 +27,8 @@
 
 #include "factor.hpp"
 #include "hash_funcs.hpp"
-#include "sha256.hpp"
+#include "sym_sha256.hpp"
+#include "sym_md5.hpp"
 #include "sym_bit_vec.hpp"
 #include "utils.hpp"
 #include "cmsat/cmsat_solver.hpp"
@@ -127,6 +131,46 @@ void sha256Tests() {
   }
 
   spdlog::info("SHA256 tests passed.");
+}
+
+void md5Tests() {
+  MD5 md5;
+  const int difficulty = 64;  // Normal MD5 has 64 rounds
+
+  Utils::seed(1);
+  const std::vector<size_t> inp_sizes{0, 8, 32, 64, 512, 640, 1024};
+  for (size_t inp_size : inp_sizes) {
+    for (size_t i = 0; i < 10; i++) {
+      // Generate a random input of length "inp_size"
+      const boost::dynamic_bitset<> bits = Utils::randomBits(inp_size);
+      std::string bitstr;
+      boost::to_string(bits, bitstr);
+
+      // Call MD5 using Crypto++
+      CryptoPP::Weak::MD5 cryptopp_md5;
+      uint8_t digest[CryptoPP::Weak::MD5::DIGESTSIZE];
+      cryptopp_md5.CalculateDigest(digest,
+          (uint8_t *)bitstr.c_str(), inp_size / 8);
+
+      // Convert output to lowercase hexadecimal
+      CryptoPP::HexEncoder encoder;
+      std::string expected_output;
+      encoder.Attach(new CryptoPP::StringSink(expected_output));
+      encoder.Put(digest, sizeof(digest));
+      encoder.MessageEnd();
+      boost::algorithm::to_lower(expected_output);
+
+      // Call MD5 using custom hash function
+      const std::string h = md5.call(bits, difficulty).hex();
+
+      if (true || h.compare(expected_output) != 0) {
+        spdlog::info("inp_size={}, i={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
+                     inp_size, i, Utils::hexstr(bits), expected_output, h);
+      }
+    }
+  }
+
+  spdlog::info("MD5 tests passed.");
 }
 
 void bitcoinBlockTest() {
@@ -237,8 +281,9 @@ void allTests() {
   // simpleTests();
   // symBitVecTests();
   // sha256Tests();
+  md5Tests();
   // cmsatTests();
-  bpTests();
+  // bpTests();
   // bitcoinBlockTest();
 }
 

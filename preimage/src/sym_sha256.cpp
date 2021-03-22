@@ -10,7 +10,7 @@
  * Proprietary and confidential
  */
 
-#include "sha256.hpp"
+#include "sym_sha256.hpp"
 
 #include <spdlog/spdlog.h>
 
