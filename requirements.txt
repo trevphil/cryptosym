@@ -23,7 +23,7 @@ protobuf==3.13.0
 pydot==1.4.1
 pyparsing==2.4.7
 python-dateutil==2.8.1
-PyYAML==5.3.1
+PyYAML==5.4
 qpsolvers==1.4
 quadprog==0.1.7
 requests==2.24.0
