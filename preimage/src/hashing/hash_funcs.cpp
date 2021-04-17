@@ -10,7 +10,7 @@
  * Proprietary and confidential
  */
 
-#include "hash_funcs.hpp"
+#include "hashing/hash_funcs.hpp"
 #include "utils.hpp"
 
 #include <spdlog/spdlog.h>

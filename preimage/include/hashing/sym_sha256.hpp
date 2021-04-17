@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "sym_bit_vec.hpp"
-#include "sym_hash.hpp"
+#include "hashing/sym_hash.hpp"
 
 namespace preimage {
 

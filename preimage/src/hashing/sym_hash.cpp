@@ -10,7 +10,10 @@
  * Proprietary and confidential
  */
 
-#include "sym_hash.hpp"
+#include "hashing/sym_hash.hpp"
+#include "bit.hpp"
+#include "factor.hpp"
+#include "utils.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -18,10 +21,6 @@
 #include <iostream>
 #include <map>
 #include <algorithm>
-
-#include "bit.hpp"
-#include "factor.hpp"
-#include "utils.hpp"
 
 namespace preimage {
 

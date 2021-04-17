@@ -12,7 +12,7 @@
 
 // Based off of: http://www.zedwood.com/article/cpp-md5-function
 
-#include "sym_md5.hpp"
+#include "hashing/sym_md5.hpp"
 
 #define S11 7
 #define S12 12

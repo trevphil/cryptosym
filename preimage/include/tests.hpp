@@ -26,11 +26,11 @@
 #include <string>
 #include <assert.h>
 
+#include "hashing/hash_funcs.hpp"
+#include "hashing/sym_sha256.hpp"
+#include "hashing/sym_md5.hpp"
+#include "hashing/sym_ripemd160.hpp"
 #include "factor.hpp"
-#include "hash_funcs.hpp"
-#include "sym_sha256.hpp"
-#include "sym_md5.hpp"
-#include "sym_ripemd160.hpp"
 #include "sym_bit_vec.hpp"
 #include "utils.hpp"
 #include "cmsat/cmsat_solver.hpp"

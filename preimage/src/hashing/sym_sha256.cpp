@@ -10,11 +10,10 @@
  * Proprietary and confidential
  */
 
-#include "sym_sha256.hpp"
+#include "hashing/sym_sha256.hpp"
+#include "utils.hpp"
 
 #include <spdlog/spdlog.h>
-
-#include "utils.hpp"
 
 namespace preimage {
 

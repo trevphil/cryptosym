@@ -38,16 +38,16 @@ add_executable(preimage
                src/bit.cpp
                src/factor.cpp
                src/sym_bit_vec.cpp
-               src/sym_hash.cpp
-               src/hash_funcs.cpp
-               src/sym_sha256.cpp
+               src/hashing/sym_hash.cpp
+               src/hashing/hash_funcs.cpp
+               src/hashing/sym_sha256.cpp
+               src/hashing/sym_md5.cpp
+               src/hashing/sym_ripemd160.cpp
                src/solver.cpp
                src/cmsat/cmsat_solver.cpp
                src/bp/node.cpp
                src/bp/graph.cpp
-               src/bp/bp_solver.cpp
-               src/sym_md5.cpp
-               src/sym_ripemd160.cpp)
+               src/bp/bp_solver.cpp)
 
 target_link_libraries(preimage PRIVATE spdlog::spdlog)
 target_link_libraries(preimage PUBLIC cryptominisat5)
