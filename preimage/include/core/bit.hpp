@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-#include "factor.hpp"
+#include "core/factor.hpp"
 
 namespace preimage {
 

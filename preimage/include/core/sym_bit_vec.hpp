@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "bit.hpp"
+#include "core/bit.hpp"
 
 namespace preimage {
 

@@ -35,15 +35,15 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 # Add all the source files needed to build the executable
 add_executable(preimage
                src/main.cpp
-               src/bit.cpp
-               src/factor.cpp
-               src/sym_bit_vec.cpp
+               src/core/bit.cpp
+               src/core/factor.cpp
+               src/core/sym_bit_vec.cpp
+               src/core/solver.cpp
                src/hashing/sym_hash.cpp
                src/hashing/hash_funcs.cpp
                src/hashing/sym_sha256.cpp
                src/hashing/sym_md5.cpp
                src/hashing/sym_ripemd160.cpp
-               src/solver.cpp
                src/cmsat/cmsat_solver.cpp
                src/bp/node.cpp
                src/bp/graph.cpp

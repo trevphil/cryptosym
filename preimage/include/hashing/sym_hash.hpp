@@ -15,7 +15,7 @@
 #include <boost/dynamic_bitset.hpp>
 #include <set>
 
-#include "sym_bit_vec.hpp"
+#include "core/sym_bit_vec.hpp"
 
 namespace preimage {
 

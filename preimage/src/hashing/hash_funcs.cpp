@@ -11,7 +11,7 @@
  */
 
 #include "hashing/hash_funcs.hpp"
-#include "utils.hpp"
+#include "core/utils.hpp"
 
 #include <spdlog/spdlog.h>
 

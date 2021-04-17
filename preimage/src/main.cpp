@@ -19,14 +19,14 @@
 #include <stdio.h>
 
 #include "tests.hpp"
+#include "core/sym_bit_vec.hpp"
+#include "core/utils.hpp"
+#include "core/factor.hpp"
+#include "core/solver.hpp"
 #include "hashing/hash_funcs.hpp"
 #include "hashing/sym_sha256.hpp"
 #include "hashing/sym_md5.hpp"
 #include "hashing/sym_ripemd160.hpp"
-#include "sym_bit_vec.hpp"
-#include "utils.hpp"
-#include "factor.hpp"
-#include "solver.hpp"
 #include "cmsat/cmsat_solver.hpp"
 #include "bp/bp_solver.hpp"
 

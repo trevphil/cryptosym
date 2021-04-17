@@ -20,7 +20,7 @@
 #include <eigen3/Eigen/Eigen>
 
 #include "bp/params.hpp"
-#include "factor.hpp"
+#include "core/factor.hpp"
 
 namespace preimage {
 

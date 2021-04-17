@@ -15,8 +15,8 @@
 #include <map>
 #include <vector>
 
-#include "factor.hpp"
-#include "bit.hpp"
+#include "core/factor.hpp"
+#include "core/bit.hpp"
 
 namespace preimage {
 

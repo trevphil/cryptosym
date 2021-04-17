@@ -13,8 +13,8 @@
 #include <list>
 #include <algorithm>
 
-#include "solver.hpp"
-#include "utils.hpp"
+#include "core/solver.hpp"
+#include "core/utils.hpp"
 
 #include <spdlog/spdlog.h>
 

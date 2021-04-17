@@ -17,7 +17,7 @@
 #include <map>
 #include <vector>
 
-#include "solver.hpp"
+#include "core/solver.hpp"
 
 namespace preimage {
 

@@ -10,15 +10,14 @@
  * Proprietary and confidential
  */
 
-#include "sym_bit_vec.hpp"
+#include "core/sym_bit_vec.hpp"
+#include "core/utils.hpp"
 
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
 #include <iostream>
 #include <ostream>
-
-#include "utils.hpp"
 
 namespace preimage {
 

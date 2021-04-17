@@ -11,7 +11,7 @@
  */
 
 #include "hashing/sym_sha256.hpp"
-#include "utils.hpp"
+#include "core/utils.hpp"
 
 #include <spdlog/spdlog.h>
 

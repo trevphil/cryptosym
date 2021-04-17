@@ -11,9 +11,9 @@
  */
 
 #include "hashing/sym_hash.hpp"
-#include "bit.hpp"
-#include "factor.hpp"
-#include "utils.hpp"
+#include "core/bit.hpp"
+#include "core/factor.hpp"
+#include "core/utils.hpp"
 
 #include <spdlog/spdlog.h>
 

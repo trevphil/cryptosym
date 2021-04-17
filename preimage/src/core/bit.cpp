@@ -10,8 +10,8 @@
  * Proprietary and confidential
  */
 
-#include "bit.hpp"
-#include "config.hpp"
+#include "core/bit.hpp"
+#include "core/config.hpp"
 
 namespace preimage {
 

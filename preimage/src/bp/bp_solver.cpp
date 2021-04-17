@@ -15,7 +15,7 @@
 
 #include "bp/bp_solver.hpp"
 #include "bp/prior_factor.hpp"
-#include "utils.hpp"
+#include "core/utils.hpp"
 
 #include <spdlog/spdlog.h>
 

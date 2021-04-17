@@ -15,7 +15,7 @@
 #include <map>
 #include <vector>
 
-#include "solver.hpp"
+#include "core/solver.hpp"
 #include "bp/graph.hpp"
 #include "bp/node.hpp"
 #include "bp/params.hpp"

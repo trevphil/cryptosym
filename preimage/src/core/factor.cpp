@@ -10,7 +10,7 @@
  * Proprietary and confidential
  */
 
-#include "factor.hpp"
+#include "core/factor.hpp"
 
 #include <iomanip>
 #include <sstream>

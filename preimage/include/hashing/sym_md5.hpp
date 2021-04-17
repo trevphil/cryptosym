@@ -16,7 +16,7 @@
 #include <vector>
 #include <assert.h>
 
-#include "sym_bit_vec.hpp"
+#include "core/sym_bit_vec.hpp"
 #include "hashing/sym_hash.hpp"
 
 #define MD5_BLOCK_SIZE 64
