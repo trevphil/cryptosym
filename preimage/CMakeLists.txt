@@ -35,6 +35,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 # Add all the source files needed to build the executable
 add_executable(preimage
                src/main.cpp
+               src/problem_instance.cpp
                src/core/bit.cpp
                src/core/factor.cpp
                src/core/sym_bit_vec.cpp
