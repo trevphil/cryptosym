@@ -23,12 +23,13 @@ namespace preimage {
 
 class CMSatSolver : public Solver {
  public:
-  CMSatSolver(const std::map<size_t, Factor> &factors,
-              const std::vector<size_t> &input_indices);
+  CMSatSolver(bool verbose);
 
   std::string solverName() const override { return "CryptoMiniSAT"; }
 
  protected:
+  void initialize() override;
+
   std::map<size_t, bool> solveInternal() override;
 
  private:

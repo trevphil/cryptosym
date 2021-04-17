@@ -23,23 +23,25 @@ namespace preimage {
 
 class Solver {
  public:
-  Solver(const std::map<size_t, Factor> &factors,
-         const std::vector<size_t> &input_indices);
+  Solver(bool verbose);
 
   virtual ~Solver();
 
-  std::map<size_t, bool> solve(const std::map<size_t, bool> &observed);
+  std::map<size_t, bool> solve(const std::map<size_t, Factor> &factors,
+                               const std::vector<size_t> &input_indices,
+                               const std::map<size_t, bool> &observed);
 
   virtual std::string solverName() const = 0;
 
  protected:
-  virtual void reset();
+  virtual void initialize() = 0;
 
   virtual std::map<size_t, bool> solveInternal() = 0;
 
+  bool verbose_;
   std::map<size_t, Factor> factors_;
-  std::map<size_t, bool> observed_;
   std::vector<size_t> input_indices_;
+  std::map<size_t, bool> observed_;
 
  private:
   void setImplicitObserved();

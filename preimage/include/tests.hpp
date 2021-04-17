@@ -30,8 +30,7 @@
 #include "core/sym_bit_vec.hpp"
 #include "core/utils.hpp"
 #include "hashing/hash_funcs.hpp"
-#include "cmsat/cmsat_solver.hpp"
-#include "bp/bp_solver.hpp"
+#include "problem_instance.hpp"
 
 namespace preimage {
 
@@ -245,89 +244,21 @@ void bitcoinBlockTest() {
 }
 
 void cmsatTests() {
-  SHA256 sha256;
-  const int difficulty = 4;  // Normal SHA256 has 64 rounds
-  const boost::dynamic_bitset<> bits = Utils::randomBits(64, 1);
-  SymBitVec h = sha256.call(bits, difficulty);
-
-  // Collect observed bits
-  std::map<size_t, bool> observed;
-  for (size_t i = 0; i < h.size(); ++i) {
-    const Bit &b = h.at(i);
-    if (b.is_rv) observed[b.index] = b.val;
-  }
-
-  // Collect factors in a mapping from RV index --> factor
-  const size_t n = Factor::global_factors.size();
-  std::map<size_t, Factor> factors;
-  for (size_t i = 0; i < n; ++i) {
-    const Factor &f = Factor::global_factors.at(i);
-    assert(i == f.output);
-    // Skip bits which are not ancestors of observed bits
-    if (!sha256.canIgnore(i)) factors[i] = f;
-  }
-
-  CMSatSolver solver(factors, sha256.hashInputIndices());
-  const std::map<size_t, bool> assignments = solver.solve(observed);
-  boost::dynamic_bitset<> pred_input(64);
-
-  // Fill with observed bits, if any input bits made it directly to output
-  for (const auto &itr : observed) {
-    const size_t bit_idx = itr.first;
-    const bool bit_val = itr.second;
-    if (bit_idx < 64) pred_input[bit_idx] = bit_val;
-  }
-
-  // Fill input prediction with assignments from the solver
-  for (const auto &itr : assignments) {
-    const size_t bit_idx = itr.first;
-    const bool bit_val = itr.second;
-    if (bit_idx < 64) pred_input[bit_idx] = bit_val;
-  }
-
-  assert(Utils::hexstr(pred_input).compare(Utils::hexstr(bits)) == 0);
+  ProblemInstance problem(64, 4, false, false);
+  const int rtn = problem.prepare("SHA256", "cmsat");
+  assert(rtn == 0);
+  const int status = problem.execute();
+  assert(status == 0);
   spdlog::info("CryptoMiniSAT tests passed.");
 }
 
 void bpTests() {
-  /*
-  A
-   \
-    XOR --> D
-   /         \
-  B           XOR --> F
-   \         /
-    AND --> E
-   /
-  C
-                                             0    1    2    3    4    5
-  F=1 --> E=1, D=0 --> B=1, C=1 --> A=1     (A=1, B=1, C=1, D=0, E=1, F=1)
-
-  F=1 --> E=0, D=1 --> B=1 --> C=0, A=0     (A=0, B=1, C=0, D=1, E=0, F=1)
-                       B=0 --> A=1, C=0     (A=1, B=0, C=0, D=1, E=0, F=1)
-                                    C=1     (A=1, B=0, C=1, D=1, E=0, F=1)
-  */
-
-  std::map<size_t, bool> observed;
-  observed[5] = true;
-  // observed[3] = false;
-
-  // Collect factors in a mapping from RV index --> factor
-  std::map<size_t, Factor> factors;
-  factors[0] = Factor(Factor::Type::PriorFactor, 0);
-  factors[1] = Factor(Factor::Type::PriorFactor, 1);
-  factors[2] = Factor(Factor::Type::PriorFactor, 2);
-  factors[3] = Factor(Factor::Type::XorFactor, 3, {0, 1});
-  factors[4] = Factor(Factor::Type::AndFactor, 4, {1, 2});
-  factors[5] = Factor(Factor::Type::XorFactor, 5, {3, 4});
-
-  bp::BPSolver solver(factors, {0, 1, 2});
-  const std::map<size_t, bool> assignments = solver.solve(observed);
-  for (const auto &itr : assignments) {
-    const size_t rv = itr.first;
-    const bool val = itr.second;
-    spdlog::info("BP predicts bit {} = {}", rv, val);
-  }
+  ProblemInstance problem(64, 2, false, false);
+  const int rtn = problem.prepare("SHA256", "bp");
+  assert(rtn == 0);
+  const int status = problem.execute();
+  assert(status == 0);
+  spdlog::info("Belief propagation tests passed.");
 }
 
 void allTests() {
@@ -337,7 +268,7 @@ void allTests() {
   ripemd160Tests();
   md5Tests();
   cmsatTests();
-  // bpTests();
+  bpTests();
   // bitcoinBlockTest();
 }
 

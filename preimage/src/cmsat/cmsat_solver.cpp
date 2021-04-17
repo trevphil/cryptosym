@@ -16,9 +16,9 @@
 
 namespace preimage {
 
-CMSatSolver::CMSatSolver(const std::map<size_t, Factor> &factors,
-                         const std::vector<size_t> &input_indices)
-    : Solver(factors, input_indices) {
+CMSatSolver::CMSatSolver(bool verbose) : Solver(verbose) {}
+
+void CMSatSolver::initialize() {
   rv2idx_ = {};
   size_t i = 0;
   for (const auto &itr : factors_) {
@@ -30,7 +30,7 @@ CMSatSolver::CMSatSolver(const std::map<size_t, Factor> &factors,
   solver_ = new CMSat::SATSolver;
   solver_->set_num_threads(4);
   solver_->new_vars(n);
-  spdlog::info("Initializing cryptominisat5 (n={})", n);
+  if (verbose_) spdlog::info("Initializing cryptominisat5 (n={})", n);
 
   std::vector<CMSat::Lit> clause;
   std::vector<unsigned int> xor_clause;
@@ -111,7 +111,7 @@ std::map<size_t, bool> CMSatSolver::solveInternal() {
     assumptions.push_back(CMSat::Lit(idx, !itr.second));
   }
 
-  spdlog::info("Solving...");
+  if (verbose_) spdlog::info("Solving...");
   CMSat::lbool ret = solver_->solve(&assumptions);
   assert(ret == CMSat::l_True);
   const auto model = solver_->get_model();

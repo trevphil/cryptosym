@@ -26,12 +26,13 @@ namespace bp {
 
 class BPSolver : public Solver {
  public:
-  BPSolver(const std::map<size_t, Factor> &factors,
-           const std::vector<size_t> &input_indices);
+  BPSolver(bool verbose);
 
   std::string solverName() const override { return "Belief Propagation"; }
 
  protected:
+  void initialize() override;
+
   std::map<size_t, bool> solveInternal() override;
 
  private:

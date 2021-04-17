@@ -20,28 +20,28 @@
 
 namespace preimage {
 
-Solver::Solver(const std::map<size_t, Factor> &factors,
-               const std::vector<size_t> &input_indices)
-    : factors_(factors), input_indices_(input_indices) {}
+Solver::Solver(bool verbose) : verbose_(verbose) {}
 
 Solver::~Solver() {}
 
-std::map<size_t, bool> Solver::solve(const std::map<size_t, bool> &observed) {
-  const auto start = Utils::sec_since_epoch();
-  reset();
+std::map<size_t, bool> Solver::solve(const std::map<size_t, Factor> &factors,
+                                     const std::vector<size_t> &input_indices,
+                                     const std::map<size_t, bool> &observed) {
+  const auto start = Utils::ms_since_epoch();
+  factors_ = factors;
+  input_indices_ = input_indices;
   observed_ = observed;
   setImplicitObserved();
+  initialize();
   const auto solution = solveInternal();
-  const auto end = Utils::sec_since_epoch();
-  spdlog::info("Solution found in {} s", end - start);
+  const auto end = Utils::ms_since_epoch();
+  if (verbose_) spdlog::info("Solution found in {} ms", end - start);
   return solution;
 }
 
-void Solver::reset() { observed_.clear(); }
-
 void Solver::setImplicitObserved() {
   const size_t initial = observed_.size();
-  spdlog::info("There are {} initially observed bits", initial);
+  if (verbose_) spdlog::info("There are {} initially observed bits", initial);
   while (true) {
     const size_t before = observed_.size();
     const size_t smallest_obs = propagateBackward();
@@ -50,7 +50,7 @@ void Solver::setImplicitObserved() {
     if (before == after) break;
   }
   const size_t diff = observed_.size() - initial;
-  spdlog::info("Pre-solved for {} additional bits", diff);
+  if (verbose_) spdlog::info("Pre-solved for {} additional bits", diff);
 }
 
 size_t Solver::propagateBackward() {

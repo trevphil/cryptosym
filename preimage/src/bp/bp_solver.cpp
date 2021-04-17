@@ -23,9 +23,9 @@ namespace preimage {
 
 namespace bp {
 
-BPSolver::BPSolver(const std::map<size_t, Factor> &factors,
-                   const std::vector<size_t> &input_indices)
-    : Solver(factors, input_indices) {
+BPSolver::BPSolver(bool verbose) : Solver(verbose) {}
+
+void BPSolver::initialize() {
   g_ = Graph();
   g_.schedule_variable.clear();
   g_.schedule_variable.push_back({});
@@ -107,30 +107,41 @@ std::map<size_t, bool> BPSolver::solveInternal() {
     const auto end = Utils::ms_since_epoch();
     const double e = g_.entropySum();
     const double c = g_.maxChange();
-    spdlog::info("Iter {}/{} - {} ms, entropy sum {:.3f}, max change {:.3f}",
-                 g_.iterations(), BP_MAX_ITER, end - start, e, c);
+
+    if (verbose_) {
+      spdlog::info("Iter {}/{} - {} ms, entropy sum {:.3f}, max change {:.3f}",
+                   g_.iterations(), BP_MAX_ITER, end - start, e, c);
+    }
 
     if (e < BP_ENTROPY_THRESHOLD) {
-      spdlog::info("Entropy thresh reached ({}), abort after iteration {}",
-                   e, g_.iterations());
+      if (verbose_) {
+        spdlog::info("Entropy thresh reached ({}), abort after iteration {}",
+                     e, g_.iterations());
+      }
       break;
     }
 
     if (c < BP_CHANGE_THRESHOLD) {
-      spdlog::info("Change thresh reached ({}), converged after iteration {}",
-                   c, g_.iterations());
+      if (verbose_) {
+        spdlog::info("Change thresh reached ({}), converged after iteration {}",
+                     c, g_.iterations());
+      }
       break;
     }
   }
 
-  spdlog::warn("Graph node number of resets: {}", GraphNode::num_resets);
+  if (verbose_) {
+    spdlog::warn("Graph node number of resets: {}", GraphNode::num_resets);
+  }
 
   std::map<size_t, bool> solution;
   for (const auto &itr : factors_) {
     const Factor &f = itr.second;
     if (!f.valid) continue;
     solution[f.output] = g_.getNode(f.output)->bit();
-    if (f.output < 64) spdlog::info("{}", g_.getNode(f.output)->toString());
+    if (verbose_ && f.output < 64) {
+      spdlog::info("{}", g_.getNode(f.output)->toString());
+    }
   }
   return solution;
 }
