@@ -28,6 +28,7 @@ class MD5 : public SymHash {
   MD5();
 
   SymBitVec hash(const SymBitVec &hash_input, int difficulty) override;
+
  private:
   void init(int difficulty);
 

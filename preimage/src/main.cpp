@@ -22,6 +22,7 @@
 #include "tests.hpp"
 #include "sym_sha256.hpp"
 #include "sym_md5.hpp"
+#include "sym_ripemd160.hpp"
 #include "sym_bit_vec.hpp"
 #include "utils.hpp"
 #include "factor.hpp"
@@ -36,6 +37,8 @@ SymHash* selectHashFunction(const std::string &name) {
     return new SHA256();
   } else if (name.compare("MD5") == 0) {
     return new MD5();
+  } else if (name.compare("RIPEMD160") == 0) {
+    return new RIPEMD160();
   } else if (name.compare("SameIOHash") == 0) {
     return new SameIOHash();
   } else if (name.compare("NotHash") == 0) {
@@ -88,9 +91,9 @@ int parseArgument(char* arg) {
     std::stringstream help_msg;
     help_msg << std::endl << "Command-line arguments:" << std::endl;
     help_msg << "\thash=HASH_FUNCTION" << std::endl;
-    help_msg << "\t -> one of: SHA256, MD5, LossyPseudoHash, NonLossyPseudoHash, NotHash, SameIOHash" << std::endl;
+    help_msg << "\t -> one of: SHA256, MD5, RIPEMD160, LossyPseudoHash, NonLossyPseudoHash, NotHash, SameIOHash" << std::endl;
     help_msg << "\td=DIFFICULTY (1-64)" << std::endl;
-    help_msg << "\ti=NUM_INPUT_BITS (8-512 or more, best to choose a multiple of 8)" << std::endl;
+    help_msg << "\ti=NUM_INPUT_BITS (8-512 or more, choose a multiple of 8)" << std::endl;
     help_msg << "\tsolver=SOLVER" << std::endl;
     help_msg << "\t -> one of: cmsat, bp" << std::endl;
     help_msg << "\ttests=1 (if you want to run tests)" << std::endl;

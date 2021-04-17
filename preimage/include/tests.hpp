@@ -19,6 +19,7 @@
 #include <cryptopp/dll.h>
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
 #include <cryptopp/md5.h>
+#include <cryptopp/ripemd.h>
 
 #include <map>
 #include <vector>
@@ -29,6 +30,7 @@
 #include "hash_funcs.hpp"
 #include "sym_sha256.hpp"
 #include "sym_md5.hpp"
+#include "sym_ripemd160.hpp"
 #include "sym_bit_vec.hpp"
 #include "utils.hpp"
 #include "cmsat/cmsat_solver.hpp"
@@ -136,6 +138,52 @@ void sha256Tests() {
   }
 
   spdlog::info("SHA256 tests passed.");
+}
+
+void ripemd160Tests() {
+  RIPEMD160 ripemd160;
+  const int difficulty = 160;  // Normal RIPEMD160 has 80 rounds
+
+  Utils::seed(1);
+  const std::vector<size_t> inp_sizes{0, 8, 32, 64, 512, 640, 1024};
+  for (size_t inp_size : inp_sizes) {
+    for (size_t sample_idx = 0; sample_idx < 10; sample_idx++) {
+      // Generate a random input of length "inp_size" bits
+      const boost::dynamic_bitset<> bits = Utils::randomBits(inp_size);
+      const size_t n_bytes = inp_size / 8;
+      uint8_t byte_arr[n_bytes];
+      for (size_t byte_idx = 0; byte_idx < n_bytes; byte_idx++) {
+        byte_arr[byte_idx] = 0;
+        for (size_t k = 0; k < 8; k++) {
+          byte_arr[byte_idx] += bits[(byte_idx * 8) + k] << k;
+        }
+      }
+
+      // Call RIPEMD160 using Crypto++
+      CryptoPP::RIPEMD160 cryptopp_ripemd160;
+      uint8_t digest[CryptoPP::RIPEMD160::DIGESTSIZE];
+      cryptopp_ripemd160.CalculateDigest(digest, byte_arr, n_bytes);
+
+      // Convert output to lowercase hexadecimal
+      CryptoPP::HexEncoder encoder;
+      std::string expected_output;
+      encoder.Attach(new CryptoPP::StringSink(expected_output));
+      encoder.Put(digest, sizeof(digest));
+      encoder.MessageEnd();
+      boost::algorithm::to_lower(expected_output);
+
+      // Call RIPEMD160 using custom hash function
+      const std::string h = ripemd160.call(bits, difficulty).hex();
+
+      if (h.compare(expected_output) != 0) {
+        spdlog::info("inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
+                     inp_size, sample_idx, Utils::hexstr(bits), expected_output, h);
+        assert(false);
+      }
+    }
+  }
+
+  spdlog::info("RIPEMD160 tests passed.");
 }
 
 void md5Tests() {
@@ -292,6 +340,7 @@ void allTests() {
   simpleTests();
   symBitVecTests();
   sha256Tests();
+  ripemd160Tests();
   md5Tests();
   cmsatTests();
   // bpTests();

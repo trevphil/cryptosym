@@ -46,7 +46,8 @@ add_executable(preimage
                src/bp/node.cpp
                src/bp/graph.cpp
                src/bp/bp_solver.cpp
-               src/sym_md5.cpp)
+               src/sym_md5.cpp
+               src/sym_ripemd160.cpp)
 
 target_link_libraries(preimage PRIVATE spdlog::spdlog)
 target_link_libraries(preimage PUBLIC cryptominisat5)

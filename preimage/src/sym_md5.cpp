@@ -146,7 +146,6 @@ void MD5::update(const SymBitVec input[], size_t len) {
   }
 
   // Buffer remaining input
-  // memcpy(&buffer[index], &input[i], length - i);
   for (size_t j = index; j < index + len - i; j++) {
     buffer[j] = input[i + j - index];
   }
