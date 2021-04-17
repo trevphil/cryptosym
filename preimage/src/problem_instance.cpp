@@ -152,6 +152,8 @@ void ProblemInstance::prepareSolver(const std::string &solver_name) {
     solver = std::unique_ptr<Solver>(new CMSatSolver(verbose_));
   } else if (solver_name.compare("bp") == 0) {
     solver = std::unique_ptr<Solver>(new bp::BPSolver(verbose_));
+  } else if (solver_name.compare("ortools_cp") == 0) {
+    solver = std::unique_ptr<Solver>(new ORToolsCPSolver(verbose_));
   } else {
     spdlog::error("Unsupported solver: {}", solver_name);
     solver = nullptr;

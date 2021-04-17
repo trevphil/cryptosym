@@ -22,9 +22,14 @@ if(NOT TARGET spdlog)
   find_package(spdlog REQUIRED)
 endif()
 
+# CryptoMiniSAT
 find_package(cryptominisat5 REQUIRED)
 
+# Crypto++
 find_package(CryptoPP REQUIRED)
+
+# Google or-tools
+find_package(ortools CONFIG REQUIRED)
 
 # Eigen
 find_package(Eigen3 REQUIRED)
@@ -53,3 +58,4 @@ add_executable(preimage
 target_link_libraries(preimage PRIVATE spdlog::spdlog)
 target_link_libraries(preimage PUBLIC cryptominisat5)
 target_link_libraries(preimage PUBLIC cryptopp-shared)
+target_link_libraries(preimage PUBLIC ortools::ortools)
