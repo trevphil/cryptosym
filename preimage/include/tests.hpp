@@ -30,9 +30,6 @@
 #include "core/sym_bit_vec.hpp"
 #include "core/utils.hpp"
 #include "hashing/hash_funcs.hpp"
-#include "hashing/sym_sha256.hpp"
-#include "hashing/sym_md5.hpp"
-#include "hashing/sym_ripemd160.hpp"
 #include "cmsat/cmsat_solver.hpp"
 #include "bp/bp_solver.hpp"
 

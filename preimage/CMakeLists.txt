@@ -39,7 +39,7 @@ add_executable(preimage
                src/core/factor.cpp
                src/core/sym_bit_vec.cpp
                src/core/solver.cpp
-               src/hashing/sym_hash.cpp
+               src/core/sym_hash.cpp
                src/hashing/hash_funcs.cpp
                src/hashing/sym_sha256.cpp
                src/hashing/sym_md5.cpp
