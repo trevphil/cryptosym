@@ -66,7 +66,7 @@ Solver* selectSolver(const std::string &solving_method,
 std::string hash_func = "MD5";
 std::string solving_method = "bp";
 size_t input_size = 64;
-int difficulty = 1;
+int difficulty = -1;
 int run_tests = false;
 
 int parseArgument(char* arg) {
@@ -89,8 +89,8 @@ int parseArgument(char* arg) {
     help_msg << std::endl << "Command-line arguments:" << std::endl;
     help_msg << "\thash=HASH_FUNCTION" << std::endl;
     help_msg << "\t -> one of: SHA256, MD5, RIPEMD160, LossyPseudoHash, NonLossyPseudoHash, NotHash, SameIOHash" << std::endl;
-    help_msg << "\td=DIFFICULTY (1-64)" << std::endl;
-    help_msg << "\ti=NUM_INPUT_BITS (8-512 or more, choose a multiple of 8)" << std::endl;
+    help_msg << "\td=DIFFICULTY (-1 for default)" << std::endl;
+    help_msg << "\ti=NUM_INPUT_BITS (choose a multiple of 8)" << std::endl;
     help_msg << "\tsolver=SOLVER" << std::endl;
     help_msg << "\t -> one of: cmsat, bp" << std::endl;
     help_msg << "\ttests=1 (if you want to run tests)" << std::endl;
@@ -113,13 +113,10 @@ void run(int argc, char **argv) {
     return;
   }
 
-  spdlog::info("Hash algorithm:\t{}", hash_func);
-  spdlog::info("Solver:\t\t{}", solving_method);
-  spdlog::info("Input message size:\t{} bits", input_size);
-  spdlog::info("Difficulty level:\t{}", difficulty);
+  SymHash *h = selectHashFunction(hash_func);
+  if (difficulty == -1) difficulty = h->defaultDifficulty();
 
   // Execute hash algorithm on random input
-  SymHash *h = selectHashFunction(hash_func);
   boost::dynamic_bitset<> input = Utils::randomBits(input_size, 0);
   SymBitVec output_bits = h->call(input, difficulty);
   const std::string output_hash = output_bits.bin();
@@ -145,6 +142,15 @@ void run(int argc, char **argv) {
     }
   }
 
+  // Initialize the solver
+  Solver *solver = selectSolver(solving_method, factors,
+                                h->hashInputIndices());
+
+  spdlog::info("Hash algorithm:\t{}", h->hashName());
+  spdlog::info("Solver:\t\t{}", solver->solverName());
+  spdlog::info("Input message size:\t{} bits", input_size);
+  spdlog::info("Difficulty level:\t{}", difficulty);
+
   spdlog::info("Logic gate statistics:");
   spdlog::info(" --> # PRIOR: {}", factor_count[Factor::Type::PriorFactor]);
   spdlog::info(" --> # SAME: {}", factor_count[Factor::Type::SameFactor]);
@@ -154,8 +160,6 @@ void run(int argc, char **argv) {
   spdlog::info(" --> # OR: {}", factor_count[Factor::Type::OrFactor]);
 
   // Solve and extract the predicted input bits
-  Solver *solver = selectSolver(solving_method, factors,
-                                h->hashInputIndices());
   const std::map<size_t, bool> assignments = solver->solve(observed);
   boost::dynamic_bitset<> pred_input(input_size);
 

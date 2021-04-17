@@ -26,6 +26,8 @@ class CMSatSolver : public Solver {
   CMSatSolver(const std::map<size_t, Factor> &factors,
               const std::vector<size_t> &input_indices);
 
+  std::string solverName() const override { return "CryptoMiniSAT"; }
+
  protected:
   std::map<size_t, bool> solveInternal() override;
 

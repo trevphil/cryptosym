@@ -37,12 +37,6 @@ std::map<size_t, bool> Solver::solve(const std::map<size_t, bool> &observed) {
   return solution;
 }
 
-std::map<size_t, bool> Solver::solveInternal() {
-  spdlog::error("Calling solveInternal() from generic superclass");
-  std::map<size_t, bool> solution;
-  return solution;
-}
-
 void Solver::reset() { observed_.clear(); }
 
 void Solver::setImplicitObserved() {

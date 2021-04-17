@@ -10,7 +10,7 @@
  * Proprietary and confidential
  */
 
-#include "hashing/sym_hash.hpp"
+#include "core/sym_hash.hpp"
 #include "core/bit.hpp"
 #include "core/factor.hpp"
 #include "core/utils.hpp"
@@ -25,7 +25,9 @@
 namespace preimage {
 
 SymHash::SymHash()
-    : ignorable_(), did_find_ignorable_(false), hash_output_indices_() {}
+    : ignorable_(), did_find_ignorable_(false),
+      hash_output_indices_(), num_calls_(0.0),
+      cum_runtime_ms_(0.0) {}
 
 SymHash::~SymHash() {}
 
@@ -42,6 +44,11 @@ size_t SymHash::numUnknownsPerHash() const { return Bit::global_index; }
 size_t SymHash::numUsefulFactors() {
   findIgnorableRVs();
   return Bit::global_bits.size() - ignorable_.size();
+}
+
+double SymHash::averageRuntimeMs() const {
+  if (num_calls_ == 0) return -1.0;
+  return cum_runtime_ms_ / num_calls_;
 }
 
 void SymHash::saveStatistics(const std::string &stats_filename) {
@@ -133,90 +140,6 @@ void SymHash::saveFactors(const std::string &factor_filename) {
   factor_file.close();
 }
 
-void SymHash::saveFactorsCNF(const std::string &cnf_filename) {
-  findIgnorableRVs();
-
-  std::set<size_t> rvs;
-  uint64_t n_clauses = 0;
-
-  for (const Factor &f : Factor::global_factors) {
-    if (ignorable_.count(f.output) > 0) continue;
-    rvs.insert(f.output);
-    for (size_t inp : f.inputs) rvs.insert(inp);
-    if (f.t == Factor::Type::AndFactor)
-      n_clauses += 3;
-    else if (f.t == Factor::Type::NotFactor)
-      n_clauses += 2;
-    else if (f.t == Factor::Type::SameFactor)
-      n_clauses += 2;
-    else if (f.t == Factor::Type::XorFactor)
-      n_clauses += 1;
-    else if (f.t == Factor::Type::OrFactor)
-      n_clauses += 3;
-  }
-
-  std::map<size_t, size_t> rv2idx;
-  size_t idx = 1;
-  for (size_t rv : rvs) rv2idx[rv] = idx++;
-
-  std::ofstream cnf_file;
-  cnf_file.open(cnf_filename);
-  cnf_file << "p cnf " << rvs.size() << " " << n_clauses << std::endl;
-
-  for (const Factor &f : Factor::global_factors) {
-    if (ignorable_.count(f.output) > 0) continue;
-    switch (f.t) {
-      case Factor::Type::PriorFactor:
-        break;
-      case Factor::Type::NotFactor:
-        cnf_file << rv2idx[f.inputs.at(0)] << " ";
-        cnf_file << rv2idx[f.output] << " 0" << std::endl;
-        cnf_file << "-" << rv2idx[f.inputs.at(0)] << " ";
-        cnf_file << "-" << rv2idx[f.output] << " 0" << std::endl;
-        break;
-      case Factor::Type::SameFactor:
-        cnf_file << rv2idx[f.inputs.at(0)] << " ";
-        cnf_file << "-" << rv2idx[f.output] << " 0" << std::endl;
-        cnf_file << rv2idx[f.output] << " ";
-        cnf_file << "-" << rv2idx[f.inputs.at(0)] << " 0" << std::endl;
-        break;
-      case Factor::Type::AndFactor:
-        cnf_file << rv2idx[f.inputs.at(0)] << " ";
-        cnf_file << "-" << rv2idx[f.output] << " 0" << std::endl;
-        cnf_file << rv2idx[f.inputs.at(1)] << " ";
-        cnf_file << "-" << rv2idx[f.output] << " 0" << std::endl;
-        cnf_file << rv2idx[f.output] << " ";
-        cnf_file << "-" << rv2idx[f.inputs.at(0)] << " ";
-        cnf_file << "-" << rv2idx[f.inputs.at(1)] << " 0" << std::endl;
-        break;
-      case Factor::Type::XorFactor:
-        // If a = b ^ c, then a ^ b ^ c = 0 always
-        // https://www.msoos.org/xor-clauses/
-        cnf_file << "x" << rv2idx[f.output] << " ";
-        cnf_file << "-" << rv2idx[f.inputs.at(0)] << " ";
-        cnf_file << rv2idx[f.inputs.at(1)] << " 0" << std::endl;
-        break;
-      case Factor::Type::OrFactor:
-        cnf_file << "-" << rv2idx[f.inputs.at(0)] << " ";
-        cnf_file << rv2idx[f.output] << " 0" << std::endl;
-        cnf_file << "-" << rv2idx[f.inputs.at(1)] << " ";
-        cnf_file << rv2idx[f.output] << " 0" << std::endl;
-        cnf_file << "-" << rv2idx[f.output] << " ";
-        cnf_file << rv2idx[f.inputs.at(0)] << " ";
-        cnf_file << rv2idx[f.inputs.at(1)] << " 0" << std::endl;
-        break;
-    }
-  }
-
-  cnf_file.close();
-}
-
-SymBitVec SymHash::hash(const SymBitVec &hash_input, int difficulty) {
-  spdlog::error("Calling hash() from generic superclass");
-  assert(false);
-  return hash_input;
-}
-
 SymBitVec SymHash::call(const boost::dynamic_bitset<> &hash_input,
                         int difficulty) {
   Bit::reset();
@@ -224,7 +147,11 @@ SymBitVec SymHash::call(const boost::dynamic_bitset<> &hash_input,
   did_find_ignorable_ = false;
   SymBitVec inp(hash_input, true);
   hash_input_indices_ = inp.rvIndices();
+  if (difficulty == -1) difficulty = defaultDifficulty();
+  const auto start = Utils::ms_since_epoch();
   SymBitVec out = hash(inp, difficulty);
+  cum_runtime_ms_ += Utils::ms_since_epoch() - start;
+  num_calls_++;
   assert(Factor::global_factors.size() == Bit::global_bits.size());
   hash_output_indices_ = out.rvIndices();
   return out;

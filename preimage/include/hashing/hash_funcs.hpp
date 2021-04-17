@@ -23,21 +23,37 @@ namespace preimage {
 class SameIOHash : public SymHash {
  public:
   SymBitVec hash(const SymBitVec &hash_input, int difficulty) override;
+
+  int defaultDifficulty() const override { return 1; }
+
+  std::string hashName() const override { return "Same Input/Output"; }
 };
 
 class NotHash : public SymHash {
  public:
   SymBitVec hash(const SymBitVec &hash_input, int difficulty) override;
+
+  int defaultDifficulty() const override { return 1; }
+
+  std::string hashName() const override { return "Invert Input"; }
 };
 
 class LossyPseudoHash : public SymHash {
  public:
   SymBitVec hash(const SymBitVec &hash_input, int difficulty) override;
+
+  int defaultDifficulty() const override { return 4; }
+
+  std::string hashName() const override { return "Lossy Pseudo-Hash"; }
 };
 
 class NonLossyPseudoHash : public SymHash {
  public:
   SymBitVec hash(const SymBitVec &hash_input, int difficulty) override;
+
+  int defaultDifficulty() const override { return 4; }
+
+  std::string hashName() const override { return "Non-Lossy Pseudo-Hash"; }
 };
 
 }  // end namespace preimage

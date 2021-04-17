@@ -14,6 +14,7 @@
 
 #include <map>
 #include <vector>
+#include <string>
 
 #include "core/factor.hpp"
 #include "core/bit.hpp"
@@ -29,10 +30,12 @@ class Solver {
 
   std::map<size_t, bool> solve(const std::map<size_t, bool> &observed);
 
+  virtual std::string solverName() const = 0;
+
  protected:
   virtual void reset();
 
-  virtual std::map<size_t, bool> solveInternal();
+  virtual std::map<size_t, bool> solveInternal() = 0;
 
   std::map<size_t, Factor> factors_;
   std::map<size_t, bool> observed_;

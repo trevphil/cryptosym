@@ -26,6 +26,10 @@ class SHA256 : public SymHash {
 
   SymBitVec hash(const SymBitVec &hash_input, int difficulty) override;
 
+  int defaultDifficulty() const override { return 64; }
+
+  std::string hashName() const override { return "SHA256"; }
+
  private:
   void resetState();
   void update(const SymBitVec &bv, int difficulty);

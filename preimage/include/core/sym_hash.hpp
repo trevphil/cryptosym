@@ -13,6 +13,8 @@
 #pragma once
 
 #include <boost/dynamic_bitset.hpp>
+
+#include <string>
 #include <set>
 
 #include "core/sym_bit_vec.hpp"
@@ -35,24 +37,30 @@ class SymHash {
 
   void saveFactors(const std::string &factor_filename);
 
-  void saveFactorsCNF(const std::string &cnf_filename);
-
-  SymBitVec call(const boost::dynamic_bitset<> &hash_input, int difficulty);
+  SymBitVec call(const boost::dynamic_bitset<> &hash_input,
+                 int difficulty = -1);
 
   bool canIgnore(size_t rv);
 
- protected:
-  size_t numUnknownsPerHash() const;
+  double averageRuntimeMs() const;
 
-  virtual SymBitVec hash(const SymBitVec &hash_input, int difficulty);
+  virtual int defaultDifficulty() const = 0;
+
+  virtual std::string hashName() const = 0;
+
+ protected:
+  virtual SymBitVec hash(const SymBitVec &hash_input, int difficulty) = 0;
 
  private:
   void findIgnorableRVs();
+
+  size_t numUnknownsPerHash() const;
 
   std::set<size_t> ignorable_;
   bool did_find_ignorable_;
   std::vector<size_t> hash_input_indices_;
   std::vector<size_t> hash_output_indices_;
+  double num_calls_, cum_runtime_ms_;
 };
 
 }  // end namespace preimage

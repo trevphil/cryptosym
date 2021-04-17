@@ -29,6 +29,10 @@ class MD5 : public SymHash {
 
   SymBitVec hash(const SymBitVec &hash_input, int difficulty) override;
 
+  int defaultDifficulty() const override { return 64; }
+
+  std::string hashName() const override { return "MD5"; }
+
  private:
   void init(int difficulty);
 

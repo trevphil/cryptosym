@@ -85,15 +85,14 @@ void sha256Tests() {
       "8113ebf33c97daa9998762aacafe750c7cefc2b2f173c90c59663a57fe626f21";
 
   SHA256 sha256;
-  const int difficulty = 64;  // Normal SHA256 has 64 rounds
 
-  std::string h = sha256.call(Utils::str2bits(empty), difficulty).hex();
+  std::string h = sha256.call(Utils::str2bits(empty)).hex();
   assert(h.compare(h_empty) == 0);
 
-  h = sha256.call(Utils::str2bits(s), difficulty).hex();
+  h = sha256.call(Utils::str2bits(s)).hex();
   assert(h.compare(h_s) == 0);
 
-  h = sha256.call(Utils::str2bits(s7), difficulty).hex();
+  h = sha256.call(Utils::str2bits(s7)).hex();
   assert(h.compare(h_s7) == 0);
 
   Utils::seed(1);
@@ -125,7 +124,7 @@ void sha256Tests() {
       boost::algorithm::to_lower(expected_output);
 
       // Call SHA256 using custom hash function
-      h = sha256.call(bits, difficulty).hex();
+      h = sha256.call(bits).hex();
 
       if (h.compare(expected_output) != 0) {
         spdlog::info("inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
@@ -134,12 +133,11 @@ void sha256Tests() {
     }
   }
 
-  spdlog::info("SHA256 tests passed.");
+  spdlog::info("SHA256 tests passed, mean runtime: ~{:.0f} ms", sha256.averageRuntimeMs());
 }
 
 void ripemd160Tests() {
   RIPEMD160 ripemd160;
-  const int difficulty = 160;  // Normal RIPEMD160 has 80 rounds
 
   Utils::seed(1);
   const std::vector<size_t> inp_sizes{0, 8, 32, 64, 512, 640, 1024};
@@ -170,7 +168,7 @@ void ripemd160Tests() {
       boost::algorithm::to_lower(expected_output);
 
       // Call RIPEMD160 using custom hash function
-      const std::string h = ripemd160.call(bits, difficulty).hex();
+      const std::string h = ripemd160.call(bits).hex();
 
       if (h.compare(expected_output) != 0) {
         spdlog::info("inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
@@ -180,12 +178,11 @@ void ripemd160Tests() {
     }
   }
 
-  spdlog::info("RIPEMD160 tests passed.");
+  spdlog::info("RIPEMD160 tests passed, mean runtime: ~{:.0f} ms", ripemd160.averageRuntimeMs());
 }
 
 void md5Tests() {
   MD5 md5;
-  const int difficulty = 64;  // Normal MD5 has 64 rounds
 
   Utils::seed(1);
   const std::vector<size_t> inp_sizes{0, 8, 32, 64, 512, 640, 1024};
@@ -216,7 +213,7 @@ void md5Tests() {
       boost::algorithm::to_lower(expected_output);
 
       // Call MD5 using custom hash function
-      const std::string h = md5.call(bits, difficulty).hex();
+      const std::string h = md5.call(bits).hex();
 
       if (h.compare(expected_output) != 0) {
         spdlog::info("inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
@@ -226,7 +223,7 @@ void md5Tests() {
     }
   }
 
-  spdlog::info("MD5 tests passed.");
+  spdlog::info("MD5 tests passed, mean runtime: ~{:.0f} ms", md5.averageRuntimeMs());
 }
 
 void bitcoinBlockTest() {
