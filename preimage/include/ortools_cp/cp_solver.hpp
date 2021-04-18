@@ -12,37 +12,38 @@
 
 #pragma once
 
+#include "ortools/sat/cp_model.h"
+#include "ortools/sat/model.h"
+#include "ortools/sat/sat_parameters.pb.h"
+
 #include <map>
 #include <vector>
+#include <assert.h>
 
 #include "core/solver.hpp"
-#include "bp/graph.hpp"
-#include "bp/node.hpp"
-#include "bp/params.hpp"
 
 namespace preimage {
 
-namespace bp {
-
-class BPSolver : public Solver {
+class ORToolsCPSolver : public Solver {
  public:
-  BPSolver(bool verbose);
+  ORToolsCPSolver(bool verbose);
 
-  std::string solverName() const override { return "Belief Propagation"; }
+  std::string solverName() const override { return "ortools CP"; }
 
   void setUsableLogicGates() const override;
 
  protected:
+  inline std::string rv2s(size_t rv) const;
+
+  inline operations_research::sat::BoolVar getVar(size_t rv);
+
   void initialize() override;
 
   std::map<size_t, bool> solveInternal() override;
 
  private:
-  BPFactorType convertFactorType(Factor::Type t) const;
-
-  Graph g_;
+  operations_research::sat::CpModelBuilder cp_model_;
+  std::map<size_t, operations_research::sat::BoolVar> rv2var_;
 };
-
-}  // end namespace bp
 
 }  // end namespace preimage

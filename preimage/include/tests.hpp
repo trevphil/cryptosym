@@ -267,6 +267,27 @@ void bpTests() {
   spdlog::info("Belief propagation tests passed.");
 }
 
+void ortoolsCPTests() {
+  ProblemInstance problem(64, 4, false, false);
+
+  int rtn = problem.prepare("SHA256", "ortools_cp");
+  assert(rtn == 0);
+  int status = problem.execute();
+  assert(status == 0);
+
+  rtn = problem.prepare("MD5", "ortools_cp");
+  assert(rtn == 0);
+  status = problem.execute();
+  assert(status == 0);
+
+  rtn = problem.prepare("RIPEMD160", "ortools_cp");
+  assert(rtn == 0);
+  status = problem.execute();
+  assert(status == 0);
+
+  spdlog::info("ortools constraint programming tests passed.");
+}
+
 void allTests() {
   simpleTests();
   symBitVecTests();
@@ -275,6 +296,7 @@ void allTests() {
   md5Tests();
   cmsatTests();
   bpTests();
+  ortoolsCPTests();
 }
 
 }  // end namespace preimage

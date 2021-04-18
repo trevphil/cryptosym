@@ -25,6 +25,11 @@ namespace bp {
 
 BPSolver::BPSolver(bool verbose) : Solver(verbose) {}
 
+void BPSolver::setUsableLogicGates() const {
+  config::use_xor = true;
+  config::use_or = true;
+}
+
 void BPSolver::initialize() {
   g_ = Graph();
   g_.schedule_variable.clear();

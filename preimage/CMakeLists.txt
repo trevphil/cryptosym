@@ -41,6 +41,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 add_executable(preimage
                src/main.cpp
                src/problem_instance.cpp
+               src/core/config.cpp
                src/core/bit.cpp
                src/core/factor.cpp
                src/core/sym_bit_vec.cpp
@@ -53,7 +54,8 @@ add_executable(preimage
                src/cmsat/cmsat_solver.cpp
                src/bp/node.cpp
                src/bp/graph.cpp
-               src/bp/bp_solver.cpp)
+               src/bp/bp_solver.cpp
+               src/ortools_cp/cp_solver.cpp)
 
 target_link_libraries(preimage PRIVATE spdlog::spdlog)
 target_link_libraries(preimage PUBLIC cryptominisat5)

@@ -27,6 +27,8 @@ class CMSatSolver : public Solver {
 
   std::string solverName() const override { return "CryptoMiniSAT"; }
 
+  void setUsableLogicGates() const override;
+
  protected:
   void initialize() override;
 

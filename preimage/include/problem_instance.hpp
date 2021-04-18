@@ -24,7 +24,7 @@
 #include "hashing/hash_funcs.hpp"
 #include "bp/bp_solver.hpp"
 #include "cmsat/cmsat_solver.hpp"
-#include "ortools_cp/ortools_cp_solver.hpp"
+#include "ortools_cp/cp_solver.hpp"
 
 #include <spdlog/spdlog.h>
 

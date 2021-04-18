@@ -10,16 +10,8 @@
  * Proprietary and confidential
  */
 
-#pragma once
+#include "core/config.hpp"
 
-namespace preimage {
+bool preimage::config::use_xor = true;
 
-namespace config {
-
-extern bool use_xor;
-
-extern bool use_or;
-
-}  // end namespace config
-
-}  // end namespace preimage
+bool preimage::config::use_or = true;

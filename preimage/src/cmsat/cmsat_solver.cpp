@@ -18,6 +18,11 @@ namespace preimage {
 
 CMSatSolver::CMSatSolver(bool verbose) : Solver(verbose) {}
 
+void CMSatSolver::setUsableLogicGates() const {
+  config::use_xor = true;
+  config::use_or = true;
+}
+
 void CMSatSolver::initialize() {
   rv2idx_ = {};
   size_t i = 0;

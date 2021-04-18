@@ -18,6 +18,7 @@
 
 #include "core/factor.hpp"
 #include "core/bit.hpp"
+#include "core/config.hpp"
 
 namespace preimage {
 
@@ -32,6 +33,8 @@ class Solver {
                                const std::map<size_t, bool> &observed);
 
   virtual std::string solverName() const = 0;
+
+  virtual void setUsableLogicGates() const = 0;
 
  protected:
   virtual void initialize() = 0;

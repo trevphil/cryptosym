@@ -25,6 +25,7 @@ int ProblemInstance::prepare(const std::string &hash_name,
   if (hasher == nullptr) return 1;
   prepareSolver(solver_name);
   if (solver == nullptr) return 1;
+  solver->setUsableLogicGates();
   return 0;
 }
 
