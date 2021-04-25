@@ -288,6 +288,27 @@ void ortoolsCPTests() {
   spdlog::info("ortools constraint programming tests passed.");
 }
 
+void ortoolsMIPTests() {
+  ProblemInstance problem(64, 2, false, false);
+
+  int rtn = problem.prepare("SHA256", "ortools_mip");
+  assert(rtn == 0);
+  int status = problem.execute();
+  assert(status == 0);
+
+  rtn = problem.prepare("MD5", "ortools_mip");
+  assert(rtn == 0);
+  status = problem.execute();
+  assert(status == 0);
+
+  rtn = problem.prepare("RIPEMD160", "ortools_mip");
+  assert(rtn == 0);
+  status = problem.execute();
+  assert(status == 0);
+
+  spdlog::info("ortools MIP tests passed.");
+}
+
 void allTests() {
   simpleTests();
   symBitVecTests();
@@ -297,6 +318,7 @@ void allTests() {
   cmsatTests();
   bpTests();
   ortoolsCPTests();
+  ortoolsMIPTests();
 }
 
 }  // end namespace preimage

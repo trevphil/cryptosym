@@ -58,7 +58,7 @@ int parseArgument(char* arg) {
     help_msg << "\td=DIFFICULTY (-1 for default)" << std::endl;
     help_msg << "\ti=NUM_INPUT_BITS (choose a multiple of 8)" << std::endl;
     help_msg << "\tsolver=SOLVER" << std::endl;
-    help_msg << "\t -> one of: cmsat, bp, ortools_cp" << std::endl;
+    help_msg << "\t -> one of: cmsat, bp, ortools_cp, ortools_mip" << std::endl;
     spdlog::info(help_msg.str());
     return 1;
   }

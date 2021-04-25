@@ -35,7 +35,7 @@ std::map<size_t, bool> Solver::solve(const std::map<size_t, Factor> &factors,
   initialize();
   const auto solution = solveInternal();
   const auto end = Utils::ms_since_epoch();
-  if (verbose_) spdlog::info("Solution found in {} ms", end - start);
+  if (verbose_) spdlog::info("Solver finished in {} ms", end - start);
   return solution;
 }
 

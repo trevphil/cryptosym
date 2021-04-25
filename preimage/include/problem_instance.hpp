@@ -25,6 +25,7 @@
 #include "bp/bp_solver.hpp"
 #include "cmsat/cmsat_solver.hpp"
 #include "ortools_cp/cp_solver.hpp"
+#include "ortools_mip/mip_solver.hpp"
 
 #include <spdlog/spdlog.h>
 
