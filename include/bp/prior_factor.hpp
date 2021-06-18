@@ -22,7 +22,7 @@ namespace bp {
 
 class GraphPriorFactor : public GraphFactor {
  public:
-  GraphPriorFactor(size_t i, bool bit)
+  GraphPriorFactor(int i, bool bit)
       : GraphFactor(i, BPFactorType::Prior), bit_(bit) {}
 
   virtual ~GraphPriorFactor() {

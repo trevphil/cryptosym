@@ -32,7 +32,7 @@ namespace preimage {
 
 class ProblemInstance {
  public:
-  ProblemInstance(size_t num_input_bits, size_t num_known_input_bits,
+  ProblemInstance(int num_input_bits, int num_known_input_bits,
                   int difficulty, bool verbose, bool bin_format);
 
   int prepare(const std::string &hash_name,
@@ -49,8 +49,8 @@ class ProblemInstance {
   std::unique_ptr<Solver> solver;
 
  private:
-  size_t num_input_bits_;
-  size_t num_known_input_bits_;
+  int num_input_bits_;
+  int num_known_input_bits_;
   int difficulty_;
   bool verbose_;
   bool bin_format_;

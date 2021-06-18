@@ -24,19 +24,19 @@ Solver::Solver(bool verbose) : verbose_(verbose) {}
 
 Solver::~Solver() {}
 
-void Solver::setFactors(const std::map<size_t, Factor> &factors) {
+void Solver::setFactors(const std::map<int, Factor> &factors) {
   factors_ = factors;
 }
 
-void Solver::setInputIndices(const std::vector<size_t> &input_indices) {
+void Solver::setInputIndices(const std::vector<int> &input_indices) {
   input_indices_ = input_indices;
 }
 
-void Solver::setObserved(const std::map<size_t, bool> &observed) {
+void Solver::setObserved(const std::map<int, bool> &observed) {
   observed_ = observed;
 }
 
-std::map<size_t, bool> Solver::solve() {
+std::map<int, bool> Solver::solve() {
   const auto start = Utils::ms_since_epoch();
   setImplicitObserved();
   initialize();
@@ -47,28 +47,28 @@ std::map<size_t, bool> Solver::solve() {
 }
 
 void Solver::setImplicitObserved() {
-  const size_t initial = observed_.size();
+  const int initial = observed_.size();
   if (verbose_) spdlog::info("There are {} initially observed bits", initial);
   while (true) {
-    const size_t before = observed_.size();
-    const size_t smallest_obs = propagateBackward();
+    const int before = observed_.size();
+    const int smallest_obs = propagateBackward();
     propagateForward(smallest_obs);
-    const size_t after = observed_.size();
+    const int after = observed_.size();
     if (before == after) break;
   }
-  const size_t diff = observed_.size() - initial;
+  const int diff = observed_.size() - initial;
   if (verbose_) spdlog::info("Pre-solved for {} additional bits", diff);
 }
 
-size_t Solver::propagateBackward() {
-  std::list<size_t> queue;
+int Solver::propagateBackward() {
+  std::list<int> queue;
   for (const auto &itr : observed_) queue.push_back(itr.first);
-  size_t smallest_obs = factors_.size() * 2;
-  size_t inp, inp1, inp2, inp3;
+  int smallest_obs = factors_.size() * 2;
+  int inp, inp1, inp2, inp3;
   bool inp1_obs, inp2_obs, inp3_obs;
 
   while (queue.size() > 0) {
-    const size_t rv = queue.front();
+    const int rv = queue.front();
     queue.pop_front();
 
     if (factors_.count(rv) == 0) continue;
@@ -178,12 +178,12 @@ size_t Solver::propagateBackward() {
   return smallest_obs;
 }
 
-void Solver::propagateForward(size_t smallest_obs) {
-  const size_t n = factors_.size() * 2;
-  size_t inp, inp1, inp2, inp3;
+void Solver::propagateForward(int smallest_obs) {
+  const int n = factors_.size() * 2;
+  int inp, inp1, inp2, inp3;
   bool inp1_obs, inp2_obs, inp3_obs;
 
-  for (size_t rv = smallest_obs; rv < n; rv++) {
+  for (int rv = smallest_obs; rv < n; rv++) {
     if (observed_.count(rv) > 0) continue;
     if (factors_.count(rv) == 0) continue;
     const Factor &f = factors_.at(rv);

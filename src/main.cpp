@@ -22,8 +22,8 @@ namespace preimage {
 
 std::string hash_func = "MD5";
 std::string solving_method = "bp";
-size_t input_size = 64;
-size_t n_known_inputs = 0;
+int input_size = 64;
+int n_known_inputs = 0;
 int difficulty = -1;
 int run_tests = false;
 bool verbose = true;
@@ -45,9 +45,9 @@ int parseArgument(char* arg) {
   } else if (1 == sscanf(arg, "d=%d", &option)) {
     difficulty = option;
   } else if (1 == sscanf(arg, "i=%u", &uoption)) {
-    input_size = size_t(uoption);
+    input_size = int(uoption);
   } else if (1 == sscanf(arg, "k=%u", &uoption)) {
-    n_known_inputs = size_t(uoption);
+    n_known_inputs = int(uoption);
   } else if (1 == sscanf(arg, "solver=%s", buf)) {
     solving_method = buf;
   } else {

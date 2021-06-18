@@ -40,9 +40,9 @@ MD5::MD5() {
 SymBitVec MD5::hash(const SymBitVec &hash_input, int difficulty) {
   // Input size must be byte-aligned
   assert(hash_input.size() % 8 == 0);
-  const size_t n_bytes = hash_input.size() / 8;
+  const int n_bytes = hash_input.size() / 8;
   SymBitVec input[n_bytes];
-  for (size_t i = 0; i < n_bytes; i++) {
+  for (int i = 0; i < n_bytes; i++) {
     input[i] = hash_input.extract(i * 8, (i + 1) * 8);
   }
 
@@ -51,7 +51,7 @@ SymBitVec MD5::hash(const SymBitVec &hash_input, int difficulty) {
   finalize();
 
   SymBitVec combined_digest;
-  for (size_t i = 0; i < 16; i++) {
+  for (int i = 0; i < 16; i++) {
     combined_digest = digest[i].concat(combined_digest);
   }
   return combined_digest;
@@ -69,8 +69,8 @@ void MD5::init(int difficulty) {
   state[2] = SymBitVec(0x98badcfe, 32);
   state[3] = SymBitVec(0x10325476, 32);
 
-  for (size_t i = 0; i < MD5_BLOCK_SIZE; i++) buffer[i] = SymBitVec(0, 8);
-  for (size_t i = 0; i < 16; i++) digest[i] = SymBitVec(0, 8);
+  for (int i = 0; i < MD5_BLOCK_SIZE; i++) buffer[i] = SymBitVec(0, 8);
+  for (int i = 0; i < 16; i++) digest[i] = SymBitVec(0, 8);
 
   const std::vector<uint32_t> raw_constants = {
     0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee, 0xf57c0faf, 0x4787c62a,
@@ -89,7 +89,7 @@ void MD5::init(int difficulty) {
   for (uint32_t c : raw_constants) constants_.push_back(SymBitVec(c, 32));
 }
 
-void MD5::decode(SymBitVec output[], const SymBitVec input[], size_t len) {
+void MD5::decode(SymBitVec output[], const SymBitVec input[], int len) {
   // Decode input (8 bits per SymBitVec) into output (32 bits per SymBitVec)
   assert(len % 4 == 0);
   for (unsigned int i = 0, j = 0; j < len; i++, j += 4) {
@@ -100,10 +100,10 @@ void MD5::decode(SymBitVec output[], const SymBitVec input[], size_t len) {
   }
 }
 
-void MD5::encode(SymBitVec output[], const SymBitVec input[], size_t len) {
+void MD5::encode(SymBitVec output[], const SymBitVec input[], int len) {
   // Encode input (32 bits per SymBitVec) into output (8 bits per SymBitVec)
   assert(len % 4 == 0);
-  for (size_t i = 0, j = 0; j < len; i++, j += 4) {
+  for (int i = 0, j = 0; j < len; i++, j += 4) {
     output[j] = input[i].extract(0, 8);
     output[j + 1] = (input[i] >> 8).extract(0, 8);
     output[j + 2] = (input[i] >> 16).extract(0, 8);
@@ -111,25 +111,25 @@ void MD5::encode(SymBitVec output[], const SymBitVec input[], size_t len) {
   }
 }
 
-void MD5::update(const SymBitVec input[], size_t len) {
+void MD5::update(const SymBitVec input[], int len) {
   // Each SymBitVec in `input` has 8 bits
   // Compute number of bytes mod 64
-  size_t index = count[0] / 8 % MD5_BLOCK_SIZE;
+  int index = count[0] / 8 % MD5_BLOCK_SIZE;
 
   // Update number of bits
   if ((count[0] += (len << 3)) < (len << 3)) count[1]++;
   count[1] += (len >> 29);
 
   // Number of bytes we need to fill in `buffer`
-  size_t firstpart = 64 - index;
+  int firstpart = 64 - index;
 
-  size_t i;
+  int i;
 
   // Transform as many times as possible.
   if (len >= firstpart) {
     // Fill buffer first, then transform
     // memcpy(&buffer[index], input, firstpart);
-    for (size_t j = index; j < index + firstpart; j++) {
+    for (int j = index; j < index + firstpart; j++) {
       buffer[j] = input[j - index];
     }
 
@@ -146,7 +146,7 @@ void MD5::update(const SymBitVec input[], size_t len) {
   }
 
   // Buffer remaining input
-  for (size_t j = index; j < index + len - i; j++) {
+  for (int j = index; j < index + len - i; j++) {
     buffer[j] = input[i + j - index];
   }
 }
@@ -316,7 +316,7 @@ void MD5::finalize() {
   };
 
   SymBitVec padding[64];
-  for (size_t i = 0; i < 64; i++) padding[i] = SymBitVec(padding_raw[i], 8);
+  for (int i = 0; i < 64; i++) padding[i] = SymBitVec(padding_raw[i], 8);
 
   // Save number of bits
   SymBitVec bits[8];  // 8 bits per SymBitVec
@@ -326,8 +326,8 @@ void MD5::finalize() {
   encode(bits, count_bv, 8);
 
   // pad out to 56 mod 64.
-  size_t index = count[0] / 8 % 64;
-  size_t pad_len = (index < 56) ? (56 - index) : (120 - index);
+  int index = count[0] / 8 % 64;
+  int pad_len = (index < 56) ? (56 - index) : (120 - index);
   update(padding, pad_len);
 
   // Append length (before padding)

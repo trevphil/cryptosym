@@ -14,7 +14,7 @@
 
 namespace preimage {
 
-size_t Bit::global_index = 0;
+int Bit::global_index = 0;
 std::vector<Bit> Bit::global_bits = {};
 
 Bit::Bit(bool bit_val, bool rv, int d) : val(bit_val), is_rv(rv), depth(d) {
@@ -25,6 +25,12 @@ Bit::Bit(bool bit_val, bool rv, int d) : val(bit_val), is_rv(rv), depth(d) {
 }
 
 Bit::~Bit() {}
+
+Bit Bit::zero() { return Bit(0, false, 0); }
+
+Bit Bit::one() { return Bit(1, false, 0); }
+
+Bit Bit::constant(bool val) { return Bit(val, false, 0); }
 
 void Bit::reset() {
   global_index = 0;
@@ -43,8 +49,8 @@ Bit Bit::operator~() const {
 
 Bit Bit::operator&(const Bit &b) const {
   // If AND-ing with a constant of 0, result will be always be 0
-  if (!is_rv && !val) return Bit(0, false, 0);
-  if (!b.is_rv && !b.val) return Bit(0, false, 0);
+  if (!is_rv && !val) return Bit::zero();
+  if (!b.is_rv && !b.val) return Bit::zero();
 
   const Bit a = *this;
 
@@ -62,7 +68,7 @@ Bit Bit::operator&(const Bit &b) const {
     // Here, "a" is a constant equal to 1, so result is directly "b"
     return b;
   } else {
-    return Bit(val & b.val, false, 0);  // Both are constants
+    return Bit::constant(val & b.val);  // Both are constants
   }
 }
 
@@ -71,7 +77,7 @@ Bit Bit::operator^(const Bit &b) const {
 
   if (is_rv && b.is_rv) {
     // a ^ a is always 0
-    if (index == b.index) return Bit(0, false, 0);
+    if (index == b.index) return Bit::zero();
     Bit result(val ^ b.val, true, std::max(depth, b.depth) + 1);
     Factor f(Factor::Type::XorFactor, result.index, {index, b.index});
     Factor::global_factors[result.index] = f;
@@ -87,14 +93,14 @@ Bit Bit::operator^(const Bit &b) const {
     // XOR with a constant of 1 is the inverse of the other input
     return ~b;
   } else {
-    return Bit(val ^ b.val, false, 0);  // Both are constants
+    return Bit::constant(val ^ b.val);  // Both are constants
   }
 }
 
 Bit Bit::operator|(const Bit &b) const {
   // If OR-ing with a constant of 1, result will be always be 1
-  if (!is_rv && val) return Bit(1, false, 0);
-  if (!b.is_rv && b.val) return Bit(1, false, 0);
+  if (!is_rv && val) return Bit::one();
+  if (!b.is_rv && b.val) return Bit::one();
 
   const Bit a = *this;
 
@@ -112,12 +118,12 @@ Bit Bit::operator|(const Bit &b) const {
     // Here, "a" is a constant equal to 0, so result is directly "b"
     return b;
   } else {
-    return Bit(val | b.val, false, 0);  // Both are constants
+    return Bit::constant(val | b.val);  // Both are constants
   }
 }
 
 std::pair<Bit, Bit> Bit::add(const Bit &a, const Bit &b) {
-  return add(a, b, Bit(0, false, 0));
+  return add(a, b, Bit::zero());
 }
 
 std::pair<Bit, Bit> Bit::add(const Bit &a, const Bit &b, const Bit &carry_in) {
@@ -166,12 +172,12 @@ Bit Bit::majority3(const Bit &a, const Bit &b, const Bit &c) {
   } else if (knowns.size() == 2) {
     // If known bits are equal (0, 0) or (1, 1) they will have the majority
     if (knowns.at(0) == knowns.at(1)) {
-      return Bit(knowns.at(0), false, 0);
+      return Bit::constant(knowns.at(0));
     } else {
       return unknowns.at(0);  // Otherwise we have Maj3(0, 1, X) = X
     }
   } else {
-    return Bit(val, false, 0);  // Otherwise all 3 values are known, so not a RV
+    return Bit::constant(val);  // Otherwise all 3 values are known, so not a RV
   }
 }
 

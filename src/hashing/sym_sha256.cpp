@@ -58,7 +58,7 @@ void SHA256::resetState() {
              SymBitVec(0x1F83D9AB, 32), SymBitVec(0x5BE0CD19, 32)};
   w_ = {};
   data_ = {};
-  for (size_t i = 0; i < block_size_; i++) {
+  for (int i = 0; i < block_size_; i++) {
     data_.push_back(SymBitVec(0, 8));
   }
 }
@@ -76,17 +76,17 @@ void SHA256::transform(int difficulty) {
   w_ = {};
   std::vector<SymBitVec> d;
   for (const SymBitVec &bv : data_) d.push_back(bv.resize(32));
-  for (size_t i = 0; i < 16; ++i) {
+  for (int i = 0; i < 16; ++i) {
     w_.push_back((d[4 * i] << 24) + (d[4 * i + 1] << 16) + (d[4 * i + 2] << 8) +
                  d[4 * i + 3]);
   }
-  for (size_t i = 16; i < 64; ++i) {
+  for (int i = 16; i < 64; ++i) {
     w_.push_back(Gamma1(w_[i - 2]) + w_[i - 7] + Gamma0(w_[i - 15]) +
                  w_[i - 16]);
   }
 
   std::vector<SymBitVec> ss = digest_;
-  std::vector<size_t> i = {0, 1, 2, 3, 4, 5, 6, 7};
+  std::vector<int> i = {0, 1, 2, 3, 4, 5, 6, 7};
   for (int j = 0; j < difficulty && j < 64; ++j) {
     const auto output = round(ss[i[0]], ss[i[1]], ss[i[2]], ss[i[3]], ss[i[4]],
                               ss[i[5]], ss[i[6]], ss[i[7]], j, words_.at(j));
@@ -95,27 +95,27 @@ void SHA256::transform(int difficulty) {
     std::rotate(i.begin(), i.begin() + 7, i.end());  // rotate right by 1
   }
 
-  for (size_t j = 0; j < digest_.size(); j++) {
+  for (int j = 0; j < digest_.size(); j++) {
     digest_[j] = digest_.at(j) + ss.at(j);
   }
 }
 
 void SHA256::update(const SymBitVec &bv, int difficulty) {
-  size_t count = bv.size() / 8;
-  size_t buffer_idx = 0;
-  size_t clo = (count_lo_ + (count << 3)) & 0xffffffff;
+  int count = bv.size() / 8;
+  int buffer_idx = 0;
+  int clo = (count_lo_ + (count << 3)) & 0xffffffff;
   if (clo < count_lo_) ++count_hi_;
   count_lo_ = clo;
   count_hi_ += (count >> 29);
 
   if (local_) {
-    size_t i = block_size_ - local_;
+    int i = block_size_ - local_;
     if (i > count) i = count;
 
-    const size_t n_bytes = i;
-    for (size_t byte_idx = 0; byte_idx < n_bytes; byte_idx++) {
-      const size_t bit_lower = (buffer_idx + byte_idx) * 8;
-      const size_t bit_upper = bit_lower + 8;
+    const int n_bytes = i;
+    for (int byte_idx = 0; byte_idx < n_bytes; byte_idx++) {
+      const int bit_lower = (buffer_idx + byte_idx) * 8;
+      const int bit_upper = bit_lower + 8;
       data_[local_ + byte_idx] = bv.extract(bit_lower, bit_upper);
     }
 
@@ -132,9 +132,9 @@ void SHA256::update(const SymBitVec &bv, int difficulty) {
 
   while (count >= block_size_) {
     data_ = {};
-    for (size_t byte_idx = 0; byte_idx < block_size_; byte_idx++) {
-      const size_t bit_lower = (buffer_idx + byte_idx) * 8;
-      const size_t bit_upper = bit_lower + 8;
+    for (int byte_idx = 0; byte_idx < block_size_; byte_idx++) {
+      const int bit_lower = (buffer_idx + byte_idx) * 8;
+      const int bit_upper = bit_lower + 8;
       data_.push_back(bv.extract(bit_lower, bit_upper));
     }
 
@@ -143,30 +143,30 @@ void SHA256::update(const SymBitVec &bv, int difficulty) {
     transform(difficulty);
   }
 
-  for (size_t byte_idx = 0; byte_idx < count; byte_idx++) {
-    const size_t bit_lower = (buffer_idx + byte_idx) * 8;
-    const size_t bit_upper = bit_lower + 8;
+  for (int byte_idx = 0; byte_idx < count; byte_idx++) {
+    const int bit_lower = (buffer_idx + byte_idx) * 8;
+    const int bit_upper = bit_lower + 8;
     data_[local_ + byte_idx] = bv.extract(bit_lower, bit_upper);
   }
   local_ = count;
 }
 
 SymBitVec SHA256::digest(int difficulty) {
-  size_t count = (count_lo_ >> 3) & 0x3f;
+  int count = (count_lo_ >> 3) & 0x3f;
   data_[count] = SymBitVec(0x80, 8);
   count++;
   const SymBitVec zero(0, 8);
   if (count > block_size_ - 8) {
     data_.resize(count);
-    for (size_t i = 0; i < block_size_ - count; ++i) data_.push_back(zero);
+    for (int i = 0; i < block_size_ - count; ++i) data_.push_back(zero);
 
     transform(difficulty);
 
     data_ = {};
-    for (size_t i = 0; i < block_size_; ++i) data_.push_back(zero);
+    for (int i = 0; i < block_size_; ++i) data_.push_back(zero);
   } else {
     data_.resize(count);
-    for (size_t i = 0; i < block_size_ - count; ++i) data_.push_back(zero);
+    for (int i = 0; i < block_size_ - count; ++i) data_.push_back(zero);
   }
 
   const SymBitVec lo_bit_count(count_lo_, 32);
@@ -192,7 +192,7 @@ SymBitVec SHA256::digest(int difficulty) {
   }
 
   SymBitVec result = dig.at(0);
-  for (size_t i = 1; i < dig.size(); ++i) {
+  for (int i = 1; i < dig.size(); ++i) {
     result = dig.at(i).concat(result);
   }
   return result;

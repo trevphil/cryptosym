@@ -14,8 +14,8 @@
 
 namespace preimage {
 
-ProblemInstance::ProblemInstance(size_t num_input_bits,
-                                 size_t num_known_input_bits,
+ProblemInstance::ProblemInstance(int num_input_bits,
+                                 int num_known_input_bits,
                                  int difficulty, bool verbose,
                                  bool bin_format)
     : num_input_bits_(num_input_bits),
@@ -54,23 +54,24 @@ int ProblemInstance::execute() {
       bin_format_ ? output_bits.bin() : output_bits.hex();
 
   // Collect observed output bits
-  std::map<size_t, bool> observed;
-  for (size_t i = 0; i < output_bits.size(); ++i) {
+  std::map<int, bool> observed;
+  for (int i = 0; i < output_bits.size(); ++i) {
     const Bit &b = output_bits.at(i);
     if (b.is_rv) observed[b.index] = b.val;
   }
   // Collect observed input bits (if input is partially known)
   const auto input_bit_indices = hasher->hashInputIndices();
-  const size_t n_known = std::min(num_known_input_bits_, input_bit_indices.size());
-  for (size_t i = 0; i < n_known; i++) {
+  const int n_known = std::min(num_known_input_bits_,
+                               (int)input_bit_indices.size());
+  for (int i = 0; i < n_known; i++) {
     observed[input_bit_indices.at(i)] = input[i];
   }
 
   // Collect factors in a mapping from RV index --> factor
-  std::map<size_t, Factor> factors;
-  std::map<Factor::Type, size_t> factor_count;
+  std::map<int, Factor> factors;
+  std::map<Factor::Type, int> factor_count;
   for (const auto &itr : Factor::global_factors) {
-    const size_t rv = itr.first;
+    const int rv = itr.first;
     const Factor &f = itr.second;
     // Skip bits which are not ancestors of observed bits
     if (!hasher->canIgnore(rv)) {
@@ -91,19 +92,19 @@ int ProblemInstance::execute() {
   solver->setFactors(factors);
   solver->setInputIndices(input_bit_indices);
   solver->setObserved(observed);
-  const std::map<size_t, bool> assignments = solver->solve();
+  const std::map<int, bool> assignments = solver->solve();
   boost::dynamic_bitset<> pred_input(num_input_bits_);
 
   // Fill with observed bits, if any input bits made it directly to output
   for (const auto &itr : observed) {
-    const size_t bit_idx = itr.first;
+    const int bit_idx = itr.first;
     const bool bit_val = itr.second;
     if (bit_idx < num_input_bits_) pred_input[bit_idx] = bit_val;
   }
 
   // Fill input prediction with assignments from the solver
   for (const auto &itr : assignments) {
-    const size_t bit_idx = itr.first;
+    const int bit_idx = itr.first;
     const bool bit_val = itr.second;
     if (bit_idx < num_input_bits_) pred_input[bit_idx] = bit_val;
   }

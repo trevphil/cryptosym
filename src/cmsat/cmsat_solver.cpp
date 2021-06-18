@@ -24,10 +24,10 @@ CMSatSolver::~CMSatSolver() {
 
 void CMSatSolver::initialize() {
   rv2idx_.clear();
-  size_t i = 0;
-  for (const size_t rv : input_indices_) rv2idx_[rv] = i++;
+  int i = 0;
+  for (const int rv : input_indices_) rv2idx_[rv] = i++;
   for (const auto &itr : factors_) {
-    const size_t rv = itr.first;
+    const int rv = itr.first;
     const Factor &f = itr.second;
     if (f.valid) rv2idx_[rv] = i++;
   }
@@ -126,10 +126,10 @@ void CMSatSolver::initialize() {
   }
 }
 
-std::map<size_t, bool> CMSatSolver::solveInternal() {
+std::map<int, bool> CMSatSolver::solveInternal() {
   std::vector<CMSat::Lit> assumptions;
   for (const auto &itr : observed_) {
-    const size_t rv = itr.first;
+    const int rv = itr.first;
     if (rv2idx_.count(rv) == 0) continue;
     const unsigned int idx = rv2idx_.at(rv);
     // The second argument is "is_negated". If bit=1, the bit is not negated.
@@ -140,9 +140,9 @@ std::map<size_t, bool> CMSatSolver::solveInternal() {
   assert(ret == CMSat::l_True);
   const auto final_model = solver_->get_model();
 
-  std::map<size_t, bool> solution;
+  std::map<int, bool> solution;
   for (const auto &itr : rv2idx_) {
-      const size_t rv = itr.first;
+      const int rv = itr.first;
       const unsigned int idx = itr.second;
       solution[rv] = (final_model[idx] == CMSat::l_True);
   }

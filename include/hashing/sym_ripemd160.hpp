@@ -30,8 +30,8 @@ class RIPEMD160 : public SymHash {
  private:
   void resetState(int difficulty);
 
-  void finalize(const SymBitVec &hash_input, size_t bit_index,
-                size_t lo, size_t hi);
+  void finalize(const SymBitVec &hash_input, int bit_index,
+                int lo, int hi);
 
   static inline SymBitVec F(const SymBitVec &x, const SymBitVec &y,
                             const SymBitVec &z) {

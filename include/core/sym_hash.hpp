@@ -27,18 +27,18 @@ class SymHash {
 
   virtual ~SymHash();
 
-  std::vector<size_t> hashInputIndices() const;
+  std::vector<int> hashInputIndices() const;
 
-  std::vector<size_t> hashOutputIndices() const;
+  std::vector<int> hashOutputIndices() const;
 
-  size_t numUsefulFactors();
+  int numUsefulFactors();
 
   int dagDepth() const;
 
   SymBitVec call(const boost::dynamic_bitset<> &hash_input,
                  int difficulty = -1);
 
-  bool canIgnore(size_t rv);
+  bool canIgnore(int rv);
 
   double averageRuntimeMs() const;
 
@@ -52,12 +52,12 @@ class SymHash {
  private:
   void findIgnorableRVs();
 
-  size_t numUnknownsPerHash() const;
+  int numUnknownsPerHash() const;
 
-  std::set<size_t> ignorable_;
+  std::set<int> ignorable_;
   bool did_find_ignorable_;
-  std::vector<size_t> hash_input_indices_;
-  std::vector<size_t> hash_output_indices_;
+  std::vector<int> hash_input_indices_;
+  std::vector<int> hash_output_indices_;
   double num_calls_, cum_runtime_ms_;
 };
 

@@ -31,24 +31,24 @@ class Utils {
  public:
   static void seed(unsigned int s) { std::srand(s); }
 
-  static boost::dynamic_bitset<> randomBits(size_t n) {
+  static boost::dynamic_bitset<> randomBits(int n) {
     boost::dynamic_bitset<> x(n);
-    for (size_t i = 0; i < n; ++i) x[i] = rand() % 2;
+    for (int i = 0; i < n; ++i) x[i] = rand() % 2;
     return x;
   }
 
-  static boost::dynamic_bitset<> randomBits(size_t n, unsigned int s) {
+  static boost::dynamic_bitset<> randomBits(int n, unsigned int s) {
     seed(s);
     return randomBits(n);
   }
 
   static boost::dynamic_bitset<> str2bits(const std::string &s) {
-    const size_t n = s.size();
-    const size_t n_bits = n * 8;
+    const int n = s.size();
+    const int n_bits = n * 8;
     boost::dynamic_bitset<> bits(n_bits);
-    for (size_t i = 0; i < n; ++i) {
+    for (int i = 0; i < n; ++i) {
       char c = s[i];
-      for (size_t j = 0; j < 8; j++) {
+      for (int j = 0; j < 8; j++) {
         bits[(8 * i) + j] = (c >> j) & 1;
       }
     }
@@ -62,9 +62,9 @@ class Utils {
 
     std::string out = "";
 
-    for (size_t i = 0; i < b.size(); i += 4) {
+    for (int i = 0; i < b.size(); i += 4) {
       int8_t n = 0;
-      for (size_t j = i; j < i + 4; ++j) {
+      for (int j = i; j < i + 4; ++j) {
         n <<= 1;
         if (b[j] == '1') n |= 1;
       }

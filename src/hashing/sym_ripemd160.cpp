@@ -39,14 +39,14 @@ RIPEMD160::RIPEMD160() {
 SymBitVec RIPEMD160::hash(const SymBitVec &hash_input, int difficulty) {
   // Input size must be byte-aligned
   assert(hash_input.size() % 8 == 0);
-  const size_t n_bytes = hash_input.size() / 8;
+  const int n_bytes = hash_input.size() / 8;
 
   resetState(difficulty);
 
   // Process message in chunks of 64 bytes
-  size_t bit_index = 0;
-  for (size_t b = n_bytes; b > 63; b -= 64) {
-    for (size_t i = 0; i < 16; i++) {
+  int bit_index = 0;
+  for (int b = n_bytes; b > 63; b -= 64) {
+    for (int i = 0; i < 16; i++) {
       X_[i] = hash_input.extract(bit_index, bit_index + 32);
       bit_index += 32;
     }
@@ -57,7 +57,7 @@ SymBitVec RIPEMD160::hash(const SymBitVec &hash_input, int difficulty) {
   finalize(hash_input, bit_index, n_bytes, 0);
 
   SymBitVec hashcode[20];  // Each SymBitVec in `hashcode` has 8 bits
-  for (size_t i = 0; i < RIPEMD160_SIZE / 8; i += 4) {
+  for (int i = 0; i < RIPEMD160_SIZE / 8; i += 4) {
     hashcode[i + 0] = (buffer_[i >> 2] >>  0).extract(0, 8);
     hashcode[i + 1] = (buffer_[i >> 2] >>  8).extract(0, 8);
     hashcode[i + 2] = (buffer_[i >> 2] >> 16).extract(0, 8);
@@ -65,7 +65,7 @@ SymBitVec RIPEMD160::hash(const SymBitVec &hash_input, int difficulty) {
   }
 
   SymBitVec combined_digest;
-  for (size_t i = 0; i < 20; i++) {
+  for (int i = 0; i < 20; i++) {
     combined_digest = hashcode[i].concat(combined_digest);
   }
   return combined_digest;
@@ -80,12 +80,12 @@ void RIPEMD160::resetState(int difficulty) {
   buffer_[4] = SymBitVec(0xc3d2e1f0, 32);
 }
 
-void RIPEMD160::finalize(const SymBitVec &hash_input, size_t bit_index,
-                         size_t lo, size_t hi) {
-  for (size_t i = 0; i < 16; i++) X_[i] = SymBitVec(0, 32);
+void RIPEMD160::finalize(const SymBitVec &hash_input, int bit_index,
+                         int lo, int hi) {
+  for (int i = 0; i < 16; i++) X_[i] = SymBitVec(0, 32);
 
   SymBitVec tmp;
-  for (size_t i = 0; i < (lo & 63); i++) {
+  for (int i = 0; i < (lo & 63); i++) {
     tmp = hash_input.extract(bit_index, bit_index + 8);
     tmp = (tmp.resize(32) << (8 * (i & 3)));
     X_[i >> 2] = X_[i >> 2] ^ tmp;
@@ -97,7 +97,7 @@ void RIPEMD160::finalize(const SymBitVec &hash_input, size_t bit_index,
 
   if ((lo & 63) > 55) {
     transform();
-    for (size_t i = 0; i < 16; i++) X_[i] = SymBitVec(0, 32);
+    for (int i = 0; i < 16; i++) X_[i] = SymBitVec(0, 32);
   }
 
   X_[14] = SymBitVec(lo << 3, 32);

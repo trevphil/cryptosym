@@ -54,17 +54,17 @@ class GraphEdge {
 
 class GraphFactor {
  public:
-  GraphFactor(size_t i, BPFactorType t);
+  GraphFactor(int i, BPFactorType t);
 
   virtual ~GraphFactor();
 
   static std::string ftype2str(BPFactorType t);
 
-  static std::string makeString(size_t index, BPFactorType t);
+  static std::string makeString(int index, BPFactorType t);
 
   std::string toString() const;
 
-  size_t index() const;
+  int index() const;
 
   BPFactorType type() const;
 
@@ -79,18 +79,18 @@ class GraphFactor {
   void addEdge(std::shared_ptr<GraphEdge> e);
 
  protected:
-  size_t index_;
+  int index_;
   BPFactorType t_;
   std::vector<std::shared_ptr<GraphEdge>> edges_;
   Eigen::MatrixXd table_;
 
  private:
-  std::map<size_t, size_t> edge_index_for_table_column_;
+  std::map<int, int> edge_index_for_table_column_;
 };
 
 class GraphNode {
  public:
-  explicit GraphNode(size_t i);
+  explicit GraphNode(int i);
 
   virtual ~GraphNode();
 
@@ -100,7 +100,7 @@ class GraphNode {
 
   std::string toString() const;
 
-  size_t index() const;
+  int index() const;
 
   bool bit() const;
 
@@ -124,18 +124,18 @@ class GraphNode {
 
   void addEdge(std::shared_ptr<GraphEdge> e);
 
-  static size_t num_resets;
+  static int num_resets;
 
  private:
   bool bit_;
   double entropy_;
   double change_;
-  size_t index_;
+  int index_;
   std::vector<std::shared_ptr<GraphEdge>> edges_;
   std::vector<IODirection> directions_;
-  std::vector<size_t> in_factor_idx_;
-  std::vector<size_t> out_factor_idx_;
-  std::vector<size_t> all_factor_idx_;
+  std::vector<int> in_factor_idx_;
+  std::vector<int> out_factor_idx_;
+  std::vector<int> all_factor_idx_;
   Eigen::MatrixXd prev_in_, prev_out_;
   Eigen::Vector2d prev_dist_, final_dist_;
 };

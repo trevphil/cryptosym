@@ -28,8 +28,8 @@ SymBitVec NotHash::hash(const SymBitVec &hash_input, int difficulty) {
 }
 
 SymBitVec LossyPseudoHash::hash(const SymBitVec &hash_input, int difficulty) {
-  const size_t n = hash_input.size();
-  const size_t n4 = n / 4;
+  const int n = hash_input.size();
+  const int n4 = n / 4;
 
   const SymBitVec A(0xDEADBEEF12345678, n);
   const SymBitVec B(0xFADBADB00BEAD321, n);
@@ -55,8 +55,8 @@ SymBitVec LossyPseudoHash::hash(const SymBitVec &hash_input, int difficulty) {
 }
 
 SymBitVec NonLossyPseudoHash::hash(const SymBitVec &hash_input, int difficulty) {
-  const size_t n = hash_input.size();
-  const size_t n4 = n / 4;
+  const int n = hash_input.size();
+  const int n4 = n / 4;
 
   const SymBitVec A(0xDEADBEEF12345678, n);
   const SymBitVec B(0xFADBADB00BEAD321, n);

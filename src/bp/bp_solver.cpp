@@ -31,10 +31,10 @@ void BPSolver::initialize() {
   g_.schedule_variable.push_back({});
   g_.schedule_factor.clear();
   g_.schedule_factor.push_back({});
-  size_t max_rv = 0;
+  int max_rv = 0;
 
   for (const auto &itr : factors_) {
-    const size_t rv = itr.first;
+    const int rv = itr.first;
     const Factor &f = itr.second;
     if (!f.valid) continue;
     const BPFactorType t = convertFactorType(f.t);
@@ -53,7 +53,7 @@ void BPSolver::initialize() {
     }
     g_.connectFactorNode(fac, out_node, IODirection::Output);
 
-    for (size_t inp : f.inputs) {
+    for (int inp : f.inputs) {
       std::shared_ptr<GraphNode> inp_node;
       if (!g_.hasNode(inp)) {
         inp_node = std::shared_ptr<GraphNode>(new GraphNode(inp));
@@ -66,7 +66,7 @@ void BPSolver::initialize() {
     }
   }
 
-  for (size_t rv = 0; rv < max_rv; rv++) {
+  for (int rv = 0; rv < max_rv; rv++) {
     if (g_.hasNode(rv)) g_.schedule_variable[0].push_back(g_.getNode(rv));
   }
 }
@@ -81,10 +81,10 @@ BPFactorType BPSolver::convertFactorType(Factor::Type t) const {
   }
 }
 
-std::map<size_t, bool> BPSolver::solveInternal() {
-  std::vector<size_t> prior_rvs = {};
+std::map<int, bool> BPSolver::solveInternal() {
+  std::vector<int> prior_rvs = {};
   for (const auto &itr : observed_) {
-    const size_t rv = itr.first;
+    const int rv = itr.first;
     const bool bit_val = itr.second;
     assert(g_.hasNode(rv));
     std::shared_ptr<GraphFactor> fac(new GraphPriorFactor(rv, bit_val));
@@ -131,7 +131,7 @@ std::map<size_t, bool> BPSolver::solveInternal() {
     spdlog::warn("Graph node number of resets: {}", GraphNode::num_resets);
   }
 
-  std::map<size_t, bool> solution;
+  std::map<int, bool> solution;
   for (auto &nodes : g_.schedule_variable) {
     for (std::shared_ptr<GraphNode> node : nodes) {
       solution[node->index()] = node->bit();

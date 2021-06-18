@@ -34,11 +34,11 @@ class CMSatSolver : public Solver {
  protected:
   void initialize() override;
 
-  std::map<size_t, bool> solveInternal() override;
+  std::map<int, bool> solveInternal() override;
 
  private:
   CMSat::SATSolver *solver_;
-  std::map<size_t, unsigned int> rv2idx_;
+  std::map<int, unsigned int> rv2idx_;
 };
 
 }  // end namespace preimage

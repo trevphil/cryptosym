@@ -27,30 +27,30 @@ class Solver {
 
   virtual ~Solver();
 
-  void setFactors(const std::map<size_t, Factor> &factors);
+  void setFactors(const std::map<int, Factor> &factors);
 
-  void setInputIndices(const std::vector<size_t> &input_indices);
+  void setInputIndices(const std::vector<int> &input_indices);
 
-  void setObserved(const std::map<size_t, bool> &observed);
+  void setObserved(const std::map<int, bool> &observed);
 
-  std::map<size_t, bool> solve();
+  std::map<int, bool> solve();
 
   virtual std::string solverName() const = 0;
 
  protected:
   virtual void initialize() = 0;
 
-  virtual std::map<size_t, bool> solveInternal() = 0;
+  virtual std::map<int, bool> solveInternal() = 0;
 
   bool verbose_;
-  std::map<size_t, Factor> factors_;
-  std::vector<size_t> input_indices_;
-  std::map<size_t, bool> observed_;
+  std::map<int, Factor> factors_;
+  std::vector<int> input_indices_;
+  std::map<int, bool> observed_;
 
  private:
   void setImplicitObserved();
-  size_t propagateBackward();
-  void propagateForward(size_t smallest_obs);
+  int propagateBackward();
+  void propagateForward(int smallest_obs);
 };
 
 }  // end namespace preimage

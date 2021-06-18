@@ -38,11 +38,11 @@ class MD5 : public SymHash {
 
   void finalize();
 
-  void decode(SymBitVec output[], const SymBitVec input[], size_t len);
+  void decode(SymBitVec output[], const SymBitVec input[], int len);
 
-  void encode(SymBitVec output[], const SymBitVec input[], size_t len);
+  void encode(SymBitVec output[], const SymBitVec input[], int len);
 
-  void update(const SymBitVec input[], size_t len);
+  void update(const SymBitVec input[], int len);
 
   void transform(const SymBitVec block[MD5_BLOCK_SIZE]);
 

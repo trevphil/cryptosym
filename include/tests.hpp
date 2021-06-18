@@ -95,16 +95,16 @@ void sha256Tests() {
   assert(h.compare(h_s7) == 0);
 
   Utils::seed(1);
-  const std::vector<size_t> inp_sizes{0, 8, 32, 64, 512, 640, 1024};
-  for (size_t inp_size : inp_sizes) {
-    for (size_t sample_idx = 0; sample_idx < 10; sample_idx++) {
+  const std::vector<int> inp_sizes{0, 8, 32, 64, 512, 640, 1024};
+  for (int inp_size : inp_sizes) {
+    for (int sample_idx = 0; sample_idx < 10; sample_idx++) {
       // Generate a random input of length "inp_size"
       const boost::dynamic_bitset<> bits = Utils::randomBits(inp_size);
-      const size_t n_bytes = inp_size / 8;
+      const int n_bytes = inp_size / 8;
       uint8_t byte_arr[n_bytes];
-      for (size_t byte_idx = 0; byte_idx < n_bytes; byte_idx++) {
+      for (int byte_idx = 0; byte_idx < n_bytes; byte_idx++) {
         byte_arr[byte_idx] = 0;
-        for (size_t k = 0; k < 8; k++) {
+        for (int k = 0; k < 8; k++) {
           byte_arr[byte_idx] += bits[(byte_idx * 8) + k] << k;
         }
       }
@@ -139,16 +139,16 @@ void ripemd160Tests() {
   RIPEMD160 ripemd160;
 
   Utils::seed(1);
-  const std::vector<size_t> inp_sizes{0, 8, 32, 64, 512, 640, 1024};
-  for (size_t inp_size : inp_sizes) {
-    for (size_t sample_idx = 0; sample_idx < 10; sample_idx++) {
+  const std::vector<int> inp_sizes{0, 8, 32, 64, 512, 640, 1024};
+  for (int inp_size : inp_sizes) {
+    for (int sample_idx = 0; sample_idx < 10; sample_idx++) {
       // Generate a random input of length "inp_size" bits
       const boost::dynamic_bitset<> bits = Utils::randomBits(inp_size);
-      const size_t n_bytes = inp_size / 8;
+      const int n_bytes = inp_size / 8;
       uint8_t byte_arr[n_bytes];
-      for (size_t byte_idx = 0; byte_idx < n_bytes; byte_idx++) {
+      for (int byte_idx = 0; byte_idx < n_bytes; byte_idx++) {
         byte_arr[byte_idx] = 0;
-        for (size_t k = 0; k < 8; k++) {
+        for (int k = 0; k < 8; k++) {
           byte_arr[byte_idx] += bits[(byte_idx * 8) + k] << k;
         }
       }
@@ -184,16 +184,16 @@ void md5Tests() {
   MD5 md5;
 
   Utils::seed(1);
-  const std::vector<size_t> inp_sizes{0, 8, 32, 64, 512, 640, 1024};
-  for (size_t inp_size : inp_sizes) {
-    for (size_t sample_idx = 0; sample_idx < 10; sample_idx++) {
+  const std::vector<int> inp_sizes{0, 8, 32, 64, 512, 640, 1024};
+  for (int inp_size : inp_sizes) {
+    for (int sample_idx = 0; sample_idx < 10; sample_idx++) {
       // Generate a random input of length "inp_size" bits
       const boost::dynamic_bitset<> bits = Utils::randomBits(inp_size);
-      const size_t n_bytes = inp_size / 8;
+      const int n_bytes = inp_size / 8;
       uint8_t byte_arr[n_bytes];
-      for (size_t byte_idx = 0; byte_idx < n_bytes; byte_idx++) {
+      for (int byte_idx = 0; byte_idx < n_bytes; byte_idx++) {
         byte_arr[byte_idx] = 0;
-        for (size_t k = 0; k < 8; k++) {
+        for (int k = 0; k < 8; k++) {
           byte_arr[byte_idx] += bits[(byte_idx * 8) + k] << k;
         }
       }

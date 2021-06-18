@@ -33,7 +33,7 @@ class BPSolver : public Solver {
  protected:
   void initialize() override;
 
-  std::map<size_t, bool> solveInternal() override;
+  std::map<int, bool> solveInternal() override;
 
  private:
   BPFactorType convertFactorType(Factor::Type t) const;

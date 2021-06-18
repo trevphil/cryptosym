@@ -32,17 +32,17 @@ SymHash::SymHash()
 
 SymHash::~SymHash() {}
 
-std::vector<size_t> SymHash::hashInputIndices() const {
+std::vector<int> SymHash::hashInputIndices() const {
   return hash_input_indices_;
 }
 
-std::vector<size_t> SymHash::hashOutputIndices() const {
+std::vector<int> SymHash::hashOutputIndices() const {
   return hash_output_indices_;
 }
 
-size_t SymHash::numUnknownsPerHash() const { return Bit::global_index; }
+int SymHash::numUnknownsPerHash() const { return Bit::global_index; }
 
-size_t SymHash::numUsefulFactors() {
+int SymHash::numUsefulFactors() {
   findIgnorableRVs();
   return Bit::global_bits.size() - ignorable_.size();
 }
@@ -74,7 +74,7 @@ SymBitVec SymHash::call(const boost::dynamic_bitset<> &hash_input,
   return out;
 }
 
-bool SymHash::canIgnore(size_t rv) {
+bool SymHash::canIgnore(int rv) {
   findIgnorableRVs();
   return ignorable_.count(rv) > 0;
 }
@@ -82,27 +82,27 @@ bool SymHash::canIgnore(size_t rv) {
 void SymHash::findIgnorableRVs() {
   if (did_find_ignorable_) return;
 
-  std::set<size_t> seen = {};
+  std::set<int> seen = {};
   ignorable_ = {};
 
   // At first we assume that ALL bits can be ignored
-  for (size_t i : hash_input_indices_)
+  for (int i : hash_input_indices_)
     ignorable_.insert(i);
   for (const auto &itr : Factor::global_factors)
     ignorable_.insert(itr.first);
 
   // Random variables in the queue cannot be ignored
-  std::queue<size_t> q;
-  for (size_t i : hash_output_indices_) q.push(i);
+  std::queue<int> q;
+  for (int i : hash_output_indices_) q.push(i);
 
   while (!q.empty()) {
-    const size_t rv = q.front();
+    const int rv = q.front();
     q.pop();
     ignorable_.erase(rv);
     seen.insert(rv);
     if (Factor::global_factors.count(rv) > 0) {
       const Factor &f = Factor::global_factors.at(rv);
-      for (size_t inp : f.inputs) {
+      for (int inp : f.inputs) {
         if (seen.count(inp) == 0) q.push(inp);
       }
     }

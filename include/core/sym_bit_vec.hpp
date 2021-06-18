@@ -31,11 +31,11 @@ class SymBitVec {
   SymBitVec();
   explicit SymBitVec(const std::vector<Bit> &bits);
   SymBitVec(const boost::dynamic_bitset<> &bits, bool unknown = false);
-  SymBitVec(uint64_t n, size_t sz, bool unknown = false);
+  SymBitVec(uint64_t n, int sz, bool unknown = false);
 
   virtual ~SymBitVec();
 
-  size_t size() const;
+  int size() const;
 
   uint64_t intVal() const;
 
@@ -45,17 +45,17 @@ class SymBitVec {
 
   std::string hex() const;
 
-  Bit at(size_t index) const;
+  Bit at(int index) const;
 
-  std::vector<size_t> rvIndices() const;
+  std::vector<int> rvIndices() const;
 
   SymBitVec concat(const SymBitVec &other) const;
 
-  SymBitVec extract(size_t lb, size_t ub) const;
+  SymBitVec extract(int lb, int ub) const;
 
-  SymBitVec resize(size_t n) const;
+  SymBitVec resize(int n) const;
 
-  SymBitVec rotr(size_t n) const;
+  SymBitVec rotr(int n) const;
 
   SymBitVec reversed() const;
 
@@ -69,9 +69,9 @@ class SymBitVec {
 
   SymBitVec operator+(const SymBitVec &b) const;
 
-  SymBitVec operator<<(size_t n) const;
+  SymBitVec operator<<(int n) const;
 
-  SymBitVec operator>>(size_t n) const;
+  SymBitVec operator>>(int n) const;
 
   static SymBitVec majority3(const SymBitVec &a,
                              const SymBitVec &b,

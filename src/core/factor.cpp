@@ -17,12 +17,12 @@
 
 namespace preimage {
 
-std::unordered_map<size_t, Factor> Factor::global_factors = {};
+std::unordered_map<int, Factor> Factor::global_factors = {};
 
 Factor::Factor() : valid(false) {}
 
-Factor::Factor(Factor::Type typ, const size_t out,
-               const std::vector<size_t> &inp)
+Factor::Factor(Factor::Type typ, const int out,
+               const std::vector<int> &inp)
     : t(typ), output(out), inputs(inp), valid(true) {
   n_inputs = Factor::numInputs(t);
   if (n_inputs != inp.size()) {
@@ -37,14 +37,14 @@ Factor::~Factor() {}
 std::string Factor::toString() const {
   std::stringstream stream;
   stream << char(t) << " " << output;
-  for (size_t inp : inputs) stream << " " << inp;
+  for (int inp : inputs) stream << " " << inp;
   std::string result(stream.str());
   return result;
 }
 
 void Factor::reset() { global_factors.clear(); }
 
-size_t Factor::numInputs(Factor::Type t) {
+int Factor::numInputs(Factor::Type t) {
   switch (t) {
     case Type::NotFactor:
       return 1;

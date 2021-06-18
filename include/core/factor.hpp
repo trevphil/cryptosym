@@ -32,7 +32,7 @@ class Factor {
 
   Factor();
 
-  Factor(Type t, const size_t output, const std::vector<size_t> &inputs = {});
+  Factor(Type t, const int output, const std::vector<int> &inputs = {});
 
   virtual ~Factor();
 
@@ -40,14 +40,14 @@ class Factor {
 
   static void reset();
 
-  static size_t numInputs(Type t);
+  static int numInputs(Type t);
 
-  static std::unordered_map<size_t, Factor> global_factors;
+  static std::unordered_map<int, Factor> global_factors;
 
   Type t;
-  size_t output;
-  std::vector<size_t> inputs;
-  size_t n_inputs;
+  int output;
+  std::vector<int> inputs;
+  int n_inputs;
   bool valid;
 };
 

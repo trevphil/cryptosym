@@ -27,6 +27,12 @@ class Bit {
 
   static void reset();
 
+  static Bit zero();
+
+  static Bit one();
+
+  static Bit constant(bool val);
+
   Bit operator~() const;
 
   Bit operator&(const Bit &b) const;
@@ -41,13 +47,13 @@ class Bit {
 
   static Bit majority3(const Bit &a, const Bit &b, const Bit &c);
 
-  static size_t global_index;
+  static int global_index;
   static std::vector<Bit> global_bits;
 
   bool val;
   bool is_rv;
   int depth;
-  size_t index;
+  int index;
 };
 
 }  // end namespace preimage
