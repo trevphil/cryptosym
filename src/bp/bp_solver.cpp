@@ -25,11 +25,6 @@ namespace bp {
 
 BPSolver::BPSolver(bool verbose) : Solver(verbose) {}
 
-void BPSolver::setUsableLogicGates() const {
-  config::use_xor = true;
-  config::use_or = true;
-}
-
 void BPSolver::initialize() {
   g_ = Graph();
   g_.schedule_variable.clear();
@@ -43,7 +38,6 @@ void BPSolver::initialize() {
     const Factor &f = itr.second;
     if (!f.valid) continue;
     const BPFactorType t = convertFactorType(f.t);
-    if (t == BPFactorType::None) continue;
 
     std::shared_ptr<GraphFactor> fac(new GraphFactor(rv, t));
     g_.addFactor(fac);
@@ -79,13 +73,11 @@ void BPSolver::initialize() {
 
 BPFactorType BPSolver::convertFactorType(Factor::Type t) const {
   switch (t) {
-    // "Prior factors" (hash input bits) have no probabilistic prior
-    case Factor::Type::PriorFactor: return BPFactorType::None;
     case Factor::Type::AndFactor: return BPFactorType::And;
     case Factor::Type::NotFactor: return BPFactorType::Not;
-    case Factor::Type::SameFactor: return BPFactorType::Same;
     case Factor::Type::XorFactor: return BPFactorType::Xor;
     case Factor::Type::OrFactor: return BPFactorType::Or;
+    case Factor::Type::MajFactor: return BPFactorType::Maj;
   }
 }
 
@@ -140,12 +132,9 @@ std::map<size_t, bool> BPSolver::solveInternal() {
   }
 
   std::map<size_t, bool> solution;
-  for (const auto &itr : factors_) {
-    const Factor &f = itr.second;
-    if (!f.valid) continue;
-    solution[f.output] = g_.getNode(f.output)->bit();
-    if (verbose_ && f.output < 64) {
-      spdlog::info("{}", g_.getNode(f.output)->toString());
+  for (auto &nodes : g_.schedule_variable) {
+    for (std::shared_ptr<GraphNode> node : nodes) {
+      solution[node->index()] = node->bit();
     }
   }
   return solution;

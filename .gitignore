@@ -4,7 +4,5 @@ __pycache__
 build
 *.so
 *.o
-data
 .vscode
-learning_output
 preimage/main

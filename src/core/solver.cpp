@@ -63,9 +63,9 @@ void Solver::setImplicitObserved() {
 size_t Solver::propagateBackward() {
   std::list<size_t> queue;
   for (const auto &itr : observed_) queue.push_back(itr.first);
-  size_t smallest_obs = factors_.size();
-  size_t inp, inp1, inp2;
-  bool inp1_obs, inp2_obs;
+  size_t smallest_obs = factors_.size() * 2;
+  size_t inp, inp1, inp2, inp3;
+  bool inp1_obs, inp2_obs, inp3_obs;
 
   while (queue.size() > 0) {
     const size_t rv = queue.front();
@@ -76,12 +76,6 @@ size_t Solver::propagateBackward() {
     if (!f.valid) continue;
 
     switch (f.t) {
-    case Factor::Type::SameFactor:
-      inp = f.inputs.at(0);
-      observed_[inp] = observed_.at(rv);
-      queue.push_back(inp);
-      smallest_obs = std::min(smallest_obs, inp);
-      break;
     case Factor::Type::NotFactor:
       inp = f.inputs.at(0);
       observed_[inp] = !observed_.at(rv);
@@ -147,7 +141,36 @@ size_t Solver::propagateBackward() {
         smallest_obs = std::min(smallest_obs, inp1);
       }
       break;
-    case Factor::Type::PriorFactor:
+    case Factor::Type::MajFactor:
+      inp1 = f.inputs.at(0);
+      inp2 = f.inputs.at(1);
+      inp3 = f.inputs.at(2);
+      inp1_obs = observed_.count(inp1) > 0;
+      inp2_obs = observed_.count(inp2) > 0;
+      inp3_obs = observed_.count(inp3) > 0;
+      if (observed_.at(rv) == true) {
+        if (inp1_obs && observed_.at(inp1) == false) {
+          observed_[inp2] = true;
+          observed_[inp3] = true;
+        } else if (inp2_obs && observed_.at(inp2) == false) {
+          observed_[inp1] = true;
+          observed_[inp3] = true;
+        } else if (inp3_obs && observed_.at(inp3) == false) {
+          observed_[inp1] = true;
+          observed_[inp2] = true;
+        }
+      } else {  // Else observed_.at(rv) = false
+        if (inp1_obs && observed_.at(inp1) == true) {
+          observed_[inp2] = false;
+          observed_[inp3] = false;
+        } else if (inp2_obs && observed_.at(inp2) == true) {
+          observed_[inp1] = false;
+          observed_[inp3] = false;
+        } else if (inp3_obs && observed_.at(inp3) == true) {
+          observed_[inp1] = false;
+          observed_[inp2] = false;
+        }
+      }
       break;
     }
   }
@@ -156,9 +179,9 @@ size_t Solver::propagateBackward() {
 }
 
 void Solver::propagateForward(size_t smallest_obs) {
-  const size_t n = factors_.size();
-  size_t inp, inp1, inp2;
-  bool inp1_obs, inp2_obs;
+  const size_t n = factors_.size() * 2;
+  size_t inp, inp1, inp2, inp3;
+  bool inp1_obs, inp2_obs, inp3_obs;
 
   for (size_t rv = smallest_obs; rv < n; rv++) {
     if (observed_.count(rv) > 0) continue;
@@ -167,10 +190,6 @@ void Solver::propagateForward(size_t smallest_obs) {
     if (!f.valid) continue;
 
     switch (f.t) {
-    case Factor::Type::SameFactor:
-      inp = f.inputs.at(0);
-      if (observed_.count(inp) > 0) observed_[rv] = observed_.at(inp);
-      break;
     case Factor::Type::NotFactor:
       inp = f.inputs.at(0);
       if (observed_.count(inp) > 0) observed_[rv] = !observed_.at(inp);
@@ -208,7 +227,27 @@ void Solver::propagateForward(size_t smallest_obs) {
         observed_[rv] = true;
       }
       break;
-    case Factor::Type::PriorFactor:
+    case Factor::Type::MajFactor:
+      inp1 = f.inputs.at(0);
+      inp2 = f.inputs.at(1);
+      inp3 = f.inputs.at(2);
+      inp1_obs = observed_.count(inp1) > 0;
+      inp2_obs = observed_.count(inp2) > 0;
+      inp3_obs = observed_.count(inp3) > 0;
+      if (inp1_obs && inp2_obs && inp3_obs) {
+        observed_[rv] = ((int)observed_.at(inp1) +
+                         (int)observed_.at(inp2) +
+                         (int)observed_.at(inp3)) > 1;
+      } else if (inp1_obs && inp2_obs &&
+                 observed_.at(inp1) == observed_.at(inp2)) {
+        observed_[rv] = observed_.at(inp1);
+      } else if (inp1_obs && inp3_obs &&
+                 observed_.at(inp1) == observed_.at(inp3)) {
+        observed_[rv] = observed_.at(inp1);
+      } else if (inp2_obs && inp3_obs &&
+                 observed_.at(inp2) == observed_.at(inp3)) {
+        observed_[rv] = observed_.at(inp2);
+      }
       break;
     }
   }

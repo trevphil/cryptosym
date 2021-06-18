@@ -14,10 +14,13 @@
 
 namespace preimage {
 
-ProblemInstance::ProblemInstance(size_t num_input_bits, int difficulty,
-                                 bool verbose, bool bin_format)
-    : num_input_bits_(num_input_bits), difficulty_(difficulty),
-      verbose_(verbose), bin_format_(bin_format) {}
+ProblemInstance::ProblemInstance(size_t num_input_bits,
+                                 size_t num_known_input_bits,
+                                 int difficulty, bool verbose,
+                                 bool bin_format)
+    : num_input_bits_(num_input_bits),
+      num_known_input_bits_(num_known_input_bits),
+      difficulty_(difficulty), verbose_(verbose), bin_format_(bin_format) {}
 
 int ProblemInstance::prepare(const std::string &hash_name,
                              const std::string &solver_name) {
@@ -25,7 +28,6 @@ int ProblemInstance::prepare(const std::string &hash_name,
   if (hasher == nullptr) return 1;
   prepareSolver(solver_name);
   if (solver == nullptr) return 1;
-  solver->setUsableLogicGates();
   return 0;
 }
 
@@ -41,6 +43,7 @@ int ProblemInstance::execute() {
     spdlog::info("Hash algorithm:\t{}", hasher->hashName());
     spdlog::info("Solver:\t\t{}", solver->solverName());
     spdlog::info("Input message size:\t{} bits", num_input_bits_);
+    spdlog::info("Observed input bits:\t{} bits", num_known_input_bits_);
     spdlog::info("Difficulty level:\t{}", difficulty_);
   }
 
@@ -50,40 +53,43 @@ int ProblemInstance::execute() {
   const std::string output_hash =
       bin_format_ ? output_bits.bin() : output_bits.hex();
 
-  // Collect observed bits
+  // Collect observed output bits
   std::map<size_t, bool> observed;
   for (size_t i = 0; i < output_bits.size(); ++i) {
     const Bit &b = output_bits.at(i);
     if (b.is_rv) observed[b.index] = b.val;
   }
+  // Collect observed input bits (if input is partially known)
+  const auto input_bit_indices = hasher->hashInputIndices();
+  const size_t n_known = std::min(num_known_input_bits_, input_bit_indices.size());
+  for (size_t i = 0; i < n_known; i++) {
+    observed[input_bit_indices.at(i)] = input[i];
+  }
 
   // Collect factors in a mapping from RV index --> factor
-  const size_t n = Factor::global_factors.size();
   std::map<size_t, Factor> factors;
   std::map<Factor::Type, size_t> factor_count;
-  for (size_t i = 0; i < n; ++i) {
-    const Factor &f = Factor::global_factors.at(i);
-    assert(i == f.output);
+  for (const auto &itr : Factor::global_factors) {
+    const size_t rv = itr.first;
+    const Factor &f = itr.second;
     // Skip bits which are not ancestors of observed bits
-    if (!hasher->canIgnore(i)) {
-      factors[i] = f;
+    if (!hasher->canIgnore(rv)) {
+      factors[rv] = f;
       factor_count[f.t]++;
     }
   }
 
   if (verbose_) {
     spdlog::info("Logic gate statistics:");
-    spdlog::info(" --> # PRIOR: {}", factor_count[Factor::Type::PriorFactor]);
-    spdlog::info(" --> # SAME: {}", factor_count[Factor::Type::SameFactor]);
-    spdlog::info(" --> # NOT: {}", factor_count[Factor::Type::NotFactor]);
-    spdlog::info(" --> # AND: {}", factor_count[Factor::Type::AndFactor]);
-    spdlog::info(" --> # XOR: {}", factor_count[Factor::Type::XorFactor]);
-    spdlog::info(" --> # OR: {}", factor_count[Factor::Type::OrFactor]);
+    for (const auto &it : factor_count) {
+      spdlog::info(" --> # {}: {}", char(it.first), it.second);
+    }
+    spdlog::info("DAG depth: {}", hasher->dagDepth());
   }
 
   // Solve and extract the predicted input bits
   solver->setFactors(factors);
-  solver->setInputIndices(hasher->hashInputIndices());
+  solver->setInputIndices(input_bit_indices);
   solver->setObserved(observed);
   const std::map<size_t, bool> assignments = solver->solve();
   boost::dynamic_bitset<> pred_input(num_input_bits_);
@@ -155,12 +161,6 @@ void ProblemInstance::prepareSolver(const std::string &solver_name) {
     solver = std::unique_ptr<Solver>(new CMSatSolver(verbose_));
   } else if (solver_name.compare("bp") == 0) {
     solver = std::unique_ptr<Solver>(new bp::BPSolver(verbose_));
-  } else if (solver_name.compare("ortools_cp") == 0) {
-    solver = std::unique_ptr<Solver>(new ORToolsCPSolver(verbose_));
-  } else if (solver_name.compare("ortools_mip") == 0) {
-    solver = std::unique_ptr<Solver>(new ORToolsMIPSolver(verbose_));
-  } else if (solver_name.compare("sp") == 0) {
-    solver = std::unique_ptr<Solver>(new SPSolver(verbose_));
   } else {
     spdlog::error("Unsupported solver: {}", solver_name);
     solver = nullptr;

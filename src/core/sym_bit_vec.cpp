@@ -28,9 +28,8 @@ SymBitVec::SymBitVec(const std::vector<Bit> &bits) : bits_(bits) {}
 SymBitVec::SymBitVec(const boost::dynamic_bitset<> &bits, bool unknown) {
   bits_ = {};
   bits_.reserve(bits.size());
-  const bool is_prior = unknown;
   for (boost::dynamic_bitset<>::size_type i = 0; i < bits.size(); ++i) {
-    bits_.push_back(Bit(bits[i], unknown, is_prior));
+    bits_.push_back(Bit(bits[i], unknown, unknown ? 1 : 0));
   }
 }
 
@@ -41,9 +40,8 @@ SymBitVec::SymBitVec(uint64_t n, size_t sz, bool unknown) {
   }
   bits_ = {};
   bits_.reserve(sz);
-  const bool is_prior = unknown;
   for (size_t i = 0; i < sz; i++) {
-    Bit b((n >> i) & 1, unknown, is_prior);
+    Bit b((n >> i) & 1, unknown, unknown ? 1 : 0);
     bits_.push_back(b);
   }
 }
@@ -132,11 +130,11 @@ SymBitVec SymBitVec::resize(size_t n) const {
 
   std::vector<Bit> bits;
   if (n > 0 && n < m) {
-    for (int i = 0; i < n; i++) bits.push_back(at(i));
+    for (size_t i = 0; i < n; i++) bits.push_back(at(i));
   } else if (n > m) {
     const size_t num_zeros = n - m;
     bits = bits_;
-    for (int i = 0; i < num_zeros; i++) bits.push_back(Bit(0, false));
+    for (size_t i = 0; i < num_zeros; i++) bits.push_back(Bit(0, false, 0));
   }
   return SymBitVec(bits);
 }
@@ -164,7 +162,7 @@ SymBitVec SymBitVec::operator&(const SymBitVec &b) const {
   const size_t n = size();
   assert(n == b.size());
   std::vector<Bit> bits = {};
-  for (int i = 0; i < n; i++) bits.push_back(at(i) & b.at(i));
+  for (size_t i = 0; i < n; i++) bits.push_back(at(i) & b.at(i));
   return SymBitVec(bits);
 }
 
@@ -172,7 +170,7 @@ SymBitVec SymBitVec::operator^(const SymBitVec &b) const {
   const size_t n = size();
   assert(n == b.size());
   std::vector<Bit> bits = {};
-  for (int i = 0; i < n; i++) bits.push_back(at(i) ^ b.at(i));
+  for (size_t i = 0; i < n; i++) bits.push_back(at(i) ^ b.at(i));
   return SymBitVec(bits);
 }
 
@@ -180,7 +178,7 @@ SymBitVec SymBitVec::operator|(const SymBitVec &b) const {
   const size_t n = size();
   assert(n == b.size());
   std::vector<Bit> bits = {};
-  for (int i = 0; i < n; i++) bits.push_back(at(i) | b.at(i));
+  for (size_t i = 0; i < n; i++) bits.push_back(at(i) | b.at(i));
   return SymBitVec(bits);
 }
 
@@ -189,7 +187,7 @@ SymBitVec SymBitVec::operator+(const SymBitVec &b) const {
   const size_t n = b.size();
   assert(m == n);
 
-  Bit carry(0, false);
+  Bit carry(0, false, 0);
   std::vector<Bit> output_bits = {};
   output_bits.reserve(n);
 
@@ -211,7 +209,7 @@ SymBitVec SymBitVec::operator<<(size_t n) const {
   if (n == 0) return *this;
   const size_t m = size();
   std::vector<Bit> bits = {};
-  for (size_t i = 0; i < n; i++) bits.push_back(Bit(0, false));
+  for (size_t i = 0; i < n; i++) bits.push_back(Bit(0, false, 0));
   for (size_t i = 0; i < m - n; i++) bits.push_back(at(i));
   SymBitVec result(bits);
   assert(result.size() == m);
@@ -229,10 +227,23 @@ SymBitVec SymBitVec::operator>>(size_t n) const {
   const size_t m = size();
   std::vector<Bit> bits = {};
   for (size_t i = n; i < m; i++) bits.push_back(at(i));
-  for (size_t i = 0; i < n; i++) bits.push_back(Bit(0, false));
+  for (size_t i = 0; i < n; i++) bits.push_back(Bit(0, false, 0));
   SymBitVec result(bits);
   assert(result.size() == m);
   return result;
+}
+
+SymBitVec SymBitVec::majority3(const SymBitVec &a,
+                               const SymBitVec &b,
+                               const SymBitVec &c) {
+  assert(a.size() == b.size());
+  assert(a.size() == c.size());
+
+  std::vector<Bit> bits = {};
+  for (size_t i = 0; i < a.size(); i++) {
+    bits.push_back(Bit::majority3(a.at(i), b.at(i), c.at(i)));
+  }
+  return SymBitVec(bits);
 }
 
 }  // end namespace preimage

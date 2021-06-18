@@ -18,12 +18,26 @@ namespace preimage {
 
 CMSatSolver::CMSatSolver(bool verbose) : Solver(verbose) {}
 
-void CMSatSolver::setUsableLogicGates() const {
-  config::use_xor = true;
-  config::use_or = true;
+CMSatSolver::~CMSatSolver() {
+  if (solver_) delete solver_;
 }
 
 void CMSatSolver::initialize() {
+  rv2idx_.clear();
+  size_t i = 0;
+  for (const size_t rv : input_indices_) rv2idx_[rv] = i++;
+  for (const auto &itr : factors_) {
+    const size_t rv = itr.first;
+    const Factor &f = itr.second;
+    if (f.valid) rv2idx_[rv] = i++;
+  }
+
+  const unsigned int n = rv2idx_.size();
+  solver_ = new CMSat::SATSolver;
+  solver_->set_num_threads(1);
+  solver_->new_vars(n);
+  if (verbose_) spdlog::info("Initializing cryptominisat5 (n={})", n);
+
   std::vector<CMSat::Lit> clause;
   std::vector<unsigned int> xor_clause;
 
@@ -31,18 +45,6 @@ void CMSatSolver::initialize() {
     const Factor &f = itr.second;
 
     switch (f.t) {
-      case Factor::Type::PriorFactor:
-        break;
-      case Factor::Type::SameFactor:
-        clause = {// -out inp 0
-                  CMSat::Lit(rv2idx_.at(f.output), true),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), false)};
-        solver_->add_clause(clause);
-        clause = {// out -inp 0
-                  CMSat::Lit(rv2idx_.at(f.output), false),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), true)};
-        solver_->add_clause(clause);
-        break;
       case Factor::Type::NotFactor:
         clause = {// out inp 0
                   CMSat::Lit(rv2idx_.at(f.output), false),
@@ -88,25 +90,43 @@ void CMSatSolver::initialize() {
                   CMSat::Lit(rv2idx_.at(f.inputs.at(1)), false)};
         solver_->add_clause(clause);
         break;
+      case Factor::Type::MajFactor:
+        clause = {// out -inp1 -inp2 0
+                  CMSat::Lit(rv2idx_.at(f.output), false),
+                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), true),
+                  CMSat::Lit(rv2idx_.at(f.inputs.at(1)), true)};
+        solver_->add_clause(clause);
+        clause = {// out -inp1 -inp3 0
+                  CMSat::Lit(rv2idx_.at(f.output), false),
+                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), true),
+                  CMSat::Lit(rv2idx_.at(f.inputs.at(2)), true)};
+        solver_->add_clause(clause);
+        clause = {// out -inp2 -inp3 0
+                  CMSat::Lit(rv2idx_.at(f.output), false),
+                  CMSat::Lit(rv2idx_.at(f.inputs.at(1)), true),
+                  CMSat::Lit(rv2idx_.at(f.inputs.at(2)), true)};
+        solver_->add_clause(clause);
+        clause = {// -out inp1 inp2 0
+                  CMSat::Lit(rv2idx_.at(f.output), true),
+                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), false),
+                  CMSat::Lit(rv2idx_.at(f.inputs.at(1)), false)};
+        solver_->add_clause(clause);
+        clause = {// -out inp1 inp3 0
+                  CMSat::Lit(rv2idx_.at(f.output), true),
+                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), false),
+                  CMSat::Lit(rv2idx_.at(f.inputs.at(2)), false)};
+        solver_->add_clause(clause);
+        clause = {// -out inp2 inp3 0
+                  CMSat::Lit(rv2idx_.at(f.output), true),
+                  CMSat::Lit(rv2idx_.at(f.inputs.at(1)), false),
+                  CMSat::Lit(rv2idx_.at(f.inputs.at(2)), false)};
+        solver_->add_clause(clause);
+        break;
     }
   }
 }
 
 std::map<size_t, bool> CMSatSolver::solveInternal() {
-  rv2idx_.clear();
-  size_t i = 0;
-  for (const auto &itr : factors_) {
-    const size_t rv = itr.first;
-    const Factor &f = itr.second;
-    if (f.valid) rv2idx_[rv] = i++;
-  }
-
-  const unsigned int n = rv2idx_.size();
-  solver_ = new CMSat::SATSolver;
-  solver_->set_num_threads(4);
-  solver_->new_vars(n);
-  if (verbose_) spdlog::info("Initializing cryptominisat5 (n={})", n);
-
   std::vector<CMSat::Lit> assumptions;
   for (const auto &itr : observed_) {
     const size_t rv = itr.first;
@@ -124,7 +144,7 @@ std::map<size_t, bool> CMSatSolver::solveInternal() {
   for (const auto &itr : rv2idx_) {
       const size_t rv = itr.first;
       const unsigned int idx = itr.second;
-      solution[factors_.at(rv).output] = (final_model[idx] == CMSat::l_True);
+      solution[rv] = (final_model[idx] == CMSat::l_True);
   }
   return solution;
 }

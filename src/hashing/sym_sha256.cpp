@@ -18,7 +18,7 @@
 namespace preimage {
 
 #define Ch(x, y, z) (z ^ (x & (y ^ z)))
-#define Maj(x, y, z) (((x | y) & z) | (x & y))
+#define Maj(x, y, z) (SymBitVec::majority3(x, y, z))
 #define S(x, n) ((x >> (n & 31)) | (x << (32 - (n & 31))))
 #define R(x, n) (x >> n)
 #define Sigma0(x) (S(x, 2) ^ S(x, 13) ^ S(x, 22))
@@ -58,7 +58,7 @@ void SHA256::resetState() {
              SymBitVec(0x1F83D9AB, 32), SymBitVec(0x5BE0CD19, 32)};
   w_ = {};
   data_ = {};
-  for (int i = 0; i < block_size_; i++) {
+  for (size_t i = 0; i < block_size_; i++) {
     data_.push_back(SymBitVec(0, 8));
   }
 }
@@ -87,7 +87,7 @@ void SHA256::transform(int difficulty) {
 
   std::vector<SymBitVec> ss = digest_;
   std::vector<size_t> i = {0, 1, 2, 3, 4, 5, 6, 7};
-  for (size_t j = 0; j < difficulty && j < 64; ++j) {
+  for (int j = 0; j < difficulty && j < 64; ++j) {
     const auto output = round(ss[i[0]], ss[i[1]], ss[i[2]], ss[i[3]], ss[i[4]],
                               ss[i[5]], ss[i[6]], ss[i[7]], j, words_.at(j));
     ss[i[3]] = output.first;

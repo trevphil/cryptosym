@@ -24,11 +24,6 @@
 #include "hashing/hash_funcs.hpp"
 #include "bp/bp_solver.hpp"
 #include "cmsat/cmsat_solver.hpp"
-#include "ortools_cp/cp_solver.hpp"
-#include "ortools_mip/mip_solver.hpp"
-#include "survey_prop/sp_solver.hpp"
-
-#include <spdlog/spdlog.h>
 
 #include <memory>
 #include <string>
@@ -37,8 +32,8 @@ namespace preimage {
 
 class ProblemInstance {
  public:
-  ProblemInstance(size_t num_input_bits, int difficulty,
-                  bool verbose, bool bin_format);
+  ProblemInstance(size_t num_input_bits, size_t num_known_input_bits,
+                  int difficulty, bool verbose, bool bin_format);
 
   int prepare(const std::string &hash_name,
               const std::string &solver_name);
@@ -55,6 +50,7 @@ class ProblemInstance {
 
  private:
   size_t num_input_bits_;
+  size_t num_known_input_bits_;
   int difficulty_;
   bool verbose_;
   bool bin_format_;

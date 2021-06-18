@@ -11,6 +11,7 @@
  */
 
 #include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 #include <string>
 
@@ -22,22 +23,22 @@ namespace preimage {
 std::string hash_func = "MD5";
 std::string solving_method = "bp";
 size_t input_size = 64;
+size_t n_known_inputs = 0;
 int difficulty = -1;
 int run_tests = false;
 bool verbose = true;
 bool bin_format = false;
 
 int parseArgument(char* arg) {
-	int option;
-	unsigned int uoption;
-	char buf[1024];
-  std::string argstr(arg, std::find(arg, arg + 1024, '\0'));
+	int option = 0;
+	unsigned int uoption = 0;
+	char buf[1024] = "";
 
-  if (argstr.compare("tests") == 0) {
+  if (strcmp(arg, "tests") == 0) {
     run_tests = true;
-  } else if (argstr.compare("quiet") == 0) {
+  } else if (strcmp(arg, "quiet") == 0) {
     verbose = false;
-  } else if (argstr.compare("bin") == 0) {
+  } else if (strcmp(arg, "bin") == 0) {
     bin_format = true;
   } else if (1 == sscanf(arg, "hash=%s", buf)) {
     hash_func = buf;
@@ -45,6 +46,8 @@ int parseArgument(char* arg) {
     difficulty = option;
   } else if (1 == sscanf(arg, "i=%u", &uoption)) {
     input_size = size_t(uoption);
+  } else if (1 == sscanf(arg, "k=%u", &uoption)) {
+    n_known_inputs = size_t(uoption);
   } else if (1 == sscanf(arg, "solver=%s", buf)) {
     solving_method = buf;
   } else {
@@ -57,6 +60,7 @@ int parseArgument(char* arg) {
     help_msg << "\t -> one of: SHA256, MD5, RIPEMD160, LossyPseudoHash, NonLossyPseudoHash, NotHash, SameIOHash" << std::endl;
     help_msg << "\td=DIFFICULTY (-1 for default)" << std::endl;
     help_msg << "\ti=NUM_INPUT_BITS (choose a multiple of 8)" << std::endl;
+    help_msg << "\tk=NUM_KNOWN_INPUT_BITS (the first k bits are assumed known)" << std::endl;
     help_msg << "\tsolver=SOLVER" << std::endl;
     help_msg << "\t -> one of: cmsat, bp, sp, ortools_cp, ortools_mip" << std::endl;
     spdlog::info(help_msg.str());
@@ -78,8 +82,8 @@ void run(int argc, char **argv) {
     return;
   }
 
-  ProblemInstance problem(input_size, difficulty,
-                          verbose, bin_format);
+  ProblemInstance problem(input_size, n_known_inputs,
+                          difficulty, verbose, bin_format);
   const int rtn = problem.prepare(hash_func, solving_method);
 
   if (rtn != 0) {
@@ -100,6 +104,9 @@ void run(int argc, char **argv) {
 }  // end namespace preimage
 
 int main(int argc, char **argv) {
+  auto console = spdlog::stdout_color_st("logger");
+  spdlog::set_default_logger(console);
+
   preimage::run(argc, argv);
   return 0;
 }

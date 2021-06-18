@@ -16,18 +16,18 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace preimage {
 
 class Factor {
  public:
   enum Type : char {
-    PriorFactor = 'P',
     NotFactor = 'N',
-    SameFactor = 'S',
     AndFactor = 'A',
     XorFactor = 'X',
-    OrFactor = 'O'
+    OrFactor = 'O',
+    MajFactor = 'M'
   };
 
   Factor();
@@ -42,7 +42,7 @@ class Factor {
 
   static size_t numInputs(Type t);
 
-  static std::vector<Factor> global_factors;
+  static std::unordered_map<size_t, Factor> global_factors;
 
   Type t;
   size_t output;

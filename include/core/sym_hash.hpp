@@ -33,9 +33,7 @@ class SymHash {
 
   size_t numUsefulFactors();
 
-  void saveStatistics(const std::string &stats_filename);
-
-  void saveFactors(const std::string &factor_filename);
+  int dagDepth() const;
 
   SymBitVec call(const boost::dynamic_bitset<> &hash_input,
                  int difficulty = -1);

@@ -17,7 +17,7 @@
 
 namespace preimage {
 
-std::vector<Factor> Factor::global_factors = {};
+std::unordered_map<size_t, Factor> Factor::global_factors = {};
 
 Factor::Factor() : valid(false) {}
 
@@ -42,15 +42,11 @@ std::string Factor::toString() const {
   return result;
 }
 
-void Factor::reset() { global_factors = {}; }
+void Factor::reset() { global_factors.clear(); }
 
 size_t Factor::numInputs(Factor::Type t) {
   switch (t) {
-    case Type::PriorFactor:
-      return 0;
     case Type::NotFactor:
-      return 1;
-    case Type::SameFactor:
       return 1;
     case Type::AndFactor:
       return 2;
@@ -58,6 +54,8 @@ size_t Factor::numInputs(Factor::Type t) {
       return 2;
     case Type::OrFactor:
       return 2;
+    case Type::MajFactor:
+      return 3;
   }
 }
 

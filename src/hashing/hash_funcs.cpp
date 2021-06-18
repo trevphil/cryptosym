@@ -18,10 +18,12 @@
 namespace preimage {
 
 SymBitVec SameIOHash::hash(const SymBitVec &hash_input, int difficulty) {
+  (void)difficulty;
   return hash_input;
 }
 
 SymBitVec NotHash::hash(const SymBitVec &hash_input, int difficulty) {
+  (void)difficulty;
   return ~(~(~hash_input));
 }
 

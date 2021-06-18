@@ -53,8 +53,6 @@ std::string GraphEdge::toString() const {
 GraphFactor::GraphFactor(size_t i, BPFactorType t)
     : index_(i), t_(t) {
   switch (t_) {
-  case BPFactorType::None:
-    assert(false);  // This should never happen
   case BPFactorType::Prior:
     break;
   case BPFactorType::Not:
@@ -65,15 +63,6 @@ GraphFactor::GraphFactor(size_t i, BPFactorType t)
               0, 1, 1.0,
               1, 0, 1.0,
               1, 1, 0.0;
-    break;
-  case BPFactorType::Same:
-    table_ = Eigen::MatrixXd::Zero(4, 3);
-    // P(output = B | input = A)
-    //        A  B  prob
-    table_ << 0, 0, 1.0,
-              0, 1, 0.0,
-              1, 0, 0.0,
-              1, 1, 1.0;
     break;
   case BPFactorType::And:
     table_ = Eigen::MatrixXd::Zero(8, 4);
@@ -114,6 +103,27 @@ GraphFactor::GraphFactor(size_t i, BPFactorType t)
               1, 1, 0, BP_ZERO,
               1, 1, 1, BP_ONE;
     break;
+  case BPFactorType::Maj:
+    table_ = Eigen::MatrixXd::Zero(16, 5);
+    // P(output = D | input1 = A, input2 = B, input3 = C)
+    //        A  B  C  D  prob
+    table_ << 0, 0, 0, 0, BP_ONE,
+              0, 0, 0, 1, BP_ZERO,
+              0, 0, 1, 0, BP_ONE,
+              0, 0, 1, 1, BP_ZERO,
+              0, 1, 0, 0, BP_ONE,
+              0, 1, 0, 1, BP_ZERO,
+              0, 1, 1, 0, BP_ZERO,
+              0, 1, 1, 1, BP_ONE,
+              1, 0, 0, 0, BP_ONE,
+              1, 0, 0, 1, BP_ZERO,
+              1, 0, 1, 0, BP_ZERO,
+              1, 0, 1, 1, BP_ONE,
+              1, 1, 0, 0, BP_ZERO,
+              1, 1, 0, 1, BP_ONE,
+              1, 1, 1, 0, BP_ZERO,
+              1, 1, 1, 1, BP_ONE;
+    break;
   }
 }
 
@@ -123,13 +133,12 @@ GraphFactor::~GraphFactor() {
 
 std::string GraphFactor::ftype2str(BPFactorType t) {
   switch (t) {
-    case BPFactorType::None: return "None";
     case BPFactorType::And: return "And";
     case BPFactorType::Not: return "Not";
     case BPFactorType::Prior: return "Prior";
-    case BPFactorType::Same: return "Same";
     case BPFactorType::Xor: return "Xor";
     case BPFactorType::Or: return "Or";
+    case BPFactorType::Maj: return "Maj";
   }
 }
 
@@ -152,7 +161,6 @@ std::vector<std::shared_ptr<GraphEdge>> GraphFactor::edges() const {
 }
 
 void GraphFactor::initMessages() {
-  assert(t_ != BPFactorType::None);
   assert(t_ != BPFactorType::Prior);
   const size_t l = edges_.size();
   size_t input_column = 0;
@@ -191,7 +199,6 @@ Eigen::MatrixXd GraphFactor::gatherIncoming() const {
 }
 
 void GraphFactor::factor2node() {
-  assert(t_ != BPFactorType::None);
   assert(t_ != BPFactorType::Prior);
   const size_t l = edges_.size();
   const Eigen::MatrixXd msg_in = gatherIncoming();

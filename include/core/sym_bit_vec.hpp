@@ -29,7 +29,7 @@ the LSB is at index 0 and the MSB at index 3.
 class SymBitVec {
  public:
   SymBitVec();
-  SymBitVec(const std::vector<Bit> &bits);
+  explicit SymBitVec(const std::vector<Bit> &bits);
   SymBitVec(const boost::dynamic_bitset<> &bits, bool unknown = false);
   SymBitVec(uint64_t n, size_t sz, bool unknown = false);
 
@@ -72,6 +72,10 @@ class SymBitVec {
   SymBitVec operator<<(size_t n) const;
 
   SymBitVec operator>>(size_t n) const;
+
+  static SymBitVec majority3(const SymBitVec &a,
+                             const SymBitVec &b,
+                             const SymBitVec &c);
 
  private:
   std::vector<Bit> bits_;

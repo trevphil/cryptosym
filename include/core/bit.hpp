@@ -21,7 +21,7 @@ namespace preimage {
 
 class Bit {
  public:
-  Bit(bool bit_val, bool rv, bool is_prior = false);
+  Bit(bool bit_val, bool rv, int d);
 
   virtual ~Bit();
 
@@ -39,11 +39,14 @@ class Bit {
                                  const Bit &carry_in);
   static std::pair<Bit, Bit> add(const Bit &a, const Bit &b);
 
+  static Bit majority3(const Bit &a, const Bit &b, const Bit &c);
+
   static size_t global_index;
   static std::vector<Bit> global_bits;
 
   bool val;
   bool is_rv;
+  int depth;
   size_t index;
 };
 

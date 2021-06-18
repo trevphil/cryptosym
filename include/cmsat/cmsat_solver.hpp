@@ -25,11 +25,11 @@ namespace preimage {
 
 class CMSatSolver : public Solver {
  public:
-  CMSatSolver(bool verbose);
+  explicit CMSatSolver(bool verbose);
+
+  virtual ~CMSatSolver();
 
   std::string solverName() const override { return "CryptoMiniSAT"; }
-
-  void setUsableLogicGates() const override;
 
  protected:
   void initialize() override;
