@@ -11,6 +11,7 @@
  */
 
 #include "core/bit.hpp"
+#include "core/config.hpp"
 
 namespace preimage {
 
@@ -54,6 +55,7 @@ Bit Bit::operator&(const Bit &b) const {
     if (a.index == b.index) return a;
     // (0 & 1 = 0), (1 & 0 = 0)
     if (a.index == -b.index) return Bit::zero();
+
     Bit result(a.val & b.val, true, 1 + std::max(a.depth, b.depth));
     LogicGate f(LogicGate::Type::and_gate, result.depth,
                 result.index, {a.index, b.index});
@@ -78,6 +80,13 @@ Bit Bit::operator^(const Bit &b) const {
     if (a.index == b.index) return Bit::zero();
     // a ^ !a is always 1
     if (a.index == -b.index) return Bit::one();
+
+    if (config::only_and_gates) {
+      const Bit tmp1 = ~(a & b);
+      const Bit tmp2 = ~(a & tmp1);
+      const Bit tmp3 = ~(b & tmp1);
+      return ~(tmp2 & tmp3);
+    }
 
     Bit result(a.val ^ b.val, true, 1 + std::max(a.depth, b.depth));
     LogicGate f(LogicGate::Type::xor_gate, result.depth,
@@ -110,6 +119,13 @@ Bit Bit::operator|(const Bit &b) const {
     if (a.index == b.index) return a;
     // (0 | 1 = 1), (1 | 0 = 1)
     if (a.index == -b.index) return Bit::one();
+
+    if (config::only_and_gates) {
+      const Bit tmp1 = ~(a & a);
+      const Bit tmp2 = ~(b & b);
+      return ~(tmp1 & tmp2);
+    }
+
     Bit result(a.val | b.val, true, 1 + std::max(a.depth, b.depth));
     LogicGate f(LogicGate::Type::or_gate, result.depth,
                 result.index, {a.index, b.index});
@@ -158,6 +174,11 @@ Bit Bit::majority3(const Bit &a, const Bit &b, const Bit &c) {
     if (a.index == -b.index) return c;
     if (a.index == -c.index) return b;
     if (b.index == -c.index) return a;
+
+    if (config::only_and_gates) {
+      return (~(~a & ~b)) & (~(~a & ~c)) & (~(~b & ~c));
+    }
+
     // All 3 inputs are unknown --> output will be unknown
     Bit result(val, true, 1 + std::max(a.depth, std::max(b.depth, c.depth)));
     LogicGate f(LogicGate::Type::maj_gate, result.depth, result.index,
@@ -211,6 +232,9 @@ Bit Bit::xor3(const Bit &a, const Bit &b, const Bit &c) {
     if (a.index == -b.index) return ~c;
     if (a.index == -c.index) return ~b;
     if (b.index == -c.index) return ~a;
+
+    if (config::only_and_gates) return a ^ b ^ c;
+
     // All 3 inputs are unknown --> output will be unknown
     Bit result(val, true, 1 + std::max(a.depth, std::max(b.depth, c.depth)));
     LogicGate f(LogicGate::Type::xor3_gate, result.depth, result.index,

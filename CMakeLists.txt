@@ -44,6 +44,7 @@ include_directories(${OpenCV_LIBRARIES})
 add_executable(preimage
                src/main.cpp
                src/problem_instance.cpp
+               src/core/config.cpp
                src/core/bit.cpp
                src/core/logic_gate.cpp
                src/core/sym_bit_vec.cpp

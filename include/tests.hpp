@@ -26,6 +26,7 @@
 #include <string>
 #include <assert.h>
 
+#include "core/config.hpp"
 #include "core/logic_gate.hpp"
 #include "core/sym_bit_vec.hpp"
 #include "core/utils.hpp"
@@ -303,12 +304,21 @@ void bpTests() {
 }
 
 void allTests() {
+  spdlog::info("Doing simple tests..");
   conversionTests();
   simpleTests();
   symBitVecTests();
+  config::only_and_gates = true;
+  spdlog::info("Validating hash functions using only AND gates...");
   sha256Tests();
   ripemd160Tests();
   md5Tests();
+  config::only_and_gates = false;
+  spdlog::info("Validating hash functions using all gates...");
+  sha256Tests();
+  ripemd160Tests();
+  md5Tests();
+  spdlog::info("Validating solvers...");
   cmsatTests();
   preimageSATTests();
   bpTests();

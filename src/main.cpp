@@ -16,6 +16,7 @@
 #include <string>
 
 #include "tests.hpp"
+#include "core/config.hpp"
 #include "problem_instance.hpp"
 
 namespace preimage {
@@ -27,6 +28,7 @@ int difficulty = -1;
 int run_tests = false;
 bool verbose = true;
 bool bin_format = false;
+bool only_and = false;
 
 int parseArgument(char* arg) {
 	int option = 0;
@@ -39,6 +41,8 @@ int parseArgument(char* arg) {
     verbose = false;
   } else if (strcmp(arg, "bin") == 0) {
     bin_format = true;
+  } else if (strcmp(arg, "and") == 0) {
+    only_and = true;
   } else if (1 == sscanf(arg, "hash=%s", buf)) {
     hash_func = buf;
   } else if (1 == sscanf(arg, "d=%d", &option)) {
@@ -53,6 +57,7 @@ int parseArgument(char* arg) {
     help_msg << "\ttests -> Include this argument to simply run tests and exit" << std::endl;
     help_msg << "\tquiet -> Include this argument to disable verbose output" << std::endl;
     help_msg << "\tbin   -> Include this argument to output bin instead of hex" << std::endl;
+    help_msg << "\tand   -> Include this argument to only use AND logic gates" << std::endl;
     help_msg << "\thash=HASH_FUNCTION" << std::endl;
     help_msg << "\t -> one of: SHA256, MD5, RIPEMD160, LossyPseudoHash, NonLossyPseudoHash, NotHash, SameIOHash" << std::endl;
     help_msg << "\td=DIFFICULTY (-1 for default)" << std::endl;
@@ -77,6 +82,8 @@ void run(int argc, char **argv) {
     spdlog::info("All tests finished.");
     return;
   }
+
+  config::only_and_gates = only_and;
 
   ProblemInstance problem(input_size, difficulty, verbose, bin_format);
   const int rtn = problem.prepare(hash_func, solving_method);
