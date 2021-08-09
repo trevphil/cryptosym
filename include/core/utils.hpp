@@ -29,7 +29,15 @@ namespace preimage {
 
 class Utils {
  public:
-  static void seed(unsigned int s) { std::srand(s); }
+  static void seed(unsigned int s) {
+    std::srand(s);
+  }
+
+  static boost::dynamic_bitset<> zeroBits(int n) {
+    boost::dynamic_bitset<> x(n);
+    for (int i = 0; i < n; ++i) x[i] = 0;
+    return x;
+  }
 
   static boost::dynamic_bitset<> randomBits(int n) {
     boost::dynamic_bitset<> x(n);
@@ -73,6 +81,37 @@ class Utils {
     }
 
     return out;
+  }
+
+  static inline const char* hex2bin(char c) {
+    switch (std::toupper(c)) {
+      case '0': return "0000";
+      case '1': return "0001";
+      case '2': return "0010";
+      case '3': return "0011";
+      case '4': return "0100";
+      case '5': return "0101";
+      case '6': return "0110";
+      case '7': return "0111";
+      case '8': return "1000";
+      case '9': return "1001";
+      case 'A': return "1010";
+      case 'B': return "1011";
+      case 'C': return "1100";
+      case 'D': return "1101";
+      case 'E': return "1110";
+      case 'F': return "1111";
+      default:
+        assert(false);
+        return "0000";
+    }
+  }
+
+  static boost::dynamic_bitset<> hex2bits(const std::string &hex_str) {
+    std::string bin_str;
+    for (int i = 0; i < (int)hex_str.length(); ++i)
+      bin_str += hex2bin(hex_str[i]);
+    return boost::dynamic_bitset<>(bin_str);
   }
 
   static std::string binstr(const boost::dynamic_bitset<> &bs) {

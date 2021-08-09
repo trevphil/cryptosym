@@ -20,10 +20,9 @@
 
 namespace preimage {
 
-std::string hash_func = "MD5";
-std::string solving_method = "bp";
+std::string hash_func = "SHA256";
+std::string solving_method = "simple";
 int input_size = 64;
-int n_known_inputs = 0;
 int difficulty = -1;
 int run_tests = false;
 bool verbose = true;
@@ -46,8 +45,6 @@ int parseArgument(char* arg) {
     difficulty = option;
   } else if (1 == sscanf(arg, "i=%u", &uoption)) {
     input_size = int(uoption);
-  } else if (1 == sscanf(arg, "k=%u", &uoption)) {
-    n_known_inputs = int(uoption);
   } else if (1 == sscanf(arg, "solver=%s", buf)) {
     solving_method = buf;
   } else {
@@ -60,9 +57,8 @@ int parseArgument(char* arg) {
     help_msg << "\t -> one of: SHA256, MD5, RIPEMD160, LossyPseudoHash, NonLossyPseudoHash, NotHash, SameIOHash" << std::endl;
     help_msg << "\td=DIFFICULTY (-1 for default)" << std::endl;
     help_msg << "\ti=NUM_INPUT_BITS (choose a multiple of 8)" << std::endl;
-    help_msg << "\tk=NUM_KNOWN_INPUT_BITS (the first k bits are assumed known)" << std::endl;
     help_msg << "\tsolver=SOLVER" << std::endl;
-    help_msg << "\t -> one of: cmsat, bp, sp, ortools_cp, ortools_mip" << std::endl;
+    help_msg << "\t -> one of: cmsat, simple, bp" << std::endl;
     spdlog::info(help_msg.str());
     return 1;
   }
@@ -82,8 +78,7 @@ void run(int argc, char **argv) {
     return;
   }
 
-  ProblemInstance problem(input_size, n_known_inputs,
-                          difficulty, verbose, bin_format);
+  ProblemInstance problem(input_size, difficulty, verbose, bin_format);
   const int rtn = problem.prepare(hash_func, solving_method);
 
   if (rtn != 0) {
@@ -104,9 +99,6 @@ void run(int argc, char **argv) {
 }  // end namespace preimage
 
 int main(int argc, char **argv) {
-  auto console = spdlog::stdout_color_st("logger");
-  spdlog::set_default_logger(console);
-
   preimage::run(argc, argv);
   return 0;
 }

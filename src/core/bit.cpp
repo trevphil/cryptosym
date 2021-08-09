@@ -14,14 +14,13 @@
 
 namespace preimage {
 
-int Bit::global_index = 0;
-std::vector<Bit> Bit::global_bits = {};
+int Bit::global_index = 1;  // 1-based indexing
 
-Bit::Bit(bool bit_val, bool rv, int d) : val(bit_val), is_rv(rv), depth(d) {
-  if (is_rv) {
-    index = Bit::global_index++;
-    Bit::global_bits.push_back(*this);
-  }
+Bit::Bit(bool bit_val, bool is_unknown, int dpth)
+    : val(bit_val), unknown(is_unknown), depth(dpth) {
+  if (unknown) index = Bit::global_index++;
+  if (unknown) assert(index != 0);
+  if (!unknown) assert(depth == 0);
 }
 
 Bit::~Bit() {}
@@ -33,92 +32,97 @@ Bit Bit::one() { return Bit(1, false, 0); }
 Bit Bit::constant(bool val) { return Bit(val, false, 0); }
 
 void Bit::reset() {
-  global_index = 0;
-  global_bits = {};
-  Factor::reset();
+  global_index = 1;
 }
 
 Bit Bit::operator~() const {
-  const Bit b(!val, is_rv, is_rv ? depth + 1 : 0);
-  if (is_rv) {
-    const Factor f(Factor::Type::NotFactor, b.index, {index});
-    Factor::global_factors[b.index] = f;
-  }
+  Bit b(!val, false, 0);
+  b.index = -index;
+  b.unknown = unknown;
+  b.depth = depth;
   return b;
 }
 
 Bit Bit::operator&(const Bit &b) const {
   // If AND-ing with a constant of 0, result will be always be 0
-  if (!is_rv && !val) return Bit::zero();
-  if (!b.is_rv && !b.val) return Bit::zero();
-
   const Bit a = *this;
+  if (!a.unknown && !a.val) return Bit::zero();
+  if (!b.unknown && !b.val) return Bit::zero();
 
-  if (is_rv && b.is_rv) {
+  if (a.unknown && b.unknown) {
     // (0 & 0 = 0), (1 & 1 = 1)
-    if (index == b.index) return a;
-    Bit result(val & b.val, true, std::max(depth, b.depth) + 1);
-    Factor f(Factor::Type::AndFactor, result.index, {index, b.index});
-    Factor::global_factors[result.index] = f;
+    if (a.index == b.index) return a;
+    // (0 & 1 = 0), (1 & 0 = 0)
+    if (a.index == -b.index) return Bit::zero();
+    Bit result(a.val & b.val, true, 1 + std::max(a.depth, b.depth));
+    LogicGate f(LogicGate::Type::and_gate, result.depth,
+                result.index, {a.index, b.index});
+    LogicGate::global_gates.push_back(f);
     return result;
-  } else if (is_rv) {
+  } else if (a.unknown) {
     // Here, "b" is a constant equal to 1, so result is directly "a"
     return a;
-  } else if (b.is_rv) {
+  } else if (b.unknown) {
     // Here, "a" is a constant equal to 1, so result is directly "b"
     return b;
   } else {
-    return Bit::constant(val & b.val);  // Both are constants
+    return Bit::constant(a.val & b.val);  // Both are constants
   }
 }
 
 Bit Bit::operator^(const Bit &b) const {
   const Bit a = *this;
 
-  if (is_rv && b.is_rv) {
+  if (a.unknown && b.unknown) {
     // a ^ a is always 0
-    if (index == b.index) return Bit::zero();
-    Bit result(val ^ b.val, true, std::max(depth, b.depth) + 1);
-    Factor f(Factor::Type::XorFactor, result.index, {index, b.index});
-    Factor::global_factors[result.index] = f;
+    if (a.index == b.index) return Bit::zero();
+    // a ^ !a is always 1
+    if (a.index == -b.index) return Bit::one();
+
+    Bit result(a.val ^ b.val, true, 1 + std::max(a.depth, b.depth));
+    LogicGate f(LogicGate::Type::xor_gate, result.depth,
+                result.index, {a.index, b.index});
+    LogicGate::global_gates.push_back(f);
     return result;
-  } else if (a.is_rv) {
+  } else if (a.unknown) {
     // XOR with a constant of 0 is simply the other input
     if (!b.val) return a;
     // XOR with a constant of 1 is the inverse of the other input
     return ~a;
-  } else if (b.is_rv) {
+  } else if (b.unknown) {
     // XOR with a constant of 0 is simply the other input
     if (!a.val) return b;
     // XOR with a constant of 1 is the inverse of the other input
     return ~b;
   } else {
-    return Bit::constant(val ^ b.val);  // Both are constants
+    return Bit::constant(a.val ^ b.val);  // Both are constants
   }
 }
 
 Bit Bit::operator|(const Bit &b) const {
   // If OR-ing with a constant of 1, result will be always be 1
-  if (!is_rv && val) return Bit::one();
-  if (!b.is_rv && b.val) return Bit::one();
-
   const Bit a = *this;
+  if (!a.unknown && a.val) return Bit::one();
+  if (!b.unknown && b.val) return Bit::one();
 
-  if (is_rv && b.is_rv) {
+  if (a.unknown && b.unknown) {
     // (0 | 0 = 0), (1 | 1 = 1)
-    if (index == b.index) return a;
-    Bit result(val | b.val, true, std::max(depth, b.depth) + 1);
-    Factor f(Factor::Type::OrFactor, result.index, {index, b.index});
-    Factor::global_factors[result.index] = f;
+    if (a.index == b.index) return a;
+    // (0 | 1 = 1), (1 | 0 = 1)
+    if (a.index == -b.index) return Bit::one();
+    Bit result(a.val | b.val, true, 1 + std::max(a.depth, b.depth));
+    LogicGate f(LogicGate::Type::or_gate, result.depth,
+                result.index, {a.index, b.index});
+    LogicGate::global_gates.push_back(f);
     return result;
-  } else if (is_rv) {
+  } else if (a.unknown) {
     // Here, "b" is a constant equal to 0, so result is directly "a"
     return a;
-  } else if (b.is_rv) {
+  } else if (b.unknown) {
     // Here, "a" is a constant equal to 0, so result is directly "b"
     return b;
   } else {
-    return Bit::constant(val | b.val);  // Both are constants
+    return Bit::constant(a.val | b.val);  // Both are constants
   }
 }
 
@@ -127,7 +131,7 @@ std::pair<Bit, Bit> Bit::add(const Bit &a, const Bit &b) {
 }
 
 std::pair<Bit, Bit> Bit::add(const Bit &a, const Bit &b, const Bit &carry_in) {
-  const Bit sum1 = a ^ (b ^ carry_in);
+  const Bit sum1 = xor3(a, b, carry_in);
   const Bit carry_out = majority3(a, b, carry_in);
   return {sum1, carry_out};
 }
@@ -138,11 +142,11 @@ Bit Bit::majority3(const Bit &a, const Bit &b, const Bit &c) {
 
   std::vector<bool> knowns;
   std::vector<Bit> unknowns;
-  if (!a.is_rv) knowns.push_back(a.val);
+  if (!a.unknown) knowns.push_back(a.val);
   else unknowns.push_back(a);
-  if (!b.is_rv) knowns.push_back(b.val);
+  if (!b.unknown) knowns.push_back(b.val);
   else unknowns.push_back(b);
-  if (!c.is_rv) knowns.push_back(c.val);
+  if (!c.unknown) knowns.push_back(c.val);
   else unknowns.push_back(c);
 
   if (knowns.size() == 0) {
@@ -150,10 +154,15 @@ Bit Bit::majority3(const Bit &a, const Bit &b, const Bit &c) {
     if (a.index == b.index) return a;
     if (a.index == c.index) return a;
     if (b.index == c.index) return b;
-    // All 3 inputs are unknown and different --> output will be unknown
-    Bit result(val, true, std::max(a.depth, std::max(b.depth, c.depth)) + 1);
-    Factor f(Factor::Type::MajFactor, result.index, {a.index, b.index, c.index});
-    Factor::global_factors[result.index] = f;
+    // If any two inputs are opposites, the result is the odd one out
+    if (a.index == -b.index) return c;
+    if (a.index == -c.index) return b;
+    if (b.index == -c.index) return a;
+    // All 3 inputs are unknown --> output will be unknown
+    Bit result(val, true, 1 + std::max(a.depth, std::max(b.depth, c.depth)));
+    LogicGate f(LogicGate::Type::maj_gate, result.depth, result.index,
+                {a.index, b.index, c.index});
+    LogicGate::global_gates.push_back(f);
     return result;
   } else if (knowns.size() == 1) {
     if (knowns.at(0) == false) {
@@ -176,6 +185,54 @@ Bit Bit::majority3(const Bit &a, const Bit &b, const Bit &c) {
     } else {
       return unknowns.at(0);  // Otherwise we have Maj3(0, 1, X) = X
     }
+  } else {
+    return Bit::constant(val);  // Otherwise all 3 values are known, so not a RV
+  }
+}
+
+Bit Bit::xor3(const Bit &a, const Bit &b, const Bit &c) {
+  const bool val = a.val ^ b.val ^ c.val;
+
+  std::vector<bool> knowns;
+  std::vector<Bit> unknowns;
+  if (!a.unknown) knowns.push_back(a.val);
+  else unknowns.push_back(a);
+  if (!b.unknown) knowns.push_back(b.val);
+  else unknowns.push_back(b);
+  if (!c.unknown) knowns.push_back(c.val);
+  else unknowns.push_back(c);
+
+  if (knowns.size() == 0) {
+    // If any two inputs are the same, 0 ^ 0 ^ x = 0 ^ x = x
+    if (a.index == b.index) return c;
+    if (a.index == c.index) return b;
+    if (b.index == c.index) return a;
+    // If any two inputs are opposites, 0 ^ 1 ^ x = 1 ^ x = ~x
+    if (a.index == -b.index) return ~c;
+    if (a.index == -c.index) return ~b;
+    if (b.index == -c.index) return ~a;
+    // All 3 inputs are unknown --> output will be unknown
+    Bit result(val, true, 1 + std::max(a.depth, std::max(b.depth, c.depth)));
+    LogicGate f(LogicGate::Type::xor3_gate, result.depth, result.index,
+                {a.index, b.index, c.index});
+    LogicGate::global_gates.push_back(f);
+    return result;
+  } else if (knowns.size() == 1) {
+    if (knowns.at(0) == false) {
+      // 0 0 0 = 0  --> output = unknown1 ^ unknown2
+      // 0 0 1 = 1
+      // 0 1 0 = 1
+      // 0 1 1 = 0
+      return unknowns.at(0) ^ unknowns.at(1);
+    } else {
+      // 1 0 0 = 1 --> output = ~(unknown1 ^ unknown2)
+      // 1 0 1 = 0
+      // 1 1 0 = 0
+      // 1 1 1 = 1
+      return ~(unknowns.at(0) ^ unknowns.at(1));
+    }
+  } else if (knowns.size() == 2) {
+    return unknowns.at(0) ^ Bit::constant(knowns.at(0) ^ knowns.at(1));
   } else {
     return Bit::constant(val);  // Otherwise all 3 values are known, so not a RV
   }

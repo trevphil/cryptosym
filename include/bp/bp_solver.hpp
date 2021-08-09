@@ -13,6 +13,7 @@
 #pragma once
 
 #include <map>
+#include <unordered_map>
 #include <vector>
 
 #include "core/solver.hpp"
@@ -33,10 +34,10 @@ class BPSolver : public Solver {
  protected:
   void initialize() override;
 
-  std::map<int, bool> solveInternal() override;
+  std::unordered_map<int, bool> solveInternal() override;
 
  private:
-  BPFactorType convertFactorType(Factor::Type t) const;
+  BPFactorType convertLogicGate(LogicGate::Type t) const;
 
   Graph g_;
 };

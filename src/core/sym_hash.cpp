@@ -12,7 +12,7 @@
 
 #include "core/sym_hash.hpp"
 #include "core/bit.hpp"
-#include "core/factor.hpp"
+#include "core/logic_gate.hpp"
 #include "core/utils.hpp"
 
 #include <spdlog/spdlog.h>
@@ -23,12 +23,13 @@
 #include <algorithm>
 #include <queue>
 
+#define SGN(x) (x < 0 ? -1 : (x > 0 ? 1 : 0))
+
 namespace preimage {
 
 SymHash::SymHash()
-    : ignorable_(), did_find_ignorable_(false),
-      hash_output_indices_(), num_calls_(0.0),
-      cum_runtime_ms_(0.0) {}
+    : hash_input_indices_(), hash_output_indices_(),
+      num_calls_(0.0), cum_runtime_ms_(0.0) {}
 
 SymHash::~SymHash() {}
 
@@ -40,75 +41,123 @@ std::vector<int> SymHash::hashOutputIndices() const {
   return hash_output_indices_;
 }
 
-int SymHash::numUnknownsPerHash() const { return Bit::global_index; }
-
-int SymHash::numUsefulFactors() {
-  findIgnorableRVs();
-  return Bit::global_bits.size() - ignorable_.size();
-}
-
-int SymHash::dagDepth() const {
-  int max_d = 0;
-  for (Bit &b : Bit::global_bits) max_d = std::max(max_d, b.depth);
-  return max_d;
-}
-
 double SymHash::averageRuntimeMs() const {
   if (num_calls_ == 0) return -1.0;
   return cum_runtime_ms_ / num_calls_;
 }
 
-SymBitVec SymHash::call(const boost::dynamic_bitset<> &hash_input,
-                        int difficulty) {
+boost::dynamic_bitset<> SymHash::call(const boost::dynamic_bitset<> &hash_input,
+                                      int difficulty, bool symbolic) {
   Bit::reset();
-  Factor::reset();
-  did_find_ignorable_ = false;
-  SymBitVec inp(hash_input, true);
-  hash_input_indices_ = inp.rvIndices();
+  LogicGate::reset();
+  SymBitVec inp(hash_input, symbolic);
+  hash_input_indices_ = std::vector<int>(inp.size());
+  for (int i = 0; i < inp.size(); i++)
+    hash_input_indices_[i] = inp.at(i).unknown ? inp.at(i).index : 0;
   if (difficulty == -1) difficulty = defaultDifficulty();
   const auto start = Utils::ms_since_epoch();
   SymBitVec out = hash(inp, difficulty);
+  hash_output_indices_ = std::vector<int>(out.size());
+  for (int i = 0; i < out.size(); i++)
+    hash_output_indices_[i] = out.at(i).unknown ? out.at(i).index : 0;
+  if (symbolic) pruneIrrelevantGates();
+  if (symbolic) reindexBits();
   cum_runtime_ms_ += Utils::ms_since_epoch() - start;
   num_calls_++;
-  hash_output_indices_ = out.rvIndices();
-  return out;
+  return out.bits();
 }
 
-bool SymHash::canIgnore(int rv) {
-  findIgnorableRVs();
-  return ignorable_.count(rv) > 0;
-}
+void SymHash::pruneIrrelevantGates() {
+  const int num_gates_before = LogicGate::global_gates.size();
+  std::unordered_map<int, LogicGate> index2gate;
+  for (const LogicGate &g : LogicGate::global_gates) {
+    assert(g.output > 0);  // should always be positive
+    index2gate[g.output] = g;
+  }
 
-void SymHash::findIgnorableRVs() {
-  if (did_find_ignorable_) return;
-
-  std::set<int> seen = {};
-  ignorable_ = {};
-
-  // At first we assume that ALL bits can be ignored
-  for (int i : hash_input_indices_)
-    ignorable_.insert(i);
-  for (const auto &itr : Factor::global_factors)
-    ignorable_.insert(itr.first);
-
-  // Random variables in the queue cannot be ignored
+  // Gates that appear in the queue are useful, not irrelevant
   std::queue<int> q;
-  for (int i : hash_output_indices_) q.push(i);
+  for (int i : hash_output_indices_) {
+    if (i != 0) q.push(abs(i));
+  }
+
+  std::set<int> seen;  // Avoid re-visiting gates
+  std::unordered_map<int, LogicGate> useful_gates;
 
   while (!q.empty()) {
-    const int rv = q.front();
+    const int i = q.front();
     q.pop();
-    ignorable_.erase(rv);
-    seen.insert(rv);
-    if (Factor::global_factors.count(rv) > 0) {
-      const Factor &f = Factor::global_factors.at(rv);
-      for (int inp : f.inputs) {
-        if (seen.count(inp) == 0) q.push(inp);
+    if (seen.count(i) > 0) continue;
+    seen.insert(i);
+
+    if (index2gate.count(i) > 0) {
+      const LogicGate &g = index2gate.at(i);
+      useful_gates[i] = g;
+      for (int inp : g.inputs) {
+        if (seen.count(abs(inp)) == 0) q.push(abs(inp));
       }
     }
   }
 
-  did_find_ignorable_ = true;
+  LogicGate::global_gates = {};
+  for (const auto &itr : useful_gates)
+    LogicGate::global_gates.push_back(itr.second);
+
+  const int num_gates_after = LogicGate::global_gates.size();
+  spdlog::info("Pruned gates ({} --> {}), removed {:.1f}%",
+               num_gates_before, num_gates_after,
+               100.0 * (num_gates_before - num_gates_after) / num_gates_before);
+}
+
+void SymHash::reindexBits() {
+  // Get a set containing all bit indices which appear
+  // in the reduced tree (after removing irrelevant gates)
+  std::set<int> old_indices;
+  for (int out : hash_output_indices_) {
+    if (out != 0) old_indices.insert(abs(out));
+  }
+  for (const LogicGate &g : LogicGate::global_gates) {
+    old_indices.insert(abs(g.output));
+    for (int inp : g.inputs) old_indices.insert(abs(inp));
+  }
+
+  // Index bits consecutively, starting at 1
+  int k = 1;
+  std::unordered_map<int, int> index_old2new;
+  for (int old : old_indices) index_old2new[old] = k++;
+  old_indices.clear();
+
+  std::vector<LogicGate> new_gates;
+  new_gates.reserve(LogicGate::global_gates.size());
+  for (const LogicGate &g : LogicGate::global_gates) {
+    std::vector<int> inputs;
+    for (int inp : g.inputs)
+      inputs.push_back(SGN(inp) * index_old2new.at(abs(inp)));
+    const int output = SGN(g.output) * index_old2new.at(abs(g.output));
+    LogicGate g_new(g.t(), g.depth, output, inputs);
+    new_gates.push_back(g_new);
+  }
+  LogicGate::global_gates = new_gates;
+
+  std::vector<int> new_inputs, new_outputs;
+  for (int old_inp : hash_input_indices_) {
+    if (index_old2new.count(abs(old_inp)) > 0) {
+      new_inputs.push_back(SGN(old_inp) * index_old2new.at(abs(old_inp)));
+    } else {
+      new_inputs.push_back(0);
+    }
+  }
+  for (int old_out : hash_output_indices_) {
+    if (index_old2new.count(abs(old_out)) > 0) {
+      new_outputs.push_back(SGN(old_out) * index_old2new.at(abs(old_out)));
+    } else {
+      new_outputs.push_back(0);
+    }
+  }
+  hash_input_indices_ = new_inputs;
+  hash_output_indices_ = new_outputs;
 }
 
 }  // end namespace preimage
+
+#undef SGN

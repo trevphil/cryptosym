@@ -26,13 +26,27 @@
 #include <string>
 #include <assert.h>
 
-#include "core/factor.hpp"
+#include "core/logic_gate.hpp"
 #include "core/sym_bit_vec.hpp"
 #include "core/utils.hpp"
 #include "hashing/hash_funcs.hpp"
 #include "problem_instance.hpp"
 
 namespace preimage {
+
+void conversionTests() {
+  const boost::dynamic_bitset<> bits(16, 0b1101001100011101);
+  const SymBitVec bv(bits);
+  const std::string hex = "d31d";
+  const std::string bin = "1101001100011101";
+  assert(bv.intVal() == 0b1101001100011101);
+  assert(bv.bin(false).compare(bin) == 0);
+  assert(bv.hex().compare(hex) == 0);
+  assert(Utils::hexstr(bits).compare(hex) == 0);
+  assert(Utils::binstr(bits).compare(bin) == 0);
+  assert(Utils::hex2bits(hex) == bits);
+  spdlog::info("Conversion tests passed.");
+}
 
 void simpleTests() {
   boost::dynamic_bitset<> bits(64, 0xDEADBEEF);
@@ -85,13 +99,13 @@ void sha256Tests() {
 
   SHA256 sha256;
 
-  std::string h = sha256.call(Utils::str2bits(empty)).hex();
+  std::string h = Utils::hexstr(sha256.call(Utils::str2bits(empty)));
   assert(h.compare(h_empty) == 0);
 
-  h = sha256.call(Utils::str2bits(s)).hex();
+  h = Utils::hexstr(sha256.call(Utils::str2bits(s)));
   assert(h.compare(h_s) == 0);
 
-  h = sha256.call(Utils::str2bits(s7)).hex();
+  h = Utils::hexstr(sha256.call(Utils::str2bits(s7)));
   assert(h.compare(h_s7) == 0);
 
   Utils::seed(1);
@@ -123,7 +137,7 @@ void sha256Tests() {
       boost::algorithm::to_lower(expected_output);
 
       // Call SHA256 using custom hash function
-      h = sha256.call(bits).hex();
+      h = Utils::hexstr(sha256.call(bits));
 
       if (h.compare(expected_output) != 0) {
         spdlog::info("inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
@@ -167,7 +181,7 @@ void ripemd160Tests() {
       boost::algorithm::to_lower(expected_output);
 
       // Call RIPEMD160 using custom hash function
-      const std::string h = ripemd160.call(bits).hex();
+      const std::string h = Utils::hexstr(ripemd160.call(bits));
 
       if (h.compare(expected_output) != 0) {
         spdlog::info("inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
@@ -212,7 +226,7 @@ void md5Tests() {
       boost::algorithm::to_lower(expected_output);
 
       // Call MD5 using custom hash function
-      const std::string h = md5.call(bits).hex();
+      const std::string h = Utils::hexstr(md5.call(bits));
 
       if (h.compare(expected_output) != 0) {
         spdlog::info("inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
@@ -226,7 +240,7 @@ void md5Tests() {
 }
 
 void cmsatTests() {
-  ProblemInstance problem(64, 3, 12, false, false);
+  ProblemInstance problem(64, 12, false, false);
 
   int rtn = problem.prepare("SHA256", "cmsat");
   assert(rtn == 0);
@@ -246,8 +260,29 @@ void cmsatTests() {
   spdlog::info("CryptoMiniSAT tests passed.");
 }
 
+void preimageSATTests() {
+  ProblemInstance problem(64, 12, false, false);
+
+  int rtn = problem.prepare("SHA256", "simple");
+  assert(rtn == 0);
+  int status = problem.execute();
+  assert(status == 0);
+
+  rtn = problem.prepare("MD5", "simple");
+  assert(rtn == 0);
+  status = problem.execute();
+  assert(status == 0);
+
+  rtn = problem.prepare("RIPEMD160", "simple");
+  assert(rtn == 0);
+  status = problem.execute();
+  assert(status == 0);
+
+  spdlog::info("PreimageSAT tests passed.");
+}
+
 void bpTests() {
-  ProblemInstance problem(64, 4, 2, false, false);
+  ProblemInstance problem(64, 2, false, false);
 
   int rtn = problem.prepare("SHA256", "bp");
   assert(rtn == 0);
@@ -268,12 +303,14 @@ void bpTests() {
 }
 
 void allTests() {
+  conversionTests();
   simpleTests();
   symBitVecTests();
   sha256Tests();
   ripemd160Tests();
   md5Tests();
   cmsatTests();
+  preimageSATTests();
   bpTests();
 }
 

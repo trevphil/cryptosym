@@ -24,233 +24,97 @@ Solver::Solver(bool verbose) : verbose_(verbose) {}
 
 Solver::~Solver() {}
 
-void Solver::setFactors(const std::map<int, Factor> &factors) {
-  factors_ = factors;
+void Solver::setHeader(int inp_size, int out_size, int n_vars, int n_gates) {
+  input_size_ = inp_size;
+  output_size_ = out_size;
+  num_vars_ = n_vars;
+  num_gates_ = n_gates;
+}
+
+void Solver::setGates(const std::vector<LogicGate> &gates) {
+  gates_ = gates;
 }
 
 void Solver::setInputIndices(const std::vector<int> &input_indices) {
   input_indices_ = input_indices;
 }
 
-void Solver::setObserved(const std::map<int, bool> &observed) {
+void Solver::setOutputIndices(const std::vector<int> &output_indices) {
+  output_indices_ = output_indices;
+}
+
+void Solver::setObserved(const std::unordered_map<int, bool> &observed) {
   observed_ = observed;
 }
 
-std::map<int, bool> Solver::solve() {
+std::unordered_map<int, bool> Solver::solve() {
+  if (num_gates_ != (int)gates_.size()) {
+    spdlog::error("Expected {} gates but have {}.", num_gates_, gates_.size());
+    assert(false);
+  }
+  if (input_size_ != (int)input_indices_.size()) {
+    spdlog::error("Expected input_size={} but it is {}.",
+                  input_size_, input_indices_.size());
+    assert(false);
+  }
+  if (output_size_ != (int)output_indices_.size()) {
+    spdlog::error("Expected output_size={} but it is {}.",
+                  output_size_, output_indices_.size());
+    assert(false);
+  }
+
   const auto start = Utils::ms_since_epoch();
-  setImplicitObserved();
   initialize();
-  const auto solution = solveInternal();
+  auto solution = solveInternal();
   const auto end = Utils::ms_since_epoch();
   if (verbose_) spdlog::info("Solver finished in {} ms", end - start);
+
+  // Fill in observed values
+  for (const auto &itr : observed_) {
+    assert(itr.first > 0);
+    if (solution.count(itr.first) > 0) {
+      // Check for solver predictions which conflict with observations
+      if (solution.at(itr.first) != itr.second) {
+        spdlog::error("Variable {} is {} but was predicted {}!",
+                      itr.first, itr.second, solution.at(itr.first));
+        assert(false);
+      }
+    } else {
+      solution[itr.first] = itr.second;
+    }
+  }
+
   return solution;
 }
 
-void Solver::setImplicitObserved() {
-  const int initial = observed_.size();
-  if (verbose_) spdlog::info("There are {} initially observed bits", initial);
-  while (true) {
-    const int before = observed_.size();
-    const int smallest_obs = propagateBackward();
-    propagateForward(smallest_obs);
-    const int after = observed_.size();
-    if (before == after) break;
+int Solver::writeCNF(const std::string &filename) const {
+  int num_clauses = static_cast<int>(observed_.size());
+  for (const LogicGate &g : gates_) {
+    num_clauses += LogicGate::numClausesCNF(g.t());
   }
-  const int diff = observed_.size() - initial;
-  if (verbose_) spdlog::info("Pre-solved for {} additional bits", diff);
-}
 
-int Solver::propagateBackward() {
-  std::list<int> queue;
-  for (const auto &itr : observed_) queue.push_back(itr.first);
-  int smallest_obs = factors_.size() * 2;
-  int inp, inp1, inp2, inp3;
-  bool inp1_obs, inp2_obs, inp3_obs;
+  std::ofstream cnf_file(filename);
+  if (!cnf_file.is_open()) {
+    spdlog::error("Unable to open \"{}\" in write mode.", filename);
+    assert(false);
+    return 0;
+  }
 
-  while (queue.size() > 0) {
-    const int rv = queue.front();
-    queue.pop_front();
-
-    if (factors_.count(rv) == 0) continue;
-    const Factor &f = factors_.at(rv);
-    if (!f.valid) continue;
-
-    switch (f.t) {
-    case Factor::Type::NotFactor:
-      inp = f.inputs.at(0);
-      observed_[inp] = !observed_.at(rv);
-      queue.push_back(inp);
-      smallest_obs = std::min(smallest_obs, inp);
-      break;
-    case Factor::Type::AndFactor:
-      inp1 = f.inputs.at(0);
-      inp2 = f.inputs.at(1);
-      if (observed_.at(rv) == true) {
-        // Output is observed to be 1, so both inputs must have been 1
-        observed_[inp1] = true;
-        observed_[inp2] = true;
-        queue.push_back(inp1);
-        queue.push_back(inp2);
-        smallest_obs = std::min(inp1, std::min(inp2, smallest_obs));
-      } else if (observed_.count(inp1) > 0 && observed_.at(inp1) == true) {
-        // Output is 0, inp1 is 1, so inp2 must be 0
-        observed_[inp2] = false;
-        queue.push_back(inp2);
-        smallest_obs = std::min(smallest_obs, inp2);
-      } else if (observed_.count(inp2) > 0 && observed_.at(inp2) == true) {
-        // Output is 0, inp2 is 1, so inp1 must be 0
-        observed_[inp1] = false;
-        queue.push_back(inp1);
-        smallest_obs = std::min(smallest_obs, inp1);
-      }
-      break;
-    case Factor::Type::XorFactor:
-      inp1 = f.inputs.at(0);
-      inp2 = f.inputs.at(1);
-      inp1_obs = observed_.count(inp1) > 0;
-      inp2_obs = observed_.count(inp2) > 0;
-      if (inp1_obs && !inp2_obs) {
-        observed_[inp2] = observed_.at(rv) ^ observed_.at(inp1);
-        queue.push_back(inp2);
-        smallest_obs = std::min(smallest_obs, inp2);
-      } else if (inp2_obs && !inp1_obs) {
-        observed_[inp1] = observed_.at(rv) ^ observed_.at(inp2);
-        queue.push_back(inp1);
-        smallest_obs = std::min(smallest_obs, inp1);
-      }
-      break;
-    case Factor::Type::OrFactor:
-      inp1 = f.inputs.at(0);
-      inp2 = f.inputs.at(1);
-      if (observed_.at(rv) == false) {
-        // Output is observed to be 0, so both inputs must have been 0
-        observed_[inp1] = false;
-        observed_[inp2] = false;
-        queue.push_back(inp1);
-        queue.push_back(inp2);
-        smallest_obs = std::min(inp1, std::min(inp2, smallest_obs));
-      } else if (observed_.count(inp1) > 0 && observed_.at(inp1) == false) {
-        // Output is 1, inp1 is 0, so inp2 must be 1
-        observed_[inp2] = true;
-        queue.push_back(inp2);
-        smallest_obs = std::min(smallest_obs, inp2);
-      } else if (observed_.count(inp2) > 0 && observed_.at(inp2) == false) {
-        // Output is 1, inp2 is 0, so inp1 must be 1
-        observed_[inp1] = true;
-        queue.push_back(inp1);
-        smallest_obs = std::min(smallest_obs, inp1);
-      }
-      break;
-    case Factor::Type::MajFactor:
-      inp1 = f.inputs.at(0);
-      inp2 = f.inputs.at(1);
-      inp3 = f.inputs.at(2);
-      inp1_obs = observed_.count(inp1) > 0;
-      inp2_obs = observed_.count(inp2) > 0;
-      inp3_obs = observed_.count(inp3) > 0;
-      if (observed_.at(rv) == true) {
-        if (inp1_obs && observed_.at(inp1) == false) {
-          observed_[inp2] = true;
-          observed_[inp3] = true;
-        } else if (inp2_obs && observed_.at(inp2) == false) {
-          observed_[inp1] = true;
-          observed_[inp3] = true;
-        } else if (inp3_obs && observed_.at(inp3) == false) {
-          observed_[inp1] = true;
-          observed_[inp2] = true;
-        }
-      } else {  // Else observed_.at(rv) = false
-        if (inp1_obs && observed_.at(inp1) == true) {
-          observed_[inp2] = false;
-          observed_[inp3] = false;
-        } else if (inp2_obs && observed_.at(inp2) == true) {
-          observed_[inp1] = false;
-          observed_[inp3] = false;
-        } else if (inp3_obs && observed_.at(inp3) == true) {
-          observed_[inp1] = false;
-          observed_[inp2] = false;
-        }
-      }
-      break;
+  cnf_file << "p cnf " << num_vars_ << " " << num_clauses << "\n";
+  for (const auto &itr : observed_) {
+    assert(itr.first > 0);
+    cnf_file << (itr.first * (itr.second ? 1 : -1)) << " 0\n";
+  }
+  for (const LogicGate &g : gates_) {
+    const std::vector<std::vector<int>> clauses = g.cnf();
+    for (const std::vector<int> &clause : clauses) {
+      for (int var : clause) cnf_file << var << " ";
+      cnf_file << "0\n";
     }
   }
 
-  return smallest_obs;
-}
-
-void Solver::propagateForward(int smallest_obs) {
-  const int n = factors_.size() * 2;
-  int inp, inp1, inp2, inp3;
-  bool inp1_obs, inp2_obs, inp3_obs;
-
-  for (int rv = smallest_obs; rv < n; rv++) {
-    if (observed_.count(rv) > 0) continue;
-    if (factors_.count(rv) == 0) continue;
-    const Factor &f = factors_.at(rv);
-    if (!f.valid) continue;
-
-    switch (f.t) {
-    case Factor::Type::NotFactor:
-      inp = f.inputs.at(0);
-      if (observed_.count(inp) > 0) observed_[rv] = !observed_.at(inp);
-      break;
-    case Factor::Type::AndFactor:
-      inp1 = f.inputs.at(0);
-      inp2 = f.inputs.at(1);
-      inp1_obs = observed_.count(inp1) > 0;
-      inp2_obs = observed_.count(inp2) > 0;
-      if (inp1_obs && inp2_obs) {
-        observed_[rv] = observed_.at(inp1) & observed_.at(inp2);
-      } else if (inp1_obs && observed_.at(inp1) == false) {
-        observed_[rv] = false;
-      } else if (inp2_obs && observed_.at(inp2) == false) {
-        observed_[rv] = false;
-      }
-      break;
-    case Factor::Type::XorFactor:
-      inp1 = f.inputs.at(0);
-      inp2 = f.inputs.at(1);
-      if (observed_.count(inp1) > 0 && observed_.count(inp2) > 0) {
-        observed_[rv] = observed_.at(inp1) ^ observed_.at(inp2);
-      }
-      break;
-    case Factor::Type::OrFactor:
-      inp1 = f.inputs.at(0);
-      inp2 = f.inputs.at(1);
-      inp1_obs = observed_.count(inp1) > 0;
-      inp2_obs = observed_.count(inp2) > 0;
-      if (inp1_obs && inp2_obs) {
-        observed_[rv] = observed_.at(inp1) | observed_.at(inp2);
-      } else if (inp1_obs && observed_.at(inp1) == true) {
-        observed_[rv] = true;
-      } else if (inp2_obs && observed_.at(inp2) == true) {
-        observed_[rv] = true;
-      }
-      break;
-    case Factor::Type::MajFactor:
-      inp1 = f.inputs.at(0);
-      inp2 = f.inputs.at(1);
-      inp3 = f.inputs.at(2);
-      inp1_obs = observed_.count(inp1) > 0;
-      inp2_obs = observed_.count(inp2) > 0;
-      inp3_obs = observed_.count(inp3) > 0;
-      if (inp1_obs && inp2_obs && inp3_obs) {
-        observed_[rv] = ((int)observed_.at(inp1) +
-                         (int)observed_.at(inp2) +
-                         (int)observed_.at(inp3)) > 1;
-      } else if (inp1_obs && inp2_obs &&
-                 observed_.at(inp1) == observed_.at(inp2)) {
-        observed_[rv] = observed_.at(inp1);
-      } else if (inp1_obs && inp3_obs &&
-                 observed_.at(inp1) == observed_.at(inp3)) {
-        observed_[rv] = observed_.at(inp1);
-      } else if (inp2_obs && inp3_obs &&
-                 observed_.at(inp2) == observed_.at(inp3)) {
-        observed_[rv] = observed_.at(inp2);
-      }
-      break;
-    }
-  }
+  cnf_file.close();
+  return num_clauses;
 }
 
 }  // end namespace preimage

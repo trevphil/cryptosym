@@ -14,7 +14,10 @@
 
 #include <boost/dynamic_bitset.hpp>
 #include <map>
+#include <unordered_map>
 #include <vector>
+#include <iostream>
+#include <fstream>
 #include <assert.h>
 
 #include "core/sym_hash.hpp"
@@ -24,6 +27,7 @@
 #include "hashing/hash_funcs.hpp"
 #include "bp/bp_solver.hpp"
 #include "cmsat/cmsat_solver.hpp"
+#include "preimage_sat/preimage_sat.hpp"
 
 #include <memory>
 #include <string>
@@ -32,8 +36,8 @@ namespace preimage {
 
 class ProblemInstance {
  public:
-  ProblemInstance(int num_input_bits, int num_known_input_bits,
-                  int difficulty, bool verbose, bool bin_format);
+  ProblemInstance(int num_input_bits, int difficulty,
+                  bool verbose, bool bin_format);
 
   int prepare(const std::string &hash_name,
               const std::string &solver_name);
@@ -41,16 +45,22 @@ class ProblemInstance {
   int execute();
 
  private:
-  void prepareHasher(const std::string &hash_name);
+  void saveSymbols(const std::string &filename);
 
-  void prepareSolver(const std::string &solver_name);
+  void loadSymbols(const std::string &filename);
+
+  void createHasher(const std::string &hash_name);
+
+  void createSolver(const std::string &solver_name);
+
+  boost::dynamic_bitset<> getPreimage(const std::string &symbols_file,
+                                      const std::string &hash_hex);
 
   std::unique_ptr<SymHash> hasher;
   std::unique_ptr<Solver> solver;
 
  private:
   int num_input_bits_;
-  int num_known_input_bits_;
   int difficulty_;
   bool verbose_;
   bool bin_format_;

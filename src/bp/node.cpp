@@ -30,8 +30,8 @@ namespace bp {
 
 GraphEdge::GraphEdge(std::shared_ptr<GraphNode> n,
                      std::shared_ptr<GraphFactor> f,
-                     IODirection dir)
-    : node(n), factor(f), direction(dir) {}
+                     IODirection dir, bool neg)
+    : node(n), factor(f), direction(dir), negated(neg) {}
 
 std::string GraphEdge::toString() const {
   std::string dir_str = "";
@@ -42,6 +42,7 @@ std::string GraphEdge::toString() const {
     case IODirection::Prior: dir_str = "Prior"; break;
   }
   std::stringstream ss;
+  if (negated) ss << "~ ";
   ss << node->toString() << " <-[" << dir_str << "]-> " << factor->toString();
   return ss.str();
 }
@@ -54,15 +55,6 @@ GraphFactor::GraphFactor(int i, BPFactorType t)
     : index_(i), t_(t) {
   switch (t_) {
   case BPFactorType::Prior:
-    break;
-  case BPFactorType::Not:
-    table_ = Eigen::MatrixXd::Zero(4, 3);
-    // P(output = B | input = A)
-    //        A  B  prob
-    table_ << 0, 0, 0.0,
-              0, 1, 1.0,
-              1, 0, 1.0,
-              1, 1, 0.0;
     break;
   case BPFactorType::And:
     table_ = Eigen::MatrixXd::Zero(8, 4);
@@ -124,6 +116,27 @@ GraphFactor::GraphFactor(int i, BPFactorType t)
               1, 1, 1, 0, BP_ZERO,
               1, 1, 1, 1, BP_ONE;
     break;
+  case BPFactorType::Xor3:
+    table_ = Eigen::MatrixXd::Zero(16, 5);
+    // P(output = D | input1 = A, input2 = B, input3 = C)
+    //        A  B  C  D  prob
+    table_ << 0, 0, 0, 0, BP_ONE,
+              0, 0, 0, 1, BP_ZERO,
+              0, 0, 1, 0, BP_ZERO,
+              0, 0, 1, 1, BP_ONE,
+              0, 1, 0, 0, BP_ZERO,
+              0, 1, 0, 1, BP_ONE,
+              0, 1, 1, 0, BP_ONE,
+              0, 1, 1, 1, BP_ZERO,
+              1, 0, 0, 0, BP_ZERO,
+              1, 0, 0, 1, BP_ONE,
+              1, 0, 1, 0, BP_ONE,
+              1, 0, 1, 1, BP_ZERO,
+              1, 1, 0, 0, BP_ONE,
+              1, 1, 0, 1, BP_ZERO,
+              1, 1, 1, 0, BP_ZERO,
+              1, 1, 1, 1, BP_ONE;
+    break;
   }
 }
 
@@ -134,11 +147,11 @@ GraphFactor::~GraphFactor() {
 std::string GraphFactor::ftype2str(BPFactorType t) {
   switch (t) {
     case BPFactorType::And: return "And";
-    case BPFactorType::Not: return "Not";
     case BPFactorType::Prior: return "Prior";
     case BPFactorType::Xor: return "Xor";
     case BPFactorType::Or: return "Or";
     case BPFactorType::Maj: return "Maj";
+    case BPFactorType::Xor3: return "Xor3";
   }
 }
 
@@ -209,9 +222,11 @@ void GraphFactor::factor2node() {
   const int n_rows = tfill.rows();
 
   for (int col = 0; col < l; col++) {
-    Eigen::Array2d m = msg_in.row(edge_index_for_table_column_.at(col));
+    const int edge_idx = edge_index_for_table_column_.at(col);
+    const bool negated = edges_.at(edge_idx)->negated;
+    Eigen::Array2d m = msg_in.row(edge_idx);
     for (int row = 0; row < n_rows; row++) {
-      if (table_(row, col) == 0) {
+      if ((!negated && table_(row, col) == 0) || (negated && table_(row, col) == 1)) {
         tfill(row, col) = m(0);
       } else {
         tfill(row, col) = m(1);
@@ -226,6 +241,8 @@ void GraphFactor::factor2node() {
 #endif
 
   for (int col = 0; col < l; col++) {
+    const int edge_idx = edge_index_for_table_column_.at(col);
+    const bool negated = edges_.at(edge_idx)->negated;
     Eigen::MatrixXd tmp = tfill.replicate(1, 1);
     // Remove column "col" from tmp
     tmp.block(0, col, n_rows, l - col) = tmp.block(0, col + 1, n_rows, l - col);
@@ -237,17 +254,17 @@ void GraphFactor::factor2node() {
     double s0 = 0;
     double s1 = 0;
     for (int row = 0; row < table_.rows(); row++) {
-      if (table_(row, col) == 0) {
+      if ((!negated && table_(row, col) == 0) || (negated && table_(row, col) == 1)) {
         s0 += p(row);
       } else {
         s1 += p(row);
       }
     }
-    edges_.at(edge_index_for_table_column_.at(col))->m2n(0) = s0;
-    edges_.at(edge_index_for_table_column_.at(col))->m2n(1) = s1;
+    edges_.at(edge_idx)->m2n(0) = s0;
+    edges_.at(edge_idx)->m2n(1) = s1;
 #ifdef PRINT_DEBUG
     std::cout << "factor2node, col=" << col << ", " <<
-      edges_.at(edge_index_for_table_column_.at(col))->toString() <<
+      edges_.at(edge_idx)->toString() <<
       " (s0,s1)=[" << s0 << ", " << s1 << "]" << std::endl;
 #endif
   }

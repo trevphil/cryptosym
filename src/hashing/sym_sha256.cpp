@@ -21,10 +21,10 @@ namespace preimage {
 #define Maj(x, y, z) (SymBitVec::majority3(x, y, z))
 #define S(x, n) ((x >> (n & 31)) | (x << (32 - (n & 31))))
 #define R(x, n) (x >> n)
-#define Sigma0(x) (S(x, 2) ^ S(x, 13) ^ S(x, 22))
-#define Sigma1(x) (S(x, 6) ^ S(x, 11) ^ S(x, 25))
-#define Gamma0(x) (S(x, 7) ^ S(x, 18) ^ R(x, 3))
-#define Gamma1(x) (S(x, 17) ^ S(x, 19) ^ R(x, 10))
+#define Sigma0(x) (SymBitVec::xor3(S(x, 2), S(x, 13), S(x, 22)))
+#define Sigma1(x) (SymBitVec::xor3(S(x, 6), S(x, 11), S(x, 25)))
+#define Gamma0(x) (SymBitVec::xor3(S(x, 7), S(x, 18), R(x, 3)))
+#define Gamma1(x) (SymBitVec::xor3(S(x, 17), S(x, 19), R(x, 10)))
 
 SHA256::SHA256() {
   block_size_ = 64;

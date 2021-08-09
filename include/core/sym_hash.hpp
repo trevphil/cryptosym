@@ -16,6 +16,7 @@
 
 #include <string>
 #include <set>
+#include <unordered_map>
 
 #include "core/sym_bit_vec.hpp"
 
@@ -31,14 +32,8 @@ class SymHash {
 
   std::vector<int> hashOutputIndices() const;
 
-  int numUsefulFactors();
-
-  int dagDepth() const;
-
-  SymBitVec call(const boost::dynamic_bitset<> &hash_input,
-                 int difficulty = -1);
-
-  bool canIgnore(int rv);
+  boost::dynamic_bitset<> call(const boost::dynamic_bitset<> &hash_input,
+                               int difficulty = -1, bool symbolic = false);
 
   double averageRuntimeMs() const;
 
@@ -50,12 +45,10 @@ class SymHash {
   virtual SymBitVec hash(const SymBitVec &hash_input, int difficulty) = 0;
 
  private:
-  void findIgnorableRVs();
+  void pruneIrrelevantGates();
 
-  int numUnknownsPerHash() const;
+  void reindexBits();
 
-  std::set<int> ignorable_;
-  bool did_find_ignorable_;
   std::vector<int> hash_input_indices_;
   std::vector<int> hash_output_indices_;
   double num_calls_, cum_runtime_ms_;

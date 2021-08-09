@@ -12,11 +12,12 @@
 
 #pragma once
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <string>
+#include <fstream>
 
-#include "core/factor.hpp"
+#include "core/logic_gate.hpp"
 #include "core/bit.hpp"
 
 namespace preimage {
@@ -27,30 +28,33 @@ class Solver {
 
   virtual ~Solver();
 
-  void setFactors(const std::map<int, Factor> &factors);
+  void setHeader(int inp_size, int out_size, int n_vars, int n_gates);
 
   void setInputIndices(const std::vector<int> &input_indices);
 
-  void setObserved(const std::map<int, bool> &observed);
+  void setOutputIndices(const std::vector<int> &output_indices);
 
-  std::map<int, bool> solve();
+  void setGates(const std::vector<LogicGate> &gates);
+
+  void setObserved(const std::unordered_map<int, bool> &observed);
+
+  int writeCNF(const std::string &filename) const;
+
+  std::unordered_map<int, bool> solve();
 
   virtual std::string solverName() const = 0;
 
  protected:
   virtual void initialize() = 0;
 
-  virtual std::map<int, bool> solveInternal() = 0;
+  virtual std::unordered_map<int, bool> solveInternal() = 0;
 
   bool verbose_;
-  std::map<int, Factor> factors_;
-  std::vector<int> input_indices_;
-  std::map<int, bool> observed_;
-
- private:
-  void setImplicitObserved();
-  int propagateBackward();
-  void propagateForward(int smallest_obs);
+  int input_size_, output_size_;
+  int num_vars_, num_gates_;
+  std::vector<LogicGate> gates_;
+  std::vector<int> input_indices_, output_indices_;
+  std::unordered_map<int, bool> observed_;
 };
 
 }  // end namespace preimage

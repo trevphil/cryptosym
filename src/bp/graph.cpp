@@ -132,8 +132,8 @@ double Graph::maxChange() const {
 
 void Graph::connectFactorNode(std::shared_ptr<GraphFactor> factor,
                               std::shared_ptr<GraphNode> node,
-                              IODirection dir) {
-  std::shared_ptr<GraphEdge> e(new GraphEdge(node, factor, dir));
+                              IODirection dir, bool negated) {
+  std::shared_ptr<GraphEdge> e(new GraphEdge(node, factor, dir, negated));
   factor->addEdge(e);
   node->addEdge(e);
 }

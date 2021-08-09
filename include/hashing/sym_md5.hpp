@@ -62,7 +62,7 @@ class MD5 : public SymHash {
 
   static inline SymBitVec H(const SymBitVec &x, const SymBitVec &y,
                             const SymBitVec &z) {
-    return x ^ y ^ z;
+    return SymBitVec::xor3(x, y, z);
   }
 
   static inline SymBitVec I(const SymBitVec &x, const SymBitVec &y,

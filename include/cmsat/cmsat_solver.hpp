@@ -34,11 +34,19 @@ class CMSatSolver : public Solver {
  protected:
   void initialize() override;
 
-  std::map<int, bool> solveInternal() override;
+  std::unordered_map<int, bool> solveInternal() override;
 
  private:
+  inline CMSat::Lit getLit(int i) const {
+    assert(i != 0);
+    return CMSat::Lit(abs(i) - 1, i < 0);
+  }
+
+  void addClause(const LogicGate &g);
+
+  void addXorClause(const LogicGate &g);
+
   CMSat::SATSolver *solver_;
-  std::map<int, unsigned int> rv2idx_;
 };
 
 }  // end namespace preimage

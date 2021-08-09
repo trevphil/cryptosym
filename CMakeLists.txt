@@ -36,12 +36,16 @@ set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
 set(EIGEN3_LIBRARIES ${EIGEN3_LIBRARIES})
 include_directories(${EIGEN3_INCLUDE_DIR})
 
+# OpenCV
+find_package(OpenCV 4 REQUIRED)
+include_directories(${OpenCV_LIBRARIES})
+
 # Add all the source files needed to build the executable
 add_executable(preimage
                src/main.cpp
                src/problem_instance.cpp
                src/core/bit.cpp
-               src/core/factor.cpp
+               src/core/logic_gate.cpp
                src/core/sym_bit_vec.cpp
                src/core/solver.cpp
                src/core/sym_hash.cpp
@@ -50,6 +54,7 @@ add_executable(preimage
                src/hashing/sym_md5.cpp
                src/hashing/sym_ripemd160.cpp
                src/cmsat/cmsat_solver.cpp
+               src/preimage_sat/preimage_sat.cpp
                src/bp/node.cpp
                src/bp/graph.cpp
                src/bp/bp_solver.cpp)
@@ -58,3 +63,4 @@ target_link_libraries(preimage ${EXTRA_LIBS})
 target_link_libraries(preimage spdlog::spdlog)
 target_link_libraries(preimage cryptominisat5)
 target_link_libraries(preimage cryptopp-shared)
+target_link_libraries(preimage ${OpenCV_LIBRARIES})

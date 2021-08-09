@@ -29,7 +29,7 @@ SymBitVec::SymBitVec(const boost::dynamic_bitset<> &bits, bool unknown) {
   bits_ = {};
   bits_.reserve(bits.size());
   for (boost::dynamic_bitset<>::size_type i = 0; i < bits.size(); ++i) {
-    bits_.push_back(Bit(bits[i], unknown, unknown ? 1 : 0));
+    bits_.push_back(Bit(bits[i], unknown, 0));
   }
 }
 
@@ -40,10 +40,7 @@ SymBitVec::SymBitVec(uint64_t n, int sz, bool unknown) {
   }
   bits_ = {};
   bits_.reserve(sz);
-  for (int i = 0; i < sz; i++) {
-    Bit b((n >> i) & 1, unknown, unknown ? 1 : 0);
-    bits_.push_back(b);
-  }
+  for (int i = 0; i < sz; i++) bits_.push_back(Bit((n >> i) & 1, unknown, 0));
 }
 
 SymBitVec::~SymBitVec() {}
@@ -76,7 +73,7 @@ std::string SymBitVec::bin(bool colored) const {
   std::stringstream bit_stream;
   const int n = size();
   for (int i = 0; i < n; ++i) {
-    if (at(i).is_rv) {
+    if (at(i).unknown) {
       bit_stream << "\033[32m" << (at(i).val ? '1' : '0') << "\033[0m";
     } else {
       bit_stream << (at(i).val ? '1' : '0');
@@ -89,17 +86,10 @@ std::string SymBitVec::hex() const { return Utils::hexstr(bits()); }
 
 Bit SymBitVec::at(int index) const {
   const int n = size();
-  if (index >= n) spdlog::error("Index {} o.o.b. for SymBitVec[{}]", index, n);
-  assert(index < n);
+  if (index < 0 || index >= n)
+    spdlog::error("Index {} o.o.b. for SymBitVec[{}]", index, n);
+  assert(index >= 0 && index < n);
   return bits_.at(index);
-}
-
-std::vector<int> SymBitVec::rvIndices() const {
-  std::vector<int> indices;
-  for (const Bit &b : bits_) {
-    if (b.is_rv) indices.push_back(b.index);
-  }
-  return indices;
 }
 
 SymBitVec SymBitVec::concat(const SymBitVec &other) const {
@@ -242,6 +232,19 @@ SymBitVec SymBitVec::majority3(const SymBitVec &a,
   std::vector<Bit> bits = {};
   for (int i = 0; i < a.size(); i++) {
     bits.push_back(Bit::majority3(a.at(i), b.at(i), c.at(i)));
+  }
+  return SymBitVec(bits);
+}
+
+SymBitVec SymBitVec::xor3(const SymBitVec &a,
+                          const SymBitVec &b,
+                          const SymBitVec &c) {
+  assert(a.size() == b.size());
+  assert(a.size() == c.size());
+
+  std::vector<Bit> bits = {};
+  for (int i = 0; i < a.size(); i++) {
+    bits.push_back(Bit::xor3(a.at(i), b.at(i), c.at(i)));
   }
   return SymBitVec(bits);
 }

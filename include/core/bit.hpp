@@ -15,13 +15,13 @@
 #include <utility>
 #include <vector>
 
-#include "core/factor.hpp"
+#include "core/logic_gate.hpp"
 
 namespace preimage {
 
 class Bit {
  public:
-  Bit(bool bit_val, bool rv, int d);
+  Bit(bool bit_val, bool is_unknown, int dpth);
 
   virtual ~Bit();
 
@@ -47,13 +47,14 @@ class Bit {
 
   static Bit majority3(const Bit &a, const Bit &b, const Bit &c);
 
+  static Bit xor3(const Bit &a, const Bit &b, const Bit &c);
+
   static int global_index;
-  static std::vector<Bit> global_bits;
 
   bool val;
-  bool is_rv;
-  int depth;
   int index;
+  bool unknown;
+  int depth;
 };
 
 }  // end namespace preimage

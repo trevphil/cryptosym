@@ -20,7 +20,7 @@
 #include <eigen3/Eigen/Eigen>
 
 #include "bp/params.hpp"
-#include "core/factor.hpp"
+#include "core/logic_gate.hpp"
 
 namespace preimage {
 
@@ -31,7 +31,7 @@ enum class IODirection : uint8_t {
 };
 
 enum class BPFactorType : uint8_t {
-  Prior = 0, And = 1, Not = 2, Xor = 3, Or = 4, Maj = 5
+  Prior = 0, And = 1, Xor = 2, Or = 3, Maj = 4, Xor3 = 5
 };
 
 class GraphNode;
@@ -41,13 +41,14 @@ class GraphEdge {
  public:
   GraphEdge(std::shared_ptr<GraphNode> n,
             std::shared_ptr<GraphFactor> f,
-            IODirection dir);
+            IODirection dir, bool neg);
 
   std::string toString() const;
 
   std::shared_ptr<GraphNode> node;
   std::shared_ptr<GraphFactor> factor;
   IODirection direction;
+  bool negated;
   Eigen::Vector2d m2f;
   Eigen::Vector2d m2n;
 };

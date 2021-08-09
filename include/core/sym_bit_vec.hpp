@@ -47,8 +47,6 @@ class SymBitVec {
 
   Bit at(int index) const;
 
-  std::vector<int> rvIndices() const;
-
   SymBitVec concat(const SymBitVec &other) const;
 
   SymBitVec extract(int lb, int ub) const;
@@ -76,6 +74,10 @@ class SymBitVec {
   static SymBitVec majority3(const SymBitVec &a,
                              const SymBitVec &b,
                              const SymBitVec &c);
+
+  static SymBitVec xor3(const SymBitVec &a,
+                        const SymBitVec &b,
+                        const SymBitVec &c);
 
  private:
   std::vector<Bit> bits_;

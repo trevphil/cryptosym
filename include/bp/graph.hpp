@@ -50,7 +50,7 @@ class Graph {
 
   void connectFactorNode(std::shared_ptr<GraphFactor> factor,
                          std::shared_ptr<GraphNode> node,
-                         IODirection dir);
+                         IODirection dir, bool negated = false);
 
   int iterations() const;
 

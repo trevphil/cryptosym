@@ -12,6 +12,7 @@
 
 #include "cmsat/cmsat_solver.hpp"
 
+#include <iostream>
 #include <spdlog/spdlog.h>
 
 namespace preimage {
@@ -22,129 +23,99 @@ CMSatSolver::~CMSatSolver() {
   if (solver_) delete solver_;
 }
 
-void CMSatSolver::initialize() {
-  rv2idx_.clear();
-  int i = 0;
-  for (const int rv : input_indices_) rv2idx_[rv] = i++;
-  for (const auto &itr : factors_) {
-    const int rv = itr.first;
-    const Factor &f = itr.second;
-    if (f.valid) rv2idx_[rv] = i++;
+void CMSatSolver::addClause(const LogicGate &g) {
+  const std::vector<std::vector<int>> clauses = g.cnf();
+  for (const auto &clause : clauses) {
+    std::vector<CMSat::Lit> cmsat_clause;
+    for (int var : clause) cmsat_clause.push_back(getLit(var));
+    solver_->add_clause(cmsat_clause);
+  }
+}
+
+void CMSatSolver::addXorClause(const LogicGate &g) {
+  int lsum = (g.output < 0 ? 1 : 0);
+  std::vector<unsigned int> xor_clause = {
+    static_cast<unsigned int>(abs(g.output) - 1)
+  };
+
+  for (int i = 0; i < static_cast<int>(g.inputs.size()); i++) {
+    lsum += g.inputs[i] < 0 ? 1 : 0;
+    xor_clause.push_back(static_cast<unsigned int>(abs(g.inputs[i]) - 1));
   }
 
-  const unsigned int n = rv2idx_.size();
+  const bool xor_negated = (lsum % 2) == 1;
+  solver_->add_xor_clause(xor_clause, xor_negated);
+}
+
+void CMSatSolver::initialize() {
   solver_ = new CMSat::SATSolver;
   solver_->set_num_threads(1);
-  solver_->new_vars(n);
-  if (verbose_) spdlog::info("Initializing cryptominisat5 (n={})", n);
+  solver_->new_vars(num_vars_);
+  // solver_->set_no_simplify();
 
-  std::vector<CMSat::Lit> clause;
-  std::vector<unsigned int> xor_clause;
+  /*
+  void set_num_threads(unsigned n); // Number of threads to use. Must be set before any vars/clauses are added
+  void set_allow_otf_gauss(); // Allow on-the-fly gaussian elimination
 
-  for (const auto &itr : factors_) {
-    const Factor &f = itr.second;
+  void set_verbosity(unsigned verbosity = 0); // Default is 0, silent
+  void set_verbosity_detach_warning(bool verb); // Default is 0, silent
+  void set_default_polarity(bool polarity); // Default polarity when branching for all vars
+  void set_no_simplify(); // Never simplify
+  void set_no_simplify_at_startup(); // Doesn't simplify at start, faster startup time
+  void set_no_equivalent_lit_replacement(); // Don't replace equivalent literals
+  void set_no_bva(); // No bounded variable addition
+  void set_no_bve(); // No bounded variable elimination
+  void set_yes_comphandler(); // Allow component handler to work
+  void set_greedy_undef(); // Try to set variables to l_Undef in solution
+  void set_sampling_vars(std::vector<uint32_t>* sampl_vars);
+  void set_timeout_all_calls(double secs); // max timeout on all subsequent solve() or simplify
+  void set_up_for_scalmc(); // used to set the solver up for ScalMC configuration
+  void set_single_run(); // we promise to call solve() EXACTLY once
+  void set_intree_probe(int val);
+  void set_sls(int val);
+  void set_full_bve(int val);
+  void set_full_bve_iter_ratio(double val);
+  void set_scc(int val);
+  void set_bva(int val);
+  void set_distill(int val);
+  void reset_vsids();
+  void set_no_confl_needed(); // assumptions-based conflict will NOT be calculated for next solve run
+  void set_xor_detach(bool val);
+  */
 
-    switch (f.t) {
-      case Factor::Type::NotFactor:
-        clause = {// out inp 0
-                  CMSat::Lit(rv2idx_.at(f.output), false),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), false)};
-        solver_->add_clause(clause);
-        clause = {// -out -inp 0
-                  CMSat::Lit(rv2idx_.at(f.output), true),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), true)};
-        solver_->add_clause(clause);
+  if (verbose_)
+    spdlog::info("Running cryptominisat5 (n={})", num_vars_);
+
+  for (const LogicGate &g : gates_) {
+    switch (g.t()) {
+      case LogicGate::Type::and_gate:
+      case LogicGate::Type::or_gate:
+      case LogicGate::Type::maj_gate:
+        addClause(g);
         break;
-      case Factor::Type::AndFactor:
-        clause = {// -out inp1 0
-                  CMSat::Lit(rv2idx_.at(f.output), true),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), false)};
-        solver_->add_clause(clause);
-        clause = {// -out inp2 0
-                  CMSat::Lit(rv2idx_.at(f.output), true),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(1)), false)};
-        solver_->add_clause(clause);
-        clause = {// out -inp1 -inp2 0
-                  CMSat::Lit(rv2idx_.at(f.output), false),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), true),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(1)), true)};
-        solver_->add_clause(clause);
-        break;
-      case Factor::Type::XorFactor:
-        xor_clause = {rv2idx_.at(f.output), rv2idx_.at(f.inputs.at(0)),
-                      rv2idx_.at(f.inputs.at(1))};
-        solver_->add_xor_clause(xor_clause, 0);
-        break;
-      case Factor::Type::OrFactor:
-        clause = {// out -inp1 0
-                  CMSat::Lit(rv2idx_.at(f.output), false),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), true)};
-        solver_->add_clause(clause);
-        clause = {// out -inp2 0
-                  CMSat::Lit(rv2idx_.at(f.output), false),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(1)), true)};
-        solver_->add_clause(clause);
-        clause = {// -out inp1 inp2 0
-                  CMSat::Lit(rv2idx_.at(f.output), true),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), false),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(1)), false)};
-        solver_->add_clause(clause);
-        break;
-      case Factor::Type::MajFactor:
-        clause = {// out -inp1 -inp2 0
-                  CMSat::Lit(rv2idx_.at(f.output), false),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), true),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(1)), true)};
-        solver_->add_clause(clause);
-        clause = {// out -inp1 -inp3 0
-                  CMSat::Lit(rv2idx_.at(f.output), false),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), true),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(2)), true)};
-        solver_->add_clause(clause);
-        clause = {// out -inp2 -inp3 0
-                  CMSat::Lit(rv2idx_.at(f.output), false),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(1)), true),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(2)), true)};
-        solver_->add_clause(clause);
-        clause = {// -out inp1 inp2 0
-                  CMSat::Lit(rv2idx_.at(f.output), true),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), false),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(1)), false)};
-        solver_->add_clause(clause);
-        clause = {// -out inp1 inp3 0
-                  CMSat::Lit(rv2idx_.at(f.output), true),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(0)), false),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(2)), false)};
-        solver_->add_clause(clause);
-        clause = {// -out inp2 inp3 0
-                  CMSat::Lit(rv2idx_.at(f.output), true),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(1)), false),
-                  CMSat::Lit(rv2idx_.at(f.inputs.at(2)), false)};
-        solver_->add_clause(clause);
+      case LogicGate::Type::xor_gate:
+      case LogicGate::Type::xor3_gate:
+        addXorClause(g);
         break;
     }
   }
 }
 
-std::map<int, bool> CMSatSolver::solveInternal() {
+std::unordered_map<int, bool> CMSatSolver::solveInternal() {
   std::vector<CMSat::Lit> assumptions;
   for (const auto &itr : observed_) {
-    const int rv = itr.first;
-    if (rv2idx_.count(rv) == 0) continue;
-    const unsigned int idx = rv2idx_.at(rv);
-    // The second argument is "is_negated". If bit=1, the bit is not negated.
-    assumptions.push_back(CMSat::Lit(idx, !itr.second));
+    assert(itr.first > 0);
+    CMSat::Lit lit(itr.first - 1, !itr.second);
+    assumptions.push_back(lit);
   }
 
   CMSat::lbool ret = solver_->solve(&assumptions);
   assert(ret == CMSat::l_True);
   const auto final_model = solver_->get_model();
 
-  std::map<int, bool> solution;
-  for (const auto &itr : rv2idx_) {
-      const int rv = itr.first;
-      const unsigned int idx = itr.second;
-      solution[rv] = (final_model[idx] == CMSat::l_True);
+  std::unordered_map<int, bool> solution;
+  for (int i = 1; i <= num_vars_; ++i) {
+    solution[i] = (final_model[i - 1] == CMSat::l_True);
   }
   return solution;
 }

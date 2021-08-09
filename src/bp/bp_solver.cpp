@@ -33,60 +33,63 @@ void BPSolver::initialize() {
   g_.schedule_factor.push_back({});
   int max_rv = 0;
 
-  for (const auto &itr : factors_) {
-    const int rv = itr.first;
-    const Factor &f = itr.second;
-    if (!f.valid) continue;
-    const BPFactorType t = convertFactorType(f.t);
+  for (const LogicGate &gate : gates_) {
+    const int rv = gate.output;
+    assert(rv > 0);
+    const BPFactorType t = convertLogicGate(gate.t());
 
     std::shared_ptr<GraphFactor> fac(new GraphFactor(rv, t));
     g_.addFactor(fac);
     g_.schedule_factor[0].push_back(fac);
 
     std::shared_ptr<GraphNode> out_node;
-    if (!g_.hasNode(f.output)) {
-      out_node = std::shared_ptr<GraphNode>(new GraphNode(f.output));
+    if (!g_.hasNode(rv)) {
+      out_node = std::shared_ptr<GraphNode>(new GraphNode(rv));
       g_.addNode(out_node);
-      max_rv = std::max(max_rv, f.output);
+      max_rv = std::max(max_rv, rv);
     } else {
-      out_node = g_.getNode(f.output);
+      out_node = g_.getNode(rv);
     }
     g_.connectFactorNode(fac, out_node, IODirection::Output);
 
-    for (int inp : f.inputs) {
+    for (int inp : gate.inputs) {
+      assert(inp != 0);
       std::shared_ptr<GraphNode> inp_node;
-      if (!g_.hasNode(inp)) {
-        inp_node = std::shared_ptr<GraphNode>(new GraphNode(inp));
+      if (!g_.hasNode(abs(inp))) {
+        inp_node = std::shared_ptr<GraphNode>(new GraphNode(abs(inp)));
         g_.addNode(inp_node);
-        max_rv = std::max(max_rv, inp);
+        max_rv = std::max(max_rv, abs(inp));
       } else {
-        inp_node = g_.getNode(inp);
+        inp_node = g_.getNode(abs(inp));
       }
-      g_.connectFactorNode(fac, inp_node, IODirection::Input);
+      g_.connectFactorNode(fac, inp_node, IODirection::Input, inp < 0);
     }
   }
 
-  for (int rv = 0; rv < max_rv; rv++) {
-    if (g_.hasNode(rv)) g_.schedule_variable[0].push_back(g_.getNode(rv));
+  for (int rv = 0; rv <= max_rv; ++rv) {
+    if (g_.hasNode(rv)) {
+      g_.schedule_variable[0].push_back(g_.getNode(rv));
+    }
   }
 }
 
-BPFactorType BPSolver::convertFactorType(Factor::Type t) const {
+BPFactorType BPSolver::convertLogicGate(LogicGate::Type t) const {
   switch (t) {
-    case Factor::Type::AndFactor: return BPFactorType::And;
-    case Factor::Type::NotFactor: return BPFactorType::Not;
-    case Factor::Type::XorFactor: return BPFactorType::Xor;
-    case Factor::Type::OrFactor: return BPFactorType::Or;
-    case Factor::Type::MajFactor: return BPFactorType::Maj;
+    case LogicGate::Type::and_gate: return BPFactorType::And;
+    case LogicGate::Type::xor_gate: return BPFactorType::Xor;
+    case LogicGate::Type::or_gate: return BPFactorType::Or;
+    case LogicGate::Type::maj_gate: return BPFactorType::Maj;
+    case LogicGate::Type::xor3_gate: return BPFactorType::Xor3;
   }
 }
 
-std::map<int, bool> BPSolver::solveInternal() {
+std::unordered_map<int, bool> BPSolver::solveInternal() {
   std::vector<int> prior_rvs = {};
   for (const auto &itr : observed_) {
     const int rv = itr.first;
-    const bool bit_val = itr.second;
+    assert(rv > 0);
     assert(g_.hasNode(rv));
+    const bool bit_val = itr.second;
     std::shared_ptr<GraphFactor> fac(new GraphPriorFactor(rv, bit_val));
     g_.addFactor(fac);
     g_.connectFactorNode(fac, g_.getNode(rv), IODirection::Prior);
@@ -131,7 +134,7 @@ std::map<int, bool> BPSolver::solveInternal() {
     spdlog::warn("Graph node number of resets: {}", GraphNode::num_resets);
   }
 
-  std::map<int, bool> solution;
+  std::unordered_map<int, bool> solution;
   for (auto &nodes : g_.schedule_variable) {
     for (std::shared_ptr<GraphNode> node : nodes) {
       solution[node->index()] = node->bit();

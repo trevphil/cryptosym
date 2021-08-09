@@ -35,7 +35,7 @@ class RIPEMD160 : public SymHash {
 
   static inline SymBitVec F(const SymBitVec &x, const SymBitVec &y,
                             const SymBitVec &z) {
-    return (x ^ y ^ z);
+    return SymBitVec::xor3(x, y, z);
   }
 
   static inline SymBitVec G(const SymBitVec &x, const SymBitVec &y,
