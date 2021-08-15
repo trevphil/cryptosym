@@ -86,19 +86,6 @@ class ProblemGenerator(object):
       clause_idx = add_clause([g.inp2, -g.out], clause_idx)
       clause_idx = add_clause([-g.inp1, -g.inp2, g.out], clause_idx)
     num_clauses = clause_idx
-    
-    # Add random connections!
-    sparsity = 0.1
-    for row in range(int(2 * num_vars)):
-      existing_cols = deepcopy(cols_per_row[row])
-      k = int((sparsity - len(existing_cols) / num_clauses) * num_clauses + 0.5)
-      while k > 0:
-        col = None
-        while (col is None) or (col in existing_cols):
-          col = random.randrange(0, num_clauses)
-        existing_cols.add(col)
-        cnf_indices.append((row, col))
-        k -= 1
 
     problem = Problem(input_size=input_size,
                       output_size=output_size,
