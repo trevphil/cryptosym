@@ -1,11 +1,11 @@
 import torch
 
-from mlp import MLP
+from models.base_model import BaseModel
+from models.mlp import MLP
 
-class HashSAT(torch.nn.Module):
+class NeuroSAT(BaseModel):
   def __init__(self, opts):
-    super().__init__()
-    self.opts = opts
+    super().__init__(opts)
     # LSTM
     self.L_lstm = torch.nn.LSTMCell(input_size=int(2 * opts.d),
                                     hidden_size=opts.d,
@@ -13,32 +13,32 @@ class HashSAT(torch.nn.Module):
     self.C_lstm = torch.nn.LSTMCell(input_size=opts.d,
                                     hidden_size=opts.d,
                                     bias=True)
-    """
-    self.M_lstm = torch.nn.LSTMCell(input_size=opts.d_master,
-                                    hidden_size=opts.d_master,
-                                    bias=True)
-    """
     # Multi-layer perceptrons
     dims_out_msg = [opts.d for _ in range(opts.n_msg_layers)] + [opts.d]
     dims_out_vote = [opts.d for _ in range(opts.n_vote_layers)] + [1]
     self.L_msg = MLP(dim_in=opts.d, dims_out=dims_out_msg)
     self.C_msg = MLP(dim_in=opts.d, dims_out=dims_out_msg)
-    # self.M_msg = MLP(dim_in=opts.d, dims_out=[opts.d_master])
     self.L_vote = MLP(dim_in=opts.d, dims_out=dims_out_vote)
     self.norm = 1.0 / (opts.d ** 0.5)
-    # self.norm_master = 1.0 / (opts.d_master ** 0.5)
     # Sigmoid
     self.sigmoid = torch.nn.Sigmoid()
-    
-    num_param = sum(p.numel() for p in self.parameters())
-    print(f'HashSAT has {num_param} parameters.')
+
+    print(f'{self.name} has {self.num_parameters} parameters.')
+  
+  @property
+  def name(self):
+    return 'NeuroSAT'
   
   def flip(self, A):
     # Flip first and last half of rows in A
     half_rows = A.size(0) // 2
     return torch.cat((A[half_rows:], A[:half_rows]), axis=0)
 
-  def forward(self, A, A_T, observed):
+  def forward(self, problem):
+    A = problem.A
+    A_T = problem.A_T
+    observed = problem.observed
+
     dtype = self.opts.dtype
     n_lits, n_gates = A.size()[:2]  # n, m
     n_vars = n_lits // 2
@@ -48,7 +48,6 @@ class HashSAT(torch.nn.Module):
     C_init = torch.normal(0, 1, size=(1, self.opts.d), dtype=dtype) * self.norm
     L_state = torch.tile(L_init, (n_lits, 1))   # n, d
     C_state = torch.tile(C_init, (n_gates, 1))  # m, d
-    # M_state = torch.normal(0, 1, size=(1, self.opts.d_master), dtype=dtype) * self.norm_master
     
     for var, val in observed.items():
       val = float(val)
@@ -58,7 +57,6 @@ class HashSAT(torch.nn.Module):
     # Hidden states
     L_hidden = torch.zeros(n_lits, self.opts.d, dtype=dtype)   # n, d
     C_hidden = torch.zeros(n_gates, self.opts.d, dtype=dtype)  # m, d
-    # M_hidden = torch.zeros(1, self.opts.d_master, dtype=dtype) # 1, d_master
 
     for _ in range(self.opts.T):
       L_msg_pre = self.L_msg(L_state).squeeze()  # n, d
@@ -71,14 +69,6 @@ class HashSAT(torch.nn.Module):
       C_msg = torch.cat((C_msg, self.flip(L_state)), axis=1)  # n, 2d
       
       L_hidden, L_state = self.L_lstm(C_msg, (L_hidden, L_state))
-      
-      """
-      M_msg_pre = torch.cat((L_state, C_state), axis=0)  # m+n, d
-      M_msg = self.M_msg(M_msg_pre)  # m+n, d_master
-      M_msg = torch.mean(M_msg, dim=0).view(1, -1)
-      
-      M_hidden, M_state = self.M_lstm(M_msg, (M_hidden, M_state))
-      """
 
     votes = self.L_vote(L_state).squeeze()  # n
     positive = votes[:n_vars]  # n/2
@@ -91,11 +81,11 @@ if __name__ == '__main__':
 
   import os
   from time import time
-  from config import HashSATConfig
+  from opts import PreimageOpts
   from problem import Problem
   
-  opts = HashSATConfig()
-  model = HashSAT(opts)
+  opts = PreimageOpts()
+  model = NeuroSAT(opts)
   
   sha256_d8_sym = os.path.join('samples', 'sha256_d8_sym.txt')
   sha256_d8_cnf = os.path.join('samples', 'sha256_d8_cnf.txt')
@@ -113,7 +103,7 @@ if __name__ == '__main__':
   N = 1
   for _ in range(N):
     start = time()
-    model(problem.A, problem.A_T, problem.observed)
+    model(problem)
     cum_time += (time() - start)
 
   runtime = cum_time / float(N)

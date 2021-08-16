@@ -111,9 +111,9 @@ if __name__ == '__main__':
   from networkx.drawing.nx_pydot import graphviz_layout
   from matplotlib import pyplot as plt
   
-  from config import HashSATConfig
+  from opts import PreimageOpts
   
-  opts = HashSATConfig()
+  opts = PreimageOpts()
   gen = ProblemGenerator(opts)
   
   input_size = 16

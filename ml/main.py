@@ -5,14 +5,14 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 
 import utils
-from config import HashSATConfig
-from hashsat import HashSAT
-from loss_func import HashSATLoss
+from opts import PreimageOpts
+from models.neurosat import NeuroSAT
+from loss_func import PreimageLoss
 from generator import ProblemGenerator
 from problem import Problem
 
 if __name__ == '__main__':
-  opts = HashSATConfig()
+  opts = PreimageOpts()
   random.seed(opts.seed)
   np.random.seed(opts.seed)
   torch.manual_seed(opts.seed)
@@ -22,8 +22,8 @@ if __name__ == '__main__':
   exp_path = os.path.join(logdir, exp_name)
   writer = SummaryWriter(exp_path)
 
-  model = HashSAT(opts)
-  loss_fn = HashSATLoss()
+  model = NeuroSAT(opts)
+  loss_fn = PreimageLoss()
   
   # writer.add_graph(model)  TODO
 
@@ -52,8 +52,8 @@ if __name__ == '__main__':
       train_problem.randomize_observed()
       # train_problem = gen_train.create_problem(num_inputs, num_outputs, num_gates)
 
-      pred = model(train_problem.A, train_problem.A_T, train_problem.observed)
-      loss = loss_fn.bce(pred, train_problem)
+      pred_bits = model(train_problem)
+      loss = loss_fn.bce(pred_bits, train_problem)
 
       writer.add_scalar('training_loss', loss.item(),
                         epoch * num_train_samples + train_idx)
@@ -70,8 +70,8 @@ if __name__ == '__main__':
       for val_idx in range(num_val_samples):
         val_problem.randomize_observed()
         # val_problem = gen_val.create_problem(num_inputs, num_outputs, num_gates)
-        pred = model(val_problem.A, val_problem.A_T, val_problem.observed)
-        loss = loss_fn.mse(torch.round(pred), val_problem).item()
+        pred_bits = model(val_problem)
+        loss = loss_fn.mse(torch.round(pred_bits), val_problem).item()
         num_solved += (1 if loss == 0 else 0)
       print(f'Val - epoch {epoch} - solved {num_solved}/{num_val_samples}')
       writer.add_scalar('val_accuracy', num_solved / num_val_samples, epoch)

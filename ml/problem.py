@@ -141,7 +141,7 @@ class Problem(object):
     # Random input bits
     for inp in self.input_indices:
       if inp != 0:
-        assignments[inp] = int(random.random() > 0.5)
+        assignments[abs(inp)] = int(random.random() > 0.5)
 
     # Propagate through directed graph, assume topological sort
     for gate in self.and_gates:

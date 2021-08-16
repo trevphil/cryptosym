@@ -1,6 +1,6 @@
 import torch
 
-class HashSATConfig(object):
+class PreimageOpts(object):
   def __init__(self):
     self.seed = 1
     self.dtype = torch.float32
