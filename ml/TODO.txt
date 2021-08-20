@@ -1,6 +1,6 @@
-- Instead of changing the problem structure each time, simply change the values of the observed bits?
 - Runtime / speed... calculate loss faster with matrix operations?
     --> Profile with PyTorch
         https://pytorch.org/tutorials/beginner/profiler.html
         https://pytorch.org/tutorials/recipes/recipes/profiler_recipe.html
-- Should the problems repeat after each epoch or be completely random?
+
+- Find out where NeuroSAT has trouble, look at error per node on graphs (CNF and/or DAG)

@@ -2,24 +2,12 @@ import os
 import torch
 import random
 
-
-class AndGate(object):
-    def __init__(self, out, inp1, inp2):
-        assert (type(out) is int) and (type(inp1) is int) and (type(inp2) is int)
-        assert 0 not in (out, inp1, inp2), 'Bad AND gate: (%d, %d, %d)' % (
-            out, inp1, inp2)
-        assert out > 0, 'AND output should be positive! output = %d' % out
-        self.out = out
-        self.inp1 = inp1
-        self.inp2 = inp2
-
-    def __hash__(self):
-        return hash(f'{self.out} {self.inp1} {self.inp2}')
+from logic_gate import LogicGate, GateType
 
 
 class Problem(object):
     def __init__(self, input_size, output_size, num_vars, num_gates, num_clauses,
-                 input_indices, output_indices, cnf_indices, and_gates):
+                 input_indices, output_indices, cnf_indices, gates):
         self.input_size = input_size
         self.output_size = output_size
         self.num_vars = num_vars
@@ -29,8 +17,7 @@ class Problem(object):
         self.input_indices = input_indices
         self.output_indices = output_indices
         self.cnf_indices = cnf_indices
-        self.and_gates = list(sorted(and_gates, key=lambda gate: gate.out))
-        self.observed = dict()
+        self.gates = list(sorted(gates, key=lambda gate: gate.output))
 
         assert isinstance(self.input_size, int), 'Not all properties initialized'
         assert isinstance(self.output_size, int), 'Not all properties initialized'
@@ -46,7 +33,7 @@ class Problem(object):
         k = len(self.output_indices)
         if self.output_size != k:
             assert False, 'Expected %d output indices but got %d' % (self.output_size, k)
-        k = len(self.and_gates)
+        k = len(self.gates)
         if self.num_gates != k:
             assert False, 'Expected %d logic gates but got %d' % (self.m, k)
 
@@ -64,7 +51,7 @@ class Problem(object):
         return Problem(input_size=in_sz, output_size=out_sz, num_vars=n_vars,
                        num_gates=n_gates, num_clauses=n_clauses,
                        input_indices=in_idx, output_indices=out_idx,
-                       cnf_indices=cnf_indices, and_gates=gates)
+                       cnf_indices=cnf_indices, gates=gates)
 
     @staticmethod
     def parse_symbols(filename):
@@ -90,12 +77,10 @@ class Problem(object):
                     out_idx = [int(x) for x in line.split(' ')]
                 else:
                     parts = line.split(' ')
-                    if parts[0] != 'A':
-                        assert False, 'Only AND gates are supported!'
+                    gate_type = GateType(parts[0])
                     out = int(parts[2])
-                    inp1 = int(parts[3])
-                    inp2 = int(parts[4])
-                    gate = AndGate(out, inp1, inp2)
+                    inputs = [int(x) for x in parts[3:]]
+                    gate = LogicGate(gate_type, output=out, inputs=inputs)
                     gates.append(gate)
 
         return (in_sz, out_sz, n_vars, n_gates, in_idx, out_idx, gates)
@@ -133,38 +118,40 @@ class Problem(object):
         num_clauses = clause_idx
         return (num_clauses, cnf_indices)
 
-    def set_observed(self, obs):
-        for var, assignment in obs.items():
-            assert 0 < var <= self.num_vars, 'Invalid variable index for assignment %d' % var
-        self.observed = obs
-
-    def randomize_observed(self):
-        self.observed = dict()
+    def random_observed(self, rng=None):
         assignments = dict()
+        
+        if rng is None:
+            input_bits = [int(random.random() > 0.5) for _ in range(self.input_size)]
+        else:
+            input_bits = rng.integers(low=0, high=1, size=self.input_size,
+                                      dtype=int, endpoint=True)
 
         # Random input bits
-        for inp in self.input_indices:
+        for idx, inp in enumerate(self.input_indices):
             if inp != 0:
-                assignments[abs(inp)] = int(random.random() > 0.5)
+                assignments[abs(inp)] = input_bits[idx]
 
         # Propagate through directed graph, assume topological sort
-        for gate in self.and_gates:
-            inp1_idx = abs(gate.inp1)
-            inp2_idx = abs(gate.inp2)
-            assert inp1_idx in assignments
-            assert inp2_idx in assignments
-            inp1 = assignments[inp1_idx]
-            if gate.inp1 < 0:
-                inp1 = 1 - inp1
-            inp2 = assignments[inp2_idx]
-            if gate.inp2 < 0:
-                inp2 = 1 - inp2
-            assignments[gate.out] = (inp1 * inp2)
+        for gate in self.gates:
+            inputs = []
+            for inp in gate.inputs:
+                inp_val = assignments[abs(inp)]
+                if inp < 0:
+                    inp_val = 1 - inp_val
+                inputs.append(inp_val)
+            assignments[gate.output] = gate.compute_output(inputs)
 
         # Get output bits
+        observed = dict()
         for out in self.output_indices:
-            if out != 0:
-                self.observed[abs(out)] = assignments[abs(out)]
+            if out > 0:
+                observed[out] = assignments[out]
+                observed[-out] = 1 - observed[out]
+            elif out < 0:
+                observed[-out] = assignments[-out]
+                observed[out] = 1 - observed[-out]
+        return observed
 
     def bipartite_adjacency_mat(self, transpose=False):
         if transpose:
@@ -191,7 +178,9 @@ if __name__ == '__main__':
     runtime = time() - start
     print('Loaded problem in %.2f ms' % (1000.0 * runtime))
 
-    obs = {1: True, 2: False, 3: True, 10: False}
-    problem.set_observed(obs)
+    start = time()
+    observed = problem.random_observed()
+    runtime = time() - start
+    print('Computed random observed bits in %.2f ms' % (1000.0 * runtime))
 
     print('Done.')

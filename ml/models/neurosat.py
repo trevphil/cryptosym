@@ -5,8 +5,8 @@ from models.mlp import MLP
 
 
 class NeuroSAT(BaseModel):
-    def __init__(self, opts):
-        super().__init__(opts)
+    def __init__(self, opts, problem):
+        super().__init__(opts, problem)
         # LSTM
         self.L_lstm = torch.nn.LSTMCell(input_size=int(2 * opts.d),
                                         hidden_size=opts.d,
@@ -30,15 +30,14 @@ class NeuroSAT(BaseModel):
     def name(self):
         return 'NeuroSAT'
 
-    def flip(self, A):
+    def flip(self, mat):
         # Flip first and last half of rows in A
-        half_rows = A.size(0) // 2
-        return torch.cat((A[half_rows:], A[:half_rows]), axis=0)
+        half_rows = mat.size(0) // 2
+        return torch.cat((mat[half_rows:], mat[:half_rows]), axis=0)
 
-    def forward(self, problem):
-        A = problem.A
-        A_T = problem.A_T
-        observed = problem.observed
+    def forward(self, observed):
+        A = self.problem.A
+        A_T = self.problem.A_T
 
         dtype = self.opts.dtype
         n_lits, n_gates = A.size()[:2]  # n, m
@@ -52,9 +51,8 @@ class NeuroSAT(BaseModel):
 
         for var, val in observed.items():
             val = float(val)
-            # Assign value of non-negated literal
-            L_state[var - 1, :] = val
-            L_state[var - 1 + n_vars, :] = 1.0 - val  # Assign value of negated literal
+            L_state[var - 1, :] = val                 # Assign value of literal
+            L_state[var - 1 + n_vars, :] = 1.0 - val  # Assign value of negated lit
 
         # Hidden states
         L_hidden = torch.zeros(n_lits, self.opts.d, dtype=dtype)   # n, d
@@ -87,13 +85,11 @@ if __name__ == '__main__':
     from opts import PreimageOpts
     from problem import Problem
 
-    opts = PreimageOpts()
-    model = NeuroSAT(opts)
-
     sha256_d8_sym = os.path.join('samples', 'sha256_d8_sym.txt')
     sha256_d8_cnf = os.path.join('samples', 'sha256_d8_cnf.txt')
     print('Loading problem: (%s, %s)' % (sha256_d8_sym, sha256_d8_cnf))
 
+    opts = PreimageOpts()
     problem = Problem.from_files(sha256_d8_sym, sha256_d8_cnf)
     n_vars = problem.num_vars
     n_lits = int(2 * n_vars)
@@ -101,12 +97,14 @@ if __name__ == '__main__':
     print(f'n_vars={n_vars}\nn_lits=n={n_lits}\nn_gates=m={n_gates}\nd={opts.d}')
 
     problem.set_observed({1: True})
+    
+    model = NeuroSAT(opts, problem)
 
     cum_time = 0.0
     N = 1
     for _ in range(N):
         start = time()
-        model(problem)
+        model(problem.observed)
         cum_time += (time() - start)
 
     runtime = cum_time / float(N)
