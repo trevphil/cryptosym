@@ -10,12 +10,12 @@ class NeuroSAT(BaseModel):
         super().__init__(opts, problem)
         # LSTM
         if layer_norm:
-            self.L_lstm = LayerNormLSTMCell(input_size=int(2 * opts.d),
+            self.L_lstm = LayerNormLSTMCell(input_size=opts.d,
                                             hidden_size=opts.d)
             self.C_lstm = LayerNormLSTMCell(input_size=opts.d,
                                             hidden_size=opts.d)
         else:
-            self.L_lstm = torch.nn.LSTMCell(input_size=int(2 * opts.d),
+            self.L_lstm = torch.nn.LSTMCell(input_size=opts.d,
                                             hidden_size=opts.d,
                                             bias=True)
             self.C_lstm = torch.nn.LSTMCell(input_size=opts.d,
@@ -29,7 +29,7 @@ class NeuroSAT(BaseModel):
         self.L_vote = MLP(dim_in=opts.d, dims_out=dims_out_vote)
 
         self.norm = 1.0 / (opts.d ** 0.5)
-        L_init = torch.normal(0, 1, size=(problem.num_vars * 2, opts.d), dtype=opts.dtype) * self.norm
+        L_init = torch.normal(0, 1, size=(problem.num_vars, opts.d), dtype=opts.dtype) * self.norm
         C_init = torch.normal(0, 1, size=(problem.num_clauses, opts.d), dtype=opts.dtype) * self.norm
         self.L_init = torch.nn.parameter.Parameter(L_init, requires_grad=True)
         self.C_init = torch.nn.parameter.Parameter(C_init, requires_grad=True)
@@ -43,18 +43,12 @@ class NeuroSAT(BaseModel):
     def name(self):
         return 'NeuroSAT'
 
-    def flip(self, mat):
-        # Flip first and last half of rows in A
-        half_rows = mat.size(0) // 2
-        return torch.cat((mat[half_rows:, :], mat[:half_rows, :]), axis=0)
-
     def forward(self, observed):
         A = self.problem.A
         A_T = self.problem.A_T
 
         dtype = self.opts.dtype
-        n_lits, n_clauses = A.size()[:2]  # n, m
-        n_vars = n_lits // 2
+        n_vars, n_clauses = A.size()[:2]  # n, m
 
         # Message tensors
         L_state = self.L_init.clone()
@@ -63,11 +57,10 @@ class NeuroSAT(BaseModel):
         for var, val in observed.items():
             assert var > 0
             val = (1.0 if val else -1.0)
-            L_state[var - 1, :] = val            # Assign value of literal
-            L_state[var - 1 + n_vars, :] = -val  # Assign value of negated lit
+            L_state[var - 1, :] = val
 
         # Hidden states
-        L_hidden = torch.zeros(n_lits, self.opts.d, dtype=dtype)     # n, d
+        L_hidden = torch.zeros(n_vars, self.opts.d, dtype=dtype)     # n, d
         C_hidden = torch.zeros(n_clauses, self.opts.d, dtype=dtype)  # m, d
 
         L_state_prev = L_state
@@ -82,7 +75,6 @@ class NeuroSAT(BaseModel):
 
             C_msg_pre = self.C_msg(C_state).squeeze()  # m, d
             C_msg = torch.matmul(A, C_msg_pre)  # n, d
-            C_msg = torch.cat((C_msg, self.flip(L_state)), axis=1)  # n, 2d
 
             L_hidden, L_state = self.L_lstm(C_msg, (L_hidden, L_state))
 
@@ -92,9 +84,7 @@ class NeuroSAT(BaseModel):
             itr += 1
 
         votes = self.L_vote(L_state).squeeze()  # n
-        positive = votes[:n_vars]  # n/2
-        negative = votes[n_vars:]  # n/2
-        assignments = self.sigmoid(positive - negative)
+        assignments = self.sigmoid(votes)
         return assignments
 
 
@@ -113,9 +103,8 @@ if __name__ == '__main__':
     opts = PreimageOpts()
     problem = Problem.from_files(sha256_d8_sym, sha256_d8_cnf)
     n_vars = problem.num_vars
-    n_lits = int(2 * n_vars)
     n_gates = problem.num_gates
-    print(f'n_vars={n_vars}\nn_lits=n={n_lits}\nn_gates=m={n_gates}\nd={opts.d}')
+    print(f'n_vars={n_vars}\nn_gates=m={n_gates}\nd={opts.d}')
 
     observed = problem.random_observed()
     model = NeuroSAT(opts, problem)

@@ -7,7 +7,7 @@ from logic_gate import LogicGate, GateType
 
 class Problem(object):
     def __init__(self, input_size, output_size, num_vars, num_gates, num_clauses,
-                 input_indices, output_indices, cnf_indices, gates):
+                 input_indices, output_indices, adj_mat_data, gates):
         self.input_size = input_size
         self.output_size = output_size
         self.num_vars = num_vars
@@ -16,7 +16,7 @@ class Problem(object):
 
         self.input_indices = input_indices
         self.output_indices = output_indices
-        self.cnf_indices = cnf_indices
+        self.adj_mat_data = adj_mat_data
         self.gates = list(sorted(gates, key=lambda gate: gate.output))
 
         assert isinstance(self.input_size, int), 'Not all properties initialized'
@@ -26,7 +26,7 @@ class Problem(object):
         assert isinstance(self.num_clauses, int), 'Not all properties initialized'
         assert isinstance(self.input_indices, list), 'Not all properties initialized'
         assert isinstance(self.output_indices, list), 'Not all properties initialized'
-        assert isinstance(self.cnf_indices, list), 'Not all properties initialized'
+        assert isinstance(self.adj_mat_data, list), 'Not all properties initialized'
         k = len(self.input_indices)
         if self.input_size != k:
             assert False, 'Expected %d input indices but got %d' % (self.input_size, k)
@@ -46,12 +46,12 @@ class Problem(object):
         in_sz, out_sz, n_vars, n_gates, in_idx, out_idx, gates = tup
 
         tup = Problem.parse_dimacs(cnf_filename, n_vars)
-        n_clauses, cnf_indices = tup
+        n_clauses, adj_mat_data = tup
 
         return Problem(input_size=in_sz, output_size=out_sz, num_vars=n_vars,
                        num_gates=n_gates, num_clauses=n_clauses,
                        input_indices=in_idx, output_indices=out_idx,
-                       cnf_indices=cnf_indices, gates=gates)
+                       adj_mat_data=adj_mat_data, gates=gates)
 
     @staticmethod
     def parse_symbols(filename):
@@ -92,7 +92,7 @@ class Problem(object):
 
         line_no = 0
         clause_idx = 0
-        cnf_indices = []
+        adj_mat_data = []
 
         with open(filename, 'r') as f:
             for line in f:
@@ -110,14 +110,14 @@ class Problem(object):
                     assert 0 < xa <= num_vars, 'Invalid CNF, line %d: %s' % (
                         line_no, line)
                     if x < 0:
-                        cnf_indices.append((xa - 1 + num_vars, clause_idx))  # negated
+                        adj_mat_data.append((xa - 1, clause_idx, -1))  # negated
                     else:
-                        cnf_indices.append((xa - 1, clause_idx))  # (row, col)
+                        adj_mat_data.append((xa - 1, clause_idx, 1))  # (row, col)
                 clause_idx += 1
 
         num_clauses = clause_idx
-        return (num_clauses, cnf_indices)
-    
+        return (num_clauses, adj_mat_data)
+
     def forward_computation(self, assignments):
         # Propagate through directed graph, assume topological sort
         for gate in self.gates:
@@ -157,15 +157,16 @@ class Problem(object):
 
     def bipartite_adjacency_mat(self, transpose=False):
         if transpose:
-            indices = [(y, x) for (x, y) in self.cnf_indices]
-            sz = (self.num_clauses, int(2 * self.num_vars))
+            indices = [(y, x) for (x, y, v) in self.adj_mat_data]
+            values = [v for (x, y, v) in self.adj_mat_data]
+            sz = (self.num_clauses, self.num_vars)
         else:
-            indices = self.cnf_indices
-            sz = (int(2 * self.num_vars), self.num_clauses)
+            indices = [(x, y) for (x, y, v) in self.adj_mat_data]
+            values = [v for (x, y, v) in self.adj_mat_data]
+            sz = (self.num_vars, self.num_clauses)
 
         return torch.sparse_coo_tensor(
-            list(zip(*indices)),
-            torch.ones(len(indices), dtype=torch.float32),
+            list(zip(*indices)), values,
             size=sz, dtype=torch.float32)
 
 

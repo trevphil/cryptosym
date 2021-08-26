@@ -59,12 +59,13 @@ class ProblemGenerator(object):
             output_indices = pool[-output_size:]
 
         num_vars = (max_var - 1)
-        cnf_indices = []
+        adj_mat_data = []
 
         def _add_clause(lits, ci):
             for lit in lits:
-                row = abs(lit) - 1 + (num_vars if lit < 0 else 0)
-                cnf_indices.append((row, ci))
+                row = abs(lit) - 1
+                val = 1 if lit > 0 else -1
+                adj_mat_data.append((row, ci, val))
             return ci + 1
 
         clause_idx = 0
@@ -81,7 +82,7 @@ class ProblemGenerator(object):
                           num_clauses=num_clauses,
                           input_indices=input_indices,
                           output_indices=output_indices,
-                          cnf_indices=cnf_indices,
+                          adj_mat_data=adj_mat_data,
                           gates=gates)
         return problem
 

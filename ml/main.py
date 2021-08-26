@@ -27,9 +27,9 @@ if __name__ == '__main__':
 
     train_seed = 1
     val_seed = 100
-    num_inputs = 32
-    num_outputs = 16
-    num_gates = 24
+    num_inputs = 64
+    num_outputs = 32
+    num_gates = 48
     num_train_samples = 100
     num_val_samples = 100
     num_test_samples = 100

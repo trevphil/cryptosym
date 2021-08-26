@@ -26,13 +26,10 @@ def get_cnf(problem):
         g.add_node(node)
 
     vars_per_clause = defaultdict(lambda: [])
-    for lit_idx, clause_idx in problem.cnf_indices:
-        if lit_idx >= n:
-            var = lit_idx - n + 1
-        else:
-            var = lit_idx + 1
+    for lit_idx, clause_idx, polarity in problem.adj_mat_data:
+        var = abs(lit_idx) + 1
         vars_per_clause[clause_idx].append(var)
-    
+
     for _, variables in vars_per_clause.items():
         for i in range(len(variables) - 1):
             for j in range(i + 1, len(variables)):
