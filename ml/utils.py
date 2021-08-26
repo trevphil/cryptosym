@@ -3,16 +3,6 @@ import torch
 from datetime import datetime
 
 
-def rand(b, n):
-    return (torch.rand(b, n) > 0.5).float()
-
-
-def sample(b, n, f):
-    x = rand(b, n)
-    y = f(x)
-    return (x, y)
-
-
 def get_optimizer(opts, model):
     lr = opts.lr_start
     l2 = opts.l2_penalty

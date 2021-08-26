@@ -19,59 +19,57 @@ class PreimageLoss(object):
     def bce(self, pred_bits, observed):
         cum_loss_per_gate_type = defaultdict(lambda: 0.0)
         count_per_gate_type = defaultdict(lambda: 0.0)
+        loss_per_output = defaultdict(lambda: 0.0)
+        
+        assignments = dict()
+        for var in self.problem.input_indices:
+            if var != 0:
+                assignments[abs(var)] = _get_val(pred_bits, abs(var))
 
-        # Loss for constraints which are not satisfied
-        for gate in self.problem.gates:
-            inputs = [_get_val(pred_bits, i) for i in gate.inputs]
-            target = gate.compute_output(inputs)
-            y = _get_val(pred_bits, gate.output)
-
-            bce = -torch.log(1.0 - torch.abs(target - y))
-            bce = torch.clamp(bce, min=-100.0)
-
-            gate_type = gate_type_to_str(gate.t)
-            cum_loss_per_gate_type[gate_type] += bce
-            count_per_gate_type[gate_type] += 1
-
-        # Loss for observed variables
+        assignments = self.problem.forward_computation(assignments)
+        
         for var, target in observed.items():
-            y = _get_val(pred_bits, var)
+            y = assignments[abs(var)]
+            if var < 0:
+                y = 1 - y
             bce = -torch.log(1.0 - torch.abs(int(target) - y))
             bce = torch.clamp(bce, min=-100.0)
             cum_loss_per_gate_type['observed'] += bce
             count_per_gate_type['observed'] += 1
+            loss_per_output[abs(var)] += bce
 
-        mean_loss_per_gate_type = dict()
-        for gate_type, cum_loss in cum_loss_per_gate_type.items():
-            count = count_per_gate_type[gate_type]
-            mean_loss_per_gate_type[gate_type] = cum_loss / count
+        mean_loss_per_type = dict()
+        for name, cum_loss in cum_loss_per_gate_type.items():
+            count = count_per_gate_type[name]
+            mean_loss_per_type[name] = cum_loss / count
 
         total_loss = sum(cum_loss_per_gate_type.values())
         total_count = sum(count_per_gate_type.values())
+        mean_loss = total_loss / total_count
 
-        return total_loss / total_count, mean_loss_per_gate_type
+        return mean_loss, mean_loss_per_type, loss_per_output
 
     def sse(self, pred_bits, observed):
-        cum_loss_per_gate_type = defaultdict(lambda: 0.0)
+        cum_loss_per_type = defaultdict(lambda: 0.0)
+        loss_per_output = defaultdict(lambda: 0.0)
 
-        # Loss for constraints which are not satisfied
-        for gate in self.problem.gates:
-            inputs = [_get_val(pred_bits, i) for i in gate.inputs]
-            target = gate.compute_output(inputs)
-            y = _get_val(pred_bits, gate.output)
+        assignments = dict()
+        for var in self.problem.input_indices:
+            if var != 0:
+                assignments[abs(var)] = _get_val(pred_bits, abs(var))
 
-            gate_loss = (target - y) ** 2
-            gate_type = gate_type_to_str(gate.t)
-            cum_loss_per_gate_type[gate_type] += gate_loss
+        assignments = self.problem.forward_computation(assignments)
 
-        # Loss for observed variables
         for var, target in observed.items():
-            y = _get_val(pred_bits, var)
-            observed_loss = (int(target) - y) ** 2
-            cum_loss_per_gate_type['observed'] += observed_loss
+            y = assignments[abs(var)]
+            if var < 0:
+                y = 1 - y
+            sse_loss = (int(target) - y) ** 2
+            cum_loss_per_type['observed'] += sse_loss
+            loss_per_output[abs(var)] += sse_loss
 
-        total_sse = sum(cum_loss_per_gate_type.values())
-        return total_sse, cum_loss_per_gate_type
+        total_sse = sum(cum_loss_per_type.values())
+        return total_sse, cum_loss_per_type, loss_per_output
 
 
 if __name__ == '__main__':
@@ -101,11 +99,11 @@ if __name__ == '__main__':
     loss_fn = PreimageLoss(problem)
 
     start = time()
-    loss_bce, _ = loss_fn.bce(y_pred, observed)
+    loss_bce = loss_fn.bce(y_pred, observed)[0]
     runtime_bce = (time() - start) * 1000.0
 
     start = time()
-    loss_sse, _ = loss_fn.sse(y_pred, observed)
+    loss_sse = loss_fn.sse(y_pred, observed)[0]
     runtime_sse = (time() - start) * 1000.0
 
     print('Done! loss_bce=%f (%.2f ms); loss_sse=%f (%.2f ms)' % (

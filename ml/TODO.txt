@@ -4,3 +4,13 @@
         https://pytorch.org/tutorials/recipes/recipes/profiler_recipe.html
 
 - Find out where NeuroSAT has trouble, look at error per node on graphs (CNF and/or DAG)
+    - Why can't solve on single problem with single observed set?
+        XOR2 and XOR3 are hardest to predict
+        Increasing T=10 --> T=20 no improvement
+        Increasing d=128 --> d=512 much slower training, much more parameters, not significant improvement
+        Turn off L2 penalty --> Almost identical to 1e-9 penalty
+        Tune learing rate
+        LR 1e-4 --> 1e-5 : nope
+    
+    Try with only XOR2 or XOR3... (small problem)
+    Will it solve?

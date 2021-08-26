@@ -12,5 +12,6 @@ class PreimageOpts(object):
         self.lr_start = 1e-4
         self.lr_decay = 0.99
         self.l2_penalty = 1e-9
+        self.grad_clip = 0.5
         self.max_epochs = 50
         self.logdir = 'log'

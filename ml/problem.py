@@ -117,6 +117,18 @@ class Problem(object):
 
         num_clauses = clause_idx
         return (num_clauses, cnf_indices)
+    
+    def forward_computation(self, assignments):
+        # Propagate through directed graph, assume topological sort
+        for gate in self.gates:
+            inputs = []
+            for inp in gate.inputs:
+                inp_val = assignments[abs(inp)]
+                if inp < 0:
+                    inp_val = 1 - inp_val
+                inputs.append(inp_val)
+            assignments[gate.output] = gate.compute_output(inputs)
+        return assignments
 
     def random_observed(self, rng=None):
         assignments = dict()
@@ -132,25 +144,15 @@ class Problem(object):
             if inp != 0:
                 assignments[abs(inp)] = input_bits[idx]
 
-        # Propagate through directed graph, assume topological sort
-        for gate in self.gates:
-            inputs = []
-            for inp in gate.inputs:
-                inp_val = assignments[abs(inp)]
-                if inp < 0:
-                    inp_val = 1 - inp_val
-                inputs.append(inp_val)
-            assignments[gate.output] = gate.compute_output(inputs)
+        assignments = self.forward_computation(assignments)
 
         # Get output bits
         observed = dict()
         for out in self.output_indices:
             if out > 0:
                 observed[out] = assignments[out]
-                observed[-out] = 1 - observed[out]
             elif out < 0:
                 observed[-out] = assignments[-out]
-                observed[out] = 1 - observed[-out]
         return observed
 
     def bipartite_adjacency_mat(self, transpose=False):

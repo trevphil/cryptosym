@@ -34,10 +34,7 @@ def gate_type_to_str(gate_type):
 def needs_gradient_friendly(input_values):
     if type(input_values) not in (list, tuple):
         raise RuntimeError('Input must be a list or tuple!')
-    return any(
-        (isinstance(x, torch.Tensor) and x.requires_grad)
-        for x in input_values
-    )
+    return any(isinstance(x, torch.Tensor) for x in input_values)
 
 
 class LogicGate(object):
@@ -142,16 +139,13 @@ class LogicGate(object):
                 [-self.output, -self.inputs[0], -self.inputs[1], self.inputs[2]]
             ]
         else:
-            raise NotImplementedError        
+            raise NotImplementedError
 
 
 if __name__ == '__main__':
     t = torch.zeros(10, requires_grad=True)
     assert needs_gradient_friendly([t])
     assert needs_gradient_friendly((t, ))
-    t = torch.zeros(10, requires_grad=False)
-    assert not needs_gradient_friendly([t])
-    assert not needs_gradient_friendly((t, ))
     assert not needs_gradient_friendly([1, 0, 1])
 
     gate_computation = {
@@ -163,11 +157,13 @@ if __name__ == '__main__':
     }
 
     for gate_type in GateType:
+        print(f'\nTesting gate: {gate_type_to_str(gate_type)}')
         num_inputs = inputs_for_gate(gate_type)
         inputs = list(range(1, num_inputs + 1))
         output = num_inputs + 1
         gate = LogicGate(gate_type, output=output, inputs=inputs)
-        print(f'\nTesting gate: {gate_type.value}')
+        cnf = gate.cnf_clauses()
+
         for i in range(1 << num_inputs):
             input_values = [(i >> x) & 1 for x in range(num_inputs)]
             expected = gate_computation[gate_type](input_values)
@@ -177,3 +173,32 @@ if __name__ == '__main__':
             print(f'Testing input: {binstr} --> {(expected, v1, v2)}')
             assert expected == v1
             assert expected == v2
+
+            # Validate the CNF formula
+            assignments = {inputs[i]: input_values[i] for i in range(num_inputs)}
+
+            # Ensure formula is satisfied if gate(inputs) = expected_output
+            assignments[output] = expected
+            num_sat_clauses = 0
+            for clause in cnf:
+                for lit in clause:
+                    val = int(assignments[abs(lit)])
+                    if lit < 0:
+                        val = 1 - val
+                    if val:
+                        num_sat_clauses += 1
+                        break
+            assert num_sat_clauses == len(cnf)
+
+            # Ensure formula is NOT satisfied if gate(inputs) = wrong_output
+            assignments[output] = 1 - int(expected)
+            num_sat_clauses = 0
+            for clause in cnf:
+                for lit in clause:
+                    val = int(assignments[abs(lit)])
+                    if lit < 0:
+                        val = 1 - val
+                    if val:
+                        num_sat_clauses += 1
+                        break
+            assert num_sat_clauses < len(cnf)

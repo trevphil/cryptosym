@@ -68,14 +68,14 @@ class ProblemGenerator(object):
             return ci + 1
 
         clause_idx = 0
-        for g in gates:
-            clauses = g.cnf_clauses()
-            for c in clauses:
-                clause_idx = _add_clause(c, clause_idx)
+        for gate in gates:
+            clauses = gate.cnf_clauses()
+            for clause in clauses:
+                clause_idx = _add_clause(clause, clause_idx)
         num_clauses = clause_idx
 
-        problem = Problem(input_size=input_size,
-                          output_size=output_size,
+        problem = Problem(input_size=len(input_indices),
+                          output_size=len(output_indices),
                           num_vars=num_vars,
                           num_gates=len(gates),
                           num_clauses=num_clauses,
