@@ -14,3 +14,24 @@
     
     Try with only XOR2 or XOR3... (small problem)
     Will it solve?
+    
+    
+    
+    
+    Encode problem (including observed bits) as CNF, then to MIS
+        https://stackoverflow.com/questions/47657574/how-can-3-sat-be-reduced-to-independent-set
+    
+    Solve with graph CNN
+        20 layers
+        hidden size = 32
+        lr = 1e-4
+
+    Output = (N=num_nodes, M=num_solutions)
+        {0, 1} g.t. label for each node
+        Compute cross-entropy loss for each m=1...M
+        Use min loss
+    
+    Paper 
+        https://github.com/isl-org/NPHard
+        https://arxiv.org/abs/1810.10659v1
+        local search and graph reduction

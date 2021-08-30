@@ -38,18 +38,20 @@ def needs_gradient_friendly(input_values):
 
 
 class LogicGate(object):
-    def __init__(self, gate_type, output, inputs):
+    def __init__(self, gate_type, output, inputs, depth):
         assert isinstance(output, int)
+        assert isinstance(depth, int)
         assert (isinstance(inputs, list) or isinstance(inputs, tuple))
-        assert 0 not in ([output] + list(inputs))
+        assert 0 not in inputs
         assert output > 0, 'Gate output should be positive! output = %d' % out
         self.t = GateType(gate_type)
         assert len(inputs) == inputs_for_gate(self.t), 'Wrong # gate inputs!'
         self.output = output
         self.inputs = inputs
+        self.depth = depth
 
     def __hash__(self):
-        return hash(f'{self.t.value} {self.output} {self.inputs}')
+        return hash(f'{self.t.value} {self.output} {self.inputs} {self.depth}')
 
     def compute_output(self, input_values):
         if needs_gradient_friendly(input_values):
@@ -140,65 +142,3 @@ class LogicGate(object):
             ]
         else:
             raise NotImplementedError
-
-
-if __name__ == '__main__':
-    t = torch.zeros(10, requires_grad=True)
-    assert needs_gradient_friendly([t])
-    assert needs_gradient_friendly((t, ))
-    assert not needs_gradient_friendly([1, 0, 1])
-
-    gate_computation = {
-        GateType.and_gate: (lambda x: x[0] & x[1]),
-        GateType.xor_gate: (lambda x: x[0] ^ x[1]),
-        GateType.or_gate: (lambda x: x[0] | x[1]),
-        GateType.maj_gate: (lambda x: (1 if sum(x) > 1 else 0)),
-        GateType.xor3_gate: (lambda x: x[0] ^ x[1] ^ x[2])
-    }
-
-    for gate_type in GateType:
-        print(f'\nTesting gate: {gate_type_to_str(gate_type)}')
-        num_inputs = inputs_for_gate(gate_type)
-        inputs = list(range(1, num_inputs + 1))
-        output = num_inputs + 1
-        gate = LogicGate(gate_type, output=output, inputs=inputs)
-        cnf = gate.cnf_clauses()
-
-        for i in range(1 << num_inputs):
-            input_values = [(i >> x) & 1 for x in range(num_inputs)]
-            expected = gate_computation[gate_type](input_values)
-            v1 = gate.compute_output(input_values)
-            v2 = gate.compute_output_gradient_friendly(input_values)
-            binstr = format(i, f'0{num_inputs}b')
-            print(f'Testing input: {binstr} --> {(expected, v1, v2)}')
-            assert expected == v1
-            assert expected == v2
-
-            # Validate the CNF formula
-            assignments = {inputs[i]: input_values[i] for i in range(num_inputs)}
-
-            # Ensure formula is satisfied if gate(inputs) = expected_output
-            assignments[output] = expected
-            num_sat_clauses = 0
-            for clause in cnf:
-                for lit in clause:
-                    val = int(assignments[abs(lit)])
-                    if lit < 0:
-                        val = 1 - val
-                    if val:
-                        num_sat_clauses += 1
-                        break
-            assert num_sat_clauses == len(cnf)
-
-            # Ensure formula is NOT satisfied if gate(inputs) = wrong_output
-            assignments[output] = 1 - int(expected)
-            num_sat_clauses = 0
-            for clause in cnf:
-                for lit in clause:
-                    val = int(assignments[abs(lit)])
-                    if lit < 0:
-                        val = 1 - val
-                    if val:
-                        num_sat_clauses += 1
-                        break
-            assert num_sat_clauses < len(cnf)

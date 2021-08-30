@@ -1,9 +1,12 @@
 import cv2
+import dgl
 import numpy as np
 import networkx as nx
 from networkx.drawing.nx_pydot import graphviz_layout
 from matplotlib import pyplot as plt
 from collections import defaultdict
+
+from logic import ggnn_graph, mis
 
 
 def get_dag(problem):
@@ -17,24 +20,8 @@ def get_dag(problem):
 
 
 def get_cnf(problem):
-    """
-    Create an edge between two variables if they appear in the same clause
-    """
-    n = problem.num_vars
-    g = nx.Graph()
-    for node in range(1, n + 1):
-        g.add_node(node)
-
-    vars_per_clause = defaultdict(lambda: [])
-    for lit_idx, clause_idx, polarity in problem.adj_mat_data:
-        var = abs(lit_idx) + 1
-        vars_per_clause[clause_idx].append(var)
-
-    for _, variables in vars_per_clause.items():
-        for i in range(len(variables) - 1):
-            for j in range(i + 1, len(variables)):
-                g.add_edge(variables[i], variables[j])
-    return g
+    g = mis.MaximumIndependentSet(problem, dict()).g
+    return dgl.to_networkx(g)
 
 
 def plot_dag(problem):
@@ -61,11 +48,11 @@ def plot_cnf(problem):
     plt.show()
 
 
-def plot_loss_opencv(dag, cnf, loss_per_output):
+def plot_loss_opencv(dag, cnf, loss_per_output, wait=1):
     fig, axes = plt.subplots(1, 2)
     fig.set_size_inches((10, 5))
 
-    assert dag.number_of_nodes() == cnf.number_of_nodes()
+    assert (dag.number_of_nodes() * 2) == cnf.number_of_nodes()    
     errors = [0.0 for _ in range(dag.number_of_nodes())]
     for var, loss in loss_per_output.items():
         errors[abs(var) - 1] += loss.item()
@@ -77,7 +64,7 @@ def plot_loss_opencv(dag, cnf, loss_per_output):
             with_labels=True, width=0.7, arrowsize=8, cmap=cmap,
             font_color='white')
     cnf_pos = graphviz_layout(cnf, prog='dot')
-    nx.draw(cnf, cnf_pos, axes[1], node_size=ns, node_color=errors,
+    nx.draw(cnf, cnf_pos, axes[1], node_size=ns, node_color=errors + errors,
             with_labels=True, width=0.7, cmap=cmap, font_color='white')
 
     fig.canvas.draw()
@@ -87,5 +74,5 @@ def plot_loss_opencv(dag, cnf, loss_per_output):
     h, w = im.shape[:2]
     cv2.line(im, (w // 2, 0), (w // 2, h), (0, 0, 0))
     cv2.imshow('Errors', im)
-    cv2.waitKey(1)
+    cv2.waitKey(wait)
     plt.close()
