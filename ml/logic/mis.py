@@ -3,17 +3,38 @@ import dgl
 from copy import deepcopy
 from collections import defaultdict
 
+from logic.cnf import CNF
+
 
 class MaximumIndependentSet(object):
-    def __init__(self, cnf):
-        self.cnf_clauses = []
-        self.node_clauses = []
+    def __init__(self, cnf=None, g=None):
+        self.g = None
+        self.node_index_to_lit = None
+        self.node_index_to_clause = None
+        self.lit_to_node_indices = defaultdict(list)
 
+        if cnf is not None:
+            assert g is None, 'Cannot init MIS with CNF and graph'
+            self.init_from_cnf(cnf)
+        elif g is not None:
+            assert cnf is None, 'Cannot init MIS with CNF and graph'
+            self.init_from_graph(g)
+        else:
+            assert False, 'Must init MIS with CNF or graph'
+
+        max_clause_idx = self.node_index_to_clause.max().detach().item()
+        max_lit = self.node_index_to_lit.abs().max().detach().item()
+        self.expected_num_clauses = int(max_clause_idx) + 1
+        self.expected_num_vars = int(max_lit)
+        self.pos_index = (self.node_index_to_lit > 0)
+        self.neg_index = (self.node_index_to_lit < 0)
+
+    def init_from_cnf(self, cnf):
         num_nodes = sum(len(clause) for clause in cnf.clauses)
         src, dst = [], []
         node_index = 0
-        node_index_to_lit = torch.zeros(num_nodes, dtype=int)
-        lit_to_node_indices = defaultdict(lambda: [])
+        self.node_index_to_lit = torch.zeros(num_nodes, dtype=int)
+        self.node_index_to_clause = torch.zeros(num_nodes, dtype=int)
 
         for clause_idx, clause in enumerate(cnf.clauses):
             assert clause is not None and len(clause) > 1
@@ -25,22 +46,21 @@ class MaximumIndependentSet(object):
             for i in range(num_lits):
                 lit = clause[i]
                 node = nodes[i]
-                node_index_to_lit[node] = lit
-                lit_to_node_indices[lit].append(node)
+                self.node_index_to_lit[node] = lit
+                self.node_index_to_clause[node] = clause_idx
+                self.lit_to_node_indices[lit].append(node)
 
             for i in range(num_lits - 1):
                 for j in range(i + 1, num_lits):
                     src.append(node_index + i)
                     dst.append(node_index + j)
 
-            self.cnf_clauses.append(clause)
-            self.node_clauses.append(nodes)
             node_index += num_lits
 
-        for lit, set_a in lit_to_node_indices.items():
-            if (-lit) not in lit_to_node_indices:
+        for lit, set_a in self.lit_to_node_indices.items():
+            if (-lit) not in self.lit_to_node_indices:
                 continue
-            set_b = lit_to_node_indices[-lit]
+            set_b = self.lit_to_node_indices[-lit]
             for a in set_a:
                 for b in set_b:
                     src.append(a)
@@ -50,11 +70,22 @@ class MaximumIndependentSet(object):
         g = dgl.graph((src, dst), num_nodes=num_nodes, idtype=torch.int64)
         g = dgl.to_simple(g)  # Remove parallel edges
         g = dgl.to_bidirected(g)  # Make bidirectional <-->
-
         self.g = g
-        self.cnf = cnf
-        self.node_index_to_lit = node_index_to_lit
-        self.lit_to_node_indices = lit_to_node_indices
+
+    def init_from_graph(self, g):
+        assert g.is_homogeneous, 'MIS graph should be homogeneous'
+        self.g = g
+        self.node_index_to_lit = g.ndata['node2lit']
+        self.node_index_to_clause = g.ndata['node2clause']
+
+        n = g.num_nodes()
+        i = 0
+        while i < n:
+            c = self.node_index_to_clause[i]
+            while i < n and self.node_index_to_clause[i] == c:
+                lit = self.node_index_to_lit[i].detach().item()
+                self.lit_to_node_indices[lit].append(i)
+                i += 1
 
     @property
     def num_nodes(self):
@@ -65,61 +96,31 @@ class MaximumIndependentSet(object):
         return self.g.num_edges()
 
     def cnf_to_mis_solution(self, bits):
-        """
-        For each clause in the CNF:
-            Pick a literal in the clause with truth value = 1 and
-                corresponding node in the graph unassigned
-            Set label = 1 to the corresponding node X in the graph for this literal
-            Set label = 0 to all Neighbors(X)
-            Remove X and Neighbors(X) from the set of unlabeled nodes
-        """
-        node_labeling = torch.ones(self.num_nodes, dtype=torch.int32) * -1
-        n_clauses = len(self.cnf_clauses)
+        n = self.num_nodes
 
-        """
-        values = torch.zeros(self.num_nodes, dtype=bits.dtype)
-        lit_mask = (self.node_index_to_lit > 0)
-        lits = self.node_index_to_lit[lit_mask]  # positive literals
-        values[lit_mask] = bits[lits - 1]
-        lit_mask = ~lit_mask
-        lits = self.node_index_to_lit[lit_mask]  # negative literals
-        values[lit_mask] = 1 - bits[-lits - 1]
-        """
+        # Label each node according to truth value of corresponding literal
+        label = torch.zeros(n, dtype=bits.dtype, device=bits.device)
+        label[self.pos_index] = torch.take(bits,
+                self.node_index_to_lit[self.pos_index] - 1)
+        label[self.neg_index] = 1 - torch.take(bits,
+                -self.node_index_to_lit[self.neg_index] - 1)
 
-        for i in range(n_clauses):
-            clause = self.cnf_clauses[i]
-            nodes = self.node_clauses[i]
-            selected_node = None
+        # Zero-out nodes after first non-zero node for each clause
+        i = 0
+        while i < n:
+            if label[i]:
+                c = self.node_index_to_clause[i]
+                i += 1
+                while i < n and self.node_index_to_clause[i] == c:
+                    label[i] = 0
+                    i += 1
+            else:
+                i += 1
 
-            for lit, node in zip(clause, nodes):
-                if node_labeling[node] != -1:
-                    continue  # Only consider unassigned nodes
-
-                bit_val = bits[abs(lit) - 1]
-                if lit < 0:
-                    bit_val = 1 - bit_val
-
-                if bit_val:
-                    selected_node = node
-                    break
-
-            if selected_node is None:
-                print(f'{clause}, {nodes}, {node_labeling[nodes]}')
-                return None  # UNSAT
-
-            node_labeling[selected_node] = 1
-            nbrs = self.g.in_edges(selected_node, form='uv')[0]
-            assert not (node_labeling[nbrs] == 1).any(), 'MIS has connected vertices!'
-            node_labeling[nbrs] = 0
-
-        assert not (node_labeling == -1).any(), 'Not all nodes were labeled!'
-        mis_size = torch.sum(node_labeling).item()
-        assert mis_size == n_clauses, f'|MIS| = {mis_size}, but {n_clauses} clauses'
-
-        return node_labeling.type(torch.uint8)
+        return label.type(torch.uint8)
 
     def mis_to_cnf_solution(self, node_labeling, conflict_is_error=True):
-        n = self.cnf.num_vars
+        n = self.expected_num_vars
         bits = torch.zeros(n, dtype=torch.uint8)
 
         for bit_idx in range(n):
@@ -137,3 +138,16 @@ class MaximumIndependentSet(object):
                         return None
 
         return bits
+
+    def is_independent_set(self, label):
+        n = label.size(0)
+        assert n == self.g.num_nodes()
+
+        # Only consider nodes labeled as "1"
+        nodes = torch.arange(n)[label == 1]
+        return dgl.node_subgraph(self.g, nodes).num_edges() == 0
+
+    def is_sat(self, label):
+        mis_size = torch.sum(label)
+        return mis_size >= self.expected_num_clauses and \
+            self.is_independent_set(label)

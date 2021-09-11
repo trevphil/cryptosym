@@ -1,37 +1,4 @@
-- Runtime / speed... calculate loss faster with matrix operations?
-    --> Profile with PyTorch
-        https://pytorch.org/tutorials/beginner/profiler.html
-        https://pytorch.org/tutorials/recipes/recipes/profiler_recipe.html
-
-- Find out where NeuroSAT has trouble, look at error per node on graphs (CNF and/or DAG)
-    - Why can't solve on single problem with single observed set?
-        XOR2 and XOR3 are hardest to predict
-        Increasing T=10 --> T=20 no improvement
-        Increasing d=128 --> d=512 much slower training, much more parameters, not significant improvement
-        Turn off L2 penalty --> Almost identical to 1e-9 penalty
-        Tune learing rate
-        LR 1e-4 --> 1e-5 : nope
-    
-    Try with only XOR2 or XOR3... (small problem)
-    Will it solve?
-    
-    
-    
-    
-    Encode problem (including observed bits) as CNF, then to MIS
-        https://stackoverflow.com/questions/47657574/how-can-3-sat-be-reduced-to-independent-set
-    
-    Solve with graph CNN
-        20 layers
-        hidden size = 32
-        lr = 1e-4
-
-    Output = (N=num_nodes, M=num_solutions)
-        {0, 1} g.t. label for each node
-        Compute cross-entropy loss for each m=1...M
-        Use min loss
-    
-    Paper 
-        https://github.com/isl-org/NPHard
-        https://arxiv.org/abs/1810.10659v1
-        local search and graph reduction
+1. Loss using all predicted solutions and ALL ground truth solutions
+2. "Inference-mode" solver which uses model to search for optimal solutoin
+3. Stochastic weight averaging?
+4. Batch norm / other architectures / transformer

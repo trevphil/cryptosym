@@ -1,6 +1,6 @@
 import torch
 import dgl
-from dgl.nn import GraphConv
+from dgl.nn import GraphConv, GATConv
 
 from logic.gate import GateType, gate_type_to_str
 
@@ -19,10 +19,11 @@ class HashSAT(torch.nn.Module):
             out_sz = sizes[layer_idx + 1]
             activ = torch.sigmoid if layer_idx == (num_layers - 1) else torch.relu
             conv = GraphConv(in_sz, out_sz, activation=activ)
+            # conv = GATConv(in_sz, out_sz, 16, activation=activ)
             self.layers.append(conv)
 
-        num_parameters = sum(p.numel() for p in self.parameters())
-        print(f'{self.name} has {num_parameters} parameters.')
+        self.num_parameters = sum(p.numel() for p in self.parameters())
+        # print(f'{self.name} has {num_parameters} parameters.')
 
     @property
     def name(self):

@@ -1,53 +1,75 @@
+import dgl
 import torch
 from collections import defaultdict
 
 from logic.gate import GateType, gate_type_to_str
 
 
-def _get_val(pred_bits, literal):
-    idx = abs(literal) - 1
-    bit = pred_bits[idx]
-    if literal < 0:
-        bit = 1 - bit
-    return bit
-
-
 class PreimageLoss(object):
-    def __init__(self, mis):
-        self.mis = mis
-        self.bce_fn = torch.nn.BCELoss(reduction='sum')
+    def __init__(self):
+        pass
 
-    def bce(self, pred_solutions, label):
-        label = label.float()
-        num_solutions = pred_solutions.size(1)
-        min_loss = None
+    def bce(self, batched_graph, labels):
+        graphs = dgl.unbatch(batched_graph)
+        cum_loss = 0.0
+        
+        # BCE = - [ y * log(x) + (1 - y) * log(1 - x) ]
+        for i, g in enumerate(graphs):
+            # N x P x 1
+            pred = g.ndata['pred'][:, :, None]
+            num_candidate_sol = pred.size(1)
 
-        for i in range(num_solutions):
-            l = self.bce_fn(pred_solutions[:, i], label)
-            if min_loss is None or l < min_loss:
-                min_loss = l
+            # N x 1 x Q
+            label = labels[i][:, None, :].to(pred)
+            assert label.size(0) == pred.size(0)
+            
+            # N x P x Q
+            tiled_label = torch.tile(label, (1, num_candidate_sol, 1))
 
-        return min_loss
+            # N x P x Q
+            term1 = label * torch.log(pred)
+            term2 = (1 - label) * torch.log(1 - pred)
+            bce_loss = torch.maximum(-(term1 + term2), torch.tensor(-100.0))
+            
+            # P x Q
+            reduced = bce_loss.mean(axis=0)
+            
+            # Take best across all predicted x GT solution combinations
+            cum_loss += reduced.min()
 
-    def get_solution(self, pred_solutions):
-        num_solutions = pred_solutions.size(1)
-        pred_solutions = torch.round(pred_solutions).int()
+        return cum_loss
+    
+    def mis_size_ratio(self, mis_samples, batched_graph):
+        num_samples = len(mis_samples)
+        graphs = dgl.unbatch(batched_graph)
+        assert num_samples == len(graphs)
+        cum_score = 0.0
+        
+        for graph_index in range(num_samples):
+            max_mis_size = mis_samples[graph_index].expected_num_clauses
 
-        for sol_idx in range(num_solutions):
-            node_labeling = pred_solutions[:, sol_idx]
-            bits = self.mis.mis_to_cnf_solution(node_labeling,
-                                                conflict_is_error=False)
-            if bits is None:
-                continue  # A variable was assigned to be both 0 and 1
+            g = graphs[graph_index]
+            num_nodes = g.num_nodes()
+            pred = g.ndata['pred']
+            num_candidate_solutions = pred.size(1)
+            best_mis_size = 0
 
-            assignments = dict()
-            for bit_idx in range(bits.size(0)):
-                lit = bit_idx + 1
-                val = bits[bit_idx].item()
-                assignments[lit] = val
-                assignments[-lit] = 1 - val
+            for sol_index in range(num_candidate_solutions):
+                label = torch.ones(num_nodes, dtype=int) * -1
+                sorted_nodes = torch.argsort(pred[:, sol_index], descending=True)
+                
+                for node in sorted_nodes:
+                    if label[node] != -1:
+                        break  # Node is already labeled
+                    label[node] = 1
+                    nbrs = g.in_edges(node)[0]
+                    label[nbrs] = 0
+                
+                # Find the solution corresponding to largest independent set
+                mis_size = torch.sum(label[label != -1]).detach().item()
+                best_mis_size = max(best_mis_size, int(mis_size))
+            
+            # If this ratio == 1.0, the problem was solved
+            cum_score += (best_mis_size / float(max_mis_size))
 
-            if self.mis.cnf.is_sat(assignments):
-                return assignments
-
-        return None  # None of the solutions were valid
+        return cum_score / num_samples

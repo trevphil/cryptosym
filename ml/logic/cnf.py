@@ -14,10 +14,6 @@ class CNF(object):
 
         self.reindex_lit_to_clause()
 
-    @property
-    def num_clauses(self):
-        return len(self.clauses)
-
     def __repr__(self):
         s = ''
         for i, clause in enumerate(self.clauses):
