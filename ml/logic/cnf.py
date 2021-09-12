@@ -15,11 +15,11 @@ class CNF(object):
         self.reindex_lit_to_clause()
 
     def __repr__(self):
-        s = ''
+        s = ""
         for i, clause in enumerate(self.clauses):
-            s += f'{list(sorted(clause))}'
+            s += f"{list(sorted(clause))}"
             if i != len(self.clauses) - 1:
-                s += '\n'
+                s += "\n"
         return s
 
     def reindex_lit_to_clause(self):

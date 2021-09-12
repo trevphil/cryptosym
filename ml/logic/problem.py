@@ -7,8 +7,16 @@ from logic.gate import LogicGate, GateType
 
 
 class Problem(object):
-    def __init__(self, input_size, output_size, num_vars, num_gates,
-                 input_indices, output_indices, gates):
+    def __init__(
+        self,
+        input_size,
+        output_size,
+        num_vars,
+        num_gates,
+        input_indices,
+        output_indices,
+        gates,
+    ):
         self.input_size = input_size
         self.output_size = output_size
         self.num_vars = num_vars
@@ -18,22 +26,22 @@ class Problem(object):
         self.output_indices = output_indices
         self.gates = list(sorted(gates, key=lambda gate: gate.output))
 
-        assert isinstance(self.input_size, int), 'Not all properties initialized'
-        assert isinstance(self.output_size, int), 'Not all properties initialized'
-        assert isinstance(self.num_vars, int), 'Not all properties initialized'
-        assert isinstance(self.num_gates, int), 'Not all properties initialized'
-        assert isinstance(self.input_indices, list), 'Not all properties initialized'
-        assert isinstance(self.output_indices, list), 'Not all properties initialized'
+        assert isinstance(self.input_size, int), "Not all properties initialized"
+        assert isinstance(self.output_size, int), "Not all properties initialized"
+        assert isinstance(self.num_vars, int), "Not all properties initialized"
+        assert isinstance(self.num_gates, int), "Not all properties initialized"
+        assert isinstance(self.input_indices, list), "Not all properties initialized"
+        assert isinstance(self.output_indices, list), "Not all properties initialized"
 
         k = len(self.input_indices)
         if self.input_size != k:
-            assert False, f'Expected {self.input_size} input indices but got {k}'
+            assert False, f"Expected {self.input_size} input indices but got {k}"
         k = len(self.output_indices)
         if self.output_size != k:
-            assert False, f'Expected {self.output_size} output indices but got {k}'
+            assert False, f"Expected {self.output_size} output indices but got {k}"
         k = len(self.gates)
         if self.num_gates != k:
-            assert False, f'Expected {self.num_gates} logic gates but got {k}'
+            assert False, f"Expected {self.num_gates} logic gates but got {k}"
 
         self.bit_depths = defaultdict(lambda: 0)
         for gate in self.gates:
@@ -45,41 +53,45 @@ class Problem(object):
         tup = Problem.parse_symbols(symbols_filename)
         in_sz, out_sz, n_vars, n_gates, in_idx, out_idx, gates = tup
 
-        return Problem(input_size=in_sz, output_size=out_sz,
-                       num_vars=n_vars, num_gates=n_gates,
-                       input_indices=in_idx, output_indices=out_idx,
-                       gates=gates)
+        return Problem(
+            input_size=in_sz,
+            output_size=out_sz,
+            num_vars=n_vars,
+            num_gates=n_gates,
+            input_indices=in_idx,
+            output_indices=out_idx,
+            gates=gates,
+        )
 
     @staticmethod
     def parse_symbols(filename):
         if not os.path.exists(filename) or not os.path.isfile(filename):
-            assert False, 'File not found! File name: %s' % filename
+            assert False, "File not found! File name: %s" % filename
 
         in_sz, out_sz, n_vars, n_gates = None, None, None, None
         in_idx, out_idx = None, None
         gates = []
 
-        with open(filename, 'r') as f:
+        with open(filename, "r") as f:
             for line in f:
                 line = line.strip()
-                if len(line) == 0 or line.startswith('#'):
+                if len(line) == 0 or line.startswith("#"):
                     continue  # skip empty lines and comments
 
                 if in_sz is None:
-                    parts = [int(x) for x in line.split(' ')]
+                    parts = [int(x) for x in line.split(" ")]
                     in_sz, out_sz, n_vars, n_gates = parts
                 elif in_idx is None:
-                    in_idx = [int(x) for x in line.split(' ')]
+                    in_idx = [int(x) for x in line.split(" ")]
                 elif out_idx is None:
-                    out_idx = [int(x) for x in line.split(' ')]
+                    out_idx = [int(x) for x in line.split(" ")]
                 else:
-                    parts = line.split(' ')
+                    parts = line.split(" ")
                     gate_type = GateType(parts[0])
                     depth = int(parts[1])
                     out = int(parts[2])
                     inputs = [int(x) for x in parts[3:]]
-                    gate = LogicGate(gate_type, output=out,
-                                     inputs=inputs, depth=depth)
+                    gate = LogicGate(gate_type, output=out, inputs=inputs, depth=depth)
                     gates.append(gate)
 
         return (in_sz, out_sz, n_vars, n_gates, in_idx, out_idx, gates)
@@ -105,8 +117,9 @@ class Problem(object):
         if rng is None:
             rand_bits = [(random.random() > 0.5) for _ in range(self.input_size)]
         else:
-            rand_bits = rng.integers(low=0, high=1, size=self.input_size,
-                                     dtype=int, endpoint=True)
+            rand_bits = rng.integers(
+                low=0, high=1, size=self.input_size, dtype=int, endpoint=True
+            )
 
         # Random input bits
         for idx, inp in enumerate(self.input_indices):
@@ -118,7 +131,7 @@ class Problem(object):
             inputs = []
             for inp in gate.inputs:
                 inp_val = bits[abs(inp) - 1]
-                assert inp_val != -1, 'Input bit is UNSET'
+                assert inp_val != -1, "Input bit is UNSET"
                 if inp < 0:
                     inp_val = 1 - inp_val
                 inputs.append(inp_val)
@@ -130,5 +143,5 @@ class Problem(object):
             if out != 0:
                 observed[abs(out)] = bits[abs(out) - 1].item()
 
-        assert not (bits == -1).any(), 'Some bits are unset!'
+        assert not (bits == -1).any(), "Some bits are unset!"
         return bits.type(torch.uint8), observed

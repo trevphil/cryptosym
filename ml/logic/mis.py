@@ -14,20 +14,20 @@ class MaximumIndependentSet(object):
         self.lit_to_node_indices = defaultdict(list)
 
         if cnf is not None:
-            assert g is None, 'Cannot init MIS with CNF and graph'
+            assert g is None, "Cannot init MIS with CNF and graph"
             self.init_from_cnf(cnf)
         elif g is not None:
-            assert cnf is None, 'Cannot init MIS with CNF and graph'
+            assert cnf is None, "Cannot init MIS with CNF and graph"
             self.init_from_graph(g)
         else:
-            assert False, 'Must init MIS with CNF or graph'
+            assert False, "Must init MIS with CNF or graph"
 
         max_clause_idx = self.node_index_to_clause.max().detach().item()
         max_lit = self.node_index_to_lit.abs().max().detach().item()
         self.expected_num_clauses = int(max_clause_idx) + 1
         self.expected_num_vars = int(max_lit)
-        self.pos_index = (self.node_index_to_lit > 0)
-        self.neg_index = (self.node_index_to_lit < 0)
+        self.pos_index = self.node_index_to_lit > 0
+        self.neg_index = self.node_index_to_lit < 0
 
     def init_from_cnf(self, cnf):
         num_nodes = sum(len(clause) for clause in cnf.clauses)
@@ -66,17 +66,17 @@ class MaximumIndependentSet(object):
                     src.append(a)
                     dst.append(b)
 
-        assert node_index == num_nodes, f'{node_index} != {num_nodes}'
+        assert node_index == num_nodes, f"{node_index} != {num_nodes}"
         g = dgl.graph((src, dst), num_nodes=num_nodes, idtype=torch.int64)
         g = dgl.to_simple(g)  # Remove parallel edges
         g = dgl.to_bidirected(g)  # Make bidirectional <-->
         self.g = g
 
     def init_from_graph(self, g):
-        assert g.is_homogeneous, 'MIS graph should be homogeneous'
+        assert g.is_homogeneous, "MIS graph should be homogeneous"
         self.g = g
-        self.node_index_to_lit = g.ndata['node2lit']
-        self.node_index_to_clause = g.ndata['node2clause']
+        self.node_index_to_lit = g.ndata["node2lit"]
+        self.node_index_to_clause = g.ndata["node2clause"]
 
         n = g.num_nodes()
         i = 0
@@ -100,10 +100,12 @@ class MaximumIndependentSet(object):
 
         # Label each node according to truth value of corresponding literal
         label = torch.zeros(n, dtype=bits.dtype, device=bits.device)
-        label[self.pos_index] = torch.take(bits,
-                self.node_index_to_lit[self.pos_index] - 1)
-        label[self.neg_index] = 1 - torch.take(bits,
-                -self.node_index_to_lit[self.neg_index] - 1)
+        label[self.pos_index] = torch.take(
+            bits, self.node_index_to_lit[self.pos_index] - 1
+        )
+        label[self.neg_index] = 1 - torch.take(
+            bits, -self.node_index_to_lit[self.neg_index] - 1
+        )
 
         # Zero-out nodes after first non-zero node for each clause
         i = 0
@@ -133,7 +135,7 @@ class MaximumIndependentSet(object):
                 negative_nodes = self.lit_to_node_indices[-lit]
                 if node_labeling[negative_nodes].any():
                     if conflict_is_error:
-                        assert False, 'Conflicting assignment!'
+                        assert False, "Conflicting assignment!"
                     else:
                         return None
 
@@ -149,5 +151,4 @@ class MaximumIndependentSet(object):
 
     def is_sat(self, label):
         mis_size = torch.sum(label)
-        return mis_size >= self.expected_num_clauses and \
-            self.is_independent_set(label)
+        return mis_size >= self.expected_num_clauses and self.is_independent_set(label)

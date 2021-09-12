@@ -27,7 +27,7 @@ class HashSAT(torch.nn.Module):
 
     @property
     def name(self):
-        return 'HashSAT'
+        return "HashSAT"
 
     def forward(self, graph):
         H = torch.ones((graph.num_nodes(), self.hidden_size), dtype=torch.float32)

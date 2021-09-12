@@ -16,7 +16,7 @@ def get_experiment_name(experiment_dir):
     numbers = []
     for name in os.listdir(experiment_dir):
         try:
-            num = int(name.split('_')[-1])
+            num = int(name.split("_")[-1])
             numbers.append(num)
         except BaseException:
             continue
@@ -27,4 +27,4 @@ def get_experiment_name(experiment_dir):
         exp_num = max(numbers) + 1
 
     dt = datetime.now()
-    return dt.strftime('%Y-%m-%d-%H-%M-%S') + ('_%02d' % exp_num)
+    return dt.strftime("%Y-%m-%d-%H-%M-%S") + ("_%02d" % exp_num)

@@ -60,18 +60,6 @@ class ProblemGenerator(object):
             output_indices = pool
         else:
             output_indices = pool[-output_size:]
-        
-        """
-        input_size = 3
-        output_size = 1
-        num_gates = 1
-        gates = [
-            LogicGate(GateType.xor_gate, inputs=[1, 2], output=3, depth=1)
-        ]
-        input_indices = [1, 2]
-        output_indices = [3]
-        max_var = gates[0].output + 1
-        """
 
         problem = Problem(input_size=len(input_indices),
                           output_size=len(output_indices),
