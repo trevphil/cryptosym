@@ -19,7 +19,7 @@ class HashSAT(torch.nn.Module):
             out_sz = sizes[layer_idx + 1]
             activ = torch.sigmoid if layer_idx == (num_layers - 1) else torch.relu
             conv = GraphConv(in_sz, out_sz, activation=activ)
-            # conv = GATConv(in_sz, out_sz, 16, activation=activ)
+            # conv = GATConv(in_sz, out_sz, 3, activation=activ)
             self.layers.append(conv)
 
         self.num_parameters = sum(p.numel() for p in self.parameters())
@@ -33,4 +33,6 @@ class HashSAT(torch.nn.Module):
         H = torch.ones((graph.num_nodes(), self.hidden_size), dtype=torch.float32)
         for conv in self.layers:
             H = conv(graph, H)
+            if H.ndim == 3:
+                H = H.mean(dim=1)
         return H

@@ -107,19 +107,10 @@ class MaximumIndependentSet(object):
             bits, -self.node_index_to_lit[self.neg_index] - 1
         )
 
-        # Zero-out nodes after first non-zero node for each clause
-        i = 0
-        while i < n:
-            if label[i]:
-                c = self.node_index_to_clause[i]
-                i += 1
-                while i < n and self.node_index_to_clause[i] == c:
-                    label[i] = 0
-                    i += 1
-            else:
-                i += 1
-
-        return label.type(torch.uint8)
+        # result[i] == 1 --> literal for node "i" is 0 (not in MIS)
+        # result[i] == 0 --> literal for node "i" is 1 (potentially in MIS)
+        result = 1 - label.type(torch.uint8)
+        return result
 
     def mis_to_cnf_solution(self, node_labeling, conflict_is_error=True):
         n = self.expected_num_vars

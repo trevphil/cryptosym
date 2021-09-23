@@ -12,7 +12,7 @@ def get_optimizer(opts, model):
     return (optimizer, scheduler)
 
 
-def get_experiment_name(experiment_dir):
+def get_experiment_name(experiment_dir, is_test=False):
     numbers = []
     for name in os.listdir(experiment_dir):
         try:
@@ -27,4 +27,7 @@ def get_experiment_name(experiment_dir):
         exp_num = max(numbers) + 1
 
     dt = datetime.now()
-    return dt.strftime("%Y-%m-%d-%H-%M-%S") + ("_%02d" % exp_num)
+    exp_name = dt.strftime("%Y-%m-%d-%H-%M-%S") + ("_%02d" % exp_num)
+    if is_test:
+        exp_name = f"test_{exp_name}"
+    return exp_name

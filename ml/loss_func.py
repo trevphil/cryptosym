@@ -9,15 +9,16 @@ class PreimageLoss(object):
     def __init__(self):
         pass
 
-    def bce(self, batched_graph, labels):
+    def bce(self, batched_graph, labels, num_candidate_sol):
         graphs = dgl.unbatch(batched_graph)
         cum_loss = 0.0
+        votes = torch.zeros(num_candidate_sol, dtype=int)
 
         # BCE = - [ y * log(x) + (1 - y) * log(1 - x) ]
         for i, g in enumerate(graphs):
             # N x P x 1
             pred = g.ndata["pred"][:, :, None]
-            num_candidate_sol = pred.size(1)
+            assert num_candidate_sol == pred.size(1)
 
             # N x 1 x Q
             label = labels[i][:, None, :].to(pred)
@@ -27,17 +28,20 @@ class PreimageLoss(object):
             tiled_label = torch.tile(label, (1, num_candidate_sol, 1))
 
             # N x P x Q
-            term1 = label * torch.log(pred)
-            term2 = (1 - label) * torch.log(1 - pred)
+            term1 = tiled_label * torch.log(pred)
+            term2 = (1 - tiled_label) * torch.log(1 - pred)
             bce_loss = torch.maximum(-(term1 + term2), torch.tensor(-100.0))
 
             # P x Q
             reduced = bce_loss.mean(axis=0)
 
             # Take best across all predicted x GT solution combinations
-            cum_loss += reduced.min()
+            cum_loss += reduced.mean(axis=0).min()
+            
+            # Increase vote for solution index with minimum loss
+            votes[reduced.min(axis=1)[0].argmin().detach()] += 1
 
-        return cum_loss
+        return cum_loss / len(graphs), votes
 
     def mis_size_ratio(self, mis_samples, batched_graph):
         num_samples = len(mis_samples)
@@ -45,10 +49,10 @@ class PreimageLoss(object):
         assert num_samples == len(graphs)
         cum_score = 0.0
 
-        for graph_index in range(num_samples):
-            max_mis_size = mis_samples[graph_index].expected_num_clauses
+        for i, mis in enumerate(mis_samples):
+            max_mis_size = mis.expected_num_clauses
 
-            g = graphs[graph_index]
+            g = graphs[i]
             num_nodes = g.num_nodes()
             pred = g.ndata["pred"]
             num_candidate_solutions = pred.size(1)
