@@ -1,5 +1,5 @@
-import os
 import torch
+from pathlib import Path
 from datetime import datetime
 
 
@@ -12,11 +12,11 @@ def get_optimizer(opts, model):
     return (optimizer, scheduler)
 
 
-def get_experiment_name(experiment_dir, is_test=False):
+def get_experiment_name(experiment_dir: Path, is_test: bool = False) -> str:
     numbers = []
-    for name in os.listdir(experiment_dir):
+    for name in experiment_dir.iterdir():
         try:
-            num = int(name.split("_")[-1])
+            num = int(name.stem.split("_")[-1])
             numbers.append(num)
         except BaseException:
             continue

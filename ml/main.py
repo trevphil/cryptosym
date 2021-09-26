@@ -1,5 +1,3 @@
-import os
-import dgl
 import torch
 import random
 import argparse
@@ -14,19 +12,14 @@ from opts import PreimageOpts
 from models.hashsat import HashSAT
 from loss_func import PreimageLoss
 from dataset import PLDatasetWrapper
-from solver.basic_solver import BasicMISSolver
-from solver.tree_solver import TreeMISSolver
 
 
 class PLModelWrapper(pl.LightningModule):
     def __init__(self, opts):
         super().__init__()
         self.opts = opts
-        self.model = HashSAT(
-            num_layers=opts.T, hidden_size=opts.d, num_solutions=opts.d
-        )
+        self.model = HashSAT(num_layers=opts.T, hidden_size=opts.d)
         self.loss_fn = PreimageLoss()
-        self.register_buffer("solution_weights", torch.zeros(opts.d, dtype=int))
         self.save_hyperparameters()
 
     def forward(self, g):
@@ -37,66 +30,88 @@ class PLModelWrapper(pl.LightningModule):
         return {"optimizer": optim, "lr_scheduler": {"scheduler": optim_sched}}
 
     def training_step(self, batch, batch_idx):
-        mis_samples, batched_graph, labels = batch
-        pred = self(batched_graph)
-
+        batched_graph, sat_labels = batch
+        pred_dict = self(batched_graph)
         with batched_graph.local_scope():
-            batched_graph.ndata["pred"] = pred
-            loss, votes = self.loss_fn.bce(batched_graph, labels, self.opts.d)
-            self.solution_weights += votes
+            loss_dict = self.loss_fn(batched_graph, pred_dict, sat_labels)
 
-        self.logger.experiment.add_scalar("train_loss", loss, self.global_step)
-        if self.global_step % 20 == 0:
-            print(f"solution_weights: {self.solution_weights}")
+        gs = self.global_step
+        bs = float(batched_graph.batch_size)
 
-        batch_size = float(len(mis_samples))
-        n_node = sum(mis.g.num_nodes() for mis in mis_samples) / batch_size
-        n_edge = sum(mis.g.num_edges() for mis in mis_samples) / batch_size
+        loss = loss_dict["loss"]
+        sat_loss = loss_dict["sat_loss"]
+        color_loss = loss_dict["color_loss"]
+        self.logger.experiment.add_scalar("train_loss", loss, gs)
+        self.logger.experiment.add_scalar("train_sat_loss", sat_loss, gs)
+        self.logger.experiment.add_scalar("train_color_loss", color_loss, gs)
 
-        self.logger.experiment.add_scalar("num_nodes", n_node, self.global_step)
-        self.logger.experiment.add_scalar("num_edges", n_edge, self.global_step)
+        n_correct_classifications = loss_dict["num_correct_classifications"]
+        accuracy = n_correct_classifications / bs
+        self.logger.experiment.add_scalar("accuracy", accuracy, gs)
+
+        violated_edges = loss_dict["frac_violated_edges"]
+        self.logger.experiment.add_scalar("frac_violated_edges", violated_edges, gs)
+
+        n_solved = loss_dict["num_solved"]
+        self.logger.experiment.add_scalar("num_solved", n_solved, gs)
+
+        n_node = loss_dict["mean_num_nodes"]
+        n_edge = loss_dict["mean_num_edges"]
+        self.logger.experiment.add_scalar("num_nodes", n_node, gs)
+        self.logger.experiment.add_scalar("num_edges", n_edge, gs)
 
         return loss
 
     def validation_step(self, batch, batch_idx):
-        mis_samples, batched_graph, labels = batch
-        pred = self(batched_graph)
-
+        batched_graph, sat_labels = batch
+        pred_dict = self(batched_graph)
         with batched_graph.local_scope():
-            batched_graph.ndata["pred"] = pred
-            loss, _ = self.loss_fn.bce(batched_graph, labels, self.opts.d)
-            mis_size = self.loss_fn.mis_size_ratio(mis_samples, batched_graph)
+            loss_dict = self.loss_fn(batched_graph, pred_dict, sat_labels)
 
-        self.logger.experiment.add_scalar("val_mis_size", mis_size, self.global_step)
-        self.log("pl_mis_size", mis_size)
-        self.log("val_loss", loss)
+        bs = float(batched_graph.batch_size)
 
-        return mis_size
+        self.log("val_loss", loss_dict["loss"])
+        self.log("val_num_nodes", loss_dict["mean_num_nodes"])
+        self.log("val_num_edges", loss_dict["mean_num_edges"])
+        self.log("val_num_solved", loss_dict["num_solved"])
+
+        n_correct_classifications = loss_dict["num_correct_classifications"]
+        accuracy = n_correct_classifications / bs
+        self.log("val_accuracy", accuracy)
+
+        violated_edges = loss_dict["frac_violated_edges"]
+        self.log("val_frac_violated_edges", violated_edges)
+
+        return loss_dict["loss"]
 
     def test_step(self, batch, batch_idx):
-        mis_samples, batched_graph, labels = batch
-        graphs = dgl.unbatch(batched_graph)
+        batched_graph, sat_labels = batch
+        pred_dict = self(batched_graph)
+        with batched_graph.local_scope():
+            loss_dict = self.loss_fn(batched_graph, pred_dict, sat_labels)
 
-        solver = TreeMISSolver(self.model, self.solution_weights)
-        num_solved = 0
+        bs = float(batched_graph.batch_size)
 
-        for mis, g in zip(mis_samples, graphs):
-            with g.local_scope():
-                solution = solver.solve(mis, g, no_model=False)
-                if isinstance(solution, torch.Tensor):
-                    mis_size = torch.sum(solution).detach().item()
-                    if mis_size == mis.expected_num_clauses:
-                        num_solved += 1
+        self.log("test_loss", loss_dict["loss"])
+        self.log("test_num_nodes", loss_dict["mean_num_nodes"])
+        self.log("test_num_edges", loss_dict["mean_num_edges"])
+        self.log("test_num_solved", loss_dict["num_solved"])
 
-        self.logger.experiment.add_scalar("test_solved", num_solved, self.global_step)
+        n_correct_classifications = loss_dict["num_correct_classifications"]
+        accuracy = n_correct_classifications / bs
+        self.log("test_accuracy", accuracy)
 
-        return num_solved
+        violated_edges = loss_dict["frac_violated_edges"]
+        self.log("test_frac_violated_edges", violated_edges)
+
+        return loss_dict["num_solved"]
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--test", type=str, default='',
-                        help="Provide path to the model for testing")
+    parser.add_argument(
+        "--test", type=str, default="", help="Provide path to the model for testing"
+    )
     args = parser.parse_args()
     should_test = len(args.test) > 0
 
@@ -104,14 +119,13 @@ if __name__ == "__main__":
     random.seed(opts.seed)
     np.random.seed(opts.seed)
     torch.manual_seed(opts.seed)
-    
+
     pl_dataset = PLDatasetWrapper(opts)
 
     if not should_test:
-        logdir = opts.logdir
+        logdir = Path(opts.logdir)
         exp_name = utils.get_experiment_name(logdir)
-        exp_path = os.path.join(logdir, exp_name)
-        logger = TensorBoardLogger(exp_path, name="")
+        logger = TensorBoardLogger(str(logdir / exp_name), name="")
 
         pl_wrapper = PLModelWrapper(opts)
 
@@ -125,23 +139,22 @@ if __name__ == "__main__":
             callbacks=[checkpoint_cb, lr_monitor],
             max_epochs=opts.max_epochs,
             gradient_clip_val=opts.grad_clip,
+            stochastic_weight_avg=True,
         )
 
         trainer.fit(pl_wrapper, pl_dataset)
     else:
         # Test!
-        ckpt_path = args.test
-        if not os.path.exists(ckpt_path):
-            print(f"Model checkpoint does not exist: '{ckpt_path}'")
+        ckpt_path = Path(args.test)
+        if not ckpt_path.exists():
+            print(f"Model checkpoint does not exist: {ckpt_path}")
             exit()
 
-        pl_wrapper = PLModelWrapper.load_from_checkpoint(ckpt_path, opts=opts)
-        assert pl_wrapper.solution_weights.any(), "'solution_weights' is all 0"
+        pl_wrapper = PLModelWrapper.load_from_checkpoint(str(ckpt_path), opts=opts)
 
-        logdir = opts.logdir
+        logdir = Path(opts.logdir)
         exp_name = utils.get_experiment_name(logdir, is_test=True)
-        exp_path = os.path.join(logdir, exp_name)
-        logger = TensorBoardLogger(exp_path, name="")
+        logger = TensorBoardLogger(str(logdir / exp_name), name="")
 
         trainer = pl.Trainer(accelerator=None, logger=logger)
         trainer.test(datamodule=pl_dataset, model=pl_wrapper)
