@@ -24,3 +24,16 @@ labels for MIS graph, when >1 literal is true (1) per clause.
 
 Also 3-coloring has # nodes = # variables in CNF, whereas
 MIS has a lot more nodes (# clauses * # literals per clause).
+
+
+
+
+
+
+
+
+Findings:
+- Repeating 1 GNN layer 10x then a second layer to reduce dimension
+  to 3 works BETTER than 10x differen layers... wtf.
+  
+  

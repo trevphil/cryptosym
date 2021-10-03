@@ -40,7 +40,7 @@ class PLDatasetWrapper(pl.LightningDataModule):
         return DataLoader(
             self.train_dataset,
             batch_size=self.batch_size,
-            collate_fn=self.collate_fn,
+            collate_fn=PLDatasetWrapper.collate_fn,
             num_workers=os.cpu_count(),
             pin_memory=True,
             shuffle=True,
@@ -50,7 +50,7 @@ class PLDatasetWrapper(pl.LightningDataModule):
         return DataLoader(
             self.val_dataset,
             batch_size=self.batch_size,
-            collate_fn=self.collate_fn,
+            collate_fn=PLDatasetWrapper.collate_fn,
             num_workers=os.cpu_count(),
             pin_memory=True,
             shuffle=False,
@@ -60,13 +60,14 @@ class PLDatasetWrapper(pl.LightningDataModule):
         return DataLoader(
             self.test_dataset,
             batch_size=self.batch_size,
-            collate_fn=self.collate_fn,
+            collate_fn=PLDatasetWrapper.collate_fn,
             num_workers=os.cpu_count(),
             pin_memory=True,
             shuffle=False,
         )
 
-    def collate_fn(self, graphs_labels) -> DataLoader:
+    @staticmethod
+    def collate_fn(graphs_labels) -> Tuple[dgl.DGLGraph, torch.Tensor]:
         graphs, labels = zip(*graphs_labels)
         labels = torch.tensor(labels, dtype=torch.float32)
         return dgl.batch(graphs), labels

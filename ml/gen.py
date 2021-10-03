@@ -31,7 +31,7 @@ def round_up(x: int, divisor: int) -> int:
     return x + divisor - (x % divisor)
 
 
-def execute_cnfgen(cmd: str) -> PyCNF:
+def execute_cnfgen(cmd: str) -> str:
     # https://massimolauria.net/cnfgen/transformation.html
     cmd += " -T shuffle"
     proc = subprocess.Popen(cmd.split(" "), stdout=subprocess.PIPE)
@@ -43,8 +43,7 @@ def attempt_solve(cnf: str, timeout: float = 5) -> Union[None, bool]:
     def _interrupt(s):
         s.interrupt()
 
-    cnf = PyCNF(from_string=cnf)
-    solver = Glucose4(bootstrap_with=cnf.clauses)
+    solver = Glucose4(bootstrap_with=PyCNF(from_string=cnf).clauses)
     timer = Timer(timeout, _interrupt, [solver])
     timer.start()
 

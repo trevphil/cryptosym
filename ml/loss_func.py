@@ -1,12 +1,18 @@
 import dgl
 import torch
+from typing import Dict
+
+from opts import PreimageOpts
 
 
 class PreimageLoss(object):
-    def __init__(self):
+    def __init__(self, opts: PreimageOpts):
+        self.opts = opts
         self.bce = torch.nn.BCELoss()
 
-    def __call__(self, batched_graph, pred_dict, sat_labels):
+    def __call__(
+        self, batched_graph: dgl.DGLGraph, pred_dict: Dict, sat_labels: torch.Tensor
+    ) -> Dict:
         bs = batched_graph.batch_size
 
         sat_pred = pred_dict["sat"]
@@ -48,7 +54,10 @@ class PreimageLoss(object):
             total_color_conflicts += color_conflicts
 
         color_loss /= num_edges
-        loss = 1.0 * sat_loss + 0.1 * color_loss
+        loss = (
+            self.opts.sat_loss_weight * sat_loss
+            + self.opts.color_loss_weight * color_loss
+        )
 
         mean_nodes = num_nodes / float(bs)
         mean_edges = num_edges / float(bs)

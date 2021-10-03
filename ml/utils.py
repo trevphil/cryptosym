@@ -1,33 +1,22 @@
 import torch
-from pathlib import Path
 from datetime import datetime
+from typing import Tuple, Any
 
 
-def get_optimizer(opts, model):
+def get_optimizer(opts, model) -> Tuple[torch.optim.Optimizer, Any]:
     lr = opts.lr_start
     l2 = opts.l2_penalty
-    dec = opts.lr_decay
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=l2)
-    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, dec)
-    return (optimizer, scheduler)
+    # scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, dec)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+        optimizer, T_0=1, T_mult=2, eta_min=5e-5
+    )
+    return optimizer, scheduler
 
 
-def get_experiment_name(experiment_dir: Path, is_test: bool = False) -> str:
-    numbers = []
-    for name in experiment_dir.iterdir():
-        try:
-            num = int(name.stem.split("_")[-1])
-            numbers.append(num)
-        except BaseException:
-            continue
-
-    if len(numbers) == 0:
-        exp_num = 1
-    else:
-        exp_num = max(numbers) + 1
-
+def get_experiment_name(info: str, is_test: bool = False) -> str:
     dt = datetime.now()
-    exp_name = dt.strftime("%Y-%m-%d-%H-%M-%S") + ("_%02d" % exp_num)
+    exp_name = f"{info}_{dt.strftime('%Y-%m-%d')}"
     if is_test:
-        exp_name = f"test_{exp_name}"
+        exp_name = f"{exp_name}_test"
     return exp_name
