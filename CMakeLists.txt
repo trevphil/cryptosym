@@ -36,11 +36,6 @@ set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
 set(EIGEN3_LIBRARIES ${EIGEN3_LIBRARIES})
 include_directories(${EIGEN3_INCLUDE_DIR})
 
-# OpenCV
-find_package(OpenCV 4 REQUIRED)
-include_directories(${OpenCV_LIBRARIES})
-include_directories(${OpenCV_INCLUDE_DIRS})
-
 # Add all the source files needed to build the executable
 add_executable(preimage
                src/main.cpp
@@ -79,7 +74,6 @@ target_link_libraries(preimage ${EXTRA_LIBS})
 target_link_libraries(preimage spdlog::spdlog)
 target_link_libraries(preimage cryptominisat5)
 target_link_libraries(preimage cryptopp-shared)
-target_link_libraries(preimage ${OpenCV_LIBRARIES})
 
 target_link_libraries(dataset_generator ${EXTRA_LIBS})
 target_link_libraries(dataset_generator spdlog::spdlog)

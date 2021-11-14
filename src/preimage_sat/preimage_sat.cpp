@@ -17,8 +17,7 @@
 
 namespace preimage {
 
-PreimageSATSolver::PreimageSATSolver(bool verbose)
-    : Solver(verbose), visualize(false) {}
+PreimageSATSolver::PreimageSATSolver(bool verbose) : Solver(verbose) {}
 
 PreimageSATSolver::~PreimageSATSolver() {}
 
@@ -38,7 +37,7 @@ void PreimageSATSolver::initialize() {
     lit2gates[out].insert(i);
     for (const int inp : g.inputs) {
       assert(inp != 0);
-      lit2gates[abs(inp)].insert(i);
+      lit2gates[std::abs(inp)].insert(i);
     }
   }
 
@@ -50,8 +49,6 @@ void PreimageSATSolver::initialize() {
   std::sort(literal_ordering.begin(), literal_ordering.end(),
             [](const LitStats &a, const LitStats &b) {
               return a.score() > b.score(); });
-
-  if (visualize) setupVisualization();
 
   const double init_time_ms = Utils::ms_since_epoch() - start;
   if (verbose_) spdlog::info("Initialized PreimageSAT in {:.0f} ms", init_time_ms);
@@ -165,14 +162,12 @@ int PreimageSATSolver::propagate(const int lit) {
     if (!ok) return -1;  // conflict
 
     for (int solved_lit : solved_lits) {
-      lits_solved_via_propagation.insert(abs(solved_lit));
-      for (int g : lit2gates[abs(solved_lit)]) {
+      lits_solved_via_propagation.insert(std::abs(solved_lit));
+      for (int g : lit2gates[std::abs(solved_lit)]) {
         if (g != gate_idx) q.push(g);
       }
     }
   }
-
-  if (visualize) renderDebugImage();
 
   return static_cast<int>(lits_solved_via_propagation.size());
 }
@@ -197,8 +192,8 @@ bool PreimageSATSolver::partialSolve(const LogicGate &g,
 bool PreimageSATSolver::partialSolveAnd(const LogicGate &g,
                                         std::vector<int> &solved_lits) {
   const bool out_known = literals[g.output] != 0;
-  const bool inp1_known = literals[abs(g.inputs[0])] != 0;
-  const bool inp2_known = literals[abs(g.inputs[1])] != 0;
+  const bool inp1_known = literals[std::abs(g.inputs[0])] != 0;
+  const bool inp2_known = literals[std::abs(g.inputs[1])] != 0;
   const bool out_val = getLitValue(g.output);
   const bool inp1_val = getLitValue(g.inputs[0]);
   const bool inp2_val = getLitValue(g.inputs[1]);
@@ -240,8 +235,8 @@ bool PreimageSATSolver::partialSolveAnd(const LogicGate &g,
 bool PreimageSATSolver::partialSolveOr(const LogicGate &g,
                                        std::vector<int> &solved_lits) {
   const bool out_known = literals[g.output] != 0;
-  const bool inp1_known = literals[abs(g.inputs[0])] != 0;
-  const bool inp2_known = literals[abs(g.inputs[1])] != 0;
+  const bool inp1_known = literals[std::abs(g.inputs[0])] != 0;
+  const bool inp2_known = literals[std::abs(g.inputs[1])] != 0;
   const bool out_val = getLitValue(g.output);
   const bool inp1_val = getLitValue(g.inputs[0]);
   const bool inp2_val = getLitValue(g.inputs[1]);
@@ -283,8 +278,8 @@ bool PreimageSATSolver::partialSolveOr(const LogicGate &g,
 bool PreimageSATSolver::partialSolveXor(const LogicGate &g,
                                         std::vector<int> &solved_lits) {
   const bool out_known = literals[g.output] != 0;
-  const bool inp1_known = literals[abs(g.inputs[0])] != 0;
-  const bool inp2_known = literals[abs(g.inputs[1])] != 0;
+  const bool inp1_known = literals[std::abs(g.inputs[0])] != 0;
+  const bool inp2_known = literals[std::abs(g.inputs[1])] != 0;
   const bool out_val = getLitValue(g.output);
   const bool inp1_val = getLitValue(g.inputs[0]);
   const bool inp2_val = getLitValue(g.inputs[1]);
@@ -313,7 +308,7 @@ bool PreimageSATSolver::partialSolveXor3(const LogicGate &g,
   uint8_t num_known = 0;
   uint8_t num_unknown = 0;
   for (int inp : g.inputs) {
-    if (literals[abs(inp)] != 0) known[num_known++] = getLitValue(inp);
+    if (literals[std::abs(inp)] != 0) known[num_known++] = getLitValue(inp);
     else unknown[num_unknown++] = inp;
   }
   if (literals[g.output] != 0) known[num_known++] = getLitValue(g.output);
@@ -337,7 +332,7 @@ bool PreimageSATSolver::partialSolveMaj(const LogicGate &g,
   uint8_t num_known_inputs = 0;
   uint8_t num_unknown_inputs = 0;
   for (int inp : g.inputs) {
-    if (literals[abs(inp)] != 0) {
+    if (literals[std::abs(inp)] != 0) {
       known[num_known_inputs] = getLitValue(inp);
       inp_sum += static_cast<uint8_t>(known[num_known_inputs]);
       ++num_known_inputs;
@@ -372,65 +367,6 @@ bool PreimageSATSolver::partialSolveMaj(const LogicGate &g,
     return true;
   }
   return true;
-}
-
-void PreimageSATSolver::setupVisualization() {
-  int max_depth = 0;
-  int max_gates_per_depth = 0;
-  std::map<int, std::set<int>> depth2lits;
-  for (const LogicGate &g : gates_) {
-    max_depth = std::max(max_depth, g.depth);
-    depth2lits[g.depth].insert(abs(g.output));
-    max_gates_per_depth = std::max(
-        max_gates_per_depth, static_cast<int>(depth2lits[g.depth].size()));
-  }
-  for (const int hash_inp : input_indices_) {
-    if (hash_inp != 0) {
-      depth2lits[0].insert(abs(hash_inp));
-      max_gates_per_depth = std::max(
-          max_gates_per_depth, static_cast<int>(depth2lits[0].size()));
-    }
-  }
-
-  const int p = 20;
-  const int x_step = 6;
-  const int im_width = max_depth * x_step + (2 * p);
-  const int im_height = max_gates_per_depth * 20 + (2 * p);
-  debug_image = cv::Mat(im_height, im_width, CV_8UC3, cv::Scalar(255, 255, 255));
-  lit_pos_x = std::vector<double>(num_vars_ + 1, 0.0);
-  lit_pos_y = std::vector<double>(num_vars_ + 1, 0.0);
-
-  for (const auto &itr : depth2lits) {
-    const int depth = itr.first;
-    const double x_coord = p + static_cast<double>(x_step * depth);
-    const int num_lits = static_cast<int>(itr.second.size());
-    const double y_step = static_cast<double>(im_height - (2 * p)) / (num_lits + 1);
-    double y_coord = static_cast<double>(p) + y_step;
-    for (int lit : itr.second) {
-      assert(lit > 0);
-      lit_pos_x[lit] = x_coord;
-      lit_pos_y[lit] = y_coord;
-      y_coord += y_step;
-    }
-  }
-}
-
-void PreimageSATSolver::renderDebugImage() {
-  for (int i = 1; i <= num_vars_; ++i) {
-    cv::circle(debug_image, cv::Point2d(lit_pos_x[i], lit_pos_y[i]),
-                2, cv::Scalar(0, 0, 0), -1);
-  }
-  for (const auto &stack_item : stack) {
-    const int &lit_guess = stack_item.lit_guess;
-    cv::circle(debug_image, cv::Point2d(lit_pos_x[lit_guess], lit_pos_y[lit_guess]),
-                2, cv::Scalar(0, 0, 255), -1);
-    for (const int &lit_implied : stack_item.implied) {
-      cv::circle(debug_image, cv::Point2d(lit_pos_x[lit_implied], lit_pos_y[lit_implied]),
-                2, cv::Scalar(0, 255, 0), -1);
-    }
-  }
-  cv::imshow("Debug", debug_image);
-  cv::waitKey(10);
 }
 
 }  // end namespace preimage

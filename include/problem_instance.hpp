@@ -28,6 +28,7 @@
 #include "bp/bp_solver.hpp"
 #include "cmsat/cmsat_solver.hpp"
 #include "preimage_sat/preimage_sat.hpp"
+#include "sdp/sdp_solver.hpp"
 
 #include <memory>
 #include <string>

@@ -39,7 +39,7 @@ class CMSatSolver : public Solver {
  private:
   inline CMSat::Lit getLit(int i) const {
     assert(i != 0);
-    return CMSat::Lit(abs(i) - 1, i < 0);
+    return CMSat::Lit(std::abs(i) - 1, i < 0);
   }
 
   void addClause(const LogicGate &g);

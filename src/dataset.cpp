@@ -103,8 +103,8 @@ int simplifyCNF(std::vector<std::set<int>> &cnf,
       if (var_remapping.count(old_lit)) {
         new_clause.insert(var_remapping[old_lit]);
       } else {
-        var_remapping[abs(old_lit)] = k;
-        var_remapping[-abs(old_lit)] = -k;
+        var_remapping[std::abs(old_lit)] = k;
+        var_remapping[-std::abs(old_lit)] = -k;
         new_clause.insert(var_remapping[old_lit]);
         k++;
       }

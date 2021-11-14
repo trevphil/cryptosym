@@ -22,12 +22,6 @@
 #include <utility>
 #include <iostream>
 
-#include <opencv2/core.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/calib3d.hpp>
-#include <opencv2/imgcodecs.hpp>
-
 #include "core/solver.hpp"
 #include "core/utils.hpp"
 
@@ -110,19 +104,10 @@ class PreimageSATSolver : public Solver {
   bool partialSolveMaj(const LogicGate &g,
                        std::vector<int> &solved_lits);
 
-  void setupVisualization();
-
-  void renderDebugImage();
-
   std::vector<int8_t> literals;
   std::vector<StackItem> stack;
   std::vector<LitStats> literal_ordering;
   std::unordered_map<int, std::set<int>> lit2gates;
-
-  bool visualize;
-  cv::Mat debug_image;
-  std::vector<double> lit_pos_x;
-  std::vector<double> lit_pos_y;
 };
 
 }  // end namespace preimage

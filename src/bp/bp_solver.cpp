@@ -55,12 +55,12 @@ void BPSolver::initialize() {
     for (int inp : gate.inputs) {
       assert(inp != 0);
       std::shared_ptr<GraphNode> inp_node;
-      if (!g_.hasNode(abs(inp))) {
-        inp_node = std::shared_ptr<GraphNode>(new GraphNode(abs(inp)));
+      if (!g_.hasNode(std::abs(inp))) {
+        inp_node = std::shared_ptr<GraphNode>(new GraphNode(std::abs(inp)));
         g_.addNode(inp_node);
-        max_rv = std::max(max_rv, abs(inp));
+        max_rv = std::max(max_rv, std::abs(inp));
       } else {
-        inp_node = g_.getNode(abs(inp));
+        inp_node = g_.getNode(std::abs(inp));
       }
       g_.connectFactorNode(fac, inp_node, IODirection::Input, inp < 0);
     }

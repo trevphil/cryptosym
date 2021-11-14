@@ -42,7 +42,7 @@ std::vector<int> SymHash::hashOutputIndices() const {
 }
 
 double SymHash::averageRuntimeMs() const {
-  if (num_calls_ == 0) return -1.0;
+  if (num_calls_ == 0) return NAN;
   return cum_runtime_ms_ / num_calls_;
 }
 
@@ -68,7 +68,7 @@ boost::dynamic_bitset<> SymHash::call(const boost::dynamic_bitset<> &hash_input,
 }
 
 void SymHash::pruneIrrelevantGates() {
-  const int num_gates_before = LogicGate::global_gates.size();
+  const int n_before = static_cast<int>(LogicGate::global_gates.size());
   std::unordered_map<int, LogicGate> index2gate;
   for (const LogicGate &g : LogicGate::global_gates) {
     assert(g.output > 0);  // should always be positive
@@ -78,7 +78,7 @@ void SymHash::pruneIrrelevantGates() {
   // Gates that appear in the queue are useful, not irrelevant
   std::queue<int> q;
   for (int i : hash_output_indices_) {
-    if (i != 0) q.push(abs(i));
+    if (i != 0) q.push(std::abs(i));
   }
 
   std::set<int> seen;  // Avoid re-visiting gates
@@ -90,11 +90,12 @@ void SymHash::pruneIrrelevantGates() {
     if (seen.count(i) > 0) continue;
     seen.insert(i);
 
-    if (index2gate.count(i) > 0) {
-      const LogicGate &g = index2gate.at(i);
-      useful_gates[i] = g;
-      for (int inp : g.inputs) {
-        if (seen.count(abs(inp)) == 0) q.push(abs(inp));
+    if (index2gate.count(i) == 0) continue;
+    const LogicGate &g = index2gate.at(i);
+    useful_gates[i] = g;
+    for (int inp : g.inputs) {
+      if (seen.count(std::abs(inp)) == 0) {
+        q.push(std::abs(inp));
       }
     }
   }
@@ -103,22 +104,25 @@ void SymHash::pruneIrrelevantGates() {
   for (const auto &itr : useful_gates)
     LogicGate::global_gates.push_back(itr.second);
 
-  const int num_gates_after = LogicGate::global_gates.size();
+  const int n_after = static_cast<int>(LogicGate::global_gates.size());
   spdlog::info("Pruned gates ({} --> {}), removed {:.1f}%",
-               num_gates_before, num_gates_after,
-               100.0 * (num_gates_before - num_gates_after) / num_gates_before);
+               n_before, n_after, 100.0 * (n_before - n_after) / n_before);
 }
 
 void SymHash::reindexBits() {
   // Get a set containing all bit indices which appear
-  // in the reduced tree (after removing irrelevant gates)
+  // in the reduced DAG (after removing irrelevant gates)
   std::set<int> old_indices;
   for (int out : hash_output_indices_) {
-    if (out != 0) old_indices.insert(abs(out));
+    if (out != 0) {
+      old_indices.insert(std::abs(out));
+    }
   }
   for (const LogicGate &g : LogicGate::global_gates) {
-    old_indices.insert(abs(g.output));
-    for (int inp : g.inputs) old_indices.insert(abs(inp));
+    old_indices.insert(std::abs(g.output));
+    for (int inp : g.inputs) {
+      old_indices.insert(std::abs(inp));
+    }
   }
 
   // Index bits consecutively, starting at 1
@@ -131,9 +135,10 @@ void SymHash::reindexBits() {
   new_gates.reserve(LogicGate::global_gates.size());
   for (const LogicGate &g : LogicGate::global_gates) {
     std::vector<int> inputs;
-    for (int inp : g.inputs)
-      inputs.push_back(SGN(inp) * index_old2new.at(abs(inp)));
-    const int output = SGN(g.output) * index_old2new.at(abs(g.output));
+    for (int inp : g.inputs) {
+      inputs.push_back(SGN(inp) * index_old2new.at(std::abs(inp)));
+    }
+    const int output = SGN(g.output) * index_old2new.at(std::abs(g.output));
     LogicGate g_new(g.t(), g.depth, output, inputs);
     new_gates.push_back(g_new);
   }
@@ -141,15 +146,15 @@ void SymHash::reindexBits() {
 
   std::vector<int> new_inputs, new_outputs;
   for (int old_inp : hash_input_indices_) {
-    if (index_old2new.count(abs(old_inp)) > 0) {
-      new_inputs.push_back(SGN(old_inp) * index_old2new.at(abs(old_inp)));
+    if (index_old2new.count(std::abs(old_inp)) > 0) {
+      new_inputs.push_back(SGN(old_inp) * index_old2new.at(std::abs(old_inp)));
     } else {
       new_inputs.push_back(0);
     }
   }
   for (int old_out : hash_output_indices_) {
-    if (index_old2new.count(abs(old_out)) > 0) {
-      new_outputs.push_back(SGN(old_out) * index_old2new.at(abs(old_out)));
+    if (index_old2new.count(std::abs(old_out)) > 0) {
+      new_outputs.push_back(SGN(old_out) * index_old2new.at(std::abs(old_out)));
     } else {
       new_outputs.push_back(0);
     }

@@ -5,4 +5,7 @@ build
 *.so
 *.o
 .vscode
-preimage/main
+main
+dataset_generator
+tests
+

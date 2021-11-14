@@ -1,0 +1,12 @@
+Compile tests as a separate target,
+only link Crypto++ to the testing target.
+
+Remove SPDLOG dependency, use printf or std::cout
+
+Move imports to .cpp file where possible, not .hpp file
+
+Apply linting / formatting on entire project
+
+Remove hard-coded paths to /tmp when writing files.
+
+Python bindings.

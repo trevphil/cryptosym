@@ -117,6 +117,8 @@ void ProblemInstance::createSolver(const std::string &solver_name) {
     solver = std::unique_ptr<Solver>(new PreimageSATSolver(verbose_));
   } else if (solver_name.compare("bp") == 0) {
     solver = std::unique_ptr<Solver>(new bp::BPSolver(verbose_));
+  } else if (solver_name.compare("sdp") == 0) {
+    solver = std::unique_ptr<Solver>(new SDPSolver(verbose_));
   } else {
     spdlog::error("Unsupported solver: {}", solver_name);
     solver = nullptr;
@@ -131,10 +133,10 @@ void ProblemInstance::saveSymbols(const std::string &filename) {
   const int M = LogicGate::global_gates.size();
 
   int N = 0;
-  for (int out : outputs) N = std::max(N, abs(out));
+  for (int out : outputs) N = std::max(N, std::abs(out));
   for (const LogicGate &g : LogicGate::global_gates) {
-    N = std::max(N, abs(g.output));
-    for (int inp : g.inputs) N = std::max(N, abs(inp));
+    N = std::max(N, std::abs(g.output));
+    for (int inp : g.inputs) N = std::max(N, std::abs(inp));
   }
 
   std::ofstream symbols(filename);

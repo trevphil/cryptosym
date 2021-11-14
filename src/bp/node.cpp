@@ -376,8 +376,8 @@ double GraphNode::entropy() const { return entropy_; }
 double GraphNode::change() const { return change_; }
 
 double GraphNode::distanceFromUndetermined() const {
-  return std::min(fabs(final_dist_(0) - 0.5),
-                  fabs(final_dist_(1) - 0.5));
+  return std::min(std::fabs(final_dist_(0) - 0.5),
+                  std::fabs(final_dist_(1) - 0.5));
 }
 
 std::vector<std::shared_ptr<GraphEdge>> GraphNode::edges() const {
