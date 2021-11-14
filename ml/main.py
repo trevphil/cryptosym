@@ -7,11 +7,12 @@ from pathlib import Path
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 
 import utils
 from opts import PreimageOpts
-from models.gated_graph_conv import HashSAT
+# from models.gated_graph_conv import HashSAT
+from models.encoder_decoder import HashSAT
 from loss_func import PreimageLoss
 from dataset import PLDatasetWrapper
 
@@ -28,11 +29,14 @@ class PLModelWrapper(pl.LightningModule):
         return self.model(g)
 
     def configure_optimizers(self) -> Dict[str, Any]:
-        optimizer, optimizer_scheduler = utils.get_optimizer(self.opts, self.model)
-        return {
-            "optimizer": optimizer,
-            "lr_scheduler": {"scheduler": optimizer_scheduler},
-        }
+        optim = utils.get_optimizer(self.opts, self.model)
+        if isinstance(optim, Tuple):
+            optimizer, optimizer_scheduler = optim
+            return {
+                "optimizer": optimizer,
+                "lr_scheduler": {"scheduler": optimizer_scheduler},
+            }
+        return optim
 
     def training_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
         batched_graph, sat_labels = batch
@@ -56,6 +60,9 @@ class PLModelWrapper(pl.LightningModule):
 
         violated_edges = loss_dict["frac_violated_edges"]
         self.logger.experiment.add_scalar("frac_violated_edges", violated_edges, gs)
+
+        min_conflicts = loss_dict["min_conflicts"]
+        self.logger.experiment.add_scalar("min_conflicts", min_conflicts, gs)
 
         n_solved = loss_dict["num_solved"]
         self.logger.experiment.add_scalar("num_solved", n_solved, gs)
@@ -87,6 +94,9 @@ class PLModelWrapper(pl.LightningModule):
         violated_edges = loss_dict["frac_violated_edges"]
         self.log("val_frac_violated_edges", violated_edges)
 
+        min_conflicts = loss_dict["min_conflicts"]
+        self.log("val_min_conflicts", min_conflicts)
+
         return loss_dict["loss"]
 
     def test_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
@@ -108,6 +118,9 @@ class PLModelWrapper(pl.LightningModule):
 
         violated_edges = loss_dict["frac_violated_edges"]
         self.log("test_frac_violated_edges", violated_edges)
+
+        min_conflicts = loss_dict["min_conflicts"]
+        self.log("test_min_conflicts", min_conflicts)
 
         return loss_dict["num_solved"]
 
@@ -139,11 +152,13 @@ if __name__ == "__main__":
         assert not (logdir / exp_name).exists()
         logger = TensorBoardLogger(str(logdir / exp_name), name="")
 
-        # pl_wrapper = PLModelWrapper(opts)
+        pl_wrapper = PLModelWrapper(opts)
+        """
         pl_wrapper = PLModelWrapper.load_from_checkpoint(
-            "./log/gated-graph-conv_2021-09-30/version_0/checkpoints/epoch=197-step=791.ckpt",
-            hparams_file="./log/gated-graph-conv_2021-09-30/version_0/hparams.yaml",
+            "./log/ggc_2021-10-03/version_0/checkpoints/epoch=18-step=11874.ckpt",
+            hparams_file="./log/ggc_2021-10-03/version_0/hparams.yaml",
         )
+        """
 
         checkpoint_cb = ModelCheckpoint(monitor="val_loss", save_top_k=1, mode="min")
         lr_monitor = LearningRateMonitor(logging_interval="step")

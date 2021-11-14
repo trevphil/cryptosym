@@ -9,6 +9,29 @@ from typing import Tuple
 
 from opts import PreimageOpts
 
+from cnf2graph import cnf_to_graph
+
+SAT_GRAPH = cnf_to_graph([
+    [1, 2, 3],
+    [1, 2, -3],
+    [1, -2, 3],
+    [-1, 2, 3],
+    [-1, -2, 3],
+    [1, -2, -3],
+    [-1, -2, -3]
+])
+
+UNSAT_GRAPH = cnf_to_graph([
+    [1, 2, 3],
+    [1, 2, -3],
+    [1, -2, 3],
+    [-1, 2, 3],
+    [-1, -2, 3],
+    [1, -2, -3],
+    [-1, 2, -3],
+    [-1, -2, -3]
+])
+
 
 class GraphDataset(Dataset):
     def __init__(self, dset_path: Path):
@@ -17,15 +40,22 @@ class GraphDataset(Dataset):
         self.graph_files = [f for f in dset_path.iterdir() if f.is_file()]
 
     def __len__(self) -> int:
+        return 128
         return len(self.graph_files)
 
     def __getitem__(self, index: int) -> Tuple[dgl.DGLGraph, bool]:
         assert 0 <= index < len(self), f"Index OOB: {index}"
+        if index % 2 == 0:
+            return SAT_GRAPH, True
+        else:
+            return UNSAT_GRAPH, False
+        """
         graph_file = self.graph_files[index]
         graph_list, _ = load_graphs(str(graph_file))
         assert len(graph_list) == 1, "Expected to load 1 graph"
         is_sat = "sat" in graph_file.stem.split("_")
         return graph_list[0], is_sat
+        """
 
 
 class PLDatasetWrapper(pl.LightningDataModule):
@@ -71,3 +101,12 @@ class PLDatasetWrapper(pl.LightningDataModule):
         graphs, labels = zip(*graphs_labels)
         labels = torch.tensor(labels, dtype=torch.float32)
         return dgl.batch(graphs), labels
+
+
+if __name__ == "__main__":
+    import networkx as nx
+    import matplotlib.pyplot as plt
+
+    g = dgl.to_networkx(UNSAT_GRAPH)
+    nx.draw(g)
+    plt.show()

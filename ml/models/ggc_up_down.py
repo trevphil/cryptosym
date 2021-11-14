@@ -10,32 +10,36 @@ class HashSAT(torch.nn.Module):
         self.num_colors = 3
         self.t_max = t_max
         self.hidden_size = hidden_size
+        D = 1024
 
         self.ggc = GatedGraphConv(self.hidden_size, self.hidden_size, self.t_max, 1)
-        self.gc = GraphConv(self.hidden_size, self.num_colors)
-        self.layers = [self.ggc, self.gc]
+        self.gc_upsample = GraphConv(self.hidden_size, D)
+        self.gc_downsample = GraphConv(D, self.num_colors)
 
-        self.pooling_nn = torch.nn.Linear(self.num_colors, 1)
+        self.leaky_relu = torch.nn.LeakyReLU()
+        self.pooling_nn = torch.nn.Linear(D, 1)
         self.pooling = GlobalAttentionPooling(self.pooling_nn)
-        self.output_layer = torch.nn.Linear(self.num_colors, 1)
+        self.output_layer = torch.nn.Linear(D, 1)
 
         self.num_parameters = sum(p.numel() for p in self.parameters())
 
     @property
     def name(self) -> str:
-        return "basic_gated_graph_conv"
+        return "ggc_upsample_downsample"
 
     def forward(self, graph: dgl.DGLGraph) -> Dict[str, torch.Tensor]:
         x = torch.rand((graph.num_nodes(), self.hidden_size), dtype=torch.float32)
         x /= x.size(1) ** 0.5
 
-        for i, conv in enumerate(self.layers):
-            x = conv(graph, x)
+        x = self.ggc(graph, x)
+        x_up = self.gc_upsample(graph, x)
+        x_up = self.leaky_relu(x_up)
+        x_down = self.gc_downsample(graph, x_up)
 
-        x = torch.softmax(x, dim=1)  # [num_nodes x 3]
-        node_coloring = x  # [num_nodes x 3]
-        x = self.pooling(graph, x)  # [batch_size x 3]
-        x = self.output_layer(x)  # [batch_size x 1]
-        sat = torch.sigmoid(x).squeeze()
+        node_coloring = torch.softmax(x_down, dim=1)
+
+        pooled = self.pooling(graph, x_up)
+        sat = self.output_layer(pooled)
+        sat = torch.sigmoid(sat).squeeze()
 
         return {"colors": node_coloring, "sat": sat}

@@ -1,20 +1,13 @@
 import dgl
 from pathlib import Path
 from multiprocessing import Pool, cpu_count
-from typing import Tuple
+from typing import Tuple, List
 
 from pysat.formula import CNF as PyCNF
 from dgl.data.utils import save_graphs
 
 
-def convert_cnf_to_graph(args: Tuple[int, Path, Path]) -> None:
-    sample_idx, filein, fileout = args
-
-    if fileout.exists():
-        return  # Exit early if this file already exists
-
-    cnf = PyCNF(from_file=str(filein))
-
+def cnf_to_graph(clauses: List[List[int]]) -> dgl.DGLGraph:
     lit2node = dict()
 
     # node 0 = FALSE
@@ -31,7 +24,7 @@ def convert_cnf_to_graph(args: Tuple[int, Path, Path]) -> None:
             nn += 1
         return node_index, nn
 
-    for clause in cnf.clauses:
+    for clause in clauses:
         assert len(clause) > 1
 
         node_indices = []
@@ -65,6 +58,17 @@ def convert_cnf_to_graph(args: Tuple[int, Path, Path]) -> None:
     g = dgl.graph((src, dst), num_nodes=num_nodes)
     g = dgl.to_simple(g)  # Remove parallel edges
     g = dgl.to_bidirected(g)  # Make bidirectional <-->
+    return g
+
+
+def process_sample(args: Tuple[int, Path, Path]) -> None:
+    sample_idx, filein, fileout = args
+
+    if fileout.exists():
+        return  # Exit early if this file already exists
+
+    cnf = PyCNF(from_file=str(filein))
+    g = cnf_to_graph(cnf.clauses)
 
     if sample_idx % 100 == 0:
         nn = g.num_nodes()
@@ -103,4 +107,4 @@ if __name__ == "__main__":
             arg_list.append((i, fin, fout))
 
         with Pool(cpu_count()) as p:
-            p.map(convert_cnf_to_graph, arg_list)
+            p.map(process_sample, arg_list)

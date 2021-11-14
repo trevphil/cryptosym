@@ -31,6 +31,7 @@ class PreimageLoss(object):
 
         color_loss = 0.0
         total_color_conflicts = 0
+        min_conflicts = 1e10
         num_solved_graphs = 0
         num_nodes = 0
         num_edges = 0
@@ -48,6 +49,7 @@ class PreimageLoss(object):
 
             edgei = dgl.ops.u_dot_v(g, ci, ci)
             color_conflicts = edgei.sum().detach().item()
+            min_conflicts = min(min_conflicts, color_conflicts)
             if color_conflicts == 0:
                 # A valid 3-coloring solution was found!
                 num_solved_graphs += 1
@@ -69,6 +71,7 @@ class PreimageLoss(object):
             "color_loss": color_loss,
             "num_correct_classifications": num_correct,
             "frac_violated_edges": frac_violated_edges,
+            "min_conflicts": min_conflicts,
             "num_solved": num_solved_graphs,
             "mean_num_nodes": mean_nodes,
             "mean_num_edges": mean_edges,

@@ -8,8 +8,10 @@ class PreimageOpts(object):
         self.test_dataset = "graph_files/test"
         self.d = 32
         self.T = 20
-        self.lr_start = 0.01
+        self.lr_start = 0.001
         self.l2_penalty = 0
+        self.lr_decay = 1.0
+        self.lr_decay_every_nth = 16
         self.logdir = "log"
         self.grad_clip = 0
         self.sat_loss_weight = 1.0
