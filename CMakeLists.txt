@@ -5,9 +5,10 @@ cmake_minimum_required(VERSION 3.8)
 project(preimage)
 
 set(PRINT_DEBUG false)
+set(BUILD_TESTS true)
 
 add_definitions(-std=c++17 -Wshadow -Wunused -Wall -Werror -O3)
-add_compile_options(-g)
+# add_compile_options(-g)
 
 if(PRINT_DEBUG)
   add_definitions(-DPRINT_DEBUG)
@@ -37,44 +38,36 @@ set(EIGEN3_LIBRARIES ${EIGEN3_LIBRARIES})
 include_directories(${EIGEN3_INCLUDE_DIR})
 
 # Add all the source files needed to build the executable
-add_executable(preimage
-               src/main.cpp
-               src/problem_instance.cpp
-               src/core/config.cpp
-               src/core/bit.cpp
-               src/core/logic_gate.cpp
-               src/core/sym_bit_vec.cpp
-               src/core/solver.cpp
-               src/core/sym_hash.cpp
-               src/hashing/hash_funcs.cpp
-               src/hashing/sym_sha256.cpp
-               src/hashing/sym_md5.cpp
-               src/hashing/sym_ripemd160.cpp
-               src/cmsat/cmsat_solver.cpp
-               src/preimage_sat/preimage_sat.cpp
-               src/bp/node.cpp
-               src/bp/graph.cpp
-               src/bp/bp_solver.cpp)
-
-add_executable(dataset_generator
-               src/dataset.cpp
-               src/core/config.cpp
-               src/core/bit.cpp
-               src/core/logic_gate.cpp
-               src/core/sym_bit_vec.cpp
-               src/core/solver.cpp
-               src/core/sym_hash.cpp
-               src/hashing/hash_funcs.cpp
-               src/hashing/sym_sha256.cpp
-               src/hashing/sym_md5.cpp
-               src/hashing/sym_ripemd160.cpp
-               src/cmsat/cmsat_solver.cpp)
+add_library(preimage SHARED
+            src/problem_instance.cpp
+            src/core/config.cpp
+            src/core/bit.cpp
+            src/core/logic_gate.cpp
+            src/core/sym_bit_vec.cpp
+            src/core/solver.cpp
+            src/core/sym_hash.cpp
+            src/hashing/hash_funcs.cpp
+            src/hashing/sym_sha256.cpp
+            src/hashing/sym_md5.cpp
+            src/hashing/sym_ripemd160.cpp
+            src/cmsat/cmsat_solver.cpp
+            src/preimage_sat/preimage_sat.cpp
+            src/bp/node.cpp
+            src/bp/graph.cpp
+            src/bp/bp_solver.cpp)
 
 target_link_libraries(preimage ${EXTRA_LIBS})
 target_link_libraries(preimage spdlog::spdlog)
 target_link_libraries(preimage cryptominisat5)
-target_link_libraries(preimage cryptopp-shared)
 
-target_link_libraries(dataset_generator ${EXTRA_LIBS})
-target_link_libraries(dataset_generator spdlog::spdlog)
-target_link_libraries(dataset_generator cryptominisat5)
+add_executable(main src/main.cpp)
+target_link_libraries(main preimage)
+
+add_executable(dataset_generator src/dataset.cpp)
+target_link_libraries(dataset_generator preimage)
+
+if(BUILD_TESTS)
+  add_executable(tests src/tests.cpp)
+  target_link_libraries(tests preimage)
+  target_link_libraries(tests cryptopp-shared)
+endif()

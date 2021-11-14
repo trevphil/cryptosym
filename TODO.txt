@@ -1,6 +1,3 @@
-Compile tests as a separate target,
-only link Crypto++ to the testing target.
-
 Remove SPDLOG dependency, use printf or std::cout
 
 Move imports to .cpp file where possible, not .hpp file

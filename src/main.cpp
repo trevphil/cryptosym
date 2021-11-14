@@ -15,7 +15,6 @@
 
 #include <string>
 
-#include "tests.hpp"
 #include "core/config.hpp"
 #include "problem_instance.hpp"
 
@@ -25,7 +24,6 @@ std::string hash_func = "SHA256";
 std::string solving_method = "simple";
 int input_size = 64;
 int difficulty = -1;
-int run_tests = false;
 bool verbose = true;
 bool bin_format = false;
 bool only_and = false;
@@ -35,9 +33,7 @@ int parseArgument(char* arg) {
 	unsigned int uoption = 0;
 	char buf[1024] = "";
 
-  if (strcmp(arg, "tests") == 0) {
-    run_tests = true;
-  } else if (strcmp(arg, "quiet") == 0) {
+  if (strcmp(arg, "quiet") == 0) {
     verbose = false;
   } else if (strcmp(arg, "bin") == 0) {
     bin_format = true;
@@ -54,7 +50,6 @@ int parseArgument(char* arg) {
   } else {
     std::stringstream help_msg;
     help_msg << std::endl << "Command-line arguments:" << std::endl;
-    help_msg << "\ttests -> Include this argument to simply run tests and exit" << std::endl;
     help_msg << "\tquiet -> Include this argument to disable verbose output" << std::endl;
     help_msg << "\tbin   -> Include this argument to output bin instead of hex" << std::endl;
     help_msg << "\tand   -> Include this argument to only use AND logic gates" << std::endl;
@@ -63,7 +58,7 @@ int parseArgument(char* arg) {
     help_msg << "\td=DIFFICULTY (-1 for default)" << std::endl;
     help_msg << "\ti=NUM_INPUT_BITS (choose a multiple of 8)" << std::endl;
     help_msg << "\tsolver=SOLVER" << std::endl;
-    help_msg << "\t -> one of: cmsat, simple, bp" << std::endl;
+    help_msg << "\t -> one of: cmsat, simple, bp, sdp" << std::endl;
     spdlog::info(help_msg.str());
     return 1;
   }
@@ -74,13 +69,6 @@ int parseArgument(char* arg) {
 void run(int argc, char **argv) {
   for (int i = 1; i < argc; i++) {
     if (parseArgument(argv[i]) != 0) return;
-  }
-
-  if (run_tests) {
-    spdlog::info("Running tests...");
-    allTests();
-    spdlog::info("All tests finished.");
-    return;
   }
 
   config::only_and_gates = only_and;

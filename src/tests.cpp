@@ -10,8 +10,6 @@
  * Proprietary and confidential
  */
 
-#pragma once
-
 #include <spdlog/spdlog.h>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/algorithm/string.hpp>
@@ -325,3 +323,10 @@ void allTests() {
 }
 
 }  // end namespace preimage
+
+int main(int argc, char **argv) {
+  spdlog::info("Running tests...");
+  preimage::allTests();
+  spdlog::info("All tests finished.");
+  return 0;
+}
