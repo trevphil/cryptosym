@@ -11,6 +11,7 @@ from typing import Dict, Any, Tuple
 
 import utils
 from opts import PreimageOpts
+
 # from models.gated_graph_conv import HashSAT
 from models.encoder_decoder import HashSAT
 from loss_func import PreimageLoss

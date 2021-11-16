@@ -16,7 +16,7 @@ class HashSAT(torch.nn.Module):
             n_heads=4,
             d_head=self.hidden_size,
             d_ff=20,
-            n_layers=4
+            n_layers=4,
         )
         self.decoder = SetTransformerDecoder(
             d_model=self.hidden_size,

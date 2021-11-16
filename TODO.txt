@@ -2,8 +2,6 @@ Remove SPDLOG dependency, use printf or std::cout
 
 Remove global tracking of bits and logic gates
 
-Apply linting / formatting on entire project
-
 Remove hard-coded paths to /tmp when writing files.
 
 Python bindings.
