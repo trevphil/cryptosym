@@ -103,13 +103,12 @@ class SDPSolver : public Solver {
 
   std::unordered_map<int, bool> solveInternal() override {
     int iter = 0;
-    bool converged = false;
     float eps = 1e-5;
     const int random_rounding_trials = 2000;
 
     const CNF &cnf = simplification_.simplified_cnf;
 
-    while (!converged) {
+    while (true) {
       const float delta = applyMixingKernel(cnf);
       if (iter > 0 && delta < eps) break;
       if (iter == 0) eps *= delta;

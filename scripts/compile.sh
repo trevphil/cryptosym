@@ -14,6 +14,8 @@ make
 
 mv main ..
 
+mv cnf_gen ..
+
 if [ -f tests ]; then
   mv tests ..
 fi

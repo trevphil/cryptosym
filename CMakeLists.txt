@@ -64,6 +64,9 @@ target_link_libraries(preimage cryptominisat5)
 add_executable(main src/main.cpp)
 target_link_libraries(main preimage)
 
+add_executable(cnf_gen src/cnf_gen.cpp)
+target_link_libraries(cnf_gen preimage)
+
 if(BUILD_TESTS)
   add_executable(tests src/tests.cpp)
   target_link_libraries(tests preimage)
