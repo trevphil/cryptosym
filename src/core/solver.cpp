@@ -15,7 +15,6 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
-#include <fstream>
 
 #include "core/utils.hpp"
 
@@ -84,36 +83,6 @@ std::unordered_map<int, bool> Solver::solve() {
   }
 
   return solution;
-}
-
-int Solver::writeCNF(const std::string &filename) const {
-  int num_clauses = static_cast<int>(observed_.size());
-  for (const LogicGate &g : gates_) {
-    num_clauses += LogicGate::numClausesCNF(g.t());
-  }
-
-  std::ofstream cnf_file(filename);
-  if (!cnf_file.is_open()) {
-    spdlog::error("Unable to open \"{}\" in write mode.", filename);
-    assert(false);
-    return 0;
-  }
-
-  cnf_file << "p cnf " << num_vars_ << " " << num_clauses << "\n";
-  for (const auto &itr : observed_) {
-    assert(itr.first > 0);
-    cnf_file << (itr.first * (itr.second ? 1 : -1)) << " 0\n";
-  }
-  for (const LogicGate &g : gates_) {
-    const std::vector<std::vector<int>> clauses = g.cnf();
-    for (const std::vector<int> &clause : clauses) {
-      for (int var : clause) cnf_file << var << " ";
-      cnf_file << "0\n";
-    }
-  }
-
-  cnf_file.close();
-  return num_clauses;
 }
 
 }  // end namespace preimage

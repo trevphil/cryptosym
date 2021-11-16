@@ -13,6 +13,7 @@
 #pragma once
 
 #include <set>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -33,6 +34,10 @@ class CNF {
   int numSatClauses(const std::unordered_map<int, bool> &assignments);
 
   double approximationRatio(const std::unordered_map<int, bool> &assignments);
+
+  void write(const std::string &filename) const;
+
+  CNF simplify(const std::unordered_map<int, bool> &assignments) const;
 
   int num_vars;
   int num_clauses;

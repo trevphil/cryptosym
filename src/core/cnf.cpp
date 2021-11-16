@@ -14,6 +14,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include <assert.h>
+#include <fstream>
 #include <utility>
 
 namespace preimage {
@@ -21,16 +23,15 @@ namespace preimage {
 CNF::CNF() : num_vars(0), num_clauses(0), clauses({}) {}
 
 CNF::CNF(const std::vector<LogicGate> &gates) {
-  std::set<int> vars;
+  num_vars = 0;
   clauses = {};
   for (const LogicGate &gate : gates) {
     const std::vector<std::vector<int>> gate_clauses = gate.cnf();
     for (const std::vector<int> &gc : gate_clauses) {
       clauses.push_back(std::set<int>(gc.begin(), gc.end()));
-      for (int lit : gc) vars.insert(std::abs(lit));
+      for (int lit : gc) num_vars = std::max(num_vars, std::abs(lit));
     }
   }
-  num_vars = static_cast<int>(vars.size());
   num_clauses = static_cast<int>(clauses.size());
 }
 
@@ -66,8 +67,27 @@ int CNF::numSatClauses(const std::unordered_map<int, bool> &assignments) {
 }
 
 double CNF::approximationRatio(const std::unordered_map<int, bool> &assignments) {
-  const int n_sat = numSatClauses(assignments);
-  return n_sat / static_cast<double>(num_clauses);
+  return numSatClauses(assignments) / static_cast<double>(num_clauses);
+}
+
+void CNF::write(const std::string &filename) const {
+  std::ofstream cnf_file(filename);
+  if (!cnf_file.is_open()) {
+    spdlog::error("Unable to open \"{}\" in write mode.", filename);
+    assert(false);
+  }
+
+  cnf_file << "p cnf " << num_vars << " " << num_clauses << "\n";
+  for (const std::set<int> &clause : clauses) {
+    for (int var : clause) cnf_file << var << " ";
+    cnf_file << "0\n";
+  }
+
+  cnf_file.close();
+}
+
+CNF CNF::simplify(const std::unordered_map<int, bool> &assignments) const {
+  return Simplification(*this, assignments).simplified_cnf;
 }
 
 CNF::Simplification::Simplification() {}

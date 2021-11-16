@@ -268,10 +268,6 @@ boost::dynamic_bitset<> ProblemInstance::getPreimage(const std::string &symbols_
   }
   solver->setObserved(observed);
 
-  const std::string cnf_file = "/tmp/hash_cnf.txt";
-  const int nc = solver->writeCNF(cnf_file);
-  if (verbose_) spdlog::info("Wrote CNF to: \"{}\" (clauses: {})", cnf_file, nc);
-
   // Solve for all unknown variables!
   // Assume that only non-inverted (positive-indexed) bits are given
   std::unordered_map<int, bool> assignments = solver->solve();

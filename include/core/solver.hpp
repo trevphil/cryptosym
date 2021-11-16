@@ -36,8 +36,6 @@ class Solver {
 
   void setObserved(const std::unordered_map<int, bool> &observed);
 
-  int writeCNF(const std::string &filename) const;
-
   std::unordered_map<int, bool> solve();
 
   virtual std::string solverName() const = 0;

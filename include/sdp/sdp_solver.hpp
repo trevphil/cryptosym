@@ -46,7 +46,7 @@ class SDPSolver : public Solver {
 
     n_ = cnf.num_vars;
     m_ = cnf.num_clauses;
-    k_ = static_cast<int>(std::sqrt(2.0 * (n_ + 1)) + 1);
+    k_ = static_cast<int>(std::ceil(std::sqrt(2.0 * (n_ + 1))) + 1);
     if (verbose_) {
       spdlog::info("n={}, m={}, k={}, nk={}, mk={}", n_, m_, k_, n_ * k_, m_ * k_);
     }
@@ -66,50 +66,58 @@ class SDPSolver : public Solver {
     }
   }
 
+  float applyMixingKernel(const CNF &cnf) {
+    float delta = 0.0;
+
+    for (int i = 1; i <= n_; ++i) {
+      const Eigen::VectorXf v_before = v_.col(i).replicate(1, 1);
+
+      const std::vector<int> &referenced_clauses = lit2clauses_[i];
+      for (const int signed_index : referenced_clauses) {
+        const int8_t s = signed_index < 0 ? -1 : 1;
+        const int j = std::abs(signed_index) - 1;
+        z_.col(j) -= s * v_.col(i);
+      }
+
+      v_.col(i).setZero();
+      for (const int signed_index : referenced_clauses) {
+        const int8_t s = signed_index < 0 ? -1 : 1;
+        const int j = std::abs(signed_index) - 1;
+        const size_t nj = cnf.clauses.at(j).size();
+        v_.col(i) -= (s / (4.0 * nj)) * z_.col(j);
+      }
+      const float v_norm = v_.col(i).norm();
+      v_.col(i) /= v_norm;
+
+      for (const int signed_index : referenced_clauses) {
+        const int8_t s = signed_index < 0 ? -1 : 1;
+        const int j = std::abs(signed_index) - 1;
+        z_.col(j) += s * v_.col(i);
+      }
+
+      delta += v_norm * (v_before - v_.col(i)).squaredNorm();
+    }
+
+    return delta;
+  }
+
   std::unordered_map<int, bool> solveInternal() override {
+    int iter = 0;
     bool converged = false;
-    const float convergence_thresh = 0.02;
-    const int num_trials = 2000;
+    float eps = 1e-5;
+    const int random_rounding_trials = 2000;
 
     const CNF &cnf = simplification_.simplified_cnf;
 
     while (!converged) {
-      float max_change = 0.0;
-
-      for (int i = 1; i <= n_; ++i) {
-        const Eigen::VectorXf v_before = v_.col(i).replicate(1, 1);
-
-        const std::vector<int> &referenced_clauses = lit2clauses_[i];
-        for (const int signed_index : referenced_clauses) {
-          const int8_t s = signed_index < 0 ? -1 : 1;
-          const int j = std::abs(signed_index) - 1;
-          z_.col(j) -= s * v_.col(i);
-        }
-
-        v_.col(i).setZero();
-        for (const int signed_index : referenced_clauses) {
-          const int8_t s = signed_index < 0 ? -1 : 1;
-          const int j = std::abs(signed_index) - 1;
-          const size_t nj = cnf.clauses.at(j).size();
-          v_.col(i) -= (s / (4.0 * nj)) * z_.col(j);
-        }
-        v_.col(i) /= v_.col(i).norm();
-
-        for (const int signed_index : referenced_clauses) {
-          const int8_t s = signed_index < 0 ? -1 : 1;
-          const int j = std::abs(signed_index) - 1;
-          z_.col(j) += s * v_.col(i);
-        }
-
-        const float change = (v_before - v_.col(i)).norm();
-        max_change = std::max(max_change, change);
-      }
-
-      spdlog::info("Max change: {}", max_change);
-      converged = max_change < convergence_thresh;
+      const float delta = applyMixingKernel(cnf);
+      if (iter > 0 && delta < eps) break;
+      if (iter == 0) eps *= delta;
+      ++iter;
+      spdlog::info("Iteration {}, delta = {}\t(eps = {})", iter, delta, eps);
     }
 
-    Eigen::MatrixXf r = Eigen::MatrixXf::Random(k_, num_trials);
+    Eigen::MatrixXf r = Eigen::MatrixXf::Random(k_, random_rounding_trials);
     const auto norm = r.colwise().norm();
     r.array().rowwise() /= norm.array();
 
@@ -119,7 +127,7 @@ class SDPSolver : public Solver {
     // spdlog::info("Satisfied {} fraction of clauses", frac_sat);
 
     double best_fraction_sat = 0.0;
-    for (int trial = 0; trial < num_trials; ++trial) {
+    for (int trial = 0; trial < random_rounding_trials; ++trial) {
       randomRouding(sol, r.col(trial));
       const double frac_sat = simplification_.original_cnf.approximationRatio(sol);
       if (frac_sat == 1.0) {
