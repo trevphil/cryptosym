@@ -71,13 +71,9 @@ class SymBitVec {
 
   SymBitVec operator>>(int n) const;
 
-  static SymBitVec majority3(const SymBitVec &a,
-                             const SymBitVec &b,
-                             const SymBitVec &c);
+  static SymBitVec majority3(const SymBitVec &a, const SymBitVec &b, const SymBitVec &c);
 
-  static SymBitVec xor3(const SymBitVec &a,
-                        const SymBitVec &b,
-                        const SymBitVec &c);
+  static SymBitVec xor3(const SymBitVec &a, const SymBitVec &b, const SymBitVec &c);
 
  private:
   std::vector<Bit> bits_;

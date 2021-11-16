@@ -14,8 +14,8 @@
 
 #include <unordered_map>
 
-#include "core/solver.hpp"
 #include "bp/graph.hpp"
+#include "core/solver.hpp"
 
 namespace preimage {
 

@@ -11,9 +11,10 @@
  */
 
 #include "hashing/hash_funcs.hpp"
-#include "core/utils.hpp"
 
 #include <spdlog/spdlog.h>
+
+#include "core/utils.hpp"
 
 namespace preimage {
 

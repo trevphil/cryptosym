@@ -13,9 +13,9 @@
 #pragma once
 
 #include <set>
-#include <vector>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "core/solver.hpp"
 
@@ -31,9 +31,7 @@ class PreimageSATSolver : public Solver {
     bool preferred_assignment;
     int num_referenced_gates;
 
-    double score() const {
-      return static_cast<double>(num_referenced_gates);
-    }
+    double score() const { return static_cast<double>(num_referenced_gates); }
   };
 
   struct StackItem {
@@ -80,23 +78,17 @@ class PreimageSATSolver : public Solver {
     }
   }
 
-  bool partialSolve(const LogicGate &g,
-                    std::vector<int> &solved_lits);
+  bool partialSolve(const LogicGate &g, std::vector<int> &solved_lits);
 
-  bool partialSolveAnd(const LogicGate &g,
-                       std::vector<int> &solved_lits);
+  bool partialSolveAnd(const LogicGate &g, std::vector<int> &solved_lits);
 
-  bool partialSolveOr(const LogicGate &g,
-                      std::vector<int> &solved_lits);
+  bool partialSolveOr(const LogicGate &g, std::vector<int> &solved_lits);
 
-  bool partialSolveXor(const LogicGate &g,
-                       std::vector<int> &solved_lits);
+  bool partialSolveXor(const LogicGate &g, std::vector<int> &solved_lits);
 
-  bool partialSolveXor3(const LogicGate &g,
-                        std::vector<int> &solved_lits);
+  bool partialSolveXor3(const LogicGate &g, std::vector<int> &solved_lits);
 
-  bool partialSolveMaj(const LogicGate &g,
-                       std::vector<int> &solved_lits);
+  bool partialSolveMaj(const LogicGate &g, std::vector<int> &solved_lits);
 
   std::vector<int8_t> literals;
   std::vector<StackItem> stack;

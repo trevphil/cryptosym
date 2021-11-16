@@ -10,21 +10,19 @@
  * Proprietary and confidential
  */
 
-#include <algorithm>
-#include <iostream>
-#include <fstream>
+#include "bp/graph.hpp"
 
 #include <spdlog/spdlog.h>
 
-#include "bp/graph.hpp"
+#include <algorithm>
+#include <fstream>
+#include <iostream>
 
 namespace preimage {
 
 namespace bp {
 
-Graph::Graph() : iter_(0) {
-  GraphNode::num_resets = 0;
-}
+Graph::Graph() : iter_(0) { GraphNode::num_resets = 0; }
 
 Graph::~Graph() {
   schedule_factor.clear();
@@ -56,16 +54,14 @@ void Graph::printGraph() const {
   for (auto &n : nodes_) {
     spdlog::info("{}", n->toString());
     for (auto &e : n->edges()) {
-      spdlog::info("\t{} : m2f=[{}, {}]", e->toString(),
-                   e->m2f(0), e->m2f(1));
+      spdlog::info("\t{} : m2f=[{}, {}]", e->toString(), e->m2f(0), e->m2f(1));
     }
   }
   spdlog::info(">>> factors <<<");
   for (auto &f : schedule_factor.at(0)) {
     spdlog::info("{}", f->toString());
     for (auto &e : f->edges()) {
-      spdlog::info("\t{} : m2n=[{}, {}]", e->toString(),
-                   e->m2n(0), e->m2n(1));
+      spdlog::info("\t{} : m2n=[{}, {}]", e->toString(), e->m2n(0), e->m2n(1));
     }
   }
   spdlog::info("---------------------");
@@ -100,18 +96,14 @@ void Graph::addNode(std::shared_ptr<GraphNode> node) {
   node_map_[node->index()] = node;
 }
 
-bool Graph::hasNode(int index) const {
-  return node_map_.count(index) > 0;
-}
+bool Graph::hasNode(int index) const { return node_map_.count(index) > 0; }
 
 bool Graph::hasFactor(int index, BPFactorType t) const {
   const std::string s = GraphFactor::makeString(index, t);
   return factor_map_.count(s) > 0;
 }
 
-std::shared_ptr<GraphNode> Graph::getNode(int index) const {
-  return node_map_.at(index);
-}
+std::shared_ptr<GraphNode> Graph::getNode(int index) const { return node_map_.at(index); }
 
 std::shared_ptr<GraphFactor> Graph::getFactor(int index, BPFactorType t) const {
   const std::string s = GraphFactor::makeString(index, t);
@@ -131,8 +123,8 @@ double Graph::maxChange() const {
 }
 
 void Graph::connectFactorNode(std::shared_ptr<GraphFactor> factor,
-                              std::shared_ptr<GraphNode> node,
-                              IODirection dir, bool negated) {
+                              std::shared_ptr<GraphNode> node, IODirection dir,
+                              bool negated) {
   std::shared_ptr<GraphEdge> e(new GraphEdge(node, factor, dir, negated));
   factor->addEdge(e);
   node->addEdge(e);

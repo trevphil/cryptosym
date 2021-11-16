@@ -12,10 +12,10 @@
 
 #include "cmsat/cmsat_solver.hpp"
 
+#include <spdlog/spdlog.h>
+
 #include <iostream>
 #include <vector>
-
-#include <spdlog/spdlog.h>
 
 namespace preimage {
 
@@ -37,8 +37,7 @@ void CMSatSolver::addClause(const LogicGate &g) {
 void CMSatSolver::addXorClause(const LogicGate &g) {
   int lsum = (g.output < 0 ? 1 : 0);
   std::vector<unsigned int> xor_clause = {
-    static_cast<unsigned int>(std::abs(g.output) - 1)
-  };
+      static_cast<unsigned int>(std::abs(g.output) - 1)};
 
   for (int i = 0; i < static_cast<int>(g.inputs.size()); i++) {
     lsum += g.inputs[i] < 0 ? 1 : 0;
@@ -54,8 +53,7 @@ void CMSatSolver::initialize() {
   solver_->set_num_threads(1);
   solver_->new_vars(num_vars_);
 
-  if (verbose_)
-    spdlog::info("Running cryptominisat5 (n={})", num_vars_);
+  if (verbose_) spdlog::info("Running cryptominisat5 (n={})", num_vars_);
 
   for (const LogicGate &g : gates_) {
     switch (g.t()) {

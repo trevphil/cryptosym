@@ -11,37 +11,36 @@
  */
 
 #include "core/sym_hash.hpp"
-#include "core/bit.hpp"
-#include "core/logic_gate.hpp"
-#include "core/utils.hpp"
 
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <map>
-#include <algorithm>
 #include <queue>
 #include <set>
 #include <unordered_map>
+
+#include "core/bit.hpp"
+#include "core/logic_gate.hpp"
+#include "core/utils.hpp"
 
 #define SGN(x) (x < 0 ? -1 : (x > 0 ? 1 : 0))
 
 namespace preimage {
 
 SymHash::SymHash()
-    : hash_input_indices_(), hash_output_indices_(),
-      num_calls_(0.0), cum_runtime_ms_(0.0) {}
+    : hash_input_indices_(),
+      hash_output_indices_(),
+      num_calls_(0.0),
+      cum_runtime_ms_(0.0) {}
 
 SymHash::~SymHash() {}
 
-std::vector<int> SymHash::hashInputIndices() const {
-  return hash_input_indices_;
-}
+std::vector<int> SymHash::hashInputIndices() const { return hash_input_indices_; }
 
-std::vector<int> SymHash::hashOutputIndices() const {
-  return hash_output_indices_;
-}
+std::vector<int> SymHash::hashOutputIndices() const { return hash_output_indices_; }
 
 double SymHash::averageRuntimeMs() const {
   if (num_calls_ == 0) return NAN;
@@ -103,12 +102,11 @@ void SymHash::pruneIrrelevantGates() {
   }
 
   LogicGate::global_gates = {};
-  for (const auto &itr : useful_gates)
-    LogicGate::global_gates.push_back(itr.second);
+  for (const auto &itr : useful_gates) LogicGate::global_gates.push_back(itr.second);
 
   const int n_after = static_cast<int>(LogicGate::global_gates.size());
-  spdlog::info("Pruned gates ({} --> {}), removed {:.1f}%",
-               n_before, n_after, 100.0 * (n_before - n_after) / n_before);
+  spdlog::info("Pruned gates ({} --> {}), removed {:.1f}%", n_before, n_after,
+               100.0 * (n_before - n_after) / n_before);
 }
 
 void SymHash::reindexBits() {

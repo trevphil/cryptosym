@@ -10,19 +10,19 @@
  * Proprietary and confidential
  */
 
-#include <spdlog/spdlog.h>
-#include <boost/dynamic_bitset.hpp>
-#include <boost/algorithm/string.hpp>
-
 #include <cryptopp/dll.h>
+#include <spdlog/spdlog.h>
+
+#include <boost/algorithm/string.hpp>
+#include <boost/dynamic_bitset.hpp>
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
+#include <assert.h>
 #include <cryptopp/md5.h>
 #include <cryptopp/ripemd.h>
 
 #include <map>
-#include <vector>
 #include <string>
-#include <assert.h>
+#include <vector>
 
 #include "core/config.hpp"
 #include "core/logic_gate.hpp"
@@ -91,10 +91,8 @@ void sha256Tests() {
   std::string s7 = s + s + s + s + s + s + s;
   std::string h_empty =
       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-  std::string h_s =
-      "d7b553c6f09ac85d142415f857c5310f3bbbe7cdd787cce4b985acedd585266f";
-  std::string h_s7 =
-      "8113ebf33c97daa9998762aacafe750c7cefc2b2f173c90c59663a57fe626f21";
+  std::string h_s = "d7b553c6f09ac85d142415f857c5310f3bbbe7cdd787cce4b985acedd585266f";
+  std::string h_s7 = "8113ebf33c97daa9998762aacafe750c7cefc2b2f173c90c59663a57fe626f21";
 
   SHA256 sha256;
 
@@ -139,13 +137,15 @@ void sha256Tests() {
       h = Utils::hexstr(sha256.call(bits));
 
       if (h.compare(expected_output) != 0) {
-        spdlog::info("inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
-                     inp_size, sample_idx, Utils::hexstr(bits), expected_output, h);
+        spdlog::info(
+            "inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
+            inp_size, sample_idx, Utils::hexstr(bits), expected_output, h);
       }
     }
   }
 
-  spdlog::info("SHA256 tests passed, mean runtime: ~{:.0f} ms", sha256.averageRuntimeMs());
+  spdlog::info("SHA256 tests passed, mean runtime: ~{:.0f} ms",
+               sha256.averageRuntimeMs());
 }
 
 void ripemd160Tests() {
@@ -183,14 +183,16 @@ void ripemd160Tests() {
       const std::string h = Utils::hexstr(ripemd160.call(bits));
 
       if (h.compare(expected_output) != 0) {
-        spdlog::info("inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
-                     inp_size, sample_idx, Utils::hexstr(bits), expected_output, h);
+        spdlog::info(
+            "inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
+            inp_size, sample_idx, Utils::hexstr(bits), expected_output, h);
         assert(false);
       }
     }
   }
 
-  spdlog::info("RIPEMD160 tests passed, mean runtime: ~{:.0f} ms", ripemd160.averageRuntimeMs());
+  spdlog::info("RIPEMD160 tests passed, mean runtime: ~{:.0f} ms",
+               ripemd160.averageRuntimeMs());
 }
 
 void md5Tests() {
@@ -228,8 +230,9 @@ void md5Tests() {
       const std::string h = Utils::hexstr(md5.call(bits));
 
       if (h.compare(expected_output) != 0) {
-        spdlog::info("inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
-                     inp_size, sample_idx, Utils::hexstr(bits), expected_output, h);
+        spdlog::info(
+            "inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
+            inp_size, sample_idx, Utils::hexstr(bits), expected_output, h);
         assert(false);
       }
     }

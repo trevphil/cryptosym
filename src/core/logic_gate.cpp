@@ -10,9 +10,9 @@
  * Proprietary and confidential
  */
 
-#include <spdlog/spdlog.h>
-
 #include "core/logic_gate.hpp"
+
+#include <spdlog/spdlog.h>
 
 #include <iomanip>
 #include <sstream>
@@ -28,8 +28,8 @@ LogicGate::LogicGate(LogicGate::Type typ, const int dpth, const int out,
     : depth(dpth), output(out), inputs(inp), t_(typ) {
   const int n_inputs = numInputs(t_);
   if (n_inputs != inp.size()) {
-    spdlog::info("Gate {} requires {} input(s) but got {}",
-                 char(t_), n_inputs, inp.size());
+    spdlog::info("Gate {} requires {} input(s) but got {}", char(t_), n_inputs,
+                 inp.size());
   }
   assert(depth > 0);
   assert(output != 0);
@@ -69,13 +69,11 @@ void LogicGate::reset() { global_gates.clear(); }
 std::vector<std::vector<int>> LogicGate::cnf() const {
   switch (t_) {
     case Type::and_gate:
-      return {{-output, inputs[0]},
-              {-output, inputs[1]},
-              {output, -inputs[0], -inputs[1]}};
+      return {
+          {-output, inputs[0]}, {-output, inputs[1]}, {output, -inputs[0], -inputs[1]}};
     case Type::or_gate:
-      return {{output, -inputs[0]},
-              {output, -inputs[1]},
-              {-output, inputs[0], inputs[1]}};
+      return {
+          {output, -inputs[0]}, {output, -inputs[1]}, {-output, inputs[0], inputs[1]}};
     case Type::xor_gate:
       return {{output, inputs[0], -inputs[1]},
               {output, -inputs[0], inputs[1]},
@@ -91,12 +89,9 @@ std::vector<std::vector<int>> LogicGate::cnf() const {
               {-output, -inputs[0], inputs[1], -inputs[2]},
               {-output, -inputs[0], -inputs[1], inputs[2]}};
     case Type::maj_gate:
-      return {{-output, inputs[0], inputs[1]},
-              {-output, inputs[0], inputs[2]},
-              {-output, inputs[1], inputs[2]},
-              {output, -inputs[0], -inputs[1]},
-              {output, -inputs[0], -inputs[2]},
-              {output, -inputs[1], -inputs[2]}};
+      return {{-output, inputs[0], inputs[1]},  {-output, inputs[0], inputs[2]},
+              {-output, inputs[1], inputs[2]},  {output, -inputs[0], -inputs[1]},
+              {output, -inputs[0], -inputs[2]}, {output, -inputs[1], -inputs[2]}};
   }
 }
 

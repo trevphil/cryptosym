@@ -46,21 +46,31 @@ class LogicGate {
 
   static inline int numInputs(Type typ) {
     switch (typ) {
-      case Type::and_gate: return 2;
-      case Type::or_gate: return 2;
-      case Type::xor_gate: return 2;
-      case Type::maj_gate: return 3;
-      case Type::xor3_gate: return 3;
+      case Type::and_gate:
+        return 2;
+      case Type::or_gate:
+        return 2;
+      case Type::xor_gate:
+        return 2;
+      case Type::maj_gate:
+        return 3;
+      case Type::xor3_gate:
+        return 3;
     }
   }
 
   static inline int numClausesCNF(Type typ) {
     switch (typ) {
-      case Type::and_gate: return 3;
-      case Type::or_gate: return 3;
-      case Type::xor_gate: return 4;
-      case Type::xor3_gate: return 8;
-      case Type::maj_gate: return 6;
+      case Type::and_gate:
+        return 3;
+      case Type::or_gate:
+        return 3;
+      case Type::xor_gate:
+        return 4;
+      case Type::xor3_gate:
+        return 8;
+      case Type::maj_gate:
+        return 6;
     }
   }
 

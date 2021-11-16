@@ -11,12 +11,13 @@
  */
 
 #include "core/sym_bit_vec.hpp"
-#include "core/utils.hpp"
 
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
 #include <sstream>
+
+#include "core/utils.hpp"
 
 namespace preimage {
 
@@ -222,8 +223,7 @@ SymBitVec SymBitVec::operator>>(int n) const {
   return result;
 }
 
-SymBitVec SymBitVec::majority3(const SymBitVec &a,
-                               const SymBitVec &b,
+SymBitVec SymBitVec::majority3(const SymBitVec &a, const SymBitVec &b,
                                const SymBitVec &c) {
   assert(a.size() == b.size());
   assert(a.size() == c.size());
@@ -235,9 +235,7 @@ SymBitVec SymBitVec::majority3(const SymBitVec &a,
   return SymBitVec(bits);
 }
 
-SymBitVec SymBitVec::xor3(const SymBitVec &a,
-                          const SymBitVec &b,
-                          const SymBitVec &c) {
+SymBitVec SymBitVec::xor3(const SymBitVec &a, const SymBitVec &b, const SymBitVec &c) {
   assert(a.size() == b.size());
   assert(a.size() == c.size());
 

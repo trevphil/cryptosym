@@ -10,11 +10,11 @@
  * Proprietary and confidential
  */
 
-#include <utility>
+#include "core/cnf.hpp"
 
 #include <spdlog/spdlog.h>
 
-#include "core/cnf.hpp"
+#include <utility>
 
 namespace preimage {
 
@@ -46,8 +46,10 @@ int CNF::numSatClauses(const std::unordered_map<int, bool> &assignments) {
   for (const auto &clause : clauses) {
     for (int lit : clause) {
       bool lit_val;
-      if (assignments.count(lit)) lit_val = assignments.at(lit);
-      else if (assignments.count(-lit)) lit_val = !assignments.at(-lit);
+      if (assignments.count(lit))
+        lit_val = assignments.at(lit);
+      else if (assignments.count(-lit))
+        lit_val = !assignments.at(-lit);
       else {
         spdlog::error("CNF is missing assignment for {}", lit);
         assert(false);
@@ -70,8 +72,8 @@ double CNF::approximationRatio(const std::unordered_map<int, bool> &assignments)
 
 CNF::Simplification::Simplification() {}
 
-CNF::Simplification::Simplification(
-    const CNF &cnf, const std::unordered_map<int, bool> &assignments) {
+CNF::Simplification::Simplification(const CNF &cnf,
+                                    const std::unordered_map<int, bool> &assignments) {
   std::vector<std::pair<int, bool>> q;
   std::vector<std::set<int>> tmp_clauses = cnf.clauses;
   std::unordered_map<int, std::set<int>> lit2clauses;

@@ -12,22 +12,25 @@
 
 #pragma once
 
-#include <map>
-#include <vector>
-#include <string>
-#include <memory>
 #include <Eigen/Dense>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace preimage {
 
 namespace bp {
 
-enum class IODirection : uint8_t {
-  None = 0, Input = 1, Output = 2, Prior = 3
-};
+enum class IODirection : uint8_t { None = 0, Input = 1, Output = 2, Prior = 3 };
 
 enum class BPFactorType : uint8_t {
-  Prior = 0, And = 1, Xor = 2, Or = 3, Maj = 4, Xor3 = 5
+  Prior = 0,
+  And = 1,
+  Xor = 2,
+  Or = 3,
+  Maj = 4,
+  Xor3 = 5
 };
 
 class GraphNode;
@@ -35,9 +38,8 @@ class GraphFactor;
 
 class GraphEdge {
  public:
-  GraphEdge(std::shared_ptr<GraphNode> n,
-            std::shared_ptr<GraphFactor> f,
-            IODirection dir, bool neg);
+  GraphEdge(std::shared_ptr<GraphNode> n, std::shared_ptr<GraphFactor> f, IODirection dir,
+            bool neg);
 
   std::string toString() const;
 

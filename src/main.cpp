@@ -10,8 +10,8 @@
  * Proprietary and confidential
  */
 
-#include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
 
 #include <string>
 
@@ -28,10 +28,10 @@ bool verbose = true;
 bool bin_format = false;
 bool only_and = false;
 
-int parseArgument(char* arg) {
-	int option = 0;
-	unsigned int uoption = 0;
-	char buf[1024] = "";
+int parseArgument(char *arg) {
+  int option = 0;
+  unsigned int uoption = 0;
+  char buf[1024] = "";
 
   if (strcmp(arg, "quiet") == 0) {
     verbose = false;
@@ -51,10 +51,14 @@ int parseArgument(char* arg) {
     std::stringstream help_msg;
     help_msg << std::endl << "Command-line arguments:" << std::endl;
     help_msg << "\tquiet -> Include this argument to disable verbose output" << std::endl;
-    help_msg << "\tbin   -> Include this argument to output bin instead of hex" << std::endl;
-    help_msg << "\tand   -> Include this argument to only use AND logic gates" << std::endl;
+    help_msg << "\tbin   -> Include this argument to output bin instead of hex"
+             << std::endl;
+    help_msg << "\tand   -> Include this argument to only use AND logic gates"
+             << std::endl;
     help_msg << "\thash=HASH_FUNCTION" << std::endl;
-    help_msg << "\t -> one of: SHA256, MD5, RIPEMD160, LossyPseudoHash, NonLossyPseudoHash, NotHash, SameIOHash" << std::endl;
+    help_msg << "\t -> one of: SHA256, MD5, RIPEMD160, LossyPseudoHash, "
+                "NonLossyPseudoHash, NotHash, SameIOHash"
+             << std::endl;
     help_msg << "\td=DIFFICULTY (-1 for default)" << std::endl;
     help_msg << "\ti=NUM_INPUT_BITS (choose a multiple of 8)" << std::endl;
     help_msg << "\tsolver=SOLVER" << std::endl;

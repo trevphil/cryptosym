@@ -10,17 +10,18 @@
  * Proprietary and confidential
  */
 
+#include "bp/bp_solver.hpp"
+
 #include <assert.h>
+#include <spdlog/spdlog.h>
+
 #include <memory>
 #include <vector>
 
-#include "bp/bp_solver.hpp"
 #include "bp/node.hpp"
 #include "bp/params.hpp"
 #include "bp/prior_factor.hpp"
 #include "core/utils.hpp"
-
-#include <spdlog/spdlog.h>
 
 namespace preimage {
 
@@ -78,11 +79,16 @@ void BPSolver::initialize() {
 
 BPFactorType BPSolver::convertLogicGate(LogicGate::Type t) const {
   switch (t) {
-    case LogicGate::Type::and_gate: return BPFactorType::And;
-    case LogicGate::Type::xor_gate: return BPFactorType::Xor;
-    case LogicGate::Type::or_gate: return BPFactorType::Or;
-    case LogicGate::Type::maj_gate: return BPFactorType::Maj;
-    case LogicGate::Type::xor3_gate: return BPFactorType::Xor3;
+    case LogicGate::Type::and_gate:
+      return BPFactorType::And;
+    case LogicGate::Type::xor_gate:
+      return BPFactorType::Xor;
+    case LogicGate::Type::or_gate:
+      return BPFactorType::Or;
+    case LogicGate::Type::maj_gate:
+      return BPFactorType::Maj;
+    case LogicGate::Type::xor3_gate:
+      return BPFactorType::Xor3;
   }
 }
 
@@ -118,16 +124,16 @@ std::unordered_map<int, bool> BPSolver::solveInternal() {
 
     if (e < BP_ENTROPY_THRESHOLD) {
       if (verbose_) {
-        spdlog::info("Entropy thresh reached ({}), abort after iteration {}",
-                     e, g_.iterations());
+        spdlog::info("Entropy thresh reached ({}), abort after iteration {}", e,
+                     g_.iterations());
       }
       break;
     }
 
     if (c < BP_CHANGE_THRESHOLD) {
       if (verbose_) {
-        spdlog::info("Change thresh reached ({}), converged after iteration {}",
-                     c, g_.iterations());
+        spdlog::info("Change thresh reached ({}), converged after iteration {}", c,
+                     g_.iterations());
       }
       break;
     }

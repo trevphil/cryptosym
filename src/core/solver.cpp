@@ -10,13 +10,14 @@
  * Proprietary and confidential
  */
 
+#include "core/solver.hpp"
+
+#include <spdlog/spdlog.h>
+
 #include <algorithm>
 #include <fstream>
 
-#include "core/solver.hpp"
 #include "core/utils.hpp"
-
-#include <spdlog/spdlog.h>
 
 namespace preimage {
 
@@ -31,9 +32,7 @@ void Solver::setHeader(int inp_size, int out_size, int n_vars, int n_gates) {
   num_gates_ = n_gates;
 }
 
-void Solver::setGates(const std::vector<LogicGate> &gates) {
-  gates_ = gates;
-}
+void Solver::setGates(const std::vector<LogicGate> &gates) { gates_ = gates; }
 
 void Solver::setInputIndices(const std::vector<int> &input_indices) {
   input_indices_ = input_indices;
@@ -53,13 +52,13 @@ std::unordered_map<int, bool> Solver::solve() {
     assert(false);
   }
   if (input_size_ != (int)input_indices_.size()) {
-    spdlog::error("Expected input_size={} but it is {}.",
-                  input_size_, input_indices_.size());
+    spdlog::error("Expected input_size={} but it is {}.", input_size_,
+                  input_indices_.size());
     assert(false);
   }
   if (output_size_ != (int)output_indices_.size()) {
-    spdlog::error("Expected output_size={} but it is {}.",
-                  output_size_, output_indices_.size());
+    spdlog::error("Expected output_size={} but it is {}.", output_size_,
+                  output_indices_.size());
     assert(false);
   }
 
@@ -75,8 +74,8 @@ std::unordered_map<int, bool> Solver::solve() {
     if (solution.count(itr.first) > 0) {
       // Check for solver predictions which conflict with observations
       if (solution.at(itr.first) != itr.second) {
-        spdlog::error("Variable {} is {} but was predicted {}!",
-                      itr.first, itr.second, solution.at(itr.first));
+        spdlog::error("Variable {} is {} but was predicted {}!", itr.first, itr.second,
+                      solution.at(itr.first));
         assert(false);
       }
     } else {

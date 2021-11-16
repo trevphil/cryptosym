@@ -12,9 +12,10 @@
 
 #include "preimage_sat/preimage_sat.hpp"
 
-#include <queue>
-#include <iostream>
 #include <spdlog/spdlog.h>
+
+#include <iostream>
+#include <queue>
 
 #include "core/utils.hpp"
 
@@ -50,8 +51,7 @@ void PreimageSATSolver::initialize() {
     literal_ordering[i - 1] = computeStats(i);
   }
   std::sort(literal_ordering.begin(), literal_ordering.end(),
-            [](const LitStats &a, const LitStats &b) {
-              return a.score() > b.score(); });
+            [](const LitStats &a, const LitStats &b) { return a.score() > b.score(); });
 
   const double init_time_ms = Utils::ms_since_epoch() - start;
   if (verbose_) spdlog::info("Initialized PreimageSAT in {:.0f} ms", init_time_ms);
@@ -175,8 +175,7 @@ int PreimageSATSolver::propagate(const int lit) {
   return static_cast<int>(lits_solved_via_propagation.size());
 }
 
-bool PreimageSATSolver::partialSolve(const LogicGate &g,
-                                     std::vector<int> &solved_lits) {
+bool PreimageSATSolver::partialSolve(const LogicGate &g, std::vector<int> &solved_lits) {
   solved_lits.clear();
   switch (g.t()) {
     case LogicGate::Type::and_gate:
@@ -311,11 +310,15 @@ bool PreimageSATSolver::partialSolveXor3(const LogicGate &g,
   uint8_t num_known = 0;
   uint8_t num_unknown = 0;
   for (int inp : g.inputs) {
-    if (literals[std::abs(inp)] != 0) known[num_known++] = getLitValue(inp);
-    else unknown[num_unknown++] = inp;
+    if (literals[std::abs(inp)] != 0)
+      known[num_known++] = getLitValue(inp);
+    else
+      unknown[num_unknown++] = inp;
   }
-  if (literals[g.output] != 0) known[num_known++] = getLitValue(g.output);
-  else unknown[num_unknown++] = g.output;
+  if (literals[g.output] != 0)
+    known[num_known++] = getLitValue(g.output);
+  else
+    unknown[num_unknown++] = g.output;
 
   if (num_known == 4) {
     return known[3] == (known[0] ^ known[1] ^ known[2]);
@@ -362,8 +365,7 @@ bool PreimageSATSolver::partialSolveMaj(const LogicGate &g,
       solved_lits = {unknown[0]};
       return true;
     }
-  } else if (num_known_inputs == 1 && out_known &&
-              known[0] != out_val) {
+  } else if (num_known_inputs == 1 && out_known && known[0] != out_val) {
     setLitValue(unknown[0], out_val);
     setLitValue(unknown[1], out_val);
     solved_lits = {unknown[0], unknown[1]};

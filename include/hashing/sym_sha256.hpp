@@ -39,8 +39,8 @@ class SHA256 : public SymHash {
   std::pair<SymBitVec, SymBitVec> round(const SymBitVec &a, const SymBitVec &b,
                                         const SymBitVec &c, const SymBitVec &d,
                                         const SymBitVec &e, const SymBitVec &f,
-                                        const SymBitVec &g, const SymBitVec &h,
-                                        int i, const SymBitVec &ki);
+                                        const SymBitVec &g, const SymBitVec &h, int i,
+                                        const SymBitVec &ki);
 
   int local_, count_lo_, count_hi_;
   int block_size_, digest_size_;

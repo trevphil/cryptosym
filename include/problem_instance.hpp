@@ -13,23 +13,20 @@
 #pragma once
 
 #include <boost/dynamic_bitset.hpp>
-#include <unordered_map>
-
-#include "core/sym_hash.hpp"
-#include "core/solver.hpp"
-
 #include <memory>
 #include <string>
+#include <unordered_map>
+
+#include "core/solver.hpp"
+#include "core/sym_hash.hpp"
 
 namespace preimage {
 
 class ProblemInstance {
  public:
-  ProblemInstance(int num_input_bits, int difficulty,
-                  bool verbose, bool bin_format);
+  ProblemInstance(int num_input_bits, int difficulty, bool verbose, bool bin_format);
 
-  int prepare(const std::string &hash_name,
-              const std::string &solver_name);
+  int prepare(const std::string &hash_name, const std::string &solver_name);
 
   int execute();
 

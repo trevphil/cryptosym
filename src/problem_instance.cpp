@@ -10,29 +10,32 @@
  * Proprietary and confidential
  */
 
-#include <map>
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include <assert.h>
+#include "problem_instance.hpp"
 
+#include <assert.h>
 #include <spdlog/spdlog.h>
 
-#include "problem_instance.hpp"
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <vector>
+
+#include "bp/bp_solver.hpp"
+#include "cmsat/cmsat_solver.hpp"
 #include "core/sym_bit_vec.hpp"
 #include "core/utils.hpp"
 #include "hashing/hash_funcs.hpp"
-#include "bp/bp_solver.hpp"
-#include "cmsat/cmsat_solver.hpp"
 #include "preimage_sat/preimage_sat.hpp"
 #include "sdp/sdp_solver.hpp"
 
 namespace preimage {
 
-ProblemInstance::ProblemInstance(int num_input_bits, int difficulty,
-                                 bool verbose, bool bin_format)
-    : num_input_bits_(num_input_bits), difficulty_(difficulty),
-      verbose_(verbose), bin_format_(bin_format) {}
+ProblemInstance::ProblemInstance(int num_input_bits, int difficulty, bool verbose,
+                                 bool bin_format)
+    : num_input_bits_(num_input_bits),
+      difficulty_(difficulty),
+      verbose_(verbose),
+      bin_format_(bin_format) {}
 
 int ProblemInstance::prepare(const std::string &hash_name,
                              const std::string &solver_name) {
@@ -187,8 +190,7 @@ void ProblemInstance::saveSymbols(const std::string &filename) {
   symbols << "\n";
 
   // Write logic gates
-  for (const LogicGate &g : LogicGate::global_gates)
-    symbols << g.toString() << "\n";
+  for (const LogicGate &g : LogicGate::global_gates) symbols << g.toString() << "\n";
 
   symbols.close();
   if (verbose_) spdlog::info("Wrote symbols to: \"{}\"", filename);
@@ -240,8 +242,7 @@ boost::dynamic_bitset<> ProblemInstance::getPreimage(const std::string &symbols_
     const double c = 100.0 / static_cast<double>(gates.size());
     spdlog::info("Logic gate distribution:");
     for (const auto &itr : gate_counts) {
-      spdlog::info("\t{}:\t{}\t({:.1f}%)",
-                   (char)itr.first, itr.second, itr.second * c);
+      spdlog::info("\t{}:\t{}\t({:.1f}%)", (char)itr.first, itr.second, itr.second * c);
     }
   }
 

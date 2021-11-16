@@ -10,11 +10,12 @@
  * Proprietary and confidential
  */
 
+#include "core/bit.hpp"
+
 #include <vector>
 
-#include "core/bit.hpp"
-#include "core/logic_gate.hpp"
 #include "core/config.hpp"
+#include "core/logic_gate.hpp"
 
 namespace preimage {
 
@@ -35,9 +36,7 @@ Bit Bit::one() { return Bit(1, false, 0); }
 
 Bit Bit::constant(bool val) { return Bit(val, false, 0); }
 
-void Bit::reset() {
-  global_index = 1;
-}
+void Bit::reset() { global_index = 1; }
 
 Bit Bit::operator~() const {
   Bit b(!val, false, 0);
@@ -60,8 +59,8 @@ Bit Bit::operator&(const Bit &b) const {
     if (a.index == -b.index) return Bit::zero();
 
     Bit result(a.val & b.val, true, 1 + std::max(a.depth, b.depth));
-    LogicGate f(LogicGate::Type::and_gate, result.depth,
-                result.index, {a.index, b.index});
+    LogicGate f(LogicGate::Type::and_gate, result.depth, result.index,
+                {a.index, b.index});
     LogicGate::global_gates.push_back(f);
     return result;
   } else if (a.unknown) {
@@ -92,8 +91,8 @@ Bit Bit::operator^(const Bit &b) const {
     }
 
     Bit result(a.val ^ b.val, true, 1 + std::max(a.depth, b.depth));
-    LogicGate f(LogicGate::Type::xor_gate, result.depth,
-                result.index, {a.index, b.index});
+    LogicGate f(LogicGate::Type::xor_gate, result.depth, result.index,
+                {a.index, b.index});
     LogicGate::global_gates.push_back(f);
     return result;
   } else if (a.unknown) {
@@ -130,8 +129,7 @@ Bit Bit::operator|(const Bit &b) const {
     }
 
     Bit result(a.val | b.val, true, 1 + std::max(a.depth, b.depth));
-    LogicGate f(LogicGate::Type::or_gate, result.depth,
-                result.index, {a.index, b.index});
+    LogicGate f(LogicGate::Type::or_gate, result.depth, result.index, {a.index, b.index});
     LogicGate::global_gates.push_back(f);
     return result;
   } else if (a.unknown) {
@@ -161,12 +159,18 @@ Bit Bit::majority3(const Bit &a, const Bit &b, const Bit &c) {
 
   std::vector<bool> knowns;
   std::vector<Bit> unknowns;
-  if (!a.unknown) knowns.push_back(a.val);
-  else unknowns.push_back(a);
-  if (!b.unknown) knowns.push_back(b.val);
-  else unknowns.push_back(b);
-  if (!c.unknown) knowns.push_back(c.val);
-  else unknowns.push_back(c);
+  if (!a.unknown)
+    knowns.push_back(a.val);
+  else
+    unknowns.push_back(a);
+  if (!b.unknown)
+    knowns.push_back(b.val);
+  else
+    unknowns.push_back(b);
+  if (!c.unknown)
+    knowns.push_back(c.val);
+  else
+    unknowns.push_back(c);
 
   if (knowns.size() == 0) {
     // If any two inputs are the same, they have automatic majority
@@ -219,12 +223,18 @@ Bit Bit::xor3(const Bit &a, const Bit &b, const Bit &c) {
 
   std::vector<bool> knowns;
   std::vector<Bit> unknowns;
-  if (!a.unknown) knowns.push_back(a.val);
-  else unknowns.push_back(a);
-  if (!b.unknown) knowns.push_back(b.val);
-  else unknowns.push_back(b);
-  if (!c.unknown) knowns.push_back(c.val);
-  else unknowns.push_back(c);
+  if (!a.unknown)
+    knowns.push_back(a.val);
+  else
+    unknowns.push_back(a);
+  if (!b.unknown)
+    knowns.push_back(b.val);
+  else
+    unknowns.push_back(b);
+  if (!c.unknown)
+    knowns.push_back(c.val);
+  else
+    unknowns.push_back(c);
 
   if (knowns.size() == 0) {
     // If any two inputs are the same, 0 ^ 0 ^ x = 0 ^ x = x

@@ -38,8 +38,7 @@ class Bit {
 
   Bit operator|(const Bit &b) const;
 
-  static std::pair<Bit, Bit> add(const Bit &a, const Bit &b,
-                                 const Bit &carry_in);
+  static std::pair<Bit, Bit> add(const Bit &a, const Bit &b, const Bit &carry_in);
   static std::pair<Bit, Bit> add(const Bit &a, const Bit &b);
 
   static Bit majority3(const Bit &a, const Bit &b, const Bit &c);

@@ -12,13 +12,12 @@
 
 #pragma once
 
-#include <vector>
-
 #include <Eigen/Dense>
 #include <Eigen/SVD>
+#include <vector>
 
-#include "core/solver.hpp"
 #include "core/cnf.hpp"
+#include "core/solver.hpp"
 
 namespace preimage {
 
@@ -26,8 +25,7 @@ class SDPSolver : public Solver {
  public:
   explicit SDPSolver(bool verbose) : Solver(verbose) {}
 
-  virtual ~SDPSolver() {
-  }
+  virtual ~SDPSolver() {}
 
   std::string solverName() const override { return "SDP"; }
 

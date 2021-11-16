@@ -13,8 +13,8 @@
 #pragma once
 
 #include <set>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 #include "core/logic_gate.hpp"
 

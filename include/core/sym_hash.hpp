@@ -13,7 +13,6 @@
 #pragma once
 
 #include <boost/dynamic_bitset.hpp>
-
 #include <string>
 
 #include "core/sym_bit_vec.hpp"

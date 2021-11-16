@@ -14,9 +14,9 @@
 
 #include <cryptominisat5/cryptominisat.h>
 
+#include <memory>
 #include <unordered_map>
 #include <vector>
-#include <memory>
 
 #include "core/solver.hpp"
 

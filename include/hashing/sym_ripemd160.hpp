@@ -30,31 +30,25 @@ class RIPEMD160 : public SymHash {
  private:
   void resetState(int difficulty);
 
-  void finalize(const SymBitVec &hash_input, int bit_index,
-                int lo, int hi);
+  void finalize(const SymBitVec &hash_input, int bit_index, int lo, int hi);
 
-  static inline SymBitVec F(const SymBitVec &x, const SymBitVec &y,
-                            const SymBitVec &z) {
+  static inline SymBitVec F(const SymBitVec &x, const SymBitVec &y, const SymBitVec &z) {
     return SymBitVec::xor3(x, y, z);
   }
 
-  static inline SymBitVec G(const SymBitVec &x, const SymBitVec &y,
-                            const SymBitVec &z) {
+  static inline SymBitVec G(const SymBitVec &x, const SymBitVec &y, const SymBitVec &z) {
     return (z ^ (x & (y ^ z)));
   }
 
-  static inline SymBitVec H(const SymBitVec &x, const SymBitVec &y,
-                            const SymBitVec &z) {
+  static inline SymBitVec H(const SymBitVec &x, const SymBitVec &y, const SymBitVec &z) {
     return (z ^ (x | ~y));
   }
 
-  static inline SymBitVec I(const SymBitVec &x, const SymBitVec &y,
-                            const SymBitVec &z) {
+  static inline SymBitVec I(const SymBitVec &x, const SymBitVec &y, const SymBitVec &z) {
     return (y ^ (z & (x ^ y)));
   }
 
-  static inline SymBitVec J(const SymBitVec &x, const SymBitVec &y,
-                            const SymBitVec &z) {
+  static inline SymBitVec J(const SymBitVec &x, const SymBitVec &y, const SymBitVec &z) {
     return (x ^ (y | ~z));
   }
 
@@ -62,10 +56,8 @@ class RIPEMD160 : public SymHash {
     return (x << n) | (x >> (32 - n));
   }
 
-  void transformInternal(SymBitVec &a1, SymBitVec &a2,
-                         SymBitVec &b1, SymBitVec &b2,
-                         SymBitVec &c1, SymBitVec &c2,
-                         SymBitVec &d1, SymBitVec &d2,
+  void transformInternal(SymBitVec &a1, SymBitVec &a2, SymBitVec &b1, SymBitVec &b2,
+                         SymBitVec &c1, SymBitVec &c2, SymBitVec &d1, SymBitVec &d2,
                          SymBitVec &e1, SymBitVec &e2);
 
   void transform();

@@ -44,27 +44,22 @@ class MD5 : public SymHash {
 
   void transform(const SymBitVec block[MD5_BLOCK_SIZE]);
 
-  void transformInternal(const SymBitVec block[MD5_BLOCK_SIZE],
-                         SymBitVec &a, SymBitVec &b,
-                         SymBitVec &c, SymBitVec &d);
+  void transformInternal(const SymBitVec block[MD5_BLOCK_SIZE], SymBitVec &a,
+                         SymBitVec &b, SymBitVec &c, SymBitVec &d);
 
-  static inline SymBitVec F(const SymBitVec &x, const SymBitVec &y,
-                            const SymBitVec &z) {
+  static inline SymBitVec F(const SymBitVec &x, const SymBitVec &y, const SymBitVec &z) {
     return (x & y) | (~x & z);
   }
 
-  static inline SymBitVec G(const SymBitVec &x, const SymBitVec &y,
-                            const SymBitVec &z) {
+  static inline SymBitVec G(const SymBitVec &x, const SymBitVec &y, const SymBitVec &z) {
     return (x & z) | (y & ~z);
   }
 
-  static inline SymBitVec H(const SymBitVec &x, const SymBitVec &y,
-                            const SymBitVec &z) {
+  static inline SymBitVec H(const SymBitVec &x, const SymBitVec &y, const SymBitVec &z) {
     return SymBitVec::xor3(x, y, z);
   }
 
-  static inline SymBitVec I(const SymBitVec &x, const SymBitVec &y,
-                            const SymBitVec &z) {
+  static inline SymBitVec I(const SymBitVec &x, const SymBitVec &y, const SymBitVec &z) {
     return y ^ (x | ~z);
   }
 

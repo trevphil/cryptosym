@@ -12,9 +12,9 @@
 
 #pragma once
 
-#include <vector>
 #include <map>
 #include <memory>
+#include <vector>
 
 #include "bp/node.hpp"
 
@@ -49,8 +49,8 @@ class Graph {
   double maxChange() const;
 
   void connectFactorNode(std::shared_ptr<GraphFactor> factor,
-                         std::shared_ptr<GraphNode> node,
-                         IODirection dir, bool negated = false);
+                         std::shared_ptr<GraphNode> node, IODirection dir,
+                         bool negated = false);
 
   int iterations() const;
 

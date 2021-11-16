@@ -6,7 +6,7 @@ if [ ! -d build ]; then
   mkdir build
 fi
 
-cd build
+pushd build
 
 cmake -D CMAKE_C_COMPILER=gcc -D CMAKE_CXX_COMPILER=g++ ..
 
@@ -17,3 +17,5 @@ mv main ..
 if [ -f tests ]; then
   mv tests ..
 fi
+
+popd
