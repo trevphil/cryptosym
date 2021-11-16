@@ -12,11 +12,8 @@
 
 #pragma once
 
-#include <spdlog/spdlog.h>
-
 #include <string>
 #include <vector>
-#include <unordered_map>
 
 namespace preimage {
 

@@ -10,10 +10,13 @@
  * Proprietary and confidential
  */
 
-#include <memory>
 #include <assert.h>
+#include <memory>
+#include <vector>
 
 #include "bp/bp_solver.hpp"
+#include "bp/node.hpp"
+#include "bp/params.hpp"
 #include "bp/prior_factor.hpp"
 #include "core/utils.hpp"
 

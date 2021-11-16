@@ -13,7 +13,6 @@ cmake -D CMAKE_C_COMPILER=gcc -D CMAKE_CXX_COMPILER=g++ ..
 make
 
 mv main ..
-mv dataset_generator ..
 
 if [ -f tests ]; then
   mv tests ..

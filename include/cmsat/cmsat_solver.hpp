@@ -14,8 +14,7 @@
 
 #include <cryptominisat5/cryptominisat.h>
 
-#include <map>
-#include <set>
+#include <unordered_map>
 #include <vector>
 #include <memory>
 

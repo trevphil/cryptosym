@@ -10,7 +10,10 @@
  * Proprietary and confidential
  */
 
+#include <vector>
+
 #include "core/bit.hpp"
+#include "core/logic_gate.hpp"
 #include "core/config.hpp"
 
 namespace preimage {

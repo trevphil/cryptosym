@@ -13,22 +13,10 @@
 #pragma once
 
 #include <boost/dynamic_bitset.hpp>
-#include <map>
 #include <unordered_map>
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include <assert.h>
 
 #include "core/sym_hash.hpp"
-#include "core/sym_bit_vec.hpp"
 #include "core/solver.hpp"
-#include "core/utils.hpp"
-#include "hashing/hash_funcs.hpp"
-#include "bp/bp_solver.hpp"
-#include "cmsat/cmsat_solver.hpp"
-#include "preimage_sat/preimage_sat.hpp"
-#include "sdp/sdp_solver.hpp"
 
 #include <memory>
 #include <string>

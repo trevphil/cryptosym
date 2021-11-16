@@ -19,6 +19,7 @@
 #include <spdlog/spdlog.h>
 
 #include "bp/node.hpp"
+#include "bp/params.hpp"
 
 namespace preimage {
 

@@ -12,9 +12,7 @@
 
 #pragma once
 
-#include <utility>
 #include <vector>
-#include <assert.h>
 
 #include "core/sym_bit_vec.hpp"
 #include "core/sym_hash.hpp"

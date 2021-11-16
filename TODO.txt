@@ -1,6 +1,6 @@
 Remove SPDLOG dependency, use printf or std::cout
 
-Move imports to .cpp file where possible, not .hpp file
+Remove global tracking of bits and logic gates
 
 Apply linting / formatting on entire project
 

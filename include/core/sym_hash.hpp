@@ -15,8 +15,6 @@
 #include <boost/dynamic_bitset.hpp>
 
 #include <string>
-#include <set>
-#include <unordered_map>
 
 #include "core/sym_bit_vec.hpp"
 

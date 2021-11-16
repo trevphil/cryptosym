@@ -12,14 +12,10 @@
 
 #pragma once
 
-#include <map>
 #include <unordered_map>
-#include <vector>
 
 #include "core/solver.hpp"
 #include "bp/graph.hpp"
-#include "bp/node.hpp"
-#include "bp/params.hpp"
 
 namespace preimage {
 

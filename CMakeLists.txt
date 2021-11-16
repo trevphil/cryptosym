@@ -42,6 +42,7 @@ add_library(preimage SHARED
             src/problem_instance.cpp
             src/core/config.cpp
             src/core/bit.cpp
+            src/core/cnf.cpp
             src/core/logic_gate.cpp
             src/core/sym_bit_vec.cpp
             src/core/solver.cpp
@@ -62,9 +63,6 @@ target_link_libraries(preimage cryptominisat5)
 
 add_executable(main src/main.cpp)
 target_link_libraries(main preimage)
-
-add_executable(dataset_generator src/dataset.cpp)
-target_link_libraries(dataset_generator preimage)
 
 if(BUILD_TESTS)
   add_executable(tests src/tests.cpp)

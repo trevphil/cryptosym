@@ -15,10 +15,8 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
-#include <fstream>
 
 #include "core/logic_gate.hpp"
-#include "core/bit.hpp"
 
 namespace preimage {
 

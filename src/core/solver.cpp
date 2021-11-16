@@ -10,8 +10,8 @@
  * Proprietary and confidential
  */
 
-#include <list>
 #include <algorithm>
+#include <fstream>
 
 #include "core/solver.hpp"
 #include "core/utils.hpp"

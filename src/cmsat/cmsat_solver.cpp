@@ -13,6 +13,8 @@
 #include "cmsat/cmsat_solver.hpp"
 
 #include <iostream>
+#include <vector>
+
 #include <spdlog/spdlog.h>
 
 namespace preimage {

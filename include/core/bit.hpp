@@ -13,9 +13,6 @@
 #pragma once
 
 #include <utility>
-#include <vector>
-
-#include "core/logic_gate.hpp"
 
 namespace preimage {
 

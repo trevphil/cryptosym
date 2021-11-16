@@ -12,8 +12,11 @@
 
 #include "preimage_sat/preimage_sat.hpp"
 
+#include <queue>
 #include <iostream>
 #include <spdlog/spdlog.h>
+
+#include "core/utils.hpp"
 
 namespace preimage {
 

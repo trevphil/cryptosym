@@ -15,12 +15,8 @@
 #include <map>
 #include <vector>
 #include <string>
-#include <iostream>
 #include <memory>
-#include <eigen3/Eigen/Eigen>
-
-#include "bp/params.hpp"
-#include "core/logic_gate.hpp"
+#include <Eigen/Dense>
 
 namespace preimage {
 

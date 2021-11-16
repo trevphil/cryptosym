@@ -10,7 +10,22 @@
  * Proprietary and confidential
  */
 
+#include <map>
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <assert.h>
+
+#include <spdlog/spdlog.h>
+
 #include "problem_instance.hpp"
+#include "core/sym_bit_vec.hpp"
+#include "core/utils.hpp"
+#include "hashing/hash_funcs.hpp"
+#include "bp/bp_solver.hpp"
+#include "cmsat/cmsat_solver.hpp"
+#include "preimage_sat/preimage_sat.hpp"
+#include "sdp/sdp_solver.hpp"
 
 namespace preimage {
 

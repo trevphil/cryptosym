@@ -16,8 +16,7 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
-#include <iostream>
-#include <ostream>
+#include <sstream>
 
 namespace preimage {
 

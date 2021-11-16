@@ -10,6 +10,8 @@
  * Proprietary and confidential
  */
 
+#include <spdlog/spdlog.h>
+
 #include "core/logic_gate.hpp"
 
 #include <iomanip>

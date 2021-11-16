@@ -12,18 +12,12 @@
 
 #pragma once
 
-#include <spdlog/spdlog.h>
-
 #include <set>
-#include <queue>
 #include <vector>
 #include <string>
 #include <unordered_map>
-#include <utility>
-#include <iostream>
 
 #include "core/solver.hpp"
-#include "core/utils.hpp"
 
 namespace preimage {
 

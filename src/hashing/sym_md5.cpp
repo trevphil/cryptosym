@@ -14,6 +14,8 @@
 
 #include "hashing/sym_md5.hpp"
 
+#include <assert.h>
+
 #define S11 7
 #define S12 12
 #define S13 17
