@@ -7,8 +7,6 @@
 
 #include "core/sym_bit_vec.hpp"
 
-#include <spdlog/spdlog.h>
-
 #include <algorithm>
 #include <sstream>
 
@@ -30,8 +28,8 @@ SymBitVec::SymBitVec(const boost::dynamic_bitset<> &bits, bool unknown) {
 
 SymBitVec::SymBitVec(uint64_t n, int sz, bool unknown) {
   if (sz > sizeof(uint64_t) * 8) {
-    spdlog::warn("Initializing SymBitVec[{}] with {}-bit integer", sz,
-                 sizeof(uint64_t) * 8);
+    printf("Initializing SymBitVec[%d] with %lu-bit integer\n",
+           sz, sizeof(uint64_t) * 8);
   }
   bits_ = {};
   bits_.reserve(sz);
@@ -45,8 +43,8 @@ int SymBitVec::size() const { return bits_.size(); }
 uint64_t SymBitVec::intVal() const {
   const int n = size();
   if (n > sizeof(uint64_t) * 8) {
-    spdlog::warn("Integer overflow, coercing {}-bit SymBitVec to {}-bit int", n,
-                 sizeof(uint64_t) * 8);
+    printf("Integer overflow, coercing %d-bit SymBitVec to %lu-bit int\n",
+           n, sizeof(uint64_t) * 8);
   }
   uint64_t result = 0;
   for (int i = 0; i < n; ++i) {
@@ -82,7 +80,7 @@ std::string SymBitVec::hex() const { return Utils::hexstr(bits()); }
 Bit SymBitVec::at(int index) const {
   const int n = size();
   if (index < 0 || index >= n)
-    spdlog::error("Index {} o.o.b. for SymBitVec[{}]", index, n);
+    printf("Index %d out of bounds for SymBitVec[%d]\n", index, n);
   assert(index >= 0 && index < n);
   return bits_.at(index);
 }

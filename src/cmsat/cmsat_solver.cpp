@@ -8,8 +8,6 @@
 #include "core/config.hpp"
 #include "cmsat/cmsat_solver.hpp"
 
-#include <spdlog/spdlog.h>
-
 #include <iostream>
 #include <vector>
 
@@ -49,7 +47,7 @@ void CMSatSolver::initialize() {
   solver_->set_num_threads(1);
   solver_->new_vars(num_vars_);
 
-  if (config::verbose) spdlog::info("Running cryptominisat5 (n={})", num_vars_);
+  if (config::verbose) printf("Running cryptominisat5 (n=%d)\n", num_vars_);
 
   for (const LogicGate &g : gates_) {
     switch (g.t()) {

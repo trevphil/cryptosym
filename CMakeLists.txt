@@ -14,10 +14,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(include)
 
-if(NOT TARGET spdlog)
-  # Stand-alone build
-  find_package(spdlog REQUIRED)
-endif()
+# Boost
+find_package(Boost REQUIRED)
 
 # CryptoMiniSAT
 find_package(cryptominisat5 REQUIRED)
@@ -52,7 +50,7 @@ add_library(preimage SHARED
             src/bp/graph.cpp
             src/bp/bp_solver.cpp)
 
-target_link_libraries(preimage spdlog::spdlog)
+target_link_libraries(preimage Boost::boost)
 target_link_libraries(preimage cryptominisat5)
 
 add_executable(main src/main.cpp)

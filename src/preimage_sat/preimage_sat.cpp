@@ -5,9 +5,6 @@
  * All rights reserved.
  */
 
-
-#include <spdlog/spdlog.h>
-
 #include <iostream>
 #include <queue>
 
@@ -50,7 +47,7 @@ void PreimageSATSolver::initialize() {
             [](const LitStats &a, const LitStats &b) { return a.score() > b.score(); });
 
   const double init_time_ms = Utils::ms_since_epoch() - start;
-  if (config::verbose) spdlog::info("Initialized PreimageSAT in {:.0f} ms", init_time_ms);
+  if (config::verbose) printf("Initialized PreimageSAT in %.0f ms\n", init_time_ms);
 }
 
 std::unordered_map<int, bool> PreimageSATSolver::solveInternal() {
@@ -62,11 +59,11 @@ std::unordered_map<int, bool> PreimageSATSolver::solveInternal() {
       pushStack(lit, truth_value, false);
       const int num_solved = propagate(lit);
       if (num_solved < 0) {
-        spdlog::warn("Problem is UNSAT!");
+        printf("%s\n", "Problem is UNSAT!");
         return {};
       }
     } else if (truth_value != (literals[lit] > 0)) {
-      spdlog::warn("Problem is UNSAT!");
+      printf("%s\n", "Problem is UNSAT!");
       return {};
     }
   }

@@ -5,8 +5,6 @@
  * All rights reserved.
  */
 
-#include <spdlog/spdlog.h>
-
 #include <algorithm>
 
 #include "core/config.hpp"
@@ -42,17 +40,17 @@ void Solver::setObserved(const std::unordered_map<int, bool> &observed) {
 
 std::unordered_map<int, bool> Solver::solve() {
   if (num_gates_ != (int)gates_.size()) {
-    spdlog::error("Expected {} gates but have {}.", num_gates_, gates_.size());
+    printf("Expected %d gates but have %lu.\n", num_gates_, gates_.size());
     assert(false);
   }
   if (input_size_ != (int)input_indices_.size()) {
-    spdlog::error("Expected input_size={} but it is {}.", input_size_,
-                  input_indices_.size());
+    printf("Expected input_size=%d but it is %lu.\n",
+           input_size_, input_indices_.size());
     assert(false);
   }
   if (output_size_ != (int)output_indices_.size()) {
-    spdlog::error("Expected output_size={} but it is {}.", output_size_,
-                  output_indices_.size());
+    printf("Expected output_size=%d but it is %lu.\n",
+           output_size_, output_indices_.size());
     assert(false);
   }
 
@@ -60,7 +58,7 @@ std::unordered_map<int, bool> Solver::solve() {
   initialize();
   auto solution = solveInternal();
   const auto end = Utils::ms_since_epoch();
-  if (config::verbose) spdlog::info("Solver finished in {} ms", end - start);
+  if (config::verbose) printf("Solver finished in %lld ms\n", end - start);
 
   // Fill in observed values
   for (const auto &itr : observed_) {
@@ -68,8 +66,8 @@ std::unordered_map<int, bool> Solver::solve() {
     if (solution.count(itr.first) > 0) {
       // Check for solver predictions which conflict with observations
       if (solution.at(itr.first) != itr.second) {
-        spdlog::error("Variable {} is {} but was predicted {}!", itr.first, itr.second,
-                      solution.at(itr.first));
+        printf("Variable %d is %d but was predicted %d!\n",
+               itr.first, itr.second, solution.at(itr.first));
         assert(false);
       }
     } else {

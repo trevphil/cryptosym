@@ -7,8 +7,6 @@
 
 #include "core/logic_gate.hpp"
 
-#include <spdlog/spdlog.h>
-
 #include <iomanip>
 #include <sstream>
 
@@ -23,8 +21,8 @@ LogicGate::LogicGate(LogicGate::Type typ, const int dpth, const int out,
     : depth(dpth), output(out), inputs(inp), t_(typ) {
   const int n_inputs = numInputs(t_);
   if (n_inputs != inp.size()) {
-    spdlog::info("Gate {} requires {} input(s) but got {}", char(t_), n_inputs,
-                 inp.size());
+    printf("Gate %c requires %d input(s) but got %lu\n",
+           char(t_), n_inputs, inp.size());
   }
   assert(depth > 0);
   assert(output != 0);

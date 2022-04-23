@@ -8,7 +8,6 @@
 #include "problem_instance.hpp"
 
 #include <assert.h>
-#include <spdlog/spdlog.h>
 
 #include <fstream>
 #include <iostream>
@@ -49,12 +48,12 @@ int ProblemInstance::execute() {
   }
 
   if (config::verbose) {
-    spdlog::info("Executing problem instance...");
-    spdlog::info("Hash algorithm:\t{}", hasher->hashName());
-    spdlog::info("Solver:\t\t{}", solver->solverName());
-    spdlog::info("Input message size:\t{} bits", num_input_bits_);
-    spdlog::info("Difficulty level:\t{}", difficulty_);
-    spdlog::info("-----------------------");
+    printf("%s\n", "Executing problem instance...");
+    printf("Hash algorithm:\t%s\n", hasher->hashName().c_str());
+    printf("Solver:\t\t%s\n", solver->solverName().c_str());
+    printf("Input message size:\t%d bits\n", num_input_bits_);
+    printf("Difficulty level:\t%d\n", difficulty_);
+    printf("%s\n", "-----------------------");
   }
 
   // Generate symbolic hash function using all-zero inputs
@@ -80,25 +79,25 @@ int ProblemInstance::execute() {
 
   if (config::verbose) {
     if (bin_format_) {
-      spdlog::info("True input:\t\t{}", Utils::binstr(real_input));
-      spdlog::info("Reconstructed input:\t{}", Utils::binstr(preimage));
+      printf("True input:\t\t%s\n", Utils::binstr(real_input).c_str());
+      printf("Reconstructed input:\t%s\n", Utils::binstr(preimage).c_str());
     } else {
-      spdlog::info("True input:\t\t{}", Utils::hexstr(real_input));
-      spdlog::info("Reconstructed input:\t{}", Utils::hexstr(preimage));
+      printf("True input:\t\t%s\n", Utils::hexstr(real_input).c_str());
+      printf("Reconstructed input:\t%s\n", Utils::hexstr(preimage).c_str());
     }
   }
 
   // Check if prediction yields the same hash
   if (real_output_hex.compare(pred_output_hex) == 0) {
     if (config::verbose) {
-        spdlog::info("Success! Hashes match:\t{}", pred_output_hex);
+        printf("Success! Hashes match:\t%s\n", pred_output_hex.c_str());
     }
     return 0;
   } else {
     if (config::verbose) {
-      spdlog::warn("!!! Hashes do not match.");
-      spdlog::warn("\tExpected:\t{}", bin_format_ ? real_output_bin : real_output_hex);
-      spdlog::warn("\tGot:\t\t{}", bin_format_ ? pred_output_bin : pred_output_hex);
+      printf("%s\n", "!!! Hashes do not match.");
+      printf("\tExpected:\t%s\n", (bin_format_ ? real_output_bin : real_output_hex).c_str());
+      printf("\tGot:\t\t%s\n", (bin_format_ ? pred_output_bin : pred_output_hex).c_str());
     }
     return 1;
   }
@@ -112,7 +111,7 @@ void ProblemInstance::createHasher(const std::string &hash_name) {
   } else if (hash_name.compare("RIPEMD160") == 0) {
     hasher = std::unique_ptr<SymHash>(new RIPEMD160());
   } else {
-    spdlog::error("Unrecognized hash function: {}", hash_name);
+    printf("Unrecognized hash function: %s\n", hash_name.c_str());
     hasher = nullptr;
   }
 }
@@ -125,7 +124,7 @@ void ProblemInstance::createSolver(const std::string &solver_name) {
   } else if (solver_name.compare("bp") == 0) {
     solver = std::unique_ptr<Solver>(new bp::BPSolver());
   } else {
-    spdlog::error("Unsupported solver: {}", solver_name);
+    printf("Unsupported solver: %s\n", solver_name.c_str());
     solver = nullptr;
   }
 }
@@ -146,7 +145,7 @@ void ProblemInstance::saveSymbols(const std::string &filename) {
 
   std::ofstream symbols(filename);
   if (!symbols.is_open()) {
-    spdlog::error("Unable to open \"{}\" in write mode.", filename);
+    printf("Unable to open \"%s\" in write mode.\n", filename.c_str());
     assert(false);
   }
 
@@ -180,14 +179,14 @@ void ProblemInstance::saveSymbols(const std::string &filename) {
   for (const LogicGate &g : LogicGate::global_gates) symbols << g.toString() << "\n";
 
   symbols.close();
-  if (config::verbose) spdlog::info("Wrote symbols to: \"{}\"", filename);
+  if (config::verbose) printf("Wrote symbols to: \"%s\"\n", filename.c_str());
 }
 
 boost::dynamic_bitset<> ProblemInstance::getPreimage(const std::string &symbols_file,
                                                      const std::string &hash_hex) {
   std::ifstream symbols(symbols_file);
   if (!symbols.is_open()) {
-    spdlog::error("Unable to open \"{}\" in read mode.", symbols_file);
+    printf("Unable to open \"%s\" in read mode.\n", symbols_file.c_str());
     assert(false);
   }
 
@@ -227,9 +226,9 @@ boost::dynamic_bitset<> ProblemInstance::getPreimage(const std::string &symbols_
     std::map<LogicGate::Type, int> gate_counts;
     for (const LogicGate &g : gates) gate_counts[g.t()]++;
     const double c = 100.0 / static_cast<double>(gates.size());
-    spdlog::info("Logic gate distribution:");
+    printf("%s\n", "Logic gate distribution:");
     for (const auto &itr : gate_counts) {
-      spdlog::info("\t{}:\t{}\t({:.1f}%)", (char)itr.first, itr.second, itr.second * c);
+      printf("\t%c:\t%d\t(%.1f%%)\n", (char)itr.first, itr.second, itr.second * c);
     }
   }
 

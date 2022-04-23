@@ -7,8 +7,6 @@
 
 #include "hashing/sym_sha256.hpp"
 
-#include <spdlog/spdlog.h>
-
 #include "core/utils.hpp"
 
 namespace preimage {

@@ -7,8 +7,6 @@
 
 #include "bp/graph.hpp"
 
-#include <spdlog/spdlog.h>
-
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -17,7 +15,7 @@ namespace preimage {
 
 namespace bp {
 
-Graph::Graph() : iter_(0) { GraphNode::num_resets = 0; }
+Graph::Graph() : iter_(0) {}
 
 Graph::~Graph() {
   schedule_factor.clear();
@@ -43,23 +41,23 @@ Graph::~Graph() {
 }
 
 void Graph::printGraph() const {
-  spdlog::info("--------- GRAPH ---------");
-  spdlog::info(">>> nodes <<<");
+  printf("%s\n", "--------- GRAPH ---------");
+  printf("%s\n", ">>> nodes <<<");
 
   for (auto &n : nodes_) {
-    spdlog::info("{}", n->toString());
+    printf("%s\n", n->toString().c_str());
     for (auto &e : n->edges()) {
-      spdlog::info("\t{} : m2f=[{}, {}]", e->toString(), e->m2f(0), e->m2f(1));
+      printf("\t%s : m2f=[%f, %f]\n", e->toString().c_str(), e->m2f(0), e->m2f(1));
     }
   }
-  spdlog::info(">>> factors <<<");
+  printf("%s\n", ">>> factors <<<");
   for (auto &f : schedule_factor.at(0)) {
-    spdlog::info("{}", f->toString());
+    printf("%s\n", f->toString().c_str());
     for (auto &e : f->edges()) {
-      spdlog::info("\t{} : m2n=[{}, {}]", e->toString(), e->m2n(0), e->m2n(1));
+      printf("\t%s : m2n=[%f, %f]\n", e->toString().c_str(), e->m2n(0), e->m2n(1));
     }
   }
-  spdlog::info("---------------------");
+  printf("%s\n", "---------------------");
 }
 
 void Graph::writeNodes() const {

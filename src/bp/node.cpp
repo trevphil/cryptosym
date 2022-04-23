@@ -9,7 +9,6 @@
 
 #include <assert.h>
 #include <math.h>
-#include <spdlog/spdlog.h>
 
 #include <algorithm>
 #include <iostream>
@@ -227,8 +226,6 @@ void GraphFactor::addEdge(std::shared_ptr<GraphEdge> e) { edges_.push_back(e); }
  ******* GRAPH NODE ********
  ***************************/
 
-int GraphNode::num_resets = 0;
-
 GraphNode::GraphNode(int i) : index_(i) {}
 
 GraphNode::~GraphNode() {
@@ -420,7 +417,6 @@ void GraphNode::node2factor(IODirection target) {
       // assert(false);
       p = Eigen::Array2d::Ones();
       s = p.sum();
-      GraphNode::num_resets++;
     }
     msg_out.row(i) = p / s;
   }
@@ -450,7 +446,6 @@ void GraphNode::norm() {
     // assert(false);
     Zn = Eigen::Array2d::Ones();
     divisor = Zn.sum();
-    GraphNode::num_resets++;
   }
   const Eigen::Array2d P = Zn / divisor;
   final_dist_ = P;
@@ -470,7 +465,6 @@ void GraphNode::inlineNorm(const Eigen::MatrixXd &msg) {
   if (divisor == 0.0) {
     Zn = Eigen::Array2d::Ones();
     divisor = Zn.sum();
-    GraphNode::num_resets++;
   }
   const Eigen::Array2d P = Zn / divisor;
   final_dist_ = P;

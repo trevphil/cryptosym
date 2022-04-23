@@ -118,8 +118,6 @@ class GraphNode {
 
   void addEdge(std::shared_ptr<GraphEdge> e);
 
-  static int num_resets;
-
  private:
   bool bit_;
   double entropy_;

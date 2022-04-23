@@ -7,8 +7,6 @@
 
 #include "core/cnf.hpp"
 
-#include <spdlog/spdlog.h>
-
 #include <assert.h>
 #include <fstream>
 #include <utility>
@@ -47,7 +45,7 @@ int CNF::numSatClauses(const std::unordered_map<int, bool> &assignments) {
       else if (assignments.count(-lit))
         lit_val = !assignments.at(-lit);
       else {
-        spdlog::error("CNF is missing assignment for {}", lit);
+        printf("CNF is missing assignment for %d\n", lit);
         assert(false);
       }
 
@@ -68,7 +66,7 @@ double CNF::approximationRatio(const std::unordered_map<int, bool> &assignments)
 void CNF::write(const std::string &filename) const {
   std::ofstream cnf_file(filename);
   if (!cnf_file.is_open()) {
-    spdlog::error("Unable to open \"{}\" in write mode.", filename);
+    printf("Unable to open \"%s\" in write mode.\n", filename.c_str());
     assert(false);
   }
 

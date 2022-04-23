@@ -10,7 +10,7 @@ pushd build
 
 cmake ..
 
-make
+make -j4
 
 mv main ..
 

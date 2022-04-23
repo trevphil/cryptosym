@@ -8,7 +8,6 @@
 #include "bp/bp_solver.hpp"
 
 #include <assert.h>
-#include <spdlog/spdlog.h>
 
 #include <memory>
 #include <vector>
@@ -114,29 +113,25 @@ std::unordered_map<int, bool> BPSolver::solveInternal() {
     const double c = g_.maxChange();
 
     if (config::verbose) {
-      spdlog::info("Iter {}/{} - {} ms, entropy sum {:.3f}, max change {:.3f}",
-                   g_.iterations(), BP_MAX_ITER, end - start, e, c);
+      printf("Iter %d/%d - %lld ms, entropy sum %.3f, max change %.3f\n",
+             g_.iterations(), BP_MAX_ITER, end - start, e, c);
     }
 
     if (e < BP_ENTROPY_THRESHOLD) {
       if (config::verbose) {
-        spdlog::info("Entropy thresh reached ({}), abort after iteration {}", e,
-                     g_.iterations());
+        printf("Entropy thresh reached (%.3f), abort after iteration %d\n",
+               e, g_.iterations());
       }
       break;
     }
 
     if (c < BP_CHANGE_THRESHOLD) {
       if (config::verbose) {
-        spdlog::info("Change thresh reached ({}), converged after iteration {}", c,
-                     g_.iterations());
+        printf("Change thresh reached (%.3f), converged after iteration %d\n",
+               c, g_.iterations());
       }
       break;
     }
-  }
-
-  if (config::verbose) {
-    spdlog::warn("Graph node number of resets: {}", GraphNode::num_resets);
   }
 
   std::unordered_map<int, bool> solution;

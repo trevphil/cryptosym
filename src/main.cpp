@@ -5,9 +5,6 @@
  * All rights reserved.
  */
 
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
-
 #include <string>
 
 #include "core/config.hpp"
@@ -55,7 +52,7 @@ int parseArgument(char *arg) {
     help_msg << "\ti=NUM_INPUT_BITS (choose a multiple of 8)" << std::endl;
     help_msg << "\tsolver=SOLVER" << std::endl;
     help_msg << "\t -> one of: cmsat, simple, bp" << std::endl;
-    spdlog::info(help_msg.str());
+    printf("%s\n", help_msg.str().c_str());
     return 1;
   }
 
@@ -71,18 +68,18 @@ void run(int argc, char **argv) {
   const int rtn = problem.prepare(hash_func, solving_method);
 
   if (rtn != 0) {
-    spdlog::error("Error configuring the problem, exiting.");
+    printf("%s\n", "Error configuring the problem, exiting.");
     return;
   }
 
   const int status = problem.execute();
   if (status == 0) {
-    spdlog::info("Problem was solved!");
+    printf("%s\n", "Problem was solved!");
   } else {
-    spdlog::warn("Problem was not solved! (status={})", status);
+    printf("Problem was not solved! (status=%d)\n", status);
   }
 
-  spdlog::info("Done.");
+  printf("%s\n", "Done.");
 }
 
 }  // end namespace preimage
