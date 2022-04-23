@@ -1,13 +1,8 @@
 /*
- * Hash reversal
- *
- * Copyright (c) 2020 Authors:
+ * Copyright (c) 2022 Authors:
  *   - Trevor Phillips <trevphil3@gmail.com>
  *
  * All rights reserved.
- *
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
  */
 
 #pragma once
@@ -56,21 +51,6 @@ class LogicGate {
         return 3;
       case Type::xor3_gate:
         return 3;
-    }
-  }
-
-  static inline int numClausesCNF(Type typ) {
-    switch (typ) {
-      case Type::and_gate:
-        return 3;
-      case Type::or_gate:
-        return 3;
-      case Type::xor_gate:
-        return 4;
-      case Type::xor3_gate:
-        return 8;
-      case Type::maj_gate:
-        return 6;
     }
   }
 

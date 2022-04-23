@@ -8,16 +8,14 @@ fi
 
 pushd build
 
-cmake -D CMAKE_C_COMPILER=gcc -D CMAKE_CXX_COMPILER=g++ ..
+cmake ..
 
 make
 
 mv main ..
 
-mv cnf_gen ..
-
-if [ -f tests ]; then
-  mv tests ..
+if [ -f unit_tests ]; then
+  mv unit_tests ..
 fi
 
 popd

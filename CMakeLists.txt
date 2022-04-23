@@ -4,19 +4,13 @@ cmake_minimum_required(VERSION 3.8)
 # Name of the project
 project(preimage)
 
-set(PRINT_DEBUG false)
-set(BUILD_TESTS true)
+set(BUILD_TESTS ON)
 
 add_definitions(-std=c++17 -Wshadow -Wunused -Wall -Werror -O3)
 # add_compile_options(-g)
 
-if(PRINT_DEBUG)
-  add_definitions(-DPRINT_DEBUG)
-endif()
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(EXTRA_LIBS -lm)
 
 include_directories(include)
 
@@ -29,7 +23,9 @@ endif()
 find_package(cryptominisat5 REQUIRED)
 
 # Crypto++
-find_package(CryptoPP REQUIRED)
+if(BUILD_TESTS)
+  find_package(CryptoPP REQUIRED)
+endif()
 
 # Eigen
 find_package(Eigen3 REQUIRED)
@@ -47,7 +43,6 @@ add_library(preimage SHARED
             src/core/sym_bit_vec.cpp
             src/core/solver.cpp
             src/core/sym_hash.cpp
-            src/hashing/hash_funcs.cpp
             src/hashing/sym_sha256.cpp
             src/hashing/sym_md5.cpp
             src/hashing/sym_ripemd160.cpp
@@ -57,18 +52,14 @@ add_library(preimage SHARED
             src/bp/graph.cpp
             src/bp/bp_solver.cpp)
 
-target_link_libraries(preimage ${EXTRA_LIBS})
 target_link_libraries(preimage spdlog::spdlog)
 target_link_libraries(preimage cryptominisat5)
 
 add_executable(main src/main.cpp)
 target_link_libraries(main preimage)
 
-add_executable(cnf_gen src/cnf_gen.cpp)
-target_link_libraries(cnf_gen preimage)
-
 if(BUILD_TESTS)
-  add_executable(tests src/tests.cpp)
-  target_link_libraries(tests preimage)
-  target_link_libraries(tests cryptopp-shared)
+  add_executable(unit_tests tests/unit_tests.cpp)
+  target_link_libraries(unit_tests preimage)
+  target_link_libraries(unit_tests cryptopp-shared)
 endif()

@@ -1,13 +1,8 @@
 /*
- * Hash reversal
- *
- * Copyright (c) 2020 Authors:
+ * Copyright (c) 2022 Authors:
  *   - Trevor Phillips <trevphil3@gmail.com>
  *
  * All rights reserved.
- *
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
  */
 
 #include "bp/graph.hpp"
@@ -151,19 +146,9 @@ void Graph::scheduledUpdate() {
   iter_++;
   const int n_layers = schedule_factor.size();
 
-#ifdef PRINT_DEBUG
-  spdlog::info("A: starting scheduledUpdate()");
-  printGraph();
-#endif
-
   for (auto &node : schedule_variable.at(0)) {
     node->node2factor(IODirection::Input);
   }
-
-#ifdef PRINT_DEBUG
-  spdlog::info("B: scheduledUpdate() after node2factor[Input]");
-  printGraph();
-#endif
 
   // ################# FORWARD  #################
   for (int r = 0; r < n_layers; r++) {
@@ -175,19 +160,9 @@ void Graph::scheduledUpdate() {
     }
   }
 
-#ifdef PRINT_DEBUG
-  spdlog::info("C: scheduledUpdate() after f2n --> n2f[Input]");
-  printGraph();
-#endif
-
   for (auto &node : schedule_variable.back()) {
     node->node2factor(IODirection::Output);
   }
-
-#ifdef PRINT_DEBUG
-  spdlog::info("D: scheduledUpdate() after node2factor[Output]");
-  printGraph();
-#endif
 
   // ################# BACKWARD  #################
   for (int r = (int)n_layers - 1; r >= 0; r--) {
@@ -198,10 +173,6 @@ void Graph::scheduledUpdate() {
       schedule_variable.at(r).at(i)->node2factor(IODirection::Output);
     }
   }
-#ifdef PRINT_DEBUG
-  spdlog::info("E: scheduledUpdate() after f2n --> n2f[Output]");
-  printGraph();
-#endif
 }
 
 }  // end namespace bp

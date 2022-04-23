@@ -1,13 +1,8 @@
 /*
- * Hash reversal
- *
- * Copyright (c) 2020 Authors:
+ * Copyright (c) 2022 Authors:
  *   - Trevor Phillips <trevphil3@gmail.com>
  *
  * All rights reserved.
- *
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
  */
 
 #include "problem_instance.hpp"
@@ -24,9 +19,10 @@
 #include "cmsat/cmsat_solver.hpp"
 #include "core/sym_bit_vec.hpp"
 #include "core/utils.hpp"
-#include "hashing/hash_funcs.hpp"
+#include "hashing/sym_md5.hpp"
+#include "hashing/sym_ripemd160.hpp"
+#include "hashing/sym_sha256.hpp"
 #include "preimage_sat/preimage_sat.hpp"
-#include "sdp/sdp_solver.hpp"
 
 namespace preimage {
 
@@ -114,14 +110,6 @@ void ProblemInstance::createHasher(const std::string &hash_name) {
     hasher = std::unique_ptr<SymHash>(new MD5());
   } else if (hash_name.compare("RIPEMD160") == 0) {
     hasher = std::unique_ptr<SymHash>(new RIPEMD160());
-  } else if (hash_name.compare("SameIOHash") == 0) {
-    hasher = std::unique_ptr<SymHash>(new SameIOHash());
-  } else if (hash_name.compare("NotHash") == 0) {
-    hasher = std::unique_ptr<SymHash>(new NotHash());
-  } else if (hash_name.compare("LossyPseudoHash") == 0) {
-    hasher = std::unique_ptr<SymHash>(new LossyPseudoHash());
-  } else if (hash_name.compare("NonLossyPseudoHash") == 0) {
-    hasher = std::unique_ptr<SymHash>(new NonLossyPseudoHash());
   } else {
     spdlog::error("Unrecognized hash function: {}", hash_name);
     hasher = nullptr;
@@ -135,8 +123,6 @@ void ProblemInstance::createSolver(const std::string &solver_name) {
     solver = std::unique_ptr<Solver>(new PreimageSATSolver(verbose_));
   } else if (solver_name.compare("bp") == 0) {
     solver = std::unique_ptr<Solver>(new bp::BPSolver(verbose_));
-  } else if (solver_name.compare("sdp") == 0) {
-    solver = std::unique_ptr<Solver>(new SDPSolver(verbose_));
   } else {
     spdlog::error("Unsupported solver: {}", solver_name);
     solver = nullptr;

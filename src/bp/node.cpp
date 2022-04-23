@@ -1,13 +1,8 @@
 /*
- * Hash reversal
- *
- * Copyright (c) 2020 Authors:
+ * Copyright (c) 2022 Authors:
  *   - Trevor Phillips <trevphil3@gmail.com>
  *
  * All rights reserved.
- *
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
  */
 
 #include "bp/node.hpp"
@@ -204,12 +199,6 @@ void GraphFactor::factor2node() {
     }
   }
 
-#ifdef PRINT_DEBUG
-  std::cout << "factor2node for factor: " << toString() << std::endl;
-  std::cout << "msg_in = " << std::endl << msg_in << std::endl;
-  std::cout << "tfill = " << std::endl << tfill << std::endl;
-#endif
-
   for (int col = 0; col < l; col++) {
     const int edge_idx = edge_index_for_table_column_.at(col);
     const bool negated = edges_.at(edge_idx)->negated;
@@ -217,9 +206,6 @@ void GraphFactor::factor2node() {
     // Remove column "col" from tmp
     tmp.block(0, col, n_rows, l - col) = tmp.block(0, col + 1, n_rows, l - col);
     tmp.conservativeResize(n_rows, l);
-#ifdef PRINT_DEBUG
-    std::cout << "tmp = " << std::endl << tmp << std::endl;
-#endif
     const Eigen::VectorXd p = tmp.rowwise().prod();
     double s0 = 0;
     double s1 = 0;
@@ -232,10 +218,6 @@ void GraphFactor::factor2node() {
     }
     edges_.at(edge_idx)->m2n(0) = s0;
     edges_.at(edge_idx)->m2n(1) = s1;
-#ifdef PRINT_DEBUG
-    std::cout << "factor2node, col=" << col << ", " << edges_.at(edge_idx)->toString()
-              << " (s0,s1)=[" << s0 << ", " << s1 << "]" << std::endl;
-#endif
   }
 }
 
@@ -441,13 +423,6 @@ void GraphNode::node2factor(IODirection target) {
       GraphNode::num_resets++;
     }
     msg_out.row(i) = p / s;
-
-#ifdef PRINT_DEBUG
-    std::cout << "node2factor: " << edges_.at(i)->toString() << std::endl;
-    std::cout << "msg_in = " << std::endl << msg_in << std::endl;
-    std::cout << "tmp = " << std::endl << tmp << std::endl;
-    std::cout << "p = [" << p(0) << ", " << p(1) << "]" << std::endl;
-#endif
   }
 
   for (int i : targets) {
@@ -462,10 +437,6 @@ void GraphNode::node2factor(IODirection target) {
 
   inlineNorm(msg_in);
   prev_in_ = msg_in;
-#ifdef PRINT_DEBUG
-  std::cout << "final dist = [" << final_dist_(0) << ", " << final_dist_(1) << "]"
-            << std::endl;
-#endif
 }
 
 void GraphNode::norm() {

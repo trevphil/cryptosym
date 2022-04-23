@@ -7,5 +7,5 @@ build
 .vscode
 main
 dataset_generator
-tests
-
+.idea
+unit_tests
