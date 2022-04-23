@@ -37,7 +37,7 @@ class PreimageSATSolver : public Solver {
     bool second_try;
   };
 
-  explicit PreimageSATSolver(bool verbose);
+  PreimageSATSolver();
 
   virtual ~PreimageSATSolver();
 

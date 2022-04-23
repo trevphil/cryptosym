@@ -17,7 +17,7 @@ namespace preimage {
 
 class Solver {
  public:
-  explicit Solver(bool verbose);
+  Solver();
 
   virtual ~Solver();
 
@@ -40,7 +40,6 @@ class Solver {
 
   virtual std::unordered_map<int, bool> solveInternal() = 0;
 
-  bool verbose_;
   int input_size_, output_size_;
   int num_vars_, num_gates_;
   std::vector<LogicGate> gates_;

@@ -11,6 +11,7 @@ namespace preimage {
 
 namespace config {
 
+extern bool verbose;
 extern bool only_and_gates;
 
 }  // end namespace config

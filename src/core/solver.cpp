@@ -5,17 +5,17 @@
  * All rights reserved.
  */
 
-#include "core/solver.hpp"
-
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
 
+#include "core/config.hpp"
+#include "core/solver.hpp"
 #include "core/utils.hpp"
 
 namespace preimage {
 
-Solver::Solver(bool verbose) : verbose_(verbose) {}
+Solver::Solver() {}
 
 Solver::~Solver() {}
 
@@ -60,7 +60,7 @@ std::unordered_map<int, bool> Solver::solve() {
   initialize();
   auto solution = solveInternal();
   const auto end = Utils::ms_since_epoch();
-  if (verbose_) spdlog::info("Solver finished in {} ms", end - start);
+  if (config::verbose) spdlog::info("Solver finished in {} ms", end - start);
 
   // Fill in observed values
   for (const auto &itr : observed_) {

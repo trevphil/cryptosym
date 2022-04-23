@@ -5,18 +5,19 @@
  * All rights reserved.
  */
 
-#include "preimage_sat/preimage_sat.hpp"
 
 #include <spdlog/spdlog.h>
 
 #include <iostream>
 #include <queue>
 
+#include "core/config.hpp"
 #include "core/utils.hpp"
+#include "preimage_sat/preimage_sat.hpp"
 
 namespace preimage {
 
-PreimageSATSolver::PreimageSATSolver(bool verbose) : Solver(verbose) {}
+PreimageSATSolver::PreimageSATSolver() : Solver() {}
 
 PreimageSATSolver::~PreimageSATSolver() {}
 
@@ -49,7 +50,7 @@ void PreimageSATSolver::initialize() {
             [](const LitStats &a, const LitStats &b) { return a.score() > b.score(); });
 
   const double init_time_ms = Utils::ms_since_epoch() - start;
-  if (verbose_) spdlog::info("Initialized PreimageSAT in {:.0f} ms", init_time_ms);
+  if (config::verbose) spdlog::info("Initialized PreimageSAT in {:.0f} ms", init_time_ms);
 }
 
 std::unordered_map<int, bool> PreimageSATSolver::solveInternal() {

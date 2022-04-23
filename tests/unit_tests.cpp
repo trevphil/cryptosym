@@ -6,7 +6,6 @@
  */
 
 #include <cryptopp/dll.h>
-#include <spdlog/spdlog.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/dynamic_bitset.hpp>
@@ -41,7 +40,7 @@ void conversionTests() {
   assert(Utils::hexstr(bits).compare(hex) == 0);
   assert(Utils::binstr(bits).compare(bin) == 0);
   assert(Utils::hex2bits(hex) == bits);
-  spdlog::info("Conversion tests passed.");
+  printf("%s\n", "Conversion tests passed.");
 }
 
 void simpleTests() {
@@ -53,7 +52,7 @@ void simpleTests() {
   assert(Utils::hexstr(bits).compare("00000000deadbeef") == 0);
   assert(bv1.hex().compare("00000000deadbeef") == 0);
   assert(bv2.hex().compare("00000000deadbeef") == 0);
-  spdlog::info("Simple tests passed.");
+  printf("%s\n", "Simple tests passed.");
 }
 
 void symBitVecTests() {
@@ -79,17 +78,17 @@ void symBitVecTests() {
   SymBitVec summed = t0 + t1;
   assert(t1.intVal() == summed.intVal());
 
-  spdlog::info("SymBitVec tests passed.");
+  printf("%s\n", "SymBitVec tests passed.");
 }
 
 void sha256Tests() {
-  std::string empty = "";
-  std::string s = "just a test string";
-  std::string s7 = s + s + s + s + s + s + s;
-  std::string h_empty =
+  const std::string empty = "";
+  const std::string s = "just a test string";
+  const std::string s7 = s + s + s + s + s + s + s;
+  const std::string h_empty =
       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-  std::string h_s = "d7b553c6f09ac85d142415f857c5310f3bbbe7cdd787cce4b985acedd585266f";
-  std::string h_s7 = "8113ebf33c97daa9998762aacafe750c7cefc2b2f173c90c59663a57fe626f21";
+  const std::string h_s = "d7b553c6f09ac85d142415f857c5310f3bbbe7cdd787cce4b985acedd585266f";
+  const std::string h_s7 = "8113ebf33c97daa9998762aacafe750c7cefc2b2f173c90c59663a57fe626f21";
 
   SHA256 sha256;
 
@@ -134,15 +133,13 @@ void sha256Tests() {
       h = Utils::hexstr(sha256.call(bits));
 
       if (h.compare(expected_output) != 0) {
-        spdlog::info(
-            "inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
-            inp_size, sample_idx, Utils::hexstr(bits), expected_output, h);
+        printf("inp_size=%d, sample=%d\n\tInput:\t%sExpected:\t%s\n\tGot:\t\t%s\n",
+               inp_size, sample_idx, Utils::hexstr(bits).c_str(), expected_output.c_str(), h.c_str());
       }
     }
   }
 
-  spdlog::info("SHA256 tests passed, mean runtime: ~{:.0f} ms",
-               sha256.averageRuntimeMs());
+  printf("SHA256 tests passed, mean runtime: %.0f ms\n", sha256.averageRuntimeMs());
 }
 
 void ripemd160Tests() {
@@ -180,16 +177,14 @@ void ripemd160Tests() {
       const std::string h = Utils::hexstr(ripemd160.call(bits));
 
       if (h.compare(expected_output) != 0) {
-        spdlog::info(
-            "inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
-            inp_size, sample_idx, Utils::hexstr(bits), expected_output, h);
+        printf("inp_size=%d, sample=%d\n\tInput:\t%sExpected:\t%s\n\tGot:\t\t%s\n",
+               inp_size, sample_idx, Utils::hexstr(bits).c_str(), expected_output.c_str(), h.c_str());
         assert(false);
       }
     }
   }
 
-  spdlog::info("RIPEMD160 tests passed, mean runtime: ~{:.0f} ms",
-               ripemd160.averageRuntimeMs());
+  printf("RIPEMD160 tests passed, mean runtime: %.0f ms\n", ripemd160.averageRuntimeMs());
 }
 
 void md5Tests() {
@@ -227,19 +222,18 @@ void md5Tests() {
       const std::string h = Utils::hexstr(md5.call(bits));
 
       if (h.compare(expected_output) != 0) {
-        spdlog::info(
-            "inp_size={}, sample={}\n\tInput:\t{}\n\tExpected:\t{}\n\tGot:\t\t{}",
-            inp_size, sample_idx, Utils::hexstr(bits), expected_output, h);
+        printf("inp_size=%d, sample=%d\n\tInput:\t%sExpected:\t%s\n\tGot:\t\t%s\n",
+               inp_size, sample_idx, Utils::hexstr(bits).c_str(), expected_output.c_str(), h.c_str());
         assert(false);
       }
     }
   }
 
-  spdlog::info("MD5 tests passed, mean runtime: ~{:.0f} ms", md5.averageRuntimeMs());
+  printf("MD5 tests passed, mean runtime: %.0f ms\n", md5.averageRuntimeMs());
 }
 
 void cmsatTests() {
-  ProblemInstance problem(64, 12, false, false);
+  ProblemInstance problem(64, 12, false);
 
   int rtn = problem.prepare("SHA256", "cmsat");
   assert(rtn == 0);
@@ -256,11 +250,11 @@ void cmsatTests() {
   status = problem.execute();
   assert(status == 0);
 
-  spdlog::info("CryptoMiniSAT tests passed.");
+  printf("%s\n", "CryptoMiniSAT tests passed.");
 }
 
 void preimageSATTests() {
-  ProblemInstance problem(64, 12, false, false);
+  ProblemInstance problem(64, 12, false);
 
   int rtn = problem.prepare("SHA256", "simple");
   assert(rtn == 0);
@@ -277,11 +271,11 @@ void preimageSATTests() {
   status = problem.execute();
   assert(status == 0);
 
-  spdlog::info("PreimageSAT tests passed.");
+  printf("%s\n", "PreimageSAT tests passed.");
 }
 
 void bpTests() {
-  ProblemInstance problem(64, 2, false, false);
+  ProblemInstance problem(64, 2, false);
 
   int rtn = problem.prepare("SHA256", "bp");
   assert(rtn == 0);
@@ -298,25 +292,25 @@ void bpTests() {
   status = problem.execute();
   assert(status == 0);
 
-  spdlog::info("Belief propagation tests passed.");
+  printf("%s\n", "Belief propagation tests passed.");
 }
 
 void allTests() {
-  spdlog::info("Doing simple tests..");
+  printf("%s\n", "Doing simple tests..");
   conversionTests();
   simpleTests();
   symBitVecTests();
   config::only_and_gates = true;
-  spdlog::info("Validating hash functions using only AND gates...");
+  printf("%s\n", "Validating hash functions using only AND gates...");
   sha256Tests();
   ripemd160Tests();
   md5Tests();
   config::only_and_gates = false;
-  spdlog::info("Validating hash functions using all gates...");
+  printf("%s\n", "Validating hash functions using all gates...");
   sha256Tests();
   ripemd160Tests();
   md5Tests();
-  spdlog::info("Validating solvers...");
+  printf("%s\n", "Validating solvers...");
   cmsatTests();
   preimageSATTests();
   bpTests();
@@ -325,8 +319,8 @@ void allTests() {
 }  // end namespace preimage
 
 int main(int argc, char **argv) {
-  spdlog::info("Running tests...");
+  printf("%s\n", "Running tests...");
   preimage::allTests();
-  spdlog::info("All tests finished.");
+  printf("%s\n", "All tests finished.");
   return 0;
 }

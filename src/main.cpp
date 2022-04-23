@@ -19,21 +19,19 @@ std::string hash_func = "SHA256";
 std::string solving_method = "simple";
 int input_size = 64;
 int difficulty = -1;
-bool verbose = true;
 bool bin_format = false;
-bool only_and = false;
 
 int parseArgument(char *arg) {
   int option = 0;
   unsigned int uoption = 0;
   char buf[1024] = "";
 
-  if (strcmp(arg, "quiet") == 0) {
-    verbose = false;
+  if (strcmp(arg, "verbose") == 0) {
+    config::verbose = true;
   } else if (strcmp(arg, "bin") == 0) {
     bin_format = true;
   } else if (strcmp(arg, "and") == 0) {
-    only_and = true;
+    config::only_and_gates = true;
   } else if (1 == sscanf(arg, "hash=%s", buf)) {
     hash_func = buf;
   } else if (1 == sscanf(arg, "d=%d", &option)) {
@@ -45,7 +43,7 @@ int parseArgument(char *arg) {
   } else {
     std::stringstream help_msg;
     help_msg << std::endl << "Command-line arguments:" << std::endl;
-    help_msg << "\tquiet -> Include this argument to disable verbose output" << std::endl;
+    help_msg << "\tverbose -> Include this argument for verbose output" << std::endl;
     help_msg << "\tbin   -> Include this argument to output bin instead of hex"
              << std::endl;
     help_msg << "\tand   -> Include this argument to only use AND logic gates"
@@ -69,9 +67,7 @@ void run(int argc, char **argv) {
     if (parseArgument(argv[i]) != 0) return;
   }
 
-  config::only_and_gates = only_and;
-
-  ProblemInstance problem(input_size, difficulty, verbose, bin_format);
+  ProblemInstance problem(input_size, difficulty, bin_format);
   const int rtn = problem.prepare(hash_func, solving_method);
 
   if (rtn != 0) {

@@ -18,7 +18,7 @@ namespace bp {
 
 class BPSolver : public Solver {
  public:
-  explicit BPSolver(bool verbose);
+  BPSolver();
 
   std::string solverName() const override { return "Belief Propagation"; }
 

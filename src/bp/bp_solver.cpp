@@ -16,13 +16,14 @@
 #include "bp/node.hpp"
 #include "bp/params.hpp"
 #include "bp/prior_factor.hpp"
+#include "core/config.hpp"
 #include "core/utils.hpp"
 
 namespace preimage {
 
 namespace bp {
 
-BPSolver::BPSolver(bool verbose) : Solver(verbose) {}
+BPSolver::BPSolver() : Solver() {}
 
 void BPSolver::initialize() {
   g_ = Graph();
@@ -112,13 +113,13 @@ std::unordered_map<int, bool> BPSolver::solveInternal() {
     const double e = g_.entropySum();
     const double c = g_.maxChange();
 
-    if (verbose_) {
+    if (config::verbose) {
       spdlog::info("Iter {}/{} - {} ms, entropy sum {:.3f}, max change {:.3f}",
                    g_.iterations(), BP_MAX_ITER, end - start, e, c);
     }
 
     if (e < BP_ENTROPY_THRESHOLD) {
-      if (verbose_) {
+      if (config::verbose) {
         spdlog::info("Entropy thresh reached ({}), abort after iteration {}", e,
                      g_.iterations());
       }
@@ -126,7 +127,7 @@ std::unordered_map<int, bool> BPSolver::solveInternal() {
     }
 
     if (c < BP_CHANGE_THRESHOLD) {
-      if (verbose_) {
+      if (config::verbose) {
         spdlog::info("Change thresh reached ({}), converged after iteration {}", c,
                      g_.iterations());
       }
@@ -134,7 +135,7 @@ std::unordered_map<int, bool> BPSolver::solveInternal() {
     }
   }
 
-  if (verbose_) {
+  if (config::verbose) {
     spdlog::warn("Graph node number of resets: {}", GraphNode::num_resets);
   }
 

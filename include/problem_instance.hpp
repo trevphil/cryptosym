@@ -19,7 +19,7 @@ namespace preimage {
 
 class ProblemInstance {
  public:
-  ProblemInstance(int num_input_bits, int difficulty, bool verbose, bool bin_format);
+  ProblemInstance(int num_input_bits, int difficulty, bool bin_format);
 
   int prepare(const std::string &hash_name, const std::string &solver_name);
 
@@ -43,7 +43,6 @@ class ProblemInstance {
  private:
   int num_input_bits_;
   int difficulty_;
-  bool verbose_;
   bool bin_format_;
 };
 

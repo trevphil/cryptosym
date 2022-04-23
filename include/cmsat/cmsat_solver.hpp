@@ -19,7 +19,7 @@ namespace preimage {
 
 class CMSatSolver : public Solver {
  public:
-  explicit CMSatSolver(bool verbose);
+  CMSatSolver();
 
   virtual ~CMSatSolver();
 

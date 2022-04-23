@@ -17,6 +17,7 @@
 
 #include "bp/bp_solver.hpp"
 #include "cmsat/cmsat_solver.hpp"
+#include "core/config.hpp"
 #include "core/sym_bit_vec.hpp"
 #include "core/utils.hpp"
 #include "hashing/sym_md5.hpp"
@@ -26,11 +27,9 @@
 
 namespace preimage {
 
-ProblemInstance::ProblemInstance(int num_input_bits, int difficulty, bool verbose,
-                                 bool bin_format)
+ProblemInstance::ProblemInstance(int num_input_bits, int difficulty, bool bin_format)
     : num_input_bits_(num_input_bits),
       difficulty_(difficulty),
-      verbose_(verbose),
       bin_format_(bin_format) {}
 
 int ProblemInstance::prepare(const std::string &hash_name,
@@ -49,7 +48,7 @@ int ProblemInstance::execute() {
     difficulty_ = hasher->defaultDifficulty();
   }
 
-  if (verbose_) {
+  if (config::verbose) {
     spdlog::info("Executing problem instance...");
     spdlog::info("Hash algorithm:\t{}", hasher->hashName());
     spdlog::info("Solver:\t\t{}", solver->solverName());
@@ -79,7 +78,7 @@ int ProblemInstance::execute() {
   const std::string pred_output_hex = Utils::hexstr(pred_output);
   const std::string pred_output_bin = Utils::binstr(pred_output);
 
-  if (verbose_) {
+  if (config::verbose) {
     if (bin_format_) {
       spdlog::info("True input:\t\t{}", Utils::binstr(real_input));
       spdlog::info("Reconstructed input:\t{}", Utils::binstr(preimage));
@@ -91,10 +90,12 @@ int ProblemInstance::execute() {
 
   // Check if prediction yields the same hash
   if (real_output_hex.compare(pred_output_hex) == 0) {
-    if (verbose_) spdlog::info("Success! Hashes match:\t{}", pred_output_hex);
+    if (config::verbose) {
+        spdlog::info("Success! Hashes match:\t{}", pred_output_hex);
+    }
     return 0;
   } else {
-    if (verbose_) {
+    if (config::verbose) {
       spdlog::warn("!!! Hashes do not match.");
       spdlog::warn("\tExpected:\t{}", bin_format_ ? real_output_bin : real_output_hex);
       spdlog::warn("\tGot:\t\t{}", bin_format_ ? pred_output_bin : pred_output_hex);
@@ -118,11 +119,11 @@ void ProblemInstance::createHasher(const std::string &hash_name) {
 
 void ProblemInstance::createSolver(const std::string &solver_name) {
   if (solver_name.compare("cmsat") == 0) {
-    solver = std::unique_ptr<Solver>(new CMSatSolver(verbose_));
+    solver = std::unique_ptr<Solver>(new CMSatSolver());
   } else if (solver_name.compare("simple") == 0) {
-    solver = std::unique_ptr<Solver>(new PreimageSATSolver(verbose_));
+    solver = std::unique_ptr<Solver>(new PreimageSATSolver());
   } else if (solver_name.compare("bp") == 0) {
-    solver = std::unique_ptr<Solver>(new bp::BPSolver(verbose_));
+    solver = std::unique_ptr<Solver>(new bp::BPSolver());
   } else {
     spdlog::error("Unsupported solver: {}", solver_name);
     solver = nullptr;
@@ -179,7 +180,7 @@ void ProblemInstance::saveSymbols(const std::string &filename) {
   for (const LogicGate &g : LogicGate::global_gates) symbols << g.toString() << "\n";
 
   symbols.close();
-  if (verbose_) spdlog::info("Wrote symbols to: \"{}\"", filename);
+  if (config::verbose) spdlog::info("Wrote symbols to: \"{}\"", filename);
 }
 
 boost::dynamic_bitset<> ProblemInstance::getPreimage(const std::string &symbols_file,
@@ -222,7 +223,7 @@ boost::dynamic_bitset<> ProblemInstance::getPreimage(const std::string &symbols_
     gates[k] = LogicGate(line);
   }
 
-  if (verbose_) {
+  if (config::verbose) {
     std::map<LogicGate::Type, int> gate_counts;
     for (const LogicGate &g : gates) gate_counts[g.t()]++;
     const double c = 100.0 / static_cast<double>(gates.size());

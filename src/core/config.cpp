@@ -7,4 +7,5 @@
 
 #include "core/config.hpp"
 
+bool preimage::config::verbose = false;
 bool preimage::config::only_and_gates = false;

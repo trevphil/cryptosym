@@ -5,6 +5,7 @@
  * All rights reserved.
  */
 
+#include "core/config.hpp"
 #include "cmsat/cmsat_solver.hpp"
 
 #include <spdlog/spdlog.h>
@@ -14,7 +15,7 @@
 
 namespace preimage {
 
-CMSatSolver::CMSatSolver(bool verbose) : Solver(verbose) {}
+CMSatSolver::CMSatSolver() {}
 
 CMSatSolver::~CMSatSolver() {
   if (solver_) delete solver_;
@@ -48,7 +49,7 @@ void CMSatSolver::initialize() {
   solver_->set_num_threads(1);
   solver_->new_vars(num_vars_);
 
-  if (verbose_) spdlog::info("Running cryptominisat5 (n={})", num_vars_);
+  if (config::verbose) spdlog::info("Running cryptominisat5 (n={})", num_vars_);
 
   for (const LogicGate &g : gates_) {
     switch (g.t()) {
