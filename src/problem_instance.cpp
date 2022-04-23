@@ -27,9 +27,7 @@
 namespace preimage {
 
 ProblemInstance::ProblemInstance(int num_input_bits, int difficulty, bool bin_format)
-    : num_input_bits_(num_input_bits),
-      difficulty_(difficulty),
-      bin_format_(bin_format) {}
+    : num_input_bits_(num_input_bits), difficulty_(difficulty), bin_format_(bin_format) {}
 
 int ProblemInstance::prepare(const std::string &hash_name,
                              const std::string &solver_name) {
@@ -90,13 +88,14 @@ int ProblemInstance::execute() {
   // Check if prediction yields the same hash
   if (real_output_hex.compare(pred_output_hex) == 0) {
     if (config::verbose) {
-        printf("Success! Hashes match:\t%s\n", pred_output_hex.c_str());
+      printf("Success! Hashes match:\t%s\n", pred_output_hex.c_str());
     }
     return 0;
   } else {
     if (config::verbose) {
       printf("%s\n", "!!! Hashes do not match.");
-      printf("\tExpected:\t%s\n", (bin_format_ ? real_output_bin : real_output_hex).c_str());
+      printf("\tExpected:\t%s\n",
+             (bin_format_ ? real_output_bin : real_output_hex).c_str());
       printf("\tGot:\t\t%s\n", (bin_format_ ? pred_output_bin : pred_output_hex).c_str());
     }
     return 1;

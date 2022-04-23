@@ -100,8 +100,8 @@ void SymHash::pruneIrrelevantGates() {
 
   if (config::verbose) {
     const int n_after = static_cast<int>(LogicGate::global_gates.size());
-    printf("Pruned gates (%d --> %d), removed %.1f%%\n",
-           n_before, n_after, 100.0 * (n_before - n_after) / n_before);
+    printf("Pruned gates (%d --> %d), removed %.1f%%\n", n_before, n_after,
+           100.0 * (n_before - n_after) / n_before);
   }
 }
 

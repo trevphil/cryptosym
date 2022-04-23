@@ -87,8 +87,10 @@ void sha256Tests() {
   const std::string s7 = s + s + s + s + s + s + s;
   const std::string h_empty =
       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-  const std::string h_s = "d7b553c6f09ac85d142415f857c5310f3bbbe7cdd787cce4b985acedd585266f";
-  const std::string h_s7 = "8113ebf33c97daa9998762aacafe750c7cefc2b2f173c90c59663a57fe626f21";
+  const std::string h_s =
+      "d7b553c6f09ac85d142415f857c5310f3bbbe7cdd787cce4b985acedd585266f";
+  const std::string h_s7 =
+      "8113ebf33c97daa9998762aacafe750c7cefc2b2f173c90c59663a57fe626f21";
 
   SHA256 sha256;
 
@@ -134,7 +136,8 @@ void sha256Tests() {
 
       if (h.compare(expected_output) != 0) {
         printf("inp_size=%d, sample=%d\n\tInput:\t%sExpected:\t%s\n\tGot:\t\t%s\n",
-               inp_size, sample_idx, Utils::hexstr(bits).c_str(), expected_output.c_str(), h.c_str());
+               inp_size, sample_idx, Utils::hexstr(bits).c_str(), expected_output.c_str(),
+               h.c_str());
       }
     }
   }
@@ -178,7 +181,8 @@ void ripemd160Tests() {
 
       if (h.compare(expected_output) != 0) {
         printf("inp_size=%d, sample=%d\n\tInput:\t%sExpected:\t%s\n\tGot:\t\t%s\n",
-               inp_size, sample_idx, Utils::hexstr(bits).c_str(), expected_output.c_str(), h.c_str());
+               inp_size, sample_idx, Utils::hexstr(bits).c_str(), expected_output.c_str(),
+               h.c_str());
         assert(false);
       }
     }
@@ -223,7 +227,8 @@ void md5Tests() {
 
       if (h.compare(expected_output) != 0) {
         printf("inp_size=%d, sample=%d\n\tInput:\t%sExpected:\t%s\n\tGot:\t\t%s\n",
-               inp_size, sample_idx, Utils::hexstr(bits).c_str(), expected_output.c_str(), h.c_str());
+               inp_size, sample_idx, Utils::hexstr(bits).c_str(), expected_output.c_str(),
+               h.c_str());
         assert(false);
       }
     }

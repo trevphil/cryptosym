@@ -46,8 +46,7 @@ int parseArgument(char *arg) {
     help_msg << "\tand   -> Include this argument to only use AND logic gates"
              << std::endl;
     help_msg << "\thash=HASH_FUNCTION" << std::endl;
-    help_msg << "\t -> one of: SHA256, MD5, RIPEMD160"
-             << std::endl;
+    help_msg << "\t -> one of: SHA256, MD5, RIPEMD160" << std::endl;
     help_msg << "\td=DIFFICULTY (-1 for default)" << std::endl;
     help_msg << "\ti=NUM_INPUT_BITS (choose a multiple of 8)" << std::endl;
     help_msg << "\tsolver=SOLVER" << std::endl;

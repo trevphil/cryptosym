@@ -5,11 +5,12 @@
  * All rights reserved.
  */
 
-#include "core/config.hpp"
 #include "cmsat/cmsat_solver.hpp"
 
 #include <iostream>
 #include <vector>
+
+#include "core/config.hpp"
 
 namespace preimage {
 

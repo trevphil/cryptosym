@@ -28,8 +28,7 @@ SymBitVec::SymBitVec(const boost::dynamic_bitset<> &bits, bool unknown) {
 
 SymBitVec::SymBitVec(uint64_t n, int sz, bool unknown) {
   if (sz > sizeof(uint64_t) * 8) {
-    printf("Initializing SymBitVec[%d] with %lu-bit integer\n",
-           sz, sizeof(uint64_t) * 8);
+    printf("Initializing SymBitVec[%d] with %lu-bit integer\n", sz, sizeof(uint64_t) * 8);
   }
   bits_ = {};
   bits_.reserve(sz);
@@ -43,8 +42,8 @@ int SymBitVec::size() const { return bits_.size(); }
 uint64_t SymBitVec::intVal() const {
   const int n = size();
   if (n > sizeof(uint64_t) * 8) {
-    printf("Integer overflow, coercing %d-bit SymBitVec to %lu-bit int\n",
-           n, sizeof(uint64_t) * 8);
+    printf("Integer overflow, coercing %d-bit SymBitVec to %lu-bit int\n", n,
+           sizeof(uint64_t) * 8);
   }
   uint64_t result = 0;
   for (int i = 0; i < n; ++i) {

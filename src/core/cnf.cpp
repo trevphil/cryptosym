@@ -8,6 +8,7 @@
 #include "core/cnf.hpp"
 
 #include <assert.h>
+
 #include <fstream>
 #include <utility>
 

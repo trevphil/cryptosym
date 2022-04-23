@@ -5,10 +5,11 @@
  * All rights reserved.
  */
 
+#include "core/solver.hpp"
+
 #include <algorithm>
 
 #include "core/config.hpp"
-#include "core/solver.hpp"
 #include "core/utils.hpp"
 
 namespace preimage {
@@ -44,13 +45,12 @@ std::unordered_map<int, bool> Solver::solve() {
     assert(false);
   }
   if (input_size_ != (int)input_indices_.size()) {
-    printf("Expected input_size=%d but it is %lu.\n",
-           input_size_, input_indices_.size());
+    printf("Expected input_size=%d but it is %lu.\n", input_size_, input_indices_.size());
     assert(false);
   }
   if (output_size_ != (int)output_indices_.size()) {
-    printf("Expected output_size=%d but it is %lu.\n",
-           output_size_, output_indices_.size());
+    printf("Expected output_size=%d but it is %lu.\n", output_size_,
+           output_indices_.size());
     assert(false);
   }
 
@@ -66,8 +66,8 @@ std::unordered_map<int, bool> Solver::solve() {
     if (solution.count(itr.first) > 0) {
       // Check for solver predictions which conflict with observations
       if (solution.at(itr.first) != itr.second) {
-        printf("Variable %d is %d but was predicted %d!\n",
-               itr.first, itr.second, solution.at(itr.first));
+        printf("Variable %d is %d but was predicted %d!\n", itr.first, itr.second,
+               solution.at(itr.first));
         assert(false);
       }
     } else {

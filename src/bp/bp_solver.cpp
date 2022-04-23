@@ -113,22 +113,22 @@ std::unordered_map<int, bool> BPSolver::solveInternal() {
     const double c = g_.maxChange();
 
     if (config::verbose) {
-      printf("Iter %d/%d - %lld ms, entropy sum %.3f, max change %.3f\n",
-             g_.iterations(), BP_MAX_ITER, end - start, e, c);
+      printf("Iter %d/%d - %lld ms, entropy sum %.3f, max change %.3f\n", g_.iterations(),
+             BP_MAX_ITER, end - start, e, c);
     }
 
     if (e < BP_ENTROPY_THRESHOLD) {
       if (config::verbose) {
-        printf("Entropy thresh reached (%.3f), abort after iteration %d\n",
-               e, g_.iterations());
+        printf("Entropy thresh reached (%.3f), abort after iteration %d\n", e,
+               g_.iterations());
       }
       break;
     }
 
     if (c < BP_CHANGE_THRESHOLD) {
       if (config::verbose) {
-        printf("Change thresh reached (%.3f), converged after iteration %d\n",
-               c, g_.iterations());
+        printf("Change thresh reached (%.3f), converged after iteration %d\n", c,
+               g_.iterations());
       }
       break;
     }

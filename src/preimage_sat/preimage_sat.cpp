@@ -5,12 +5,13 @@
  * All rights reserved.
  */
 
+#include "preimage_sat/preimage_sat.hpp"
+
 #include <iostream>
 #include <queue>
 
 #include "core/config.hpp"
 #include "core/utils.hpp"
-#include "preimage_sat/preimage_sat.hpp"
 
 namespace preimage {
 
