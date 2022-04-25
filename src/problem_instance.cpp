@@ -19,10 +19,10 @@
 #include "core/config.hpp"
 #include "core/sym_bit_vec.hpp"
 #include "core/utils.hpp"
+#include "dag_solver/dag_solver.hpp"
 #include "hashing/sym_md5.hpp"
 #include "hashing/sym_ripemd160.hpp"
 #include "hashing/sym_sha256.hpp"
-#include "preimage_sat/preimage_sat.hpp"
 
 namespace preimage {
 
@@ -119,7 +119,7 @@ void ProblemInstance::createSolver(const std::string &solver_name) {
   if (solver_name.compare("cmsat") == 0) {
     solver = std::unique_ptr<Solver>(new CMSatSolver());
   } else if (solver_name.compare("simple") == 0) {
-    solver = std::unique_ptr<Solver>(new PreimageSATSolver());
+    solver = std::unique_ptr<Solver>(new DAGSolver());
   } else if (solver_name.compare("bp") == 0) {
     solver = std::unique_ptr<Solver>(new bp::BPSolver());
   } else {

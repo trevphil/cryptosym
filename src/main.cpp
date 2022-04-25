@@ -17,10 +17,10 @@
 #include "core/sym_hash.hpp"
 #include "core/sym_representation.hpp"
 #include "core/utils.hpp"
+#include "dag_solver/dag_solver.hpp"
 #include "hashing/sym_md5.hpp"
 #include "hashing/sym_ripemd160.hpp"
 #include "hashing/sym_sha256.hpp"
-#include "preimage_sat/preimage_sat.hpp"
 
 namespace preimage {
 
@@ -85,7 +85,7 @@ std::unique_ptr<Solver> createSolver() {
   if (solving_method.compare("cmsat") == 0) {
     return std::make_unique<CMSatSolver>();
   } else if (solving_method.compare("dag") == 0) {
-    return std::make_unique<PreimageSATSolver>();
+    return std::make_unique<DAGSolver>();
   } else if (solving_method.compare("bp") == 0) {
     return std::make_unique<bp::BPSolver>();
   } else {

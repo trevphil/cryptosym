@@ -18,7 +18,7 @@
 
 namespace preimage {
 
-class PreimageSATSolver : public Solver {
+class DAGSolver : public Solver {
  public:
   struct LitStats {
     LitStats() {}
@@ -39,11 +39,11 @@ class PreimageSATSolver : public Solver {
     bool second_try;
   };
 
-  PreimageSATSolver();
+  DAGSolver();
 
-  virtual ~PreimageSATSolver();
+  virtual ~DAGSolver();
 
-  std::string solverName() const override { return "PreimageSAT"; }
+  std::string solverName() const override { return "DAG Solver"; }
 
   std::unordered_map<int, bool> solve(
       const SymRepresentation &problem,

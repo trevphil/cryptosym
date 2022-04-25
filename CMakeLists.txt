@@ -49,7 +49,7 @@ add_library(preimage SHARED
             src/hashing/sym_md5.cpp
             src/hashing/sym_ripemd160.cpp
             src/hashing/sym_sha256.cpp
-            src/preimage_sat/preimage_sat.cpp)
+            src/dag_solver/dag_solver.cpp)
 
 target_link_libraries(preimage Boost::boost)
 target_link_libraries(preimage cryptominisat5)

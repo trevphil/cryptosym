@@ -5,7 +5,7 @@
  * All rights reserved.
  */
 
-#include "preimage_sat/preimage_sat.hpp"
+#include "dag_solver/dag_solver.hpp"
 
 #include <iostream>
 #include <queue>
@@ -15,11 +15,11 @@
 
 namespace preimage {
 
-PreimageSATSolver::PreimageSATSolver() : Solver() {}
+DAGSolver::DAGSolver() : Solver() {}
 
-PreimageSATSolver::~PreimageSATSolver() {}
+DAGSolver::~DAGSolver() {}
 
-void PreimageSATSolver::initialize(const std::vector<LogicGate> &gates) {
+void DAGSolver::initialize(const std::vector<LogicGate> &gates) {
   const auto start = utils::ms_since_epoch();
 
   // At first, all literals are unassigned (value = 0)
@@ -48,10 +48,10 @@ void PreimageSATSolver::initialize(const std::vector<LogicGate> &gates) {
             [](const LitStats &a, const LitStats &b) { return a.score() > b.score(); });
 
   const double init_time_ms = static_cast<double>(utils::ms_since_epoch() - start);
-  if (config::verbose) printf("Initialized PreimageSAT in %.0f ms\n", init_time_ms);
+  if (config::verbose) printf("Initialized solver in %.0f ms\n", init_time_ms);
 }
 
-std::unordered_map<int, bool> PreimageSATSolver::solve(
+std::unordered_map<int, bool> DAGSolver::solve(
     const SymRepresentation &problem,
     const std::unordered_map<int, bool> &bit_assignments) {
   num_vars_ = problem.numVars();
@@ -103,20 +103,20 @@ std::unordered_map<int, bool> PreimageSATSolver::solve(
   return solution;
 }
 
-PreimageSATSolver::LitStats PreimageSATSolver::computeStats(const int lit) {
+DAGSolver::LitStats DAGSolver::computeStats(const int lit) {
   LitStats stats(lit, false);
   stats.num_referenced_gates = lit2gates[lit].size();
   return stats;
 }
 
-void PreimageSATSolver::pushStack(int lit, bool truth_value, bool second_try) {
+void DAGSolver::pushStack(int lit, bool truth_value, bool second_try) {
   assert(literals[lit] == 0);
   literals[lit] = truth_value ? 1 : -1;
   stack.push_back(StackItem(lit));
   stack.back().second_try = second_try;
 }
 
-void PreimageSATSolver::popStack(int &lit, bool &truth_value) {
+void DAGSolver::popStack(int &lit, bool &truth_value) {
   const auto &back = stack.back();
   lit = back.lit_guess;
   truth_value = (literals[lit] > 0);
@@ -125,13 +125,13 @@ void PreimageSATSolver::popStack(int &lit, bool &truth_value) {
   stack.pop_back();
 }
 
-void PreimageSATSolver::popStack() {
+void DAGSolver::popStack() {
   int lit;
   bool truth_value;
   popStack(lit, truth_value);
 }
 
-int PreimageSATSolver::pickLiteral(bool &assignment) {
+int DAGSolver::pickLiteral(bool &assignment) {
   int chosen_lit = 0;
   for (int i = 0; i < num_vars_; ++i) {
     const int lit = literal_ordering.at(i).lit;
@@ -144,7 +144,7 @@ int PreimageSATSolver::pickLiteral(bool &assignment) {
   return chosen_lit;
 }
 
-int PreimageSATSolver::propagate(const int lit, const std::vector<LogicGate> &gates) {
+int DAGSolver::propagate(const int lit, const std::vector<LogicGate> &gates) {
   std::vector<int> solved_lits;
   std::set<int> &lits_solved_via_propagation = stack.back().implied;
   assert(lit == stack.back().lit_guess);
@@ -171,7 +171,7 @@ int PreimageSATSolver::propagate(const int lit, const std::vector<LogicGate> &ga
   return static_cast<int>(lits_solved_via_propagation.size());
 }
 
-bool PreimageSATSolver::partialSolve(const LogicGate &g, std::vector<int> &solved_lits) {
+bool DAGSolver::partialSolve(const LogicGate &g, std::vector<int> &solved_lits) {
   solved_lits.clear();
   switch (g.t()) {
     case LogicGate::Type::and_gate:
@@ -187,8 +187,7 @@ bool PreimageSATSolver::partialSolve(const LogicGate &g, std::vector<int> &solve
   }
 }
 
-bool PreimageSATSolver::partialSolveAnd(const LogicGate &g,
-                                        std::vector<int> &solved_lits) {
+bool DAGSolver::partialSolveAnd(const LogicGate &g, std::vector<int> &solved_lits) {
   const bool out_known = literals[g.output] != 0;
   const bool inp1_known = literals[std::abs(g.inputs[0])] != 0;
   const bool inp2_known = literals[std::abs(g.inputs[1])] != 0;
@@ -230,8 +229,7 @@ bool PreimageSATSolver::partialSolveAnd(const LogicGate &g,
   return true;
 }
 
-bool PreimageSATSolver::partialSolveOr(const LogicGate &g,
-                                       std::vector<int> &solved_lits) {
+bool DAGSolver::partialSolveOr(const LogicGate &g, std::vector<int> &solved_lits) {
   const bool out_known = literals[g.output] != 0;
   const bool inp1_known = literals[std::abs(g.inputs[0])] != 0;
   const bool inp2_known = literals[std::abs(g.inputs[1])] != 0;
@@ -273,8 +271,7 @@ bool PreimageSATSolver::partialSolveOr(const LogicGate &g,
   return true;
 }
 
-bool PreimageSATSolver::partialSolveXor(const LogicGate &g,
-                                        std::vector<int> &solved_lits) {
+bool DAGSolver::partialSolveXor(const LogicGate &g, std::vector<int> &solved_lits) {
   const bool out_known = literals[g.output] != 0;
   const bool inp1_known = literals[std::abs(g.inputs[0])] != 0;
   const bool inp2_known = literals[std::abs(g.inputs[1])] != 0;
@@ -299,8 +296,7 @@ bool PreimageSATSolver::partialSolveXor(const LogicGate &g,
   return true;
 }
 
-bool PreimageSATSolver::partialSolveXor3(const LogicGate &g,
-                                         std::vector<int> &solved_lits) {
+bool DAGSolver::partialSolveXor3(const LogicGate &g, std::vector<int> &solved_lits) {
   bool known[4];
   int unknown[4];
   uint8_t num_known = 0;
@@ -326,8 +322,7 @@ bool PreimageSATSolver::partialSolveXor3(const LogicGate &g,
   return true;
 }
 
-bool PreimageSATSolver::partialSolveMaj(const LogicGate &g,
-                                        std::vector<int> &solved_lits) {
+bool DAGSolver::partialSolveMaj(const LogicGate &g, std::vector<int> &solved_lits) {
   bool known[3];
   int unknown[3];
   uint8_t inp_sum = 0;
