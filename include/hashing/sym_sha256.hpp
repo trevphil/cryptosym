@@ -17,9 +17,9 @@ namespace preimage {
 
 class SHA256 : public SymHash {
  public:
-  SHA256();
+  SHA256(int num_input_bits, int difficulty = -1);
 
-  SymBitVec hash(const SymBitVec &hash_input, int difficulty) override;
+  SymBitVec hash(const SymBitVec &hash_input) override;
 
   int defaultDifficulty() const override { return 64; }
 
@@ -27,9 +27,9 @@ class SHA256 : public SymHash {
 
  private:
   void resetState();
-  void update(const SymBitVec &bv, int difficulty);
-  void transform(int difficulty);
-  SymBitVec digest(int difficulty);
+  void update(const SymBitVec &bv);
+  void transform();
+  SymBitVec digest();
 
   std::pair<SymBitVec, SymBitVec> round(const SymBitVec &a, const SymBitVec &b,
                                         const SymBitVec &c, const SymBitVec &d,

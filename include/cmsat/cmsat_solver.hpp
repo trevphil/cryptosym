@@ -13,7 +13,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "core/logic_gate.hpp"
 #include "core/solver.hpp"
+#include "core/sym_representation.hpp"
 
 namespace preimage {
 
@@ -25,12 +27,13 @@ class CMSatSolver : public Solver {
 
   std::string solverName() const override { return "CryptoMiniSAT"; }
 
- protected:
-  void initialize() override;
-
-  std::unordered_map<int, bool> solveInternal() override;
+  std::unordered_map<int, bool> solve(
+      const SymRepresentation &problem,
+      const std::unordered_map<int, bool> &bit_assignments) override;
 
  private:
+  void initializeSolver(int num_vars, const std::vector<LogicGate> &gates);
+
   inline CMSat::Lit getLit(int i) const {
     assert(i != 0);
     return CMSat::Lit(std::abs(i) - 1, i < 0);

@@ -18,16 +18,16 @@ namespace preimage {
 
 class MD5 : public SymHash {
  public:
-  MD5();
+  MD5(int num_input_bits, int difficulty = -1);
 
-  SymBitVec hash(const SymBitVec &hash_input, int difficulty) override;
+  SymBitVec hash(const SymBitVec &hash_input) override;
 
   int defaultDifficulty() const override { return 64; }
 
   std::string hashName() const override { return "MD5"; }
 
  private:
-  void init(int difficulty);
+  void init();
 
   void finalize();
 
@@ -85,8 +85,6 @@ class MD5 : public SymHash {
                         const SymBitVec &ac) {
     a = rotateLeft(a + I(b, c, d) + x + ac, s) + b;
   }
-
-  int difficulty_;
 
   bool finalized;
 

@@ -12,7 +12,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "core/logic_gate.hpp"
 #include "core/solver.hpp"
+#include "core/sym_representation.hpp"
 
 namespace preimage {
 
@@ -43,23 +45,24 @@ class PreimageSATSolver : public Solver {
 
   std::string solverName() const override { return "PreimageSAT"; }
 
- protected:
-  void initialize() override;
-
-  std::unordered_map<int, bool> solveInternal() override;
+  std::unordered_map<int, bool> solve(
+      const SymRepresentation &problem,
+      const std::unordered_map<int, bool> &bit_assignments) override;
 
  private:
+  void initialize(const std::vector<LogicGate> &gates);
+
   LitStats computeStats(const int lit);
 
   void pushStack(int lit, bool truth_value, bool second_try);
 
-  bool popStack(int &lit, bool &truth_value);
+  void popStack(int &lit, bool &truth_value);
 
-  bool popStack();
+  void popStack();
 
   int pickLiteral(bool &assignment);
 
-  int propagate(const int lit);
+  int propagate(const int lit, const std::vector<LogicGate> &gates);
 
   inline bool getLitValue(const int lit) const {
     return lit < 0 ? (literals[-lit] < 0) : (literals[lit] > 0);
@@ -85,6 +88,7 @@ class PreimageSATSolver : public Solver {
 
   bool partialSolveMaj(const LogicGate &g, std::vector<int> &solved_lits);
 
+  int num_vars_;
   std::vector<int8_t> literals;
   std::vector<StackItem> stack;
   std::vector<LitStats> literal_ordering;

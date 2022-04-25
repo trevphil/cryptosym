@@ -19,8 +19,8 @@ PreimageSATSolver::PreimageSATSolver() : Solver() {}
 
 PreimageSATSolver::~PreimageSATSolver() {}
 
-void PreimageSATSolver::initialize() {
-  const auto start = Utils::ms_since_epoch();
+void PreimageSATSolver::initialize(const std::vector<LogicGate> &gates) {
+  const auto start = utils::ms_since_epoch();
 
   // At first, all literals are unassigned (value = 0)
   literals = std::vector<int8_t>(num_vars_ + 1, 0);
@@ -28,8 +28,8 @@ void PreimageSATSolver::initialize() {
 
   // Mapping from literal index to a list of gates using that literal
   lit2gates.clear();
-  for (int i = 0; i < static_cast<int>(gates_.size()); ++i) {
-    const LogicGate &g = gates_.at(i);
+  for (int i = 0; i < static_cast<int>(gates.size()); ++i) {
+    const LogicGate &g = gates.at(i);
     const int out = g.output;
     assert(out > 0);
     lit2gates[out].insert(i);
@@ -47,18 +47,27 @@ void PreimageSATSolver::initialize() {
   std::sort(literal_ordering.begin(), literal_ordering.end(),
             [](const LitStats &a, const LitStats &b) { return a.score() > b.score(); });
 
-  const double init_time_ms = Utils::ms_since_epoch() - start;
+  const double init_time_ms = static_cast<double>(utils::ms_since_epoch() - start);
   if (config::verbose) printf("Initialized PreimageSAT in %.0f ms\n", init_time_ms);
 }
 
-std::unordered_map<int, bool> PreimageSATSolver::solveInternal() {
-  for (const auto &itr : observed_) {
+std::unordered_map<int, bool> PreimageSATSolver::solve(
+    const SymRepresentation &problem,
+    const std::unordered_map<int, bool> &bit_assignments) {
+  num_vars_ = problem.numVars();
+  initialize(problem.gates());
+
+  for (const auto &itr : bit_assignments) {
     const int lit = itr.first;
-    assert(lit > 0);
+    if (lit <= 0) {
+      printf("Bits should be positive (not negated), got %d\n", lit);
+      assert(false);
+    }
+
     const bool truth_value = itr.second;
     if (literals[lit] == 0) {
       pushStack(lit, truth_value, false);
-      const int num_solved = propagate(lit);
+      const int num_solved = propagate(lit, problem.gates());
       if (num_solved < 0) {
         printf("%s\n", "Problem is UNSAT!");
         return {};
@@ -72,23 +81,18 @@ std::unordered_map<int, bool> PreimageSATSolver::solveInternal() {
   bool preferred_assignment;
   int picked_lit = pickLiteral(preferred_assignment);
   pushStack(picked_lit, preferred_assignment, false);
-  bool conflict = propagate(picked_lit) < 0;
-  bool success = false;
+  bool conflict = propagate(picked_lit, problem.gates()) < 0;
 
   while (picked_lit > 0) {
     if (conflict) {
-      while (stack.back().second_try) {
-        success = popStack();
-        assert(success);
-      }
-      success = popStack(picked_lit, preferred_assignment);
-      assert(success);
+      while (stack.back().second_try) popStack();
+      popStack(picked_lit, preferred_assignment);
       pushStack(picked_lit, !preferred_assignment, true);
-      conflict = propagate(picked_lit) < 0;
+      conflict = propagate(picked_lit, problem.gates()) < 0;
     } else {
       picked_lit = pickLiteral(preferred_assignment);
       pushStack(picked_lit, preferred_assignment, false);
-      conflict = propagate(picked_lit) < 0;
+      conflict = propagate(picked_lit, problem.gates()) < 0;
     }
   }
 
@@ -112,21 +116,19 @@ void PreimageSATSolver::pushStack(int lit, bool truth_value, bool second_try) {
   stack.back().second_try = second_try;
 }
 
-bool PreimageSATSolver::popStack(int &lit, bool &truth_value) {
-  if (stack.size() <= observed_.size()) return false;
+void PreimageSATSolver::popStack(int &lit, bool &truth_value) {
   const auto &back = stack.back();
   lit = back.lit_guess;
   truth_value = (literals[lit] > 0);
   literals[lit] = 0;
   for (int implied : back.implied) literals[implied] = 0;
   stack.pop_back();
-  return true;
 }
 
-bool PreimageSATSolver::popStack() {
+void PreimageSATSolver::popStack() {
   int lit;
   bool truth_value;
-  return popStack(lit, truth_value);
+  popStack(lit, truth_value);
 }
 
 int PreimageSATSolver::pickLiteral(bool &assignment) {
@@ -142,7 +144,7 @@ int PreimageSATSolver::pickLiteral(bool &assignment) {
   return chosen_lit;
 }
 
-int PreimageSATSolver::propagate(const int lit) {
+int PreimageSATSolver::propagate(const int lit, const std::vector<LogicGate> &gates) {
   std::vector<int> solved_lits;
   std::set<int> &lits_solved_via_propagation = stack.back().implied;
   assert(lit == stack.back().lit_guess);
@@ -155,7 +157,7 @@ int PreimageSATSolver::propagate(const int lit) {
     const int gate_idx = q.front();
     q.pop();
 
-    const bool ok = partialSolve(gates_[gate_idx], solved_lits);
+    const bool ok = partialSolve(gates[gate_idx], solved_lits);
     if (!ok) return -1;  // conflict
 
     for (int solved_lit : solved_lits) {

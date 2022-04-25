@@ -7,11 +7,13 @@
 
 #pragma once
 
+#include <boost/dynamic_bitset.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "core/logic_gate.hpp"
+#include "core/sym_representation.hpp"
 
 namespace preimage {
 
@@ -21,30 +23,17 @@ class Solver {
 
   virtual ~Solver();
 
-  void setHeader(int inp_size, int out_size, int n_vars, int n_gates);
+  std::unordered_map<int, bool> solve(const SymRepresentation &problem,
+                                      const std::string &hash_hex);
 
-  void setInputIndices(const std::vector<int> &input_indices);
+  std::unordered_map<int, bool> solve(const SymRepresentation &problem,
+                                      const boost::dynamic_bitset<> &hash_output);
 
-  void setOutputIndices(const std::vector<int> &output_indices);
-
-  void setGates(const std::vector<LogicGate> &gates);
-
-  void setObserved(const std::unordered_map<int, bool> &observed);
-
-  std::unordered_map<int, bool> solve();
+  virtual std::unordered_map<int, bool> solve(
+      const SymRepresentation &problem,
+      const std::unordered_map<int, bool> &bit_assignments) = 0;
 
   virtual std::string solverName() const = 0;
-
- protected:
-  virtual void initialize() = 0;
-
-  virtual std::unordered_map<int, bool> solveInternal() = 0;
-
-  int input_size_, output_size_;
-  int num_vars_, num_gates_;
-  std::vector<LogicGate> gates_;
-  std::vector<int> input_indices_, output_indices_;
-  std::unordered_map<int, bool> observed_;
 };
 
 }  // end namespace preimage

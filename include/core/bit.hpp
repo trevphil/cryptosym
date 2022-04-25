@@ -40,7 +40,7 @@ class Bit {
 
   static Bit xor3(const Bit &a, const Bit &b, const Bit &c);
 
-  static int global_index;
+  thread_local static int global_index;
 
   bool val;
   int index;

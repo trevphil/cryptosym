@@ -7,14 +7,11 @@
 
 #include "cmsat/cmsat_solver.hpp"
 
-#include <iostream>
-#include <vector>
-
 #include "core/config.hpp"
 
 namespace preimage {
 
-CMSatSolver::CMSatSolver() {}
+CMSatSolver::CMSatSolver() : Solver(), solver_(nullptr) {}
 
 CMSatSolver::~CMSatSolver() {
   if (solver_) delete solver_;
@@ -43,14 +40,17 @@ void CMSatSolver::addXorClause(const LogicGate &g) {
   solver_->add_xor_clause(xor_clause, xor_negated);
 }
 
-void CMSatSolver::initialize() {
+void CMSatSolver::initializeSolver(int num_vars, const std::vector<LogicGate> &gates) {
+  if (solver_) delete solver_;
   solver_ = new CMSat::SATSolver;
   solver_->set_num_threads(1);
-  solver_->new_vars(num_vars_);
+  solver_->new_vars(num_vars);
 
-  if (config::verbose) printf("Running cryptominisat5 (n=%d)\n", num_vars_);
+  if (config::verbose) {
+    printf("Running cryptominisat5 with %d variables\n", num_vars);
+  }
 
-  for (const LogicGate &g : gates_) {
+  for (const LogicGate &g : gates) {
     switch (g.t()) {
       case LogicGate::Type::and_gate:
       case LogicGate::Type::or_gate:
@@ -65,20 +65,29 @@ void CMSatSolver::initialize() {
   }
 }
 
-std::unordered_map<int, bool> CMSatSolver::solveInternal() {
+std::unordered_map<int, bool> CMSatSolver::solve(
+    const SymRepresentation &problem,
+    const std::unordered_map<int, bool> &bit_assignments) {
   std::vector<CMSat::Lit> assumptions;
-  for (const auto &itr : observed_) {
-    assert(itr.first > 0);
+  for (const auto &itr : bit_assignments) {
+    if (itr.first <= 0) {
+      printf("Bits should be positive (not negated), got %d\n", itr.first);
+      assert(false);
+    }
     CMSat::Lit lit(itr.first - 1, !itr.second);
     assumptions.push_back(lit);
   }
 
+  initializeSolver(problem.numVars(), problem.gates());
   CMSat::lbool ret = solver_->solve(&assumptions);
-  assert(ret == CMSat::l_True);
+  if (ret != CMSat::l_True) {
+    printf("%s\n", "CryptoMiniSAT did not solve the problem!");
+    assert(false);
+  }
   const auto final_model = solver_->get_model();
 
   std::unordered_map<int, bool> solution;
-  for (int i = 1; i <= num_vars_; ++i) {
+  for (int i = 1; i <= problem.numVars(); ++i) {
     solution[i] = (final_model[i - 1] == CMSat::l_True);
   }
   return solution;

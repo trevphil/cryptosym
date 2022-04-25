@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.8)
 # Name of the project
 project(preimage)
 
-set(BUILD_TESTS ON)
+set(BUILD_TESTS OFF)
 
 add_definitions(-std=c++17 -Wshadow -Wunused -Wall -Werror -O3)
 # add_compile_options(-g)
@@ -33,22 +33,23 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 # Add all the source files needed to build the executable
 add_library(preimage SHARED
-            src/problem_instance.cpp
-            src/core/config.cpp
+            src/bp/bp_solver.cpp
+            src/bp/graph.cpp
+            src/bp/node.cpp
             src/core/bit.cpp
             src/core/cnf.cpp
+            src/core/config.cpp
             src/core/logic_gate.cpp
-            src/core/sym_bit_vec.cpp
             src/core/solver.cpp
+            src/core/sym_bit_vec.cpp
             src/core/sym_hash.cpp
-            src/hashing/sym_sha256.cpp
+            src/core/sym_representation.cpp
+            src/core/utils.cpp
+            src/cmsat/cmsat_solver.cpp
             src/hashing/sym_md5.cpp
             src/hashing/sym_ripemd160.cpp
-            src/cmsat/cmsat_solver.cpp
-            src/preimage_sat/preimage_sat.cpp
-            src/bp/node.cpp
-            src/bp/graph.cpp
-            src/bp/bp_solver.cpp)
+            src/hashing/sym_sha256.cpp
+            src/preimage_sat/preimage_sat.cpp)
 
 target_link_libraries(preimage Boost::boost)
 target_link_libraries(preimage cryptominisat5)

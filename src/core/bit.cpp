@@ -14,13 +14,15 @@
 
 namespace preimage {
 
-int Bit::global_index = 1;  // 1-based indexing
+thread_local int Bit::global_index = 1;  // 1-based indexing
 
 Bit::Bit(bool bit_val, bool is_unknown, int dpth)
     : val(bit_val), unknown(is_unknown), depth(dpth) {
-  if (unknown) index = Bit::global_index++;
-  if (unknown) assert(index != 0);
-  if (!unknown) assert(depth == 0);
+  if (unknown) {
+    index = Bit::global_index++;
+  } else {
+    assert(depth == 0);
+  }
 }
 
 Bit::~Bit() {}

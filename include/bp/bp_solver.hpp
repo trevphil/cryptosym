@@ -10,7 +10,9 @@
 #include <unordered_map>
 
 #include "bp/graph.hpp"
+#include "core/logic_gate.hpp"
 #include "core/solver.hpp"
+#include "core/sym_representation.hpp"
 
 namespace preimage {
 
@@ -22,12 +24,13 @@ class BPSolver : public Solver {
 
   std::string solverName() const override { return "Belief Propagation"; }
 
- protected:
-  void initialize() override;
-
-  std::unordered_map<int, bool> solveInternal() override;
+  std::unordered_map<int, bool> solve(
+      const SymRepresentation &problem,
+      const std::unordered_map<int, bool> &bit_assignments) override;
 
  private:
+  void initializeGraph(const std::vector<LogicGate> &gates);
+
   BPFactorType convertLogicGate(LogicGate::Type t) const;
 
   Graph g_;

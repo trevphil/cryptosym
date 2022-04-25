@@ -55,16 +55,16 @@ int ProblemInstance::execute() {
   }
 
   // Generate symbolic hash function using all-zero inputs
-  boost::dynamic_bitset<> zero_input = Utils::zeroBits(num_input_bits_);
+  boost::dynamic_bitset<> zero_input = utils::zeroBits(num_input_bits_);
   hasher->call(zero_input, difficulty_, true);
   const std::string symbols_file = "/tmp/hash_symbols.txt";
   saveSymbols(symbols_file);
 
   // Execute hash algorithm on random input
-  boost::dynamic_bitset<> real_input = Utils::randomBits(num_input_bits_, 0);
+  boost::dynamic_bitset<> real_input = utils::randomBits(num_input_bits_, 0);
   boost::dynamic_bitset<> real_output = hasher->call(real_input, difficulty_);
-  const std::string real_output_hex = Utils::hexstr(real_output);
-  const std::string real_output_bin = Utils::binstr(real_output);
+  const std::string real_output_hex = utils::hexstr(real_output);
+  const std::string real_output_bin = utils::binstr(real_output);
 
   // Free up some memory: clear list of cached logic gates
   LogicGate::reset();
@@ -72,16 +72,16 @@ int ProblemInstance::execute() {
   // Attempt to get an input message which, when hashed, gives `real_output_hex`
   boost::dynamic_bitset<> preimage = getPreimage(symbols_file, real_output_hex);
   boost::dynamic_bitset<> pred_output = hasher->call(preimage, difficulty_);
-  const std::string pred_output_hex = Utils::hexstr(pred_output);
-  const std::string pred_output_bin = Utils::binstr(pred_output);
+  const std::string pred_output_hex = utils::hexstr(pred_output);
+  const std::string pred_output_bin = utils::binstr(pred_output);
 
   if (config::verbose) {
     if (bin_format_) {
-      printf("True input:\t\t%s\n", Utils::binstr(real_input).c_str());
-      printf("Reconstructed input:\t%s\n", Utils::binstr(preimage).c_str());
+      printf("True input:\t\t%s\n", utils::binstr(real_input).c_str());
+      printf("Reconstructed input:\t%s\n", utils::binstr(preimage).c_str());
     } else {
-      printf("True input:\t\t%s\n", Utils::hexstr(real_input).c_str());
-      printf("Reconstructed input:\t%s\n", Utils::hexstr(preimage).c_str());
+      printf("True input:\t\t%s\n", utils::hexstr(real_input).c_str());
+      printf("Reconstructed input:\t%s\n", utils::hexstr(preimage).c_str());
     }
   }
 
@@ -238,7 +238,7 @@ boost::dynamic_bitset<> ProblemInstance::getPreimage(const std::string &symbols_
   solver->setGates(gates);
 
   // Convert hash (in hexadecimal) to a bitvector
-  boost::dynamic_bitset<> output_bits = Utils::hex2bits(hash_hex);
+  boost::dynamic_bitset<> output_bits = utils::hex2bits(hash_hex);
   assert(output_bits.size() == O);
 
   // Assign hash output bits to a mapping from (index --> value)

@@ -14,16 +14,16 @@ namespace preimage {
 
 class RIPEMD160 : public SymHash {
  public:
-  RIPEMD160();
+  RIPEMD160(int num_input_bits, int difficulty = -1);
 
-  SymBitVec hash(const SymBitVec &hash_input, int difficulty) override;
+  SymBitVec hash(const SymBitVec &hash_input) override;
 
   int defaultDifficulty() const override { return 160; }
 
   std::string hashName() const override { return "RIPEMD160"; }
 
  private:
-  void resetState(int difficulty);
+  void resetState();
 
   void finalize(const SymBitVec &hash_input, int bit_index, int lo, int hi);
 
@@ -57,7 +57,6 @@ class RIPEMD160 : public SymHash {
 
   void transform();
 
-  int difficulty_;
   SymBitVec buffer_[5];  // Each SymBitVec in `buffer_` has 32 bits
   SymBitVec X_[16];      // Each SymBitVec in `X_` has 32 bits
   SymBitVec k0_, k1_, k2_, k3_, k4_, k5_, k6_, k7_, k8_, k9_;

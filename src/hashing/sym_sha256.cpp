@@ -7,6 +7,7 @@
 
 #include "hashing/sym_sha256.hpp"
 
+#include "core/config.hpp"
 #include "core/utils.hpp"
 
 namespace preimage {
@@ -20,7 +21,12 @@ namespace preimage {
 #define Gamma0(x) (SymBitVec::xor3(S(x, 7), S(x, 18), R(x, 3)))
 #define Gamma1(x) (SymBitVec::xor3(S(x, 17), S(x, 19), R(x, 10)))
 
-SHA256::SHA256() {
+SHA256::SHA256(int num_input_bits, int difficulty) : SymHash(num_input_bits, difficulty) {
+  if (difficulty_ < 0) difficulty_ = defaultDifficulty();
+  if (config::verbose) {
+    printf("Initialized %s with difficulty %d\n", hashName().c_str(), difficulty_);
+  }
+
   block_size_ = 64;
   digest_size_ = 32;
   const std::vector<uint32_t> raw_words = {
@@ -66,7 +72,7 @@ std::pair<SymBitVec, SymBitVec> SHA256::round(const SymBitVec &a, const SymBitVe
   return {d + t0, t0 + t1};
 }
 
-void SHA256::transform(int difficulty) {
+void SHA256::transform() {
   w_ = {};
   std::vector<SymBitVec> d;
   for (const SymBitVec &bv : data_) d.push_back(bv.resize(32));
@@ -80,7 +86,7 @@ void SHA256::transform(int difficulty) {
 
   std::vector<SymBitVec> ss = digest_;
   std::vector<int> i = {0, 1, 2, 3, 4, 5, 6, 7};
-  for (int j = 0; j < difficulty && j < 64; ++j) {
+  for (int j = 0; j < difficulty_ && j < 64; ++j) {
     const auto output = round(ss[i[0]], ss[i[1]], ss[i[2]], ss[i[3]], ss[i[4]], ss[i[5]],
                               ss[i[6]], ss[i[7]], j, words_.at(j));
     ss[i[3]] = output.first;
@@ -93,7 +99,7 @@ void SHA256::transform(int difficulty) {
   }
 }
 
-void SHA256::update(const SymBitVec &bv, int difficulty) {
+void SHA256::update(const SymBitVec &bv) {
   int count = bv.size() / 8;
   int buffer_idx = 0;
   int clo = (count_lo_ + (count << 3)) & 0xffffffff;
@@ -116,7 +122,7 @@ void SHA256::update(const SymBitVec &bv, int difficulty) {
     buffer_idx += i;
     local_ += i;
     if (local_ == block_size_) {
-      transform(difficulty);
+      transform();
       local_ = 0;
     } else {
       return;
@@ -133,7 +139,7 @@ void SHA256::update(const SymBitVec &bv, int difficulty) {
 
     count -= block_size_;
     buffer_idx += block_size_;
-    transform(difficulty);
+    transform();
   }
 
   for (int byte_idx = 0; byte_idx < count; byte_idx++) {
@@ -144,7 +150,7 @@ void SHA256::update(const SymBitVec &bv, int difficulty) {
   local_ = count;
 }
 
-SymBitVec SHA256::digest(int difficulty) {
+SymBitVec SHA256::digest() {
   int count = (count_lo_ >> 3) & 0x3f;
   data_[count] = SymBitVec(0x80, 8);
   count++;
@@ -153,7 +159,7 @@ SymBitVec SHA256::digest(int difficulty) {
     data_.resize(count);
     for (int i = 0; i < block_size_ - count; ++i) data_.push_back(zero);
 
-    transform(difficulty);
+    transform();
 
     data_ = {};
     for (int i = 0; i < block_size_; ++i) data_.push_back(zero);
@@ -173,7 +179,7 @@ SymBitVec SHA256::digest(int difficulty) {
   data_[62] = (lo_bit_count >> 8).resize(8);
   data_[63] = (lo_bit_count >> 0).resize(8);
 
-  transform(difficulty);
+  transform();
 
   std::vector<SymBitVec> dig = {};
   for (const SymBitVec &i : digest_) {
@@ -191,19 +197,10 @@ SymBitVec SHA256::digest(int difficulty) {
   return result;
 }
 
-SymBitVec SHA256::hash(const SymBitVec &hash_input, int difficulty) {
+SymBitVec SHA256::hash(const SymBitVec &hash_input) {
   resetState();
-  update(hash_input, difficulty);
-  return digest(difficulty);
+  update(hash_input);
+  return digest();
 }
-
-#undef Ch
-#undef Maj
-#undef S
-#undef R
-#undef Sigma0
-#undef Sigma1
-#undef Gamma0
-#undef Gamma1
 
 }  // end namespace preimage

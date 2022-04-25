@@ -24,7 +24,7 @@ namespace bp {
 
 BPSolver::BPSolver() : Solver() {}
 
-void BPSolver::initialize() {
+void BPSolver::initializeGraph(const std::vector<LogicGate> &gates) {
   g_ = Graph();
   g_.schedule_variable.clear();
   g_.schedule_variable.push_back({});
@@ -32,7 +32,7 @@ void BPSolver::initialize() {
   g_.schedule_factor.push_back({});
   int max_rv = 0;
 
-  for (const LogicGate &gate : gates_) {
+  for (const LogicGate &gate : gates) {
     const int rv = gate.output;
     assert(rv > 0);
     const BPFactorType t = convertLogicGate(gate.t());
@@ -87,9 +87,13 @@ BPFactorType BPSolver::convertLogicGate(LogicGate::Type t) const {
   }
 }
 
-std::unordered_map<int, bool> BPSolver::solveInternal() {
+std::unordered_map<int, bool> BPSolver::solve(
+    const SymRepresentation &problem,
+    const std::unordered_map<int, bool> &bit_assignments) {
+  initializeGraph(problem.gates());
+
   std::vector<int> prior_rvs = {};
-  for (const auto &itr : observed_) {
+  for (const auto &itr : bit_assignments) {
     const int rv = itr.first;
     assert(rv > 0);
     assert(g_.hasNode(rv));
@@ -104,11 +108,11 @@ std::unordered_map<int, bool> BPSolver::solveInternal() {
   g_.spreadPriors(prior_rvs);
 
   while (g_.iterations() < BP_MAX_ITER) {
-    const auto start = Utils::ms_since_epoch();
+    const auto start = utils::ms_since_epoch();
     g_.scheduledUpdate();
     g_.norm();
     g_.writeNodes();
-    const auto end = Utils::ms_since_epoch();
+    const auto end = utils::ms_since_epoch();
     const double e = g_.entropySum();
     const double c = g_.maxChange();
 

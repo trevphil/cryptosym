@@ -61,7 +61,7 @@ boost::dynamic_bitset<> SymBitVec::bits() const {
 }
 
 std::string SymBitVec::bin(bool colored) const {
-  if (!colored) return Utils::binstr(bits());
+  if (!colored) return utils::binstr(bits());
   std::stringstream bit_stream;
   const int n = size();
   for (int i = 0; i < n; ++i) {
@@ -74,7 +74,7 @@ std::string SymBitVec::bin(bool colored) const {
   return bit_stream.str();
 }
 
-std::string SymBitVec::hex() const { return Utils::hexstr(bits()); }
+std::string SymBitVec::hex() const { return utils::hexstr(bits()); }
 
 Bit SymBitVec::at(int index) const {
   const int n = size();

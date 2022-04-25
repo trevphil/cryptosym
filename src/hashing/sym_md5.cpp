@@ -11,6 +11,8 @@
 
 #include <assert.h>
 
+#include "core/config.hpp"
+
 #define S11 7
 #define S12 12
 #define S13 17
@@ -30,9 +32,15 @@
 
 namespace preimage {
 
-MD5::MD5() { init(64); }
+MD5::MD5(int num_input_bits, int difficulty) : SymHash(num_input_bits, difficulty) {
+  if (difficulty_ < 0) difficulty_ = defaultDifficulty();
+  if (config::verbose) {
+    printf("Initialized %s with difficulty %d\n", hashName().c_str(), difficulty_);
+  }
+  init();
+}
 
-SymBitVec MD5::hash(const SymBitVec &hash_input, int difficulty) {
+SymBitVec MD5::hash(const SymBitVec &hash_input) {
   // Input size must be byte-aligned
   assert(hash_input.size() % 8 == 0);
   const int n_bytes = hash_input.size() / 8;
@@ -41,7 +49,7 @@ SymBitVec MD5::hash(const SymBitVec &hash_input, int difficulty) {
     input[i] = hash_input.extract(i * 8, (i + 1) * 8);
   }
 
-  init(difficulty);
+  init();
   update(input, n_bytes);
   finalize();
 
@@ -52,8 +60,7 @@ SymBitVec MD5::hash(const SymBitVec &hash_input, int difficulty) {
   return combined_digest;
 }
 
-void MD5::init(int difficulty) {
-  difficulty_ = difficulty;
+void MD5::init() {
   finalized = false;
 
   count[0] = 0;
@@ -393,20 +400,3 @@ void MD5::finalize() {
 }
 
 }  // end namespace preimage
-
-#undef S11
-#undef S12
-#undef S13
-#undef S14
-#undef S21
-#undef S22
-#undef S23
-#undef S24
-#undef S31
-#undef S32
-#undef S33
-#undef S34
-#undef S41
-#undef S42
-#undef S43
-#undef S44

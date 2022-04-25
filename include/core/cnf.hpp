@@ -18,8 +18,6 @@ namespace preimage {
 
 class CNF {
  public:
-  struct Simplification;
-
   CNF();
 
   explicit CNF(const std::vector<LogicGate> &gates);
@@ -37,16 +35,6 @@ class CNF {
   int num_vars;
   int num_clauses;
   std::vector<std::set<int>> clauses;
-};
-
-struct CNF::Simplification {
-  Simplification();
-
-  Simplification(const CNF &cnf, const std::unordered_map<int, bool> &assignments);
-
-  CNF original_cnf, simplified_cnf;
-  std::unordered_map<int, int> lit_simplified_to_original;
-  std::unordered_map<int, bool> original_assignments;
 };
 
 }  // end namespace preimage

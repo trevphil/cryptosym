@@ -1,7 +1,5 @@
-Remove SPDLOG dependency, use printf or std::cout
+Remove problem_instance.[hpp|cpp]
 
-Remove global tracking of bits and logic gates
+Python bindings (PyBind)
 
-Remove hard-coded paths to /tmp when writing files.
-
-Python bindings.
+GTEST everything

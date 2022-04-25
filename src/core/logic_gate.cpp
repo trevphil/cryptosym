@@ -12,7 +12,22 @@
 
 namespace preimage {
 
-std::vector<LogicGate> LogicGate::global_gates = {};
+thread_local std::vector<LogicGate> LogicGate::global_gates = {};
+
+int numInputs(LogicGate::Type t) {
+  switch (t) {
+    case LogicGate::Type::and_gate:
+      return 2;
+    case LogicGate::Type::or_gate:
+      return 2;
+    case LogicGate::Type::xor_gate:
+      return 2;
+    case LogicGate::Type::maj_gate:
+      return 3;
+    case LogicGate::Type::xor3_gate:
+      return 3;
+  }
+}
 
 LogicGate::LogicGate() {}
 
@@ -26,7 +41,6 @@ LogicGate::LogicGate(LogicGate::Type typ, const int dpth, const int out,
   assert(depth > 0);
   assert(output != 0);
   for (int i : inputs) assert(i != 0);
-  assert(n_inputs == inp.size());
 }
 
 LogicGate::LogicGate(const std::string &data) {

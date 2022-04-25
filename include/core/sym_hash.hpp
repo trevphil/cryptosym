@@ -11,21 +11,21 @@
 #include <string>
 
 #include "core/sym_bit_vec.hpp"
+#include "core/sym_representation.hpp"
 
 namespace preimage {
 
 class SymHash {
  public:
-  SymHash();
+  SymHash(int num_input_bits, int difficulty = -1);
 
   virtual ~SymHash();
 
-  std::vector<int> hashInputIndices() const;
+  boost::dynamic_bitset<> call(const boost::dynamic_bitset<> &hash_input);
 
-  std::vector<int> hashOutputIndices() const;
+  boost::dynamic_bitset<> callRandom();
 
-  boost::dynamic_bitset<> call(const boost::dynamic_bitset<> &hash_input,
-                               int difficulty = -1, bool symbolic = false);
+  SymRepresentation getSymbolicRepresentation();
 
   double averageRuntimeMs() const;
 
@@ -34,15 +34,13 @@ class SymHash {
   virtual std::string hashName() const = 0;
 
  protected:
-  virtual SymBitVec hash(const SymBitVec &hash_input, int difficulty) = 0;
+  virtual SymBitVec hash(const SymBitVec &hash_input) = 0;
+
+ protected:
+  int num_input_bits_;
+  int difficulty_;
 
  private:
-  void pruneIrrelevantGates();
-
-  void reindexBits();
-
-  std::vector<int> hash_input_indices_;
-  std::vector<int> hash_output_indices_;
   double num_calls_, cum_runtime_ms_;
 };
 

@@ -37,9 +37,9 @@ void conversionTests() {
   assert(bv.intVal() == 0b1101001100011101);
   assert(bv.bin(false).compare(bin) == 0);
   assert(bv.hex().compare(hex) == 0);
-  assert(Utils::hexstr(bits).compare(hex) == 0);
-  assert(Utils::binstr(bits).compare(bin) == 0);
-  assert(Utils::hex2bits(hex) == bits);
+  assert(utils::hexstr(bits).compare(hex) == 0);
+  assert(utils::binstr(bits).compare(bin) == 0);
+  assert(utils::hex2bits(hex) == bits);
   printf("%s\n", "Conversion tests passed.");
 }
 
@@ -49,7 +49,7 @@ void simpleTests() {
   SymBitVec bv2(0xDEADBEEF, 64);
   assert(bv1.intVal() == uint64_t(0xDEADBEEF));
   assert(bv1.intVal() == bv2.intVal());
-  assert(Utils::hexstr(bits).compare("00000000deadbeef") == 0);
+  assert(utils::hexstr(bits).compare("00000000deadbeef") == 0);
   assert(bv1.hex().compare("00000000deadbeef") == 0);
   assert(bv2.hex().compare("00000000deadbeef") == 0);
   printf("%s\n", "Simple tests passed.");
@@ -94,21 +94,21 @@ void sha256Tests() {
 
   SHA256 sha256;
 
-  std::string h = Utils::hexstr(sha256.call(Utils::str2bits(empty)));
+  std::string h = utils::hexstr(sha256.call(utils::str2bits(empty)));
   assert(h.compare(h_empty) == 0);
 
-  h = Utils::hexstr(sha256.call(Utils::str2bits(s)));
+  h = utils::hexstr(sha256.call(utils::str2bits(s)));
   assert(h.compare(h_s) == 0);
 
-  h = Utils::hexstr(sha256.call(Utils::str2bits(s7)));
+  h = utils::hexstr(sha256.call(utils::str2bits(s7)));
   assert(h.compare(h_s7) == 0);
 
-  Utils::seed(1);
+  utils::seed(1);
   const std::vector<int> inp_sizes{0, 8, 32, 64, 512, 640, 1024};
   for (int inp_size : inp_sizes) {
     for (int sample_idx = 0; sample_idx < 10; sample_idx++) {
       // Generate a random input of length "inp_size"
-      const boost::dynamic_bitset<> bits = Utils::randomBits(inp_size);
+      const boost::dynamic_bitset<> bits = utils::randomBits(inp_size);
       const int n_bytes = inp_size / 8;
       uint8_t byte_arr[n_bytes];
       for (int byte_idx = 0; byte_idx < n_bytes; byte_idx++) {
@@ -132,11 +132,11 @@ void sha256Tests() {
       boost::algorithm::to_lower(expected_output);
 
       // Call SHA256 using custom hash function
-      h = Utils::hexstr(sha256.call(bits));
+      h = utils::hexstr(sha256.call(bits));
 
       if (h.compare(expected_output) != 0) {
         printf("inp_size=%d, sample=%d\n\tInput:\t%sExpected:\t%s\n\tGot:\t\t%s\n",
-               inp_size, sample_idx, Utils::hexstr(bits).c_str(), expected_output.c_str(),
+               inp_size, sample_idx, utils::hexstr(bits).c_str(), expected_output.c_str(),
                h.c_str());
       }
     }
@@ -148,12 +148,12 @@ void sha256Tests() {
 void ripemd160Tests() {
   RIPEMD160 ripemd160;
 
-  Utils::seed(1);
+  utils::seed(1);
   const std::vector<int> inp_sizes{0, 8, 32, 64, 512, 640, 1024};
   for (int inp_size : inp_sizes) {
     for (int sample_idx = 0; sample_idx < 10; sample_idx++) {
       // Generate a random input of length "inp_size" bits
-      const boost::dynamic_bitset<> bits = Utils::randomBits(inp_size);
+      const boost::dynamic_bitset<> bits = utils::randomBits(inp_size);
       const int n_bytes = inp_size / 8;
       uint8_t byte_arr[n_bytes];
       for (int byte_idx = 0; byte_idx < n_bytes; byte_idx++) {
@@ -177,11 +177,11 @@ void ripemd160Tests() {
       boost::algorithm::to_lower(expected_output);
 
       // Call RIPEMD160 using custom hash function
-      const std::string h = Utils::hexstr(ripemd160.call(bits));
+      const std::string h = utils::hexstr(ripemd160.call(bits));
 
       if (h.compare(expected_output) != 0) {
         printf("inp_size=%d, sample=%d\n\tInput:\t%sExpected:\t%s\n\tGot:\t\t%s\n",
-               inp_size, sample_idx, Utils::hexstr(bits).c_str(), expected_output.c_str(),
+               inp_size, sample_idx, utils::hexstr(bits).c_str(), expected_output.c_str(),
                h.c_str());
         assert(false);
       }
@@ -194,12 +194,12 @@ void ripemd160Tests() {
 void md5Tests() {
   MD5 md5;
 
-  Utils::seed(1);
+  utils::seed(1);
   const std::vector<int> inp_sizes{0, 8, 32, 64, 512, 640, 1024};
   for (int inp_size : inp_sizes) {
     for (int sample_idx = 0; sample_idx < 10; sample_idx++) {
       // Generate a random input of length "inp_size" bits
-      const boost::dynamic_bitset<> bits = Utils::randomBits(inp_size);
+      const boost::dynamic_bitset<> bits = utils::randomBits(inp_size);
       const int n_bytes = inp_size / 8;
       uint8_t byte_arr[n_bytes];
       for (int byte_idx = 0; byte_idx < n_bytes; byte_idx++) {
@@ -223,11 +223,11 @@ void md5Tests() {
       boost::algorithm::to_lower(expected_output);
 
       // Call MD5 using custom hash function
-      const std::string h = Utils::hexstr(md5.call(bits));
+      const std::string h = utils::hexstr(md5.call(bits));
 
       if (h.compare(expected_output) != 0) {
         printf("inp_size=%d, sample=%d\n\tInput:\t%sExpected:\t%s\n\tGot:\t\t%s\n",
-               inp_size, sample_idx, Utils::hexstr(bits).c_str(), expected_output.c_str(),
+               inp_size, sample_idx, utils::hexstr(bits).c_str(), expected_output.c_str(),
                h.c_str());
         assert(false);
       }

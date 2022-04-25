@@ -7,6 +7,8 @@
 
 #include "hashing/sym_ripemd160.hpp"
 
+#include "core/config.hpp"
+
 #define RIPEMD160_SIZE 160
 
 namespace preimage {
@@ -18,7 +20,13 @@ namespace preimage {
   i++;                                      \
   if (i >= difficulty_) return
 
-RIPEMD160::RIPEMD160() {
+RIPEMD160::RIPEMD160(int num_input_bits, int difficulty)
+    : SymHash(num_input_bits, difficulty) {
+  if (difficulty_ < 0) difficulty_ = defaultDifficulty();
+  if (config::verbose) {
+    printf("Initialized %s with difficulty %d\n", hashName().c_str(), difficulty_);
+  }
+
   k0_ = SymBitVec(0, 32);
   k1_ = SymBitVec(0x5a827999, 32);
   k2_ = SymBitVec(0x6ed9eba1, 32);
@@ -31,12 +39,12 @@ RIPEMD160::RIPEMD160() {
   k9_ = SymBitVec(0, 32);
 }
 
-SymBitVec RIPEMD160::hash(const SymBitVec &hash_input, int difficulty) {
+SymBitVec RIPEMD160::hash(const SymBitVec &hash_input) {
   // Input size must be byte-aligned
   assert(hash_input.size() % 8 == 0);
   const int n_bytes = hash_input.size() / 8;
 
-  resetState(difficulty);
+  resetState();
 
   // Process message in chunks of 64 bytes
   int bit_index = 0;
@@ -66,8 +74,7 @@ SymBitVec RIPEMD160::hash(const SymBitVec &hash_input, int difficulty) {
   return combined_digest;
 }
 
-void RIPEMD160::resetState(int difficulty) {
-  difficulty_ = difficulty;
+void RIPEMD160::resetState() {
   buffer_[0] = SymBitVec(0x67452301, 32);
   buffer_[1] = SymBitVec(0xefcdab89, 32);
   buffer_[2] = SymBitVec(0x98badcfe, 32);
@@ -307,7 +314,5 @@ void RIPEMD160::transform() {
   buffer_[4] = buffer_[0] + b1 + c2;
   buffer_[0] = c1;
 }
-
-#undef Subround
 
 }  // end namespace preimage
