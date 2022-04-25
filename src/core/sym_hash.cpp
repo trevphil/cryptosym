@@ -15,17 +15,9 @@
 namespace preimage {
 
 SymHash::SymHash(int num_input_bits, int difficulty)
-    : num_input_bits_(num_input_bits),
-      difficulty_(difficulty),
-      num_calls_(0.0),
-      cum_runtime_ms_(0.0) {}
+    : num_input_bits_(num_input_bits), difficulty_(difficulty)  {}
 
 SymHash::~SymHash() {}
-
-double SymHash::averageRuntimeMs() const {
-  if (num_calls_ == 0) return NAN;
-  return cum_runtime_ms_ / num_calls_;
-}
 
 boost::dynamic_bitset<> SymHash::call(const boost::dynamic_bitset<> &hash_input) {
   const int inp_size = static_cast<int>(hash_input.size());
@@ -35,10 +27,7 @@ boost::dynamic_bitset<> SymHash::call(const boost::dynamic_bitset<> &hash_input)
   }
 
   SymBitVec inp(hash_input, false);
-  const auto start = utils::ms_since_epoch();
   SymBitVec out = hash(inp);
-  cum_runtime_ms_ += static_cast<double>(utils::ms_since_epoch() - start);
-  num_calls_ += 1.0;
   return out.bits();
 }
 

@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.8)
 # Name of the project
 project(preimage)
 
-set(BUILD_TESTS OFF)
+set(BUILD_TESTS ON)
 
 add_definitions(-std=c++17 -Wshadow -Wunused -Wall -Werror -O3)
 # add_compile_options(-g)
@@ -20,9 +20,19 @@ find_package(Boost REQUIRED)
 # CryptoMiniSAT
 find_package(cryptominisat5 REQUIRED)
 
-# Crypto++
 if(BUILD_TESTS)
+  # Crypto++
   find_package(CryptoPP REQUIRED)
+
+  # GTest
+  include(FetchContent)
+  FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
+  )
+  # For Windows: Prevent overriding the parent project's compiler/linker settings
+  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+  FetchContent_MakeAvailable(googletest)
 endif()
 
 # Eigen
@@ -58,7 +68,18 @@ add_executable(main src/main.cpp)
 target_link_libraries(main preimage)
 
 if(BUILD_TESTS)
-  add_executable(unit_tests tests/unit_tests.cpp)
+  enable_testing()
+
+  add_executable(unit_tests
+                 tests/test_md5.cpp
+                 tests/test_ripemd160.cpp
+                 tests/test_sha256.cpp
+                 tests/test_sym_bit_vec.cpp
+                 tests/test_utils.cpp)
+  target_link_libraries(unit_tests gtest_main)
   target_link_libraries(unit_tests preimage)
   target_link_libraries(unit_tests cryptopp-shared)
+
+  include(GoogleTest)
+  gtest_discover_tests(unit_tests)
 endif()

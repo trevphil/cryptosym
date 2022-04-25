@@ -44,7 +44,47 @@ std::vector<int> SymRepresentation::hashOutputIndices() const {
 }
 
 void SymRepresentation::toDAG(const std::string &filename) const {
-  throw std::logic_error("Function not yet implemented.");
+  const int I = static_cast<int>(hash_input_indices_.size());
+  const int O = static_cast<int>(hash_output_indices_.size());
+  const int M = static_cast<int>(gates_.size());
+  const int N = num_vars_;
+
+  std::ofstream dag_file(filename);
+  if (!dag_file.is_open()) {
+    printf("Unable to open \"%s\" in write mode.\n", filename.c_str());
+    assert(false);
+  }
+
+  // Write comments
+  dag_file << "# input message size: " << I << "\n";
+  dag_file << "# output message size: " << O << "\n";
+  dag_file << "# number of variables: " << N << "\n";
+  dag_file << "# number of gates: " << M << "\n";
+
+  // Write header
+  dag_file << I << " " << O << " " << N << " " << M << "\n";
+
+  // Write input indices
+  for (int k = 0; k < I; k++) {
+    dag_file << hash_input_indices_.at(k);
+    if (k != I - 1) dag_file << " ";
+  }
+  dag_file << "\n";
+
+  // Write output indices
+  for (int k = 0; k < O; k++) {
+    dag_file << hash_output_indices_.at(k);
+    if (k != O - 1) dag_file << " ";
+  }
+  dag_file << "\n";
+
+  // Write logic gates
+  for (const LogicGate &g : gates_) dag_file << g.toString() << "\n";
+
+  dag_file.close();
+  if (config::verbose) {
+    printf("Wrote DAG to: \"%s\"\n", filename.c_str());
+  }
 }
 
 void SymRepresentation::toCNF(const std::string &filename) const {

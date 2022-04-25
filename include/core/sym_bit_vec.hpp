@@ -36,7 +36,7 @@ class SymBitVec {
 
   boost::dynamic_bitset<> bits() const;
 
-  std::string bin(bool colored = true) const;
+  std::string bin() const;
 
   std::string hex() const;
 

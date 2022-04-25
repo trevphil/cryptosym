@@ -27,8 +27,6 @@ class SymHash {
 
   SymRepresentation getSymbolicRepresentation();
 
-  double averageRuntimeMs() const;
-
   virtual int defaultDifficulty() const = 0;
 
   virtual std::string hashName() const = 0;
@@ -39,9 +37,6 @@ class SymHash {
  protected:
   int num_input_bits_;
   int difficulty_;
-
- private:
-  double num_calls_, cum_runtime_ms_;
 };
 
 }  // end namespace preimage

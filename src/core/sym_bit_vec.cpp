@@ -8,7 +8,6 @@
 #include "core/sym_bit_vec.hpp"
 
 #include <algorithm>
-#include <sstream>
 
 #include "core/utils.hpp"
 
@@ -57,18 +56,8 @@ boost::dynamic_bitset<> SymBitVec::bits() const {
   return b;
 }
 
-std::string SymBitVec::bin(bool colored) const {
-  if (!colored) return utils::binstr(bits());
-  std::stringstream bit_stream;
-  const int n = size();
-  for (int i = 0; i < n; ++i) {
-    if (at(i).unknown) {
-      bit_stream << "\033[32m" << (at(i).val ? '1' : '0') << "\033[0m";
-    } else {
-      bit_stream << (at(i).val ? '1' : '0');
-    }
-  }
-  return bit_stream.str();
+std::string SymBitVec::bin() const {
+  return utils::binstr(bits());
 }
 
 std::string SymBitVec::hex() const { return utils::hexstr(bits()); }

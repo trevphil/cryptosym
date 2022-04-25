@@ -43,21 +43,6 @@ LogicGate::LogicGate(LogicGate::Type typ, const int dpth, const int out,
   for (int i : inputs) assert(i != 0);
 }
 
-LogicGate::LogicGate(const std::string &data) {
-  t_ = static_cast<Type>(data[0]);
-  std::istringstream nums(data.substr(1));
-  nums >> depth;
-  assert(depth > 0);
-  nums >> output;
-  assert(output != 0);
-  const int n_inputs = numInputs(t_);
-  inputs = std::vector<int>(n_inputs);
-  for (int i = 0; i < n_inputs; i++) {
-    nums >> inputs[i];
-    assert(inputs[i] != 0);
-  }
-}
-
 LogicGate::~LogicGate() {}
 
 LogicGate::Type LogicGate::t() const { return t_; }
@@ -68,6 +53,18 @@ std::string LogicGate::toString() const {
   for (int inp : inputs) stream << " " << inp;
   std::string result(stream.str());
   return result;
+}
+
+LogicGate LogicGate::fromString(const std::string &data) {
+  const Type t = static_cast<Type>(data[0]);
+  int depth, output;
+  std::istringstream nums(data.substr(1));
+  nums >> depth;
+  nums >> output;
+  const int n_inputs = numInputs(t);
+  std::vector<int> inputs(n_inputs);
+  for (int i = 0; i < n_inputs; i++) nums >> inputs[i];
+  return LogicGate(t, depth, output, inputs);
 }
 
 void LogicGate::reset() { global_gates.clear(); }

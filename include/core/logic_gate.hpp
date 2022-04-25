@@ -27,11 +27,11 @@ class LogicGate {
   LogicGate(Type typ, const int dpth, const int output,
             const std::vector<int> &inputs = {});
 
-  LogicGate(const std::string &data);
-
   virtual ~LogicGate();
 
   std::string toString() const;
+
+  static LogicGate fromString(const std::string &data);
 
   Type t() const;
 
