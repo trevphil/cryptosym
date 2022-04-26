@@ -74,6 +74,7 @@ if(BUILD_TESTS)
 
   add_executable(unit_tests
                  tests/helpers/src/eval_solver.cpp
+                 tests/test_bp_solver.cpp
                  tests/test_cmsat_solver.cpp
                  tests/test_cnf.cpp
                  tests/test_dag_solver.cpp
