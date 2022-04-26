@@ -88,11 +88,7 @@ void SymRepresentation::toDAG(const std::string &filename) const {
 CNF SymRepresentation::toCNF() const { return CNF(gates_); }
 
 void SymRepresentation::toMIP(const std::string &filename) const {
-  throw std::logic_error("Function not yet implemented.");
-}
-
-void SymRepresentation::toGraphColoring(const std::string &filename) const {
-  throw std::logic_error("Function not yet implemented.");
+  throw std::logic_error("Function not yet implemented.");  // TODO(Trevor)
 }
 
 SymRepresentation SymRepresentation::fromDAG(const std::string &filename) {

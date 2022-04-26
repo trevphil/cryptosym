@@ -32,6 +32,10 @@ class CNF {
 
   static CNF fromFile(const std::string &filename);
 
+  void toMIS(const std::string &filename) const;
+
+  void toGraphColoring(const std::string &filename) const;
+
   CNF simplify(const std::unordered_map<int, bool> &assignments) const;
 
   int num_vars;

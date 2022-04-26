@@ -32,13 +32,11 @@ class SymRepresentation {
 
   void toDAG(const std::string &filename) const;
 
+  static SymRepresentation fromDAG(const std::string &filename);
+
   CNF toCNF() const;
 
   void toMIP(const std::string &filename) const;
-
-  void toGraphColoring(const std::string &filename) const;
-
-  static SymRepresentation fromDAG(const std::string &filename);
 
  private:
   void pruneIrrelevantGates();
