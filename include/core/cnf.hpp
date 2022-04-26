@@ -28,7 +28,9 @@ class CNF {
 
   double approximationRatio(const std::unordered_map<int, bool> &assignments);
 
-  void write(const std::string &filename) const;
+  void toFile(const std::string &filename) const;
+
+  static CNF fromFile(const std::string &filename);
 
   CNF simplify(const std::unordered_map<int, bool> &assignments) const;
 

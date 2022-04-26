@@ -9,6 +9,7 @@
 
 #include <assert.h>
 
+#include <boost/algorithm/string.hpp>
 #include <fstream>
 #include <utility>
 
@@ -150,10 +151,11 @@ int CNF::numSatClauses(const std::unordered_map<int, bool> &assignments) {
 }
 
 double CNF::approximationRatio(const std::unordered_map<int, bool> &assignments) {
+  if (num_clauses == 0) return 1.0;
   return numSatClauses(assignments) / static_cast<double>(num_clauses);
 }
 
-void CNF::write(const std::string &filename) const {
+void CNF::toFile(const std::string &filename) const {
   std::ofstream cnf_file(filename);
   if (!cnf_file.is_open()) {
     printf("Unable to open \"%s\" in write mode.\n", filename.c_str());
@@ -167,6 +169,48 @@ void CNF::write(const std::string &filename) const {
   }
 
   cnf_file.close();
+}
+
+CNF CNF::fromFile(const std::string &filename) {
+  std::ifstream cnf_file(filename);
+  if (!cnf_file.is_open()) {
+    printf("Unable to open \"%s\" in read mode.\n", filename.c_str());
+    assert(false);
+  }
+
+  std::string line;
+  int num_vars = -1;
+  int num_clauses = -1;
+  std::vector<std::set<int>> clauses;
+  std::vector<std::string> parts;
+
+  while (std::getline(cnf_file, line)) {
+    boost::algorithm::trim(line);
+    if (line.size() == 0 || line[0] == '#') continue;
+    if (line.rfind("p cnf ", 0) == 0) {
+      line = line.substr(6);
+      boost::algorithm::trim(line);
+      boost::split(parts, line, isspace);
+      num_vars = std::stoi(parts[0]);
+      num_clauses = std::stoi(parts[1]);
+    } else {
+      boost::split(parts, line, isspace);
+      std::set<int> clause;
+      for (const std::string &s : parts) {
+        const int lit = std::stoi(s);
+        if (lit != 0) clause.insert(lit);
+      }
+      clauses.push_back(clause);
+    }
+  }
+  cnf_file.close();
+
+  if (num_vars == -1 || num_clauses == -1) {
+    printf("%s\n", "Did not read `p cnf N M`, ensure DIMACS header exists.");
+    assert(false);
+  }
+
+  return CNF(clauses, num_vars);
 }
 
 CNF CNF::simplify(const std::unordered_map<int, bool> &assignments) const {
