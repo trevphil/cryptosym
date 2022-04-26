@@ -21,6 +21,8 @@ find_package(Boost REQUIRED)
 find_package(cryptominisat5 REQUIRED)
 
 if(BUILD_TESTS)
+  include_directories(tests/helpers/include)
+
   # Crypto++
   find_package(CryptoPP REQUIRED)
 
@@ -71,6 +73,10 @@ if(BUILD_TESTS)
   enable_testing()
 
   add_executable(unit_tests
+                 tests/helpers/src/eval_solver.cpp
+                 tests/test_cmsat_solver.cpp
+                 tests/test_cnf.cpp
+                 tests/test_dag_solver.cpp
                  tests/test_logic_gate.cpp
                  tests/test_md5.cpp
                  tests/test_ripemd160.cpp

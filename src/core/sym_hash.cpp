@@ -19,6 +19,8 @@ SymHash::SymHash(int num_input_bits, int difficulty)
 
 SymHash::~SymHash() {}
 
+int SymHash::numInputBits() const { return num_input_bits_; }
+
 boost::dynamic_bitset<> SymHash::call(const boost::dynamic_bitset<> &hash_input) {
   const int inp_size = static_cast<int>(hash_input.size());
   if (inp_size != num_input_bits_) {

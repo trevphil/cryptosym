@@ -21,6 +21,8 @@ class SymHash {
 
   virtual ~SymHash();
 
+  int numInputBits() const;
+
   boost::dynamic_bitset<> call(const boost::dynamic_bitset<> &hash_input);
 
   boost::dynamic_bitset<> callRandom();
