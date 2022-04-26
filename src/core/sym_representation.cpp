@@ -23,10 +23,12 @@
 
 namespace preimage {
 
-SymRepresentation::SymRepresentation(const std::vector<int> &input_indices,
+SymRepresentation::SymRepresentation(const std::vector<LogicGate> &gates,
+                                     const std::vector<int> &input_indices,
                                      const std::vector<int> &output_indices)
-    : hash_input_indices_(input_indices), hash_output_indices_(output_indices) {
-  gates_ = LogicGate::global_gates;
+    : gates_(gates),
+      hash_input_indices_(input_indices),
+      hash_output_indices_(output_indices) {
   pruneIrrelevantGates();
   reindexBits();
 }

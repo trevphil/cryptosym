@@ -54,7 +54,7 @@ SymRepresentation SymHash::getSymbolicRepresentation() {
     output_indices[i] = out.at(i).unknown ? out.at(i).index : 0;
   }
 
-  SymRepresentation sym_rep(input_indices, output_indices);
+  SymRepresentation sym_rep(LogicGate::global_gates, input_indices, output_indices);
   LogicGate::reset();
   Bit::reset();
   return sym_rep;

@@ -17,7 +17,8 @@ namespace preimage {
 
 class SymRepresentation {
  public:
-  SymRepresentation(const std::vector<int> &input_indices,
+  SymRepresentation(const std::vector<LogicGate> &gates,
+                    const std::vector<int> &input_indices,
                     const std::vector<int> &output_indices);
 
   int numVars() const;
