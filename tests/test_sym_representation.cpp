@@ -26,8 +26,8 @@ TEST(SymRepresentationTest, Initialization) {
 
   const std::vector<int> inputs = {1, 2, 3};
   const std::vector<int> outputs = {0, 4, 5};
-  EXPECT_EQ(rep.hashInputIndices(), inputs);
-  EXPECT_EQ(rep.hashOutputIndices(), outputs);
+  EXPECT_EQ(rep.inputIndices(), inputs);
+  EXPECT_EQ(rep.outputIndices(), outputs);
 }
 
 TEST(SymRepresentationTest, PruneAndReindex) {
@@ -41,8 +41,8 @@ TEST(SymRepresentationTest, PruneAndReindex) {
 
   const std::vector<int> inputs = {1, 2, 0};
   const std::vector<int> outputs = {3};
-  EXPECT_EQ(rep.hashInputIndices(), inputs);
-  EXPECT_EQ(rep.hashOutputIndices(), outputs);
+  EXPECT_EQ(rep.inputIndices(), inputs);
+  EXPECT_EQ(rep.outputIndices(), outputs);
 }
 
 TEST(SymRepresentationTest, ConvertToCNF) {
@@ -65,15 +65,15 @@ TEST(SymRepresentationTest, ConvertDAG) {
   SymRepresentation rep(gates, inputs, outputs);
   EXPECT_EQ(rep.numVars(), 6);
   EXPECT_EQ(rep.gates().size(), 3);
-  EXPECT_EQ(rep.hashInputIndices(), inputs);
-  EXPECT_EQ(rep.hashOutputIndices(), outputs);
+  EXPECT_EQ(rep.inputIndices(), inputs);
+  EXPECT_EQ(rep.outputIndices(), outputs);
 
   rep.toDAG("/tmp/dag.txt");
   rep = SymRepresentation::fromDAG("/tmp/dag.txt");
   EXPECT_EQ(rep.numVars(), 6);
   EXPECT_EQ(rep.gates().size(), 3);
-  EXPECT_EQ(rep.hashInputIndices(), inputs);
-  EXPECT_EQ(rep.hashOutputIndices(), outputs);
+  EXPECT_EQ(rep.inputIndices(), inputs);
+  EXPECT_EQ(rep.outputIndices(), outputs);
 }
 
 }  // end namespace preimage

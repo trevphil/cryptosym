@@ -37,13 +37,9 @@ int SymRepresentation::numVars() const { return num_vars_; }
 
 std::vector<LogicGate> SymRepresentation::gates() const { return gates_; }
 
-std::vector<int> SymRepresentation::hashInputIndices() const {
-  return hash_input_indices_;
-}
+std::vector<int> SymRepresentation::inputIndices() const { return hash_input_indices_; }
 
-std::vector<int> SymRepresentation::hashOutputIndices() const {
-  return hash_output_indices_;
-}
+std::vector<int> SymRepresentation::outputIndices() const { return hash_output_indices_; }
 
 void SymRepresentation::toDAG(const std::string &filename) const {
   const int I = static_cast<int>(hash_input_indices_.size());

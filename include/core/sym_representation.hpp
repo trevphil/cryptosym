@@ -26,9 +26,9 @@ class SymRepresentation {
 
   std::vector<LogicGate> gates() const;
 
-  std::vector<int> hashInputIndices() const;
+  std::vector<int> inputIndices() const;
 
-  std::vector<int> hashOutputIndices() const;
+  std::vector<int> outputIndices() const;
 
   void toDAG(const std::string &filename) const;
 

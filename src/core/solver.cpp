@@ -26,7 +26,7 @@ std::unordered_map<int, bool> Solver::solve(const SymRepresentation &problem,
 
 std::unordered_map<int, bool> Solver::solve(const SymRepresentation &problem,
                                             const boost::dynamic_bitset<> &hash_output) {
-  const std::vector<int> &output_indices = problem.hashOutputIndices();
+  const std::vector<int> &output_indices = problem.outputIndices();
   const int output_size = static_cast<int>(output_indices.size());
   std::unordered_map<int, bool> assignments;
   for (int k = 0; k < output_size; k++) {

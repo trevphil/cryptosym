@@ -131,7 +131,7 @@ void run(int argc, char **argv) {
   // Build input bits from the solution
   boost::dynamic_bitset<> preimage(input_size);
   for (int k = 0; k < input_size; k++) {
-    const int input_index = problem.hashInputIndices().at(k);
+    const int input_index = problem.inputIndices().at(k);
     if (input_index < 0 && solution.count(-input_index) > 0) {
       preimage[k] = !solution.at(-input_index);
     } else if (input_index > 0 && solution.count(input_index) > 0) {
