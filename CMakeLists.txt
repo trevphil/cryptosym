@@ -71,6 +71,7 @@ if(BUILD_TESTS)
   enable_testing()
 
   add_executable(unit_tests
+                 tests/test_logic_gate.cpp
                  tests/test_md5.cpp
                  tests/test_ripemd160.cpp
                  tests/test_sha256.cpp

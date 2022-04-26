@@ -5,12 +5,12 @@
  * All rights reserved.
  */
 
-#include <gtest/gtest.h>
-#include <string>
-#include <boost/dynamic_bitset.hpp>
-#include <boost/algorithm/string.hpp>
-
 #include <cryptopp/dll.h>
+#include <gtest/gtest.h>
+
+#include <boost/algorithm/string.hpp>
+#include <boost/dynamic_bitset.hpp>
+#include <string>
 
 #include "core/utils.hpp"
 #include "hashing/sym_sha256.hpp"

@@ -6,9 +6,10 @@
  */
 
 #include <gtest/gtest.h>
-#include <string>
-#include <boost/dynamic_bitset.hpp>
+
 #include <boost/algorithm/string.hpp>
+#include <boost/dynamic_bitset.hpp>
+#include <string>
 
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
 #include <cryptopp/dll.h>

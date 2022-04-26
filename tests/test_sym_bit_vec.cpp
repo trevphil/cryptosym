@@ -6,6 +6,7 @@
  */
 
 #include <gtest/gtest.h>
+
 #include <boost/dynamic_bitset.hpp>
 #include <string>
 

@@ -15,7 +15,7 @@
 namespace preimage {
 
 SymHash::SymHash(int num_input_bits, int difficulty)
-    : num_input_bits_(num_input_bits), difficulty_(difficulty)  {}
+    : num_input_bits_(num_input_bits), difficulty_(difficulty) {}
 
 SymHash::~SymHash() {}
 
