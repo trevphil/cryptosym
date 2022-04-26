@@ -60,8 +60,8 @@ TEST(CNFTest, ApproximationRatio) {
 
 TEST(CNFTest, ReadWrite) {
   CNF cnf({{-1, 2}, {3, -4}}, 8);
-  cnf.toFile("/tmp/test_output.cnf");
-  cnf = CNF::fromFile("/tmp/test_output.cnf");
+  cnf.toFile("/tmp/a.cnf");
+  cnf = CNF::fromFile("/tmp/a.cnf");
   EXPECT_EQ(cnf.num_vars, 8);
   EXPECT_EQ(cnf.num_clauses, 2);
   const std::set<int> clause0 = {-1, 2};

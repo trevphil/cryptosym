@@ -83,6 +83,7 @@ if(BUILD_TESTS)
                  tests/test_ripemd160.cpp
                  tests/test_sha256.cpp
                  tests/test_sym_bit_vec.cpp
+                 tests/test_sym_representation.cpp
                  tests/test_utils.cpp)
   target_link_libraries(unit_tests gtest_main)
   target_link_libraries(unit_tests preimage)

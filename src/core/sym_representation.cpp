@@ -89,9 +89,7 @@ void SymRepresentation::toDAG(const std::string &filename) const {
   }
 }
 
-void SymRepresentation::toCNF(const std::string &filename) const {
-  throw std::logic_error("Function not yet implemented.");
-}
+CNF SymRepresentation::toCNF() const { return CNF(gates_); }
 
 void SymRepresentation::toMIP(const std::string &filename) const {
   throw std::logic_error("Function not yet implemented.");
@@ -99,6 +97,48 @@ void SymRepresentation::toMIP(const std::string &filename) const {
 
 void SymRepresentation::toGraphColoring(const std::string &filename) const {
   throw std::logic_error("Function not yet implemented.");
+}
+
+SymRepresentation SymRepresentation::fromDAG(const std::string &filename) {
+  std::ifstream dag_file(filename);
+  if (!dag_file.is_open()) {
+    printf("Unable to open \"%s\" in read mode.\n", filename.c_str());
+    assert(false);
+  }
+
+  std::string line;
+  int I, O, N, M;
+
+  // Skip comments
+  while (std::getline(dag_file, line) && line[0] == '#') continue;
+  // Parse integer header
+  std::istringstream headers(line);
+  headers >> I >> O >> N >> M;
+
+  std::vector<int> inputs(I);
+  std::vector<int> outputs(O);
+
+  // Skip comments
+  while (std::getline(dag_file, line) && line[0] == '#') continue;
+  // Parse inputs
+  std::istringstream input_stream(line);
+  for (int k = 0; k < I; k++) input_stream >> inputs[k];
+
+  // Skip comments
+  while (std::getline(dag_file, line) && line[0] == '#') continue;
+  // Parse outputs
+  std::istringstream output_stream(line);
+  for (int k = 0; k < O; k++) output_stream >> outputs[k];
+
+  std::vector<LogicGate> gates(M);
+  for (int k = 0; k < M; k++) {
+    // Skip comments
+    while (std::getline(dag_file, line) && line[0] == '#') continue;
+    // Create logic gate from string
+    gates[k] = LogicGate::fromString(line);
+  }
+
+  return SymRepresentation(gates, inputs, outputs);
 }
 
 void SymRepresentation::pruneIrrelevantGates() {

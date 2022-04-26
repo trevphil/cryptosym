@@ -10,6 +10,7 @@
 #include <boost/dynamic_bitset.hpp>
 #include <vector>
 
+#include "core/cnf.hpp"
 #include "core/logic_gate.hpp"
 #include "core/sym_bit_vec.hpp"
 
@@ -31,11 +32,13 @@ class SymRepresentation {
 
   void toDAG(const std::string &filename) const;
 
-  void toCNF(const std::string &filename) const;
+  CNF toCNF() const;
 
   void toMIP(const std::string &filename) const;
 
   void toGraphColoring(const std::string &filename) const;
+
+  static SymRepresentation fromDAG(const std::string &filename);
 
  private:
   void pruneIrrelevantGates();
