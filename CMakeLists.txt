@@ -20,6 +20,12 @@ find_package(Boost REQUIRED)
 # CryptoMiniSAT
 find_package(cryptominisat5 REQUIRED)
 
+# Eigen
+find_package(Eigen3 REQUIRED)
+set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
+set(EIGEN3_LIBRARIES ${EIGEN3_LIBRARIES})
+include_directories(${EIGEN3_INCLUDE_DIR})
+
 if(BUILD_TESTS)
   include_directories(tests/helpers/include)
 
@@ -36,12 +42,6 @@ if(BUILD_TESTS)
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(googletest)
 endif()
-
-# Eigen
-find_package(Eigen3 REQUIRED)
-set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
-set(EIGEN3_LIBRARIES ${EIGEN3_LIBRARIES})
-include_directories(${EIGEN3_INCLUDE_DIR})
 
 # Add all the source files needed to build the executable
 add_library(preimage SHARED
@@ -85,6 +85,7 @@ if(BUILD_TESTS)
                  tests/test_sym_bit_vec.cpp
                  tests/test_sym_representation.cpp
                  tests/test_utils.cpp)
+
   target_link_libraries(unit_tests gtest_main)
   target_link_libraries(unit_tests preimage)
   target_link_libraries(unit_tests cryptopp-shared)
@@ -92,3 +93,12 @@ if(BUILD_TESTS)
   include(GoogleTest)
   gtest_discover_tests(unit_tests)
 endif()
+
+# PyBind11
+add_subdirectory(extern/pybind11)
+pybind11_add_module(cryptosym src/bindings.cpp)
+target_link_libraries(cryptosym PUBLIC preimage)
+
+# EXAMPLE_VERSION_INFO is defined by setup.py
+# target_compile_definitions(cmake_example
+#                            PRIVATE VERSION_INFO=${EXAMPLE_VERSION_INFO})
