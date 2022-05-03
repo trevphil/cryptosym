@@ -4,12 +4,11 @@
 #include <boost/dynamic_bitset.hpp>
 #include <sstream>
 
+#include "core/config.hpp"
 #include "core/logic_gate.hpp"
 #include "core/utils.hpp"
 
 namespace py = pybind11;
-
-int add(int i, int j) { return i + j; }
 
 namespace pybind11 {
 
@@ -20,26 +19,30 @@ struct type_caster<boost::dynamic_bitset<>> {
  public:
   PYBIND11_TYPE_CASTER(boost::dynamic_bitset<>, _("boost::dynamic_bitset<>"));
 
-  /**
-   * Conversion part 1 (Python->C++): convert a PyObject into a inty
-   * instance or return false upon failure. The second argument
-   * indicates whether implicit conversions should be applied.
-   */
   bool load(handle src, bool implicit_conversions) {
-    // https://docs.python.org/3.9/c-api/bytes.html?highlight=pybytes#c.PyBytes_FromObject
-
-    /* Extract PyObject from handle */
+    // Python --> C++
     PyObject *source = src.ptr();
-    /* Try converting into a Python integer value */
-    PyObject *tmp_object = PyBytes_FromObject(source);
-    if (!tmp_object) {
-      printf("%s\n", "Conversion failed!");
-      return false;
+    PyObject *byte_obj = PyBytes_FromObject(source);
+    if (!byte_obj) return false;
+
+    const unsigned int num_bytes = py::len(byte_obj);
+    const unsigned int n = num_bytes * 8;
+    value = boost::dynamic_bitset<>(n);
+
+    unsigned int bit_idx = 0;
+    for (unsigned int byte_idx = 0; byte_idx < num_bytes; ++byte_idx) {
+      PyObject *b_obj = PySequence_GetItem(byte_obj, byte_idx);
+      if (!b_obj) {
+        printf("Failed to get byte %ul of %ul\n", byte_idx, num_bytes);
+        return false;
+      }
+      const unsigned long b = PyLong_AsUnsignedLong(b_obj);
+      for (int offset = 0; offset < 8 && bit_idx < n; offset++) {
+        value[bit_idx++] = (b >> offset) & 1;
+      }
     }
-    const std::string data(PyBytes_AsString(tmp_object));
-    printf("Python --> C++: data = %s\n", data.c_str());
-    value = boost::dynamic_bitset<>(data);
-    Py_DECREF(tmp_object);
+
+    Py_DECREF(byte_obj);
     return !PyErr_Occurred();
   }
 
@@ -71,27 +74,35 @@ struct type_caster<boost::dynamic_bitset<>> {
 
 }  // end namespace pybind11
 
+class dummy {};  // dummy class
+
 namespace preimage {
 
 PYBIND11_MODULE(cryptosym, m) {
-  m.doc() = "CryptoSym";
+  m.doc() = "cryptosym";
 
-  m.def("add", &add, py::arg("i") = 1, py::arg("j") = 2,
-        "A function that adds two numbers");
-  m.attr("the_answer") = 42;
-  py::object world = py::cast("World");
-  m.attr("what") = world;
+  // Configuration
+  py::class_<dummy>(m, "config")
+      .def_property_static(
+          "only_and_gates", [](py::object) { return config::only_and_gates; },
+          [](py::object, bool v) { config::only_and_gates = v; })
+      .def_property_static(
+          "verbose", [](py::object) { return config::verbose; },
+          [](py::object, bool v) { config::verbose = v; });
 
-  m.def("seed", &utils::seed, py::arg("seed_value"));
-  m.def("zero_bits", &utils::zeroBits, py::arg("n"));
-  m.def("random_bits", py::overload_cast<int>(&utils::randomBits), py::arg("n"));
-  m.def("random_bits", py::overload_cast<int, unsigned int>(&utils::randomBits),
+  // Utilities
+  py::module u = m.def_submodule("utils");
+  u.def("seed", &utils::seed, py::arg("seed_value"));
+  u.def("zero_bits", &utils::zeroBits, py::arg("n"));
+  u.def("random_bits", py::overload_cast<int>(&utils::randomBits), py::arg("n"));
+  u.def("random_bits", py::overload_cast<int, unsigned int>(&utils::randomBits),
         py::arg("n"), py::arg("seed_value"));
-  m.def("str2bits", &utils::str2bits);
-  m.def("hexstr", &utils::hexstr);
-  m.def("binstr", &utils::binstr);
-  m.def("hex2bits", &utils::hex2bits);
+  u.def("str2bits", &utils::str2bits);
+  u.def("hexstr", &utils::hexstr);
+  u.def("binstr", &utils::binstr);
+  u.def("hex2bits", &utils::hex2bits);
 
+  // Logic gate
   py::class_<LogicGate> gate(m, "LogicGate");
   py::enum_<LogicGate::Type>(gate, "Type")
       .value("and_gate", LogicGate::Type::and_gate)
