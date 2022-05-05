@@ -24,7 +24,7 @@ class LogicGate {
 
   LogicGate();
 
-  LogicGate(Type typ, const int dpth, const int output,
+  LogicGate(Type typ, const int output,
             const std::vector<int> &inputs = {});
 
   virtual ~LogicGate();
@@ -54,7 +54,6 @@ class LogicGate {
     }
   }
 
-  int depth;
   int output;
   std::vector<int> inputs;
   thread_local static std::vector<LogicGate> global_gates;

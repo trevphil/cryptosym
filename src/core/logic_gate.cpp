@@ -31,19 +31,13 @@ int numInputs(LogicGate::Type t) {
 
 LogicGate::LogicGate() {}
 
-LogicGate::LogicGate(LogicGate::Type typ, const int dpth, const int out,
-                     const std::vector<int> &inp)
-    : depth(dpth), output(out), inputs(inp), t_(typ) {
+LogicGate::LogicGate(LogicGate::Type typ, const int out, const std::vector<int> &inp)
+    : output(out), inputs(inp), t_(typ) {
   const int n_inputs = numInputs(t_);
   if (n_inputs != static_cast<int>(inp.size())) {
     char err_msg[128];
     snprintf(err_msg, 128, "%s gate requires %d input(s) but got %lu\n",
              LogicGate::humanReadableType(t_).c_str(), n_inputs, inp.size());
-    throw std::invalid_argument(err_msg);
-  }
-  if (depth <= 0) {
-    char err_msg[128];
-    snprintf(err_msg, 128, "Logic gate depth must be > 0 (got %d)", depth);
     throw std::invalid_argument(err_msg);
   }
   if (output <= 0) {
@@ -64,7 +58,7 @@ LogicGate::Type LogicGate::t() const { return t_; }
 
 std::string LogicGate::toString() const {
   std::stringstream stream;
-  stream << char(t_) << " " << depth << " " << output;
+  stream << char(t_) << " " << output;
   for (int inp : inputs) stream << " " << inp;
   std::string result(stream.str());
   return result;
@@ -72,14 +66,13 @@ std::string LogicGate::toString() const {
 
 LogicGate LogicGate::fromString(const std::string &data) {
   const Type t = static_cast<Type>(data[0]);
-  int depth, output;
+  int output;
   std::istringstream nums(data.substr(1));
-  nums >> depth;
   nums >> output;
   const int n_inputs = numInputs(t);
   std::vector<int> inputs(n_inputs);
   for (int i = 0; i < n_inputs; i++) nums >> inputs[i];
-  return LogicGate(t, depth, output, inputs);
+  return LogicGate(t, output, inputs);
 }
 
 void LogicGate::reset() { global_gates.clear(); }

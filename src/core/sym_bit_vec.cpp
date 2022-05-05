@@ -21,14 +21,14 @@ SymBitVec::SymBitVec(const boost::dynamic_bitset<> &bits, bool unknown) {
   bits_ = {};
   bits_.reserve(bits.size());
   for (boost::dynamic_bitset<>::size_type i = 0; i < bits.size(); ++i) {
-    bits_.push_back(Bit(bits[i], unknown, 0));
+    bits_.push_back(Bit(bits[i], unknown));
   }
 }
 
 SymBitVec::SymBitVec(uint64_t n, int sz, bool unknown) {
   bits_ = {};
   bits_.reserve(sz);
-  for (int i = 0; i < sz; i++) bits_.push_back(Bit((n >> i) & 1, unknown, 0));
+  for (int i = 0; i < sz; i++) bits_.push_back(Bit((n >> i) & 1, unknown));
 }
 
 SymBitVec::~SymBitVec() {}

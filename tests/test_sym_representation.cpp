@@ -16,8 +16,8 @@ namespace preimage {
 
 TEST(SymRepresentationTest, Initialization) {
   const std::vector<LogicGate> gates = {
-      LogicGate(LogicGate::Type::and_gate, 1, 4, {1, -2}),
-      LogicGate(LogicGate::Type::xor_gate, 1, 5, {2, -3})};
+      LogicGate(LogicGate::Type::and_gate, 4, {1, -2}),
+      LogicGate(LogicGate::Type::xor_gate, 5, {2, -3})};
   SymRepresentation rep(gates, {1, 2, 3}, {0, 4, 5});
   EXPECT_EQ(rep.numVars(), 5);
   EXPECT_EQ(rep.gates().size(), 2);
@@ -32,8 +32,8 @@ TEST(SymRepresentationTest, Initialization) {
 
 TEST(SymRepresentationTest, PruneAndReindex) {
   const std::vector<LogicGate> gates = {
-      LogicGate(LogicGate::Type::and_gate, 1, 4, {1, -2}),
-      LogicGate(LogicGate::Type::and_gate, 1, 5, {3, -4})};
+      LogicGate(LogicGate::Type::and_gate, 4, {1, -2}),
+      LogicGate(LogicGate::Type::and_gate, 5, {3, -4})};
   SymRepresentation rep(gates, {1, 2, 3}, {4});
   EXPECT_EQ(rep.numVars(), 3);
   EXPECT_EQ(rep.gates().size(), 1);
@@ -47,8 +47,8 @@ TEST(SymRepresentationTest, PruneAndReindex) {
 
 TEST(SymRepresentationTest, ConvertToCNF) {
   const std::vector<LogicGate> gates = {
-      LogicGate(LogicGate::Type::and_gate, 1, 4, {1, -2}),
-      LogicGate(LogicGate::Type::and_gate, 1, 5, {3, -4})};
+      LogicGate(LogicGate::Type::and_gate, 4, {1, -2}),
+      LogicGate(LogicGate::Type::and_gate, 5, {3, -4})};
   SymRepresentation rep(gates, {1, 2, 3}, {4});
   const CNF cnf = rep.toCNF();
   EXPECT_EQ(cnf.num_vars, 3);
@@ -57,9 +57,9 @@ TEST(SymRepresentationTest, ConvertToCNF) {
 
 TEST(SymRepresentationTest, ConvertDAG) {
   const std::vector<LogicGate> gates = {
-      LogicGate(LogicGate::Type::and_gate, 1, 4, {1, -2}),
-      LogicGate(LogicGate::Type::xor_gate, 1, 5, {2, -3}),
-      LogicGate(LogicGate::Type::maj_gate, 1, 6, {1, 4, 5})};
+      LogicGate(LogicGate::Type::and_gate, 4, {1, -2}),
+      LogicGate(LogicGate::Type::xor_gate, 5, {2, -3}),
+      LogicGate(LogicGate::Type::maj_gate, 6, {1, 4, 5})};
   const std::vector<int> inputs = {1, 2, 3};
   const std::vector<int> outputs = {0, 6, 5, 0, 0};
   SymRepresentation rep(gates, inputs, outputs);

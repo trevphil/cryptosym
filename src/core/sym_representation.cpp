@@ -206,7 +206,7 @@ void SymRepresentation::reindexBits() {
       inputs.push_back(SGN(inp) * index_old2new.at(std::abs(inp)));
     }
     const int output = SGN(g.output) * index_old2new.at(std::abs(g.output));
-    LogicGate g_new(g.t(), g.depth, output, inputs);
+    LogicGate g_new(g.t(), output, inputs);
     new_gates.push_back(g_new);
   }
 

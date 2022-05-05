@@ -16,8 +16,7 @@ namespace preimage {
 
 thread_local int Bit::global_index = 1;  // 1-based indexing
 
-Bit::Bit(bool bit_val, bool is_unknown, int dpth)
-    : val(bit_val), unknown(is_unknown), depth(dpth) {
+Bit::Bit(bool bit_val, bool is_unknown) : val(bit_val), unknown(is_unknown) {
   if (unknown) {
     index = Bit::global_index++;
   }
@@ -25,19 +24,18 @@ Bit::Bit(bool bit_val, bool is_unknown, int dpth)
 
 Bit::~Bit() {}
 
-Bit Bit::zero() { return Bit(0, false, 0); }
+Bit Bit::zero() { return Bit(0, false); }
 
-Bit Bit::one() { return Bit(1, false, 0); }
+Bit Bit::one() { return Bit(1, false); }
 
-Bit Bit::constant(bool val) { return Bit(val, false, 0); }
+Bit Bit::constant(bool val) { return Bit(val, false); }
 
 void Bit::reset() { global_index = 1; }
 
 Bit Bit::operator~() const {
-  Bit b(!val, false, 0);
+  Bit b(!val, false);
   b.index = -index;
   b.unknown = unknown;
-  b.depth = depth;
   return b;
 }
 
@@ -53,9 +51,8 @@ Bit Bit::operator&(const Bit &b) const {
     // (0 & 1 = 0), (1 & 0 = 0)
     if (a.index == -b.index) return Bit::zero();
 
-    Bit result(a.val & b.val, true, 1 + std::max(a.depth, b.depth));
-    LogicGate f(LogicGate::Type::and_gate, result.depth, result.index,
-                {a.index, b.index});
+    Bit result(a.val & b.val, true);
+    LogicGate f(LogicGate::Type::and_gate, result.index, {a.index, b.index});
     LogicGate::global_gates.push_back(f);
     return result;
   } else if (a.unknown) {
@@ -85,9 +82,8 @@ Bit Bit::operator^(const Bit &b) const {
       return ~(tmp2 & tmp3);
     }
 
-    Bit result(a.val ^ b.val, true, 1 + std::max(a.depth, b.depth));
-    LogicGate f(LogicGate::Type::xor_gate, result.depth, result.index,
-                {a.index, b.index});
+    Bit result(a.val ^ b.val, true);
+    LogicGate f(LogicGate::Type::xor_gate, result.index, {a.index, b.index});
     LogicGate::global_gates.push_back(f);
     return result;
   } else if (a.unknown) {
@@ -123,8 +119,8 @@ Bit Bit::operator|(const Bit &b) const {
       return ~(tmp1 & tmp2);
     }
 
-    Bit result(a.val | b.val, true, 1 + std::max(a.depth, b.depth));
-    LogicGate f(LogicGate::Type::or_gate, result.depth, result.index, {a.index, b.index});
+    Bit result(a.val | b.val, true);
+    LogicGate f(LogicGate::Type::or_gate, result.index, {a.index, b.index});
     LogicGate::global_gates.push_back(f);
     return result;
   } else if (a.unknown) {
@@ -182,9 +178,8 @@ Bit Bit::majority3(const Bit &a, const Bit &b, const Bit &c) {
     }
 
     // All 3 inputs are unknown --> output will be unknown
-    Bit result(val, true, 1 + std::max(a.depth, std::max(b.depth, c.depth)));
-    LogicGate f(LogicGate::Type::maj_gate, result.depth, result.index,
-                {a.index, b.index, c.index});
+    Bit result(val, true);
+    LogicGate f(LogicGate::Type::maj_gate, result.index, {a.index, b.index, c.index});
     LogicGate::global_gates.push_back(f);
     return result;
   } else if (knowns.size() == 1) {
@@ -244,9 +239,8 @@ Bit Bit::xor3(const Bit &a, const Bit &b, const Bit &c) {
     if (config::only_and_gates) return a ^ b ^ c;
 
     // All 3 inputs are unknown --> output will be unknown
-    Bit result(val, true, 1 + std::max(a.depth, std::max(b.depth, c.depth)));
-    LogicGate f(LogicGate::Type::xor3_gate, result.depth, result.index,
-                {a.index, b.index, c.index});
+    Bit result(val, true);
+    LogicGate f(LogicGate::Type::xor3_gate, result.index, {a.index, b.index, c.index});
     LogicGate::global_gates.push_back(f);
     return result;
   } else if (knowns.size() == 1) {

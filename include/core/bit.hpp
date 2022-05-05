@@ -13,7 +13,7 @@ namespace preimage {
 
 class Bit {
  public:
-  Bit(bool bit_val, bool is_unknown, int dpth);
+  Bit(bool bit_val, bool is_unknown);
 
   virtual ~Bit();
 
@@ -45,7 +45,6 @@ class Bit {
   bool val;
   int index;
   bool unknown;
-  int depth;
 };
 
 }  // end namespace preimage

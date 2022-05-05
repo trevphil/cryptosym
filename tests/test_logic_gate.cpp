@@ -32,20 +32,18 @@ bool isSAT(const std::vector<std::vector<int>> &clauses,
 }
 
 TEST(LogicGateTest, Initialization) {
-  const LogicGate g(LogicGate::Type::and_gate, 5, 3, {1, 2});
+  const LogicGate g(LogicGate::Type::and_gate, 3, {1, 2});
   EXPECT_EQ(g.t(), LogicGate::Type::and_gate);
   EXPECT_EQ(g.output, 3);
-  EXPECT_EQ(g.depth, 5);
   EXPECT_EQ(g.inputs.at(0), 1);
   EXPECT_EQ(g.inputs.at(1), 2);
 }
 
 TEST(LogicGateTest, StringConversion) {
-  const std::string s = "M 7 4 -1 2 -3";
+  const std::string s = "M 4 -1 2 -3";
   const LogicGate g = LogicGate::fromString(s);
   EXPECT_EQ(g.t(), LogicGate::Type::maj_gate);
   EXPECT_EQ(g.output, 4);
-  EXPECT_EQ(g.depth, 7);
   EXPECT_EQ(g.inputs.at(0), -1);
   EXPECT_EQ(g.inputs.at(1), 2);
   EXPECT_EQ(g.inputs.at(2), -3);
@@ -53,7 +51,7 @@ TEST(LogicGateTest, StringConversion) {
 }
 
 TEST(LogicGateTest, AndGateCNF) {
-  const LogicGate g(LogicGate::Type::and_gate, 1, 3, {1, 2});
+  const LogicGate g(LogicGate::Type::and_gate, 3, {1, 2});
   const auto clauses = g.cnf();
   for (int i = 0; i < (1 << 3); ++i) {
     const bool b1 = (i >> 0) & 1;
@@ -69,7 +67,7 @@ TEST(LogicGateTest, AndGateCNF) {
 }
 
 TEST(LogicGateTest, OrGateCNF) {
-  const LogicGate g(LogicGate::Type::or_gate, 1, 3, {1, 2});
+  const LogicGate g(LogicGate::Type::or_gate, 3, {1, 2});
   const auto clauses = g.cnf();
   for (int i = 0; i < (1 << 3); ++i) {
     const bool b1 = (i >> 0) & 1;
@@ -85,7 +83,7 @@ TEST(LogicGateTest, OrGateCNF) {
 }
 
 TEST(LogicGateTest, XorGateCNF) {
-  const LogicGate g(LogicGate::Type::xor_gate, 1, 3, {1, 2});
+  const LogicGate g(LogicGate::Type::xor_gate, 3, {1, 2});
   const auto clauses = g.cnf();
   for (int i = 0; i < (1 << 3); ++i) {
     const bool b1 = (i >> 0) & 1;
@@ -101,7 +99,7 @@ TEST(LogicGateTest, XorGateCNF) {
 }
 
 TEST(LogicGateTest, Xor3GateCNF) {
-  const LogicGate g(LogicGate::Type::xor3_gate, 1, 4, {1, 2, 3});
+  const LogicGate g(LogicGate::Type::xor3_gate, 4, {1, 2, 3});
   const auto clauses = g.cnf();
   for (int i = 0; i < (1 << 4); ++i) {
     const bool b1 = (i >> 0) & 1;
@@ -118,7 +116,7 @@ TEST(LogicGateTest, Xor3GateCNF) {
 }
 
 TEST(LogicGateTest, Maj3GateCNF) {
-  const LogicGate g(LogicGate::Type::maj_gate, 1, 4, {1, 2, 3});
+  const LogicGate g(LogicGate::Type::maj_gate, 4, {1, 2, 3});
   const auto clauses = g.cnf();
   for (int i = 0; i < (1 << 4); ++i) {
     const bool b1 = (i >> 0) & 1;

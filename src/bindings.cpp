@@ -113,9 +113,8 @@ PYBIND11_MODULE(cryptosym, m) {
       .value("xor3_gate", LogicGate::Type::xor3_gate)
       .export_values();
   gate.def(py::init());
-  gate.def(py::init<LogicGate::Type, int, int, const std::vector<int> &>(),
-           py::arg("gate_type"), py::arg("depth"), py::arg("output"),
-           py::arg("inputs") = py::list());
+  gate.def(py::init<LogicGate::Type, int, const std::vector<int> &>(),
+           py::arg("gate_type"), py::arg("output"), py::arg("inputs") = py::list());
 }
 
 }  // end namespace preimage
