@@ -62,9 +62,11 @@ std::string SymBitVec::hex() const { return utils::hexstr(bits()); }
 
 Bit SymBitVec::at(int index) const {
   const int n = size();
-  if (index < 0 || index >= n)
-    printf("Index %d out of bounds for SymBitVec[%d]\n", index, n);
-  assert(index >= 0 && index < n);
+  if (index < 0 || index >= n) {
+    char err_msg[128];
+    snprintf(err_msg, 128, "Index %d out of bounds for SymBitVec[%d]", index, n);
+    throw std::out_of_range(err_msg);
+  }
   return bits_.at(index);
 }
 
@@ -126,7 +128,11 @@ SymBitVec SymBitVec::operator~() const {
 
 SymBitVec SymBitVec::operator&(const SymBitVec &b) const {
   const int n = size();
-  assert(n == b.size());
+  if (n != b.size()) {
+    char err_msg[128];
+    snprintf(err_msg, 128, "Bit vectors must be same size (%d != %d)", n, b.size());
+    throw std::length_error(err_msg);
+  }
   std::vector<Bit> bits = {};
   for (int i = 0; i < n; i++) bits.push_back(at(i) & b.at(i));
   return SymBitVec(bits);
@@ -134,7 +140,11 @@ SymBitVec SymBitVec::operator&(const SymBitVec &b) const {
 
 SymBitVec SymBitVec::operator^(const SymBitVec &b) const {
   const int n = size();
-  assert(n == b.size());
+  if (n != b.size()) {
+    char err_msg[128];
+    snprintf(err_msg, 128, "Bit vectors must be same size (%d != %d)", n, b.size());
+    throw std::length_error(err_msg);
+  }
   std::vector<Bit> bits = {};
   for (int i = 0; i < n; i++) bits.push_back(at(i) ^ b.at(i));
   return SymBitVec(bits);
@@ -142,7 +152,11 @@ SymBitVec SymBitVec::operator^(const SymBitVec &b) const {
 
 SymBitVec SymBitVec::operator|(const SymBitVec &b) const {
   const int n = size();
-  assert(n == b.size());
+  if (n != b.size()) {
+    char err_msg[128];
+    snprintf(err_msg, 128, "Bit vectors must be same size (%d != %d)", n, b.size());
+    throw std::length_error(err_msg);
+  }
   std::vector<Bit> bits = {};
   for (int i = 0; i < n; i++) bits.push_back(at(i) | b.at(i));
   return SymBitVec(bits);
@@ -151,7 +165,11 @@ SymBitVec SymBitVec::operator|(const SymBitVec &b) const {
 SymBitVec SymBitVec::operator+(const SymBitVec &b) const {
   const int m = size();
   const int n = b.size();
-  assert(m == n);
+  if (m != n) {
+    char err_msg[128];
+    snprintf(err_msg, 128, "Bit vectors must be same size (%d != %d)", m, n);
+    throw std::length_error(err_msg);
+  }
 
   Bit carry = Bit::zero();
   std::vector<Bit> output_bits = {};
@@ -174,6 +192,7 @@ SymBitVec SymBitVec::operator<<(int n) const {
   */
   if (n == 0) return *this;
   const int m = size();
+  n = std::min(m, n);
   std::vector<Bit> bits = {};
   for (int i = 0; i < n; i++) bits.push_back(Bit::zero());
   for (int i = 0; i < m - n; i++) bits.push_back(at(i));
@@ -191,6 +210,7 @@ SymBitVec SymBitVec::operator>>(int n) const {
   */
   if (n == 0) return *this;
   const int m = size();
+  n = std::min(m, n);
   std::vector<Bit> bits = {};
   for (int i = n; i < m; i++) bits.push_back(at(i));
   for (int i = 0; i < n; i++) bits.push_back(Bit::zero());
@@ -201,8 +221,12 @@ SymBitVec SymBitVec::operator>>(int n) const {
 
 SymBitVec SymBitVec::majority3(const SymBitVec &a, const SymBitVec &b,
                                const SymBitVec &c) {
-  assert(a.size() == b.size());
-  assert(a.size() == c.size());
+  if ((a.size() != b.size()) || (a.size() != c.size())) {
+    char err_msg[128];
+    snprintf(err_msg, 128, "Bit vectors must be same size, got (%d, %d, %d)", a.size(),
+             b.size(), c.size());
+    throw std::length_error(err_msg);
+  }
 
   std::vector<Bit> bits = {};
   for (int i = 0; i < a.size(); i++) {
@@ -212,8 +236,12 @@ SymBitVec SymBitVec::majority3(const SymBitVec &a, const SymBitVec &b,
 }
 
 SymBitVec SymBitVec::xor3(const SymBitVec &a, const SymBitVec &b, const SymBitVec &c) {
-  assert(a.size() == b.size());
-  assert(a.size() == c.size());
+  if ((a.size() != b.size()) || (a.size() != c.size())) {
+    char err_msg[128];
+    snprintf(err_msg, 128, "Bit vectors must be same size, got (%d, %d, %d)", a.size(),
+             b.size(), c.size());
+    throw std::length_error(err_msg);
+  }
 
   std::vector<Bit> bits = {};
   for (int i = 0; i < a.size(); i++) {

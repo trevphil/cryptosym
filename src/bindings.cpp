@@ -3,6 +3,7 @@
 
 #include <boost/dynamic_bitset.hpp>
 #include <sstream>
+#include <vector>
 
 #include "core/config.hpp"
 #include "core/logic_gate.hpp"
@@ -97,10 +98,10 @@ PYBIND11_MODULE(cryptosym, m) {
   u.def("random_bits", py::overload_cast<int>(&utils::randomBits), py::arg("n"));
   u.def("random_bits", py::overload_cast<int, unsigned int>(&utils::randomBits),
         py::arg("n"), py::arg("seed_value"));
-  u.def("str2bits", &utils::str2bits);
-  u.def("hexstr", &utils::hexstr);
-  u.def("binstr", &utils::binstr);
-  u.def("hex2bits", &utils::hex2bits);
+  u.def("str2bits", &utils::str2bits, py::arg("s"));
+  u.def("hexstr", &utils::hexstr, py::arg("raw_bytes"));
+  u.def("binstr", &utils::binstr, py::arg("raw_bytes"));
+  u.def("hex2bits", &utils::hex2bits, py::arg("hex_str"));
 
   // Logic gate
   py::class_<LogicGate> gate(m, "LogicGate");
@@ -111,6 +112,10 @@ PYBIND11_MODULE(cryptosym, m) {
       .value("maj_gate", LogicGate::Type::maj_gate)
       .value("xor3_gate", LogicGate::Type::xor3_gate)
       .export_values();
+  gate.def(py::init());
+  gate.def(py::init<LogicGate::Type, int, int, const std::vector<int> &>(),
+           py::arg("gate_type"), py::arg("depth"), py::arg("output"),
+           py::arg("inputs") = py::list());
 }
 
 }  // end namespace preimage

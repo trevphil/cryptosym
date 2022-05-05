@@ -35,7 +35,9 @@ class CMSatSolver : public Solver {
   void initializeSolver(int num_vars, const std::vector<LogicGate> &gates);
 
   inline CMSat::Lit getLit(int i) const {
-    assert(i != 0);
+    if (i == 0) {
+      throw std::invalid_argument("Literals should be indexed starting at 1");
+    }
     return CMSat::Lit(std::abs(i) - 1, i < 0);
   }
 

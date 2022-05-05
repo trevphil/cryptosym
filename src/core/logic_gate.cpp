@@ -35,12 +35,27 @@ LogicGate::LogicGate(LogicGate::Type typ, const int dpth, const int out,
                      const std::vector<int> &inp)
     : depth(dpth), output(out), inputs(inp), t_(typ) {
   const int n_inputs = numInputs(t_);
-  if (n_inputs != inp.size()) {
-    printf("Gate %c requires %d input(s) but got %lu\n", char(t_), n_inputs, inp.size());
+  if (n_inputs != static_cast<int>(inp.size())) {
+    char err_msg[128];
+    snprintf(err_msg, 128, "%s gate requires %d input(s) but got %lu\n",
+             LogicGate::humanReadableType(t_).c_str(), n_inputs, inp.size());
+    throw std::invalid_argument(err_msg);
   }
-  assert(depth > 0);
-  assert(output != 0);
-  for (int i : inputs) assert(i != 0);
+  if (depth <= 0) {
+    char err_msg[128];
+    snprintf(err_msg, 128, "Logic gate depth must be > 0 (got %d)", depth);
+    throw std::invalid_argument(err_msg);
+  }
+  if (output <= 0) {
+    char err_msg[128];
+    snprintf(err_msg, 128, "Logic gate output index must be > 0 (got %d)", output);
+    throw std::invalid_argument(err_msg);
+  }
+  for (int i : inputs) {
+    if (i == 0) {
+      throw std::invalid_argument("Logic gate input index cannot be 0");
+    }
+  }
 }
 
 LogicGate::~LogicGate() {}

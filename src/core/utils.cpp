@@ -109,7 +109,7 @@ const char *hex2bin(char c) {
     case 'F':
       return "1111";
     default:
-      assert(false);
+      throw std::domain_error("Unrecognized hexadecimal character");
       return "0000";
   }
 }
@@ -129,7 +129,7 @@ std::string binstr(const boost::dynamic_bitset<> &bs) {
 
 std::chrono::system_clock::rep ms_since_epoch() {
   static_assert(std::is_integral<std::chrono::system_clock::rep>::value,
-                "Representation of ticks isn't an integral value.");
+                "Representation of ticks is not an integral value");
 
   const auto now = std::chrono::system_clock::now().time_since_epoch();
   return std::chrono::duration_cast<std::chrono::milliseconds>(now).count();

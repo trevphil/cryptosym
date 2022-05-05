@@ -30,7 +30,9 @@ struct Simplification {
 
     // Queue will contain literals for which we KNOW the assignment
     for (const auto &itr : assignments) {
-      assert(itr.first != 0);
+      if (itr.first == 0) {
+        throw std::domain_error("CNF variables should be 1-indexed (0 is reserved)");
+      }
       q.push_back({itr.first, itr.second});
       q.push_back({-itr.first, !itr.second});
     }
@@ -50,18 +52,20 @@ struct Simplification {
       } else {
         for (int clause_idx : clause_indices) {
           if (tmp_clauses[clause_idx].size() == 0) continue;
-          // If this is the last literal in the clause, UNSAT
-          assert(tmp_clauses[clause_idx].size() != 1);
+          if (tmp_clauses[clause_idx].size() == 1) {
+            // If this is the last literal in the clause, UNSAT
+            throw std::logic_error("Problem found to be UNSAT during simplification");
+          }
           // Remove literal from clause, since it is 0 / false
           tmp_clauses[clause_idx].erase(lit);
           if (tmp_clauses[clause_idx].size() == 1) {
             const int last_lit = *(tmp_clauses[clause_idx].begin());
             if (original_assignments.count(last_lit) && !original_assignments[last_lit]) {
-              assert(false);  // UNSAT because we need last_lit = 1
+              throw std::logic_error("Problem found to be UNSAT during simplification");
             }
             if (original_assignments.count(-last_lit) &&
                 original_assignments[-last_lit]) {
-              assert(false);  // UNSAT, need -last_lit = 0 --> last_lit = 1
+              throw std::logic_error("Problem found to be UNSAT during simplification");
             }
             q.push_back({last_lit, true});
             q.push_back({-last_lit, false});
@@ -136,8 +140,9 @@ int CNF::numSatClauses(const std::unordered_map<int, bool> &assignments) {
       else if (assignments.count(-lit))
         lit_val = !assignments.at(-lit);
       else {
-        printf("CNF is missing assignment for %d\n", lit);
-        assert(false);
+        char err_msg[128];
+        snprintf(err_msg, 128, "CNF is missing assignment for literal %d", lit);
+        throw std::out_of_range(err_msg);
       }
 
       if (lit_val) {
@@ -158,8 +163,9 @@ double CNF::approximationRatio(const std::unordered_map<int, bool> &assignments)
 void CNF::toFile(const std::string &filename) const {
   std::ofstream cnf_file(filename);
   if (!cnf_file.is_open()) {
-    printf("Unable to open \"%s\" in write mode.\n", filename.c_str());
-    assert(false);
+    char err_msg[256];
+    snprintf(err_msg, 256, "Unable to open in write mode: %s", filename.c_str());
+    throw std::invalid_argument(err_msg);
   }
 
   cnf_file << "p cnf " << num_vars << " " << num_clauses << "\n";
@@ -174,8 +180,9 @@ void CNF::toFile(const std::string &filename) const {
 CNF CNF::fromFile(const std::string &filename) {
   std::ifstream cnf_file(filename);
   if (!cnf_file.is_open()) {
-    printf("Unable to open \"%s\" in read mode.\n", filename.c_str());
-    assert(false);
+    char err_msg[256];
+    snprintf(err_msg, 256, "Unable to open in read mode: %s", filename.c_str());
+    throw std::invalid_argument(err_msg);
   }
 
   std::string line;
@@ -206,8 +213,7 @@ CNF CNF::fromFile(const std::string &filename) {
   cnf_file.close();
 
   if (num_vars == -1 || num_clauses == -1) {
-    printf("%s\n", "Did not read `p cnf N M`, ensure DIMACS header exists.");
-    assert(false);
+    throw std::runtime_error("Did not read `p cnf N M`, ensure DIMACS header exists");
   }
 
   return CNF(clauses, num_vars);

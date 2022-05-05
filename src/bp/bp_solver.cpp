@@ -34,7 +34,6 @@ void BPSolver::initializeGraph(const std::vector<LogicGate> &gates) {
 
   for (const LogicGate &gate : gates) {
     const int rv = gate.output;
-    assert(rv > 0);
     const BPFactorType t = convertLogicGate(gate.t());
 
     std::shared_ptr<GraphFactor> fac(new GraphFactor(rv, t));
@@ -52,7 +51,6 @@ void BPSolver::initializeGraph(const std::vector<LogicGate> &gates) {
     g_.connectFactorNode(fac, out_node, IODirection::Output);
 
     for (int inp : gate.inputs) {
-      assert(inp != 0);
       std::shared_ptr<GraphNode> inp_node;
       if (!g_.hasNode(std::abs(inp))) {
         inp_node = std::shared_ptr<GraphNode>(new GraphNode(std::abs(inp)));
@@ -95,8 +93,17 @@ std::unordered_map<int, bool> BPSolver::solve(
   std::vector<int> prior_rvs = {};
   for (const auto &itr : bit_assignments) {
     const int rv = itr.first;
-    assert(rv > 0);
-    assert(g_.hasNode(rv));
+    if (rv <= 0) {
+      char err_msg[128];
+      snprintf(err_msg, 128,
+               "Bit assignments to solve() should use positive indices (got %d)", rv);
+      throw std::invalid_argument(err_msg);
+    }
+    if (!g_.hasNode(rv)) {
+      char err_msg[128];
+      snprintf(err_msg, 128, "Belief propagation graph is missing node for RV %d", rv);
+      throw std::runtime_error(err_msg);
+    }
     const bool bit_val = itr.second;
     std::shared_ptr<GraphFactor> fac(new GraphPriorFactor(rv, bit_val));
     g_.addFactor(fac);

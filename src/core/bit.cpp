@@ -20,8 +20,6 @@ Bit::Bit(bool bit_val, bool is_unknown, int dpth)
     : val(bit_val), unknown(is_unknown), depth(dpth) {
   if (unknown) {
     index = Bit::global_index++;
-  } else {
-    assert(depth == 0);
   }
 }
 

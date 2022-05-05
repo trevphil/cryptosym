@@ -24,7 +24,9 @@ class GraphPriorFactor : public GraphFactor {
   }
 
   void initMessages() override {
-    assert(edges_.size() == 1);
+    if (edges_.size() != 1) {
+      throw std::length_error("Prior factor should have 1 edge");
+    }
     std::shared_ptr<GraphEdge> e = edges_.at(0);
     e->m2n(0) = (bit_ == false ? 1.0 : 0.0);
     e->m2n(1) = (bit_ == true ? 1.0 : 0.0);

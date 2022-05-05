@@ -49,8 +49,9 @@ void SymRepresentation::toDAG(const std::string &filename) const {
 
   std::ofstream dag_file(filename);
   if (!dag_file.is_open()) {
-    printf("Unable to open \"%s\" in write mode.\n", filename.c_str());
-    assert(false);
+    char buf[256];
+    snprintf(buf, 256, "Unable to open DAG file in write mode: %s", filename.c_str());
+    throw std::invalid_argument(buf);
   }
 
   // Write comments
@@ -94,8 +95,9 @@ void SymRepresentation::toMIP(const std::string &filename) const {
 SymRepresentation SymRepresentation::fromDAG(const std::string &filename) {
   std::ifstream dag_file(filename);
   if (!dag_file.is_open()) {
-    printf("Unable to open \"%s\" in read mode.\n", filename.c_str());
-    assert(false);
+    char buf[256];
+    snprintf(buf, 256, "Unable to open DAG file in read mode: %s", filename.c_str());
+    throw std::invalid_argument(buf);
   }
 
   std::string line;
@@ -136,10 +138,7 @@ SymRepresentation SymRepresentation::fromDAG(const std::string &filename) {
 void SymRepresentation::pruneIrrelevantGates() {
   const int n_before = static_cast<int>(gates_.size());
   std::unordered_map<int, LogicGate> index2gate;
-  for (const LogicGate &g : gates_) {
-    assert(g.output > 0);  // should always be positive
-    index2gate[g.output] = g;
-  }
+  for (const LogicGate &g : gates_) index2gate[g.output] = g;
 
   // Gates that appear in the queue are useful, not irrelevant
   std::queue<int> q;

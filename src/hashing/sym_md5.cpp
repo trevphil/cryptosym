@@ -41,8 +41,6 @@ MD5::MD5(int num_input_bits, int difficulty) : SymHash(num_input_bits, difficult
 }
 
 SymBitVec MD5::hash(const SymBitVec &hash_input) {
-  // Input size must be byte-aligned
-  assert(hash_input.size() % 8 == 0);
   const int n_bytes = hash_input.size() / 8;
   SymBitVec input[n_bytes];
   for (int i = 0; i < n_bytes; i++) {

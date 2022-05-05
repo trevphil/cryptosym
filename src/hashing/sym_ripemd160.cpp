@@ -40,8 +40,6 @@ RIPEMD160::RIPEMD160(int num_input_bits, int difficulty)
 }
 
 SymBitVec RIPEMD160::hash(const SymBitVec &hash_input) {
-  // Input size must be byte-aligned
-  assert(hash_input.size() % 8 == 0);
   const int n_bytes = hash_input.size() / 8;
 
   resetState();

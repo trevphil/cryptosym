@@ -148,7 +148,7 @@ void GraphFactor::initMessages() {
     switch (edge->direction) {
       case IODirection::None:
       case IODirection::Prior:
-        assert(false);  // This should not happen
+        throw std::exception();  // This should not happen
         break;
       case IODirection::Input:
         // The first columns of the probability table are for input variables
@@ -251,59 +251,58 @@ void GraphNode::rescaleMatrix(Eigen::MatrixXd &m) {
 Eigen::Array2d GraphNode::stableColwiseProduct(const Eigen::MatrixXd &m) {
   Eigen::Array2d result = m.colwise().prod();
   return result;
-  /*
-  assert(m.cols() == 2);
-  const int n_rows = m.rows();
-  assert(n_rows >= 1);
 
-  if (n_rows == 1) {
-    Eigen::Array2d result;
-    result(0) = m(0, 0);
-    result(1) = m(0, 1);
-    return result;
-  }
+  //   assert(m.cols() == 2);
+  //   const int n_rows = m.rows();
+  //   assert(n_rows >= 1);
 
-  std::vector<double> col0, col1;
-  col0.reserve(n_rows);
-  col1.reserve(n_rows);
+  //   if (n_rows == 1) {
+  //     Eigen::Array2d result;
+  //     result(0) = m(0, 0);
+  //     result(1) = m(0, 1);
+  //     return result;
+  //   }
 
-  for (int i = 0; i < n_rows; i++) {
-    col0.push_back(m(i, 0)); col1.push_back(m(i, 1));
-  }
+  //   std::vector<double> col0, col1;
+  //   col0.reserve(n_rows);
+  //   col1.reserve(n_rows);
 
-  std::sort(col0.begin(), col0.end());
-  std::sort(col1.begin(), col1.end());
-  double prod0 = 1.0, prod1 = 1.0;
+  //   for (int i = 0; i < n_rows; i++) {
+  //     col0.push_back(m(i, 0)); col1.push_back(m(i, 1));
+  //   }
 
-  if (col0.at(0) == 0 && col1.at(0) == 0) {
-    // spdlog::error("Zero-sum for {}. Is there a contradiction?", toString());
-    // assert(false);
-    prod0 = 0.0;
-    prod1 = 0.0;
-  } else if (col0.at(0) == 0) {
-    prod0 = 0.0;
-    prod1 = 1.0;
-  } else if (col1.at(0) == 0) {
-    prod0 = 1.0;
-    prod1 = 0.0;
-  } else {
-    for (int i = 0; i < n_rows; i++) {
-      prod0 *= col0.at(i);
-      prod1 *= col1.at(i);
-      const double min_val = std::min(prod0, prod1);
-      const double max_val = std::max(prod0, prod1);
-      const double exp = (log10(max_val) - log10(min_val)) / 2;
-      const double scalar = pow(10, exp);
-      prod0 *= scalar;
-      prod1 *= scalar;
-    }
-  }
+  //   std::sort(col0.begin(), col0.end());
+  //   std::sort(col1.begin(), col1.end());
+  //   double prod0 = 1.0, prod1 = 1.0;
 
-  Eigen::Array2d result;
-  result(0) = prod0;
-  result(1) = prod1;
-  return result;
-  */
+  //   if (col0.at(0) == 0 && col1.at(0) == 0) {
+  //     // spdlog::error("Zero-sum for {}. Is there a contradiction?", toString());
+  //     // assert(false);
+  //     prod0 = 0.0;
+  //     prod1 = 0.0;
+  //   } else if (col0.at(0) == 0) {
+  //     prod0 = 0.0;
+  //     prod1 = 1.0;
+  //   } else if (col1.at(0) == 0) {
+  //     prod0 = 1.0;
+  //     prod1 = 0.0;
+  //   } else {
+  //     for (int i = 0; i < n_rows; i++) {
+  //       prod0 *= col0.at(i);
+  //       prod1 *= col1.at(i);
+  //       const double min_val = std::min(prod0, prod1);
+  //       const double max_val = std::max(prod0, prod1);
+  //       const double exp = (log10(max_val) - log10(min_val)) / 2;
+  //       const double scalar = pow(10, exp);
+  //       prod0 *= scalar;
+  //       prod1 *= scalar;
+  //     }
+  //   }
+
+  //   Eigen::Array2d result;
+  //   result(0) = prod0;
+  //   result(1) = prod1;
+  //   return result;
 }
 
 std::string GraphNode::toString() const {
@@ -349,8 +348,8 @@ void GraphNode::initMessages() {
       case IODirection::Prior:
         break;
       case IODirection::None:
-        assert(false);
-        break;  // This should not happen
+        throw std::exception();  // This should not happen
+        break;
     }
   }
 
@@ -388,7 +387,7 @@ void GraphNode::node2factor(IODirection target) {
       targets = out_factor_idx_;
       break;
     case IODirection::Prior:
-      assert(false);  // This should not happen
+      throw std::exception();  // This should not happen
       break;
   }
 

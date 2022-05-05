@@ -31,10 +31,8 @@ void DAGSolver::initialize(const std::vector<LogicGate> &gates) {
   for (int i = 0; i < static_cast<int>(gates.size()); ++i) {
     const LogicGate &g = gates.at(i);
     const int out = g.output;
-    assert(out > 0);
     lit2gates[out].insert(i);
     for (const int inp : g.inputs) {
-      assert(inp != 0);
       lit2gates[std::abs(inp)].insert(i);
     }
   }
@@ -60,8 +58,10 @@ std::unordered_map<int, bool> DAGSolver::solve(
   for (const auto &itr : bit_assignments) {
     const int lit = itr.first;
     if (lit <= 0) {
-      printf("Bits should be positive (not negated), got %d\n", lit);
-      assert(false);
+      char err_msg[128];
+      snprintf(err_msg, 128,
+               "Bit assignments to solve() should use positive indices (got %d)", lit);
+      throw std::invalid_argument(err_msg);
     }
 
     const bool truth_value = itr.second;
@@ -69,12 +69,10 @@ std::unordered_map<int, bool> DAGSolver::solve(
       pushStack(lit, truth_value, false);
       const int num_solved = propagate(lit, problem.gates());
       if (num_solved < 0) {
-        printf("%s\n", "Problem is UNSAT!");
-        return {};
+        throw std::runtime_error("Problem is UNSAT!");
       }
     } else if (truth_value != (literals[lit] > 0)) {
-      printf("%s\n", "Problem is UNSAT!");
-      return {};
+      throw std::runtime_error("Problem is UNSAT!");
     }
   }
 
@@ -110,7 +108,9 @@ DAGSolver::LitStats DAGSolver::computeStats(const int lit) {
 }
 
 void DAGSolver::pushStack(int lit, bool truth_value, bool second_try) {
-  assert(literals[lit] == 0);
+  if (literals[lit] != 0) {
+    throw std::runtime_error("Only unassigned literals can be pushed to stack");
+  }
   literals[lit] = truth_value ? 1 : -1;
   stack.push_back(StackItem(lit));
   stack.back().second_try = second_try;
@@ -147,8 +147,6 @@ int DAGSolver::pickLiteral(bool &assignment) {
 int DAGSolver::propagate(const int lit, const std::vector<LogicGate> &gates) {
   std::vector<int> solved_lits;
   std::set<int> &lits_solved_via_propagation = stack.back().implied;
-  assert(lit == stack.back().lit_guess);
-  assert(lits_solved_via_propagation.size() == 0);
 
   std::queue<int> q;
   for (int g : lit2gates[lit]) q.push(g);

@@ -15,7 +15,11 @@
 namespace preimage {
 
 SymHash::SymHash(int num_input_bits, int difficulty)
-    : num_input_bits_(num_input_bits), difficulty_(difficulty) {}
+    : num_input_bits_(num_input_bits), difficulty_(difficulty) {
+  if (num_input_bits_ % 8 != 0) {
+    throw std::domain_error("Number of hash input bits should be a multiple of 8");
+  }
+}
 
 SymHash::~SymHash() {}
 
@@ -24,8 +28,10 @@ int SymHash::numInputBits() const { return num_input_bits_; }
 boost::dynamic_bitset<> SymHash::call(const boost::dynamic_bitset<> &hash_input) {
   const int inp_size = static_cast<int>(hash_input.size());
   if (inp_size != num_input_bits_) {
-    printf("Hash expected %d-bit input, got %d bits!\n", num_input_bits_, inp_size);
-    assert(false);
+    char err_msg[128];
+    snprintf(err_msg, 128, "Hash expected %d-bit input, got %d bits!", num_input_bits_,
+             inp_size);
+    throw std::length_error(err_msg);
   }
 
   SymBitVec inp(hash_input, false);

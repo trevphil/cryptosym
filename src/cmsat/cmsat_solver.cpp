@@ -71,8 +71,11 @@ std::unordered_map<int, bool> CMSatSolver::solve(
   std::vector<CMSat::Lit> assumptions;
   for (const auto &itr : bit_assignments) {
     if (itr.first <= 0) {
-      printf("Bits should be positive (not negated), got %d\n", itr.first);
-      assert(false);
+      char err_msg[128];
+      snprintf(err_msg, 128,
+               "Bit assignments to solve() should use positive indices (got %d)",
+               itr.first);
+      throw std::invalid_argument(err_msg);
     }
     CMSat::Lit lit(itr.first - 1, !itr.second);
     assumptions.push_back(lit);
@@ -81,8 +84,7 @@ std::unordered_map<int, bool> CMSatSolver::solve(
   initializeSolver(problem.numVars(), problem.gates());
   CMSat::lbool ret = solver_->solve(&assumptions);
   if (ret != CMSat::l_True) {
-    printf("%s\n", "CryptoMiniSAT did not solve the problem!");
-    assert(false);
+    throw std::runtime_error("CryptoMiniSAT did not solve the problem!");
   }
   const auto final_model = solver_->get_model();
 
