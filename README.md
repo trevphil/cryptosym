@@ -8,19 +8,19 @@ Lossy "pseudo-hash" used to validate solver accuracy, showing relationship betwe
 
 - [Description](#description)
 - [Installation](#installation)
-	- [Python](#python)
-	- [C++](#c)
+    - [Python](#python)
+    - [C++](#c)
 - [Quickstart](#quickstart)
-	- [Writing your own hash function](#writing-your-own-hash-function)
+    - [Writing your own hash function](#writing-your-own-hash-function)
 - [How it works](#how-it-works)
-	- [Dataset generation](#dataset-generation)
-	- [Dataset format](#dataset-format)
+    - [Dataset generation](#dataset-generation)
+    - [Dataset format](#dataset-format)
 - [Solving Methods](#solving-methods)
-	- [SAT Solvers](#sat-solver)
-	- [MILP](#milp)
-	- [Optimization](#optimization)
-	- [Belief Propagation](#belief-propagation)
-	- [Machine Learning](#machine-learning)
+    - [SAT Solvers](#sat-solver)
+    - [MILP](#milp)
+    - [Optimization](#optimization)
+    - [Belief Propagation](#belief-propagation)
+    - [Machine Learning](#machine-learning)
 - [References and Resources](#references-and-resources)
 
 # Description
@@ -143,11 +143,11 @@ Implement your own hash function class which inherits from `SymbolicHash` and ha
 - XOR: `C = A ^ B`
 - NOT (aka INV for "inverse"): `B = ~A`
 - Addition: `C = A + B`
-	- `A`, `B`, and `C` should have the same number of bits, overflow is ignored
+    - `A`, `B`, and `C` should have the same number of bits, overflow is ignored
 - Shift left: `B = (A << n)`
-	- `B` will have the same number of bits as `A`
+    - `B` will have the same number of bits as `A`
 - Shift right: `B = (A >> n)`
-	- `B` will have the same number of bits as `A`
+    - `B` will have the same number of bits as `A`
 
 To generate a dataset using your hash function, run a command like the following:
 
@@ -189,7 +189,7 @@ optional arguments:
                         the input
   --pct-val PCT_VAL     Percent of samples used for validation dataset
   --pct-test PCT_TEST   Percent of samples used for test dataset
-``` 
+```
 
 # How it works
 
@@ -207,7 +207,7 @@ Some simplifications can be made during this process. For example, let's say tha
 - `B = A ^ A = 0`
 - `B = A & A = A | A = A`
 
-These simplifications help to reduce the size of the symbolic representation of the hash function, since the output bit `B` is sometimes a constant or equal to the unknown input `A`. When this happens, we don't need to introduce a new unknown variable. 
+These simplifications help to reduce the size of the symbolic representation of the hash function, since the output bit `B` is sometimes a constant or equal to the unknown input `A`. When this happens, we don't need to introduce a new unknown variable.
 
 Furthermore, the problem can be made easier to handle by reducing all operations (XOR, OR, addition) to only using AND and INV logic gates. For example, `C = A ^ B` is equivalent to:
 
@@ -254,9 +254,9 @@ Below is an outline of what each file contains:
 - `params.yaml`: Information about the dataset like the name of the hash algorithm, number of input bits `X`, and indices of the hash output bits `Y` with respect to all of the random variable bits tracked in the hash computation
 - `data.bits`: This is a binary file. Let's say you chose the options `--num-samples 64 --num-input-bits 128`, then the hash function will execute 64 times, each time with a random 128-bit input to the hash function. Let's say 1 pass of the hash function generates 2000 random variable bits, starting with the hash input bits `X` directly and (generally) ending with the hash output bits `Y`, although the `Y` bits might not be grouped together consecutively at the end. This file will contain 64*2000 bits which result from concatenating 2000 bits 64 times. When I say that a bit has index _i_, it means the _i_-th bit of 2000 bits. **The number of samples should always be a multiple of 8 to avoid filesystem errors** where the file length does not fit into an integer number of bytes.
 - `factors.txt`: Encodes the relationship between input and output bits of logic gates. Some examples follow...
-	- `PRIOR;10`: The random variable bit with index 10 is a prior, i.e.  a bit from the unknown input `X`
-	- `INV;94;93`: The random variable bit with index 94 is a result of the INV operation on bit 93, i.e. `B94 = ~B93`
-	- `AND;95;61;29`: Bit 95 is the result of AND-ing bits 61 and 29, i.e. `B95 = B61 & B29`
+    - `PRIOR;10`: The random variable bit with index 10 is a prior, i.e.  a bit from the unknown input `X`
+    - `INV;94;93`: The random variable bit with index 94 is a result of the INV operation on bit 93, i.e. `B94 = ~B93`
+    - `AND;95;61;29`: Bit 95 is the result of AND-ing bits 61 and 29, i.e. `B95 = B61 & B29`
 - `factors.cnf`: An alternative representation of the relationship between random variable bits using [DIMACS Conjunctive Normal Form](https://people.sc.fsu.edu/~jburkardt/data/cnf/cnf.html) (CNF). All logic gates can be converted to this form, see [`factor.py`](./dataset_generation/factor.py). The bit indices in CNF are all +1 relative to their indices in the other representations, so keep that in mind.
 - `graph.pdf`: If you specify the optional `--visualize` argument to the dataset generation tool, it will create a visualization of the hash function like the one shown in the beginning of the README. Hash input bits are shown in black, and output bits in green.
 - `graph.graphml`: This is another representation of the directed graph in [graphml](http://graphml.graphdrawing.org/) format showing relationships between bits, useful for visualizing in tools like [Gephi](https://gephi.org/)

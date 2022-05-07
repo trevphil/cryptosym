@@ -24,8 +24,7 @@ class LogicGate {
 
   LogicGate();
 
-  LogicGate(Type typ, const int output,
-            const std::vector<int> &inputs = {});
+  LogicGate(Type typ, const int output, const std::vector<int> &inputs = {});
 
   virtual ~LogicGate();
 

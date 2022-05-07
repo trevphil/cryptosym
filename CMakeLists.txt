@@ -1,10 +1,8 @@
-# Minimum version of CMake required to build this project
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.12)
 
-# Name of the project
-project(preimage)
+project(cryptosym)
 
-set(BUILD_TESTS ON)
+set(BUILD_TESTS OFF)
 
 add_definitions(-std=c++17 -Wshadow -Wunused -Wall -Werror -O3)
 # add_compile_options(-g)
@@ -44,7 +42,7 @@ if(BUILD_TESTS)
 endif()
 
 # Add all the source files needed to build the executable
-add_library(preimage SHARED
+add_library(cryptosymlib SHARED
             src/bp/bp_solver.cpp
             src/bp/graph.cpp
             src/bp/node.cpp
@@ -63,11 +61,11 @@ add_library(preimage SHARED
             src/hashing/sym_sha256.cpp
             src/dag_solver/dag_solver.cpp)
 
-target_link_libraries(preimage Boost::boost)
-target_link_libraries(preimage cryptominisat5)
+target_link_libraries(cryptosymlib Boost::boost)
+target_link_libraries(cryptosymlib cryptominisat5)
 
 add_executable(main src/main.cpp)
-target_link_libraries(main preimage)
+target_link_libraries(main cryptosymlib)
 
 if(BUILD_TESTS)
   enable_testing()
@@ -87,7 +85,7 @@ if(BUILD_TESTS)
                  tests/test_utils.cpp)
 
   target_link_libraries(unit_tests gtest_main)
-  target_link_libraries(unit_tests preimage)
+  target_link_libraries(unit_tests cryptosymlib)
   target_link_libraries(unit_tests cryptopp-shared)
 
   include(GoogleTest)
@@ -97,7 +95,7 @@ endif()
 # PyBind11
 add_subdirectory(extern/pybind11)
 pybind11_add_module(cryptosym src/bindings.cpp)
-target_link_libraries(cryptosym PUBLIC preimage)
+target_link_libraries(cryptosym PUBLIC cryptosymlib)
 
 # EXAMPLE_VERSION_INFO is defined by setup.py
 # target_compile_definitions(cmake_example

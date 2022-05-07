@@ -1,3 +1,4 @@
+#include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -5,8 +6,10 @@
 #include <sstream>
 #include <vector>
 
+#include "core/bit.hpp"
 #include "core/config.hpp"
 #include "core/logic_gate.hpp"
+#include "core/sym_bit_vec.hpp"
 #include "core/utils.hpp"
 
 namespace py = pybind11;
@@ -112,9 +115,48 @@ PYBIND11_MODULE(cryptosym, m) {
       .value("maj_gate", LogicGate::Type::maj_gate)
       .value("xor3_gate", LogicGate::Type::xor3_gate)
       .export_values();
-  gate.def(py::init());
-  gate.def(py::init<LogicGate::Type, int, const std::vector<int> &>(),
-           py::arg("gate_type"), py::arg("output"), py::arg("inputs") = py::list());
+  gate.def(py::init(&LogicGate::fromString), py::arg("string"));
+  gate.def(py::init<LogicGate::Type, int, const std::vector<int> &>(), py::arg("t"),
+           py::arg("output"), py::arg("inputs") = py::list());
+  gate.def("__repr__", &LogicGate::toString);
+  gate.def_property_readonly("t", &LogicGate::t);
+  gate.def_property_readonly("output", [](const LogicGate &g) { return g.output; });
+  gate.def_property_readonly("inputs", [](const LogicGate &g) { return g.inputs; });
+  gate.def_property_readonly("gate_type", [](const LogicGate &g) {
+    return LogicGate::humanReadableType(g.t());
+  });
+  gate.def("cnf", &LogicGate::cnf);
+  gate.def_static("reset", &LogicGate::reset);
+
+  // Symbolic bit vector
+  py::class_<SymBitVec> bitvec(m, "SymBitVec");
+  bitvec.def(py::init());
+  bitvec.def(py::init<const boost::dynamic_bitset<> &, bool>(), py::arg("bits"),
+             py::arg("unknown") = false);
+  bitvec.def(py::init<uint64_t, int, bool>(), py::arg("n"), py::arg("size"),
+             py::arg("unknown") = false);
+  bitvec.def("__len__", &SymBitVec::size, py::is_operator());
+  bitvec.def("__int__", &SymBitVec::intVal, py::is_operator());
+  bitvec.def("bits", &SymBitVec::bits);
+  bitvec.def("bin", &SymBitVec::bin);
+  bitvec.def("hex", &SymBitVec::hex);
+  bitvec.def("__getitem__", [](const SymBitVec &bv, int i) { return bv.at(i).val; });
+  bitvec.def("concat", &SymBitVec::concat, py::arg("other"));
+  // TODO: slicing for `extract`
+  //   https://github.com/pybind/pybind11/blob/master/tests/test_sequences_and_iterators.cpp#L288
+  bitvec.def("resize", &SymBitVec::resize, py::arg("n"));
+  bitvec.def("rotr", &SymBitVec::rotr, py::arg("n"));
+  bitvec.def("__reversed__", &SymBitVec::reversed);
+  bitvec.def(~py::self);
+  bitvec.def(py::self & py::self);
+  bitvec.def(py::self ^ py::self);
+  bitvec.def(py::self | py::self);
+  bitvec.def(py::self + py::self);
+  // bitvec.def("__lshift__");
+  // bitvec.def("__rshift__");
+  bitvec.def_static("majority3", &SymBitVec::majority3, py::arg("a"), py::arg("b"),
+                    py::arg("c"));
+  bitvec.def_static("xor3", &SymBitVec::xor3, py::arg("a"), py::arg("b"), py::arg("c"));
 }
 
 }  // end namespace preimage

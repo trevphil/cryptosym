@@ -1,1 +1,5 @@
-Python bindings (PyBind)
+- Test C++ exceptions
+- Python bindings (PyBind)
+- PyTest
+- Documentation
+- Publish on ReadTheDocs / Pip
