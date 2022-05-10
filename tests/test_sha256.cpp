@@ -40,6 +40,16 @@ TEST(SHA256Test, FixedInput) {
   EXPECT_EQ(h, expected);
 }
 
+TEST(SHA256Test, InputSizeMismatch) {
+  SHA256 sha256(32);
+  const boost::dynamic_bitset<> inputs = utils::randomBits(64);
+  EXPECT_THROW({ sha256.call(inputs); }, std::length_error);
+}
+
+TEST(SHA256Test, BadInputSize) {
+  EXPECT_THROW({ SHA256(31); }, std::length_error);
+}
+
 TEST(SHA256Test, RandomInputsAndSizes) {
   utils::seed(1);
   const std::vector<int> inp_sizes{8, 32, 64, 512, 640, 1024};

@@ -15,6 +15,8 @@
 
 namespace preimage {
 
+using GType = LogicGate::Type;
+
 bool isSAT(const std::vector<std::vector<int>> &clauses,
            const std::map<int, bool> &vars) {
   for (const std::vector<int> &clause : clauses) {
@@ -32,8 +34,8 @@ bool isSAT(const std::vector<std::vector<int>> &clauses,
 }
 
 TEST(LogicGateTest, Initialization) {
-  const LogicGate g(LogicGate::Type::and_gate, 3, {1, 2});
-  EXPECT_EQ(g.t(), LogicGate::Type::and_gate);
+  const LogicGate g(GType::and_gate, 3, {1, 2});
+  EXPECT_EQ(g.t(), GType::and_gate);
   EXPECT_EQ(g.output, 3);
   EXPECT_EQ(g.inputs.at(0), 1);
   EXPECT_EQ(g.inputs.at(1), 2);
@@ -42,7 +44,7 @@ TEST(LogicGateTest, Initialization) {
 TEST(LogicGateTest, StringConversion) {
   const std::string s = "M 4 -1 2 -3";
   const LogicGate g = LogicGate::fromString(s);
-  EXPECT_EQ(g.t(), LogicGate::Type::maj_gate);
+  EXPECT_EQ(g.t(), GType::maj_gate);
   EXPECT_EQ(g.output, 4);
   EXPECT_EQ(g.inputs.at(0), -1);
   EXPECT_EQ(g.inputs.at(1), 2);
@@ -51,7 +53,7 @@ TEST(LogicGateTest, StringConversion) {
 }
 
 TEST(LogicGateTest, AndGateCNF) {
-  const LogicGate g(LogicGate::Type::and_gate, 3, {1, 2});
+  const LogicGate g(GType::and_gate, 3, {1, 2});
   const auto clauses = g.cnf();
   for (int i = 0; i < (1 << 3); ++i) {
     const bool b1 = (i >> 0) & 1;
@@ -67,7 +69,7 @@ TEST(LogicGateTest, AndGateCNF) {
 }
 
 TEST(LogicGateTest, OrGateCNF) {
-  const LogicGate g(LogicGate::Type::or_gate, 3, {1, 2});
+  const LogicGate g(GType::or_gate, 3, {1, 2});
   const auto clauses = g.cnf();
   for (int i = 0; i < (1 << 3); ++i) {
     const bool b1 = (i >> 0) & 1;
@@ -83,7 +85,7 @@ TEST(LogicGateTest, OrGateCNF) {
 }
 
 TEST(LogicGateTest, XorGateCNF) {
-  const LogicGate g(LogicGate::Type::xor_gate, 3, {1, 2});
+  const LogicGate g(GType::xor_gate, 3, {1, 2});
   const auto clauses = g.cnf();
   for (int i = 0; i < (1 << 3); ++i) {
     const bool b1 = (i >> 0) & 1;
@@ -99,7 +101,7 @@ TEST(LogicGateTest, XorGateCNF) {
 }
 
 TEST(LogicGateTest, Xor3GateCNF) {
-  const LogicGate g(LogicGate::Type::xor3_gate, 4, {1, 2, 3});
+  const LogicGate g(GType::xor3_gate, 4, {1, 2, 3});
   const auto clauses = g.cnf();
   for (int i = 0; i < (1 << 4); ++i) {
     const bool b1 = (i >> 0) & 1;
@@ -116,7 +118,7 @@ TEST(LogicGateTest, Xor3GateCNF) {
 }
 
 TEST(LogicGateTest, Maj3GateCNF) {
-  const LogicGate g(LogicGate::Type::maj_gate, 4, {1, 2, 3});
+  const LogicGate g(GType::maj_gate, 4, {1, 2, 3});
   const auto clauses = g.cnf();
   for (int i = 0; i < (1 << 4); ++i) {
     const bool b1 = (i >> 0) & 1;
@@ -130,6 +132,32 @@ TEST(LogicGateTest, Maj3GateCNF) {
       EXPECT_FALSE(isSAT(clauses, {{1, b1}, {2, b2}, {3, b3}, {4, b4}}));
     }
   }
+}
+
+TEST(LogicGateTest, WrongNumberOfInputs) {
+  EXPECT_THROW({ LogicGate(GType::and_gate, 2, {1}); }, std::invalid_argument);
+  EXPECT_THROW({ LogicGate(GType::and_gate, 4, {1, 2, 3}); }, std::invalid_argument);
+
+  EXPECT_THROW({ LogicGate(GType::or_gate, 2, {1}); }, std::invalid_argument);
+  EXPECT_THROW({ LogicGate(GType::or_gate, 4, {1, 2, 3}); }, std::invalid_argument);
+
+  EXPECT_THROW({ LogicGate(GType::xor_gate, 2, {1}); }, std::invalid_argument);
+  EXPECT_THROW({ LogicGate(GType::xor_gate, 4, {1, 2, 3}); }, std::invalid_argument);
+
+  EXPECT_THROW({ LogicGate(GType::xor3_gate, 3, {1, 2}); }, std::invalid_argument);
+  EXPECT_THROW({ LogicGate(GType::xor3_gate, 5, {1, 2, 3, 4}); }, std::invalid_argument);
+
+  EXPECT_THROW({ LogicGate(GType::maj_gate, 3, {1, 2}); }, std::invalid_argument);
+  EXPECT_THROW({ LogicGate(GType::maj_gate, 5, {1, 2, 3, 4}); }, std::invalid_argument);
+}
+
+TEST(LogicGateTest, NegatedOutput) {
+  EXPECT_THROW({ LogicGate(GType::xor_gate, -3, {1, 2}); }, std::invalid_argument);
+}
+
+TEST(LogicGateTest, ZeroIndexedVariables) {
+  EXPECT_THROW({ LogicGate(GType::or_gate, 0, {1, 2}); }, std::invalid_argument);
+  EXPECT_THROW({ LogicGate(GType::or_gate, 2, {0, 1}); }, std::invalid_argument);
 }
 
 }  // end namespace preimage

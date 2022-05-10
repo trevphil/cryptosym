@@ -7,6 +7,8 @@
 
 #include <gtest/gtest.h>
 
+#include <fstream>
+#include <iostream>
 #include <set>
 #include <unordered_map>
 
@@ -58,6 +60,14 @@ TEST(CNFTest, ApproximationRatio) {
   EXPECT_DOUBLE_EQ(cnf.approximationRatio(assignments), 0.25);
 }
 
+TEST(CNFTest, NumSatisfiedClausesPartialAssignment) {
+  CNF cnf({{-1, 2}, {3, -4}}, 4);
+  std::unordered_map<int, bool> assignments;
+  assignments[-1] = true;
+  assignments[3] = false;
+  EXPECT_THROW({ cnf.numSatClauses(assignments); }, std::out_of_range);
+}
+
 TEST(CNFTest, ReadWrite) {
   CNF cnf({{-1, 2}, {3, -4}}, 8);
   cnf.toFile("/tmp/a.cnf");
@@ -68,6 +78,36 @@ TEST(CNFTest, ReadWrite) {
   const std::set<int> clause1 = {-4, 3};
   EXPECT_EQ(cnf.clauses[0], clause0);
   EXPECT_EQ(cnf.clauses[1], clause1);
+}
+
+TEST(CNFTest, LoadFromNonexistantFile) {
+  EXPECT_THROW({ CNF::fromFile("/not/a/file.cnf"); }, std::invalid_argument);
+}
+
+TEST(CNFTest, LoadDimacsWithoutHeader) {
+  std::fstream dimacs;
+  dimacs.open("/tmp/dimacs.cnf", std::ios_base::out);
+  ASSERT_TRUE(dimacs.is_open());
+  dimacs << "1 2 3 0\n";
+  dimacs << "3 -1 -4 0\n";
+  dimacs.close();
+  EXPECT_THROW({ CNF::fromFile("/tmp/dimacs.cnf"); }, std::runtime_error);
+}
+
+TEST(CNFTest, SimplifyWithZeroIndexedAssignments) {
+  CNF cnf({{-1, 2}, {3, -4}}, 8);
+  std::unordered_map<int, bool> assignments;
+  assignments[2] = true;
+  assignments[0] = false;
+  EXPECT_THROW({ cnf.simplify(assignments); }, std::invalid_argument);
+}
+
+TEST(CNFTest, SimplifyResultsInUnsatisfiability) {
+  CNF cnf({{-1, 2}, {-2, 3}}, 3);
+  std::unordered_map<int, bool> assignments;
+  assignments[-1] = false;
+  assignments[3] = false;
+  EXPECT_THROW({ cnf.simplify(assignments); }, std::runtime_error);
 }
 
 }  // end namespace preimage

@@ -10,6 +10,7 @@
 #include <memory>
 
 #include "cmsat/cmsat_solver.hpp"
+#include "core/logic_gate.hpp"
 #include "core/solver.hpp"
 #include "core/sym_hash.hpp"
 #include "eval_solver.hpp"
@@ -50,6 +51,27 @@ TEST(CMSatSolverTest, SolveRIPEMD160) {
       EXPECT_TRUE(solved);
     }
   }
+}
+
+TEST(CMSatSolverTest, NegatedBitAssignments) {
+  const LogicGate g = LogicGate::fromString("A 3 1 2");
+  const SymRepresentation problem({g}, {1, 2}, {3});
+  std::unordered_map<int, bool> assignments;
+  assignments[3] = true;
+  assignments[-2] = false;
+  CMSatSolver solver;
+  EXPECT_THROW({ solver.solve(problem, assignments); }, std::invalid_argument);
+}
+
+TEST(CMSatSolverTest, UnsatisfiableProblem) {
+  const LogicGate g = LogicGate::fromString("A 3 1 -2");
+  const SymRepresentation problem({g}, {1, -2}, {3});
+  std::unordered_map<int, bool> assignments;
+  assignments[3] = true;
+  assignments[1] = true;
+  assignments[2] = true;
+  CMSatSolver solver;
+  EXPECT_THROW({ solver.solve(problem, assignments); }, std::runtime_error);
 }
 
 }  // end namespace preimage

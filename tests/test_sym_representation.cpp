@@ -73,4 +73,8 @@ TEST(SymRepresentationTest, ConvertDAG) {
   EXPECT_EQ(rep.outputIndices(), outputs);
 }
 
+TEST(SymRepresentationTest, LoadInvalidDAG) {
+  EXPECT_ANY_THROW({ SymRepresentation::fromDAG("/tmp/not_a_dag.txt"); });
+}
+
 }  // end namespace preimage

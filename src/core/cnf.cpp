@@ -31,7 +31,7 @@ struct Simplification {
     // Queue will contain literals for which we KNOW the assignment
     for (const auto &itr : assignments) {
       if (itr.first == 0) {
-        throw std::domain_error("CNF variables should be 1-indexed (0 is reserved)");
+        throw std::invalid_argument("CNF variables should be 1-indexed (0 is reserved)");
       }
       q.push_back({itr.first, itr.second});
       q.push_back({-itr.first, !itr.second});
@@ -54,18 +54,18 @@ struct Simplification {
           if (tmp_clauses[clause_idx].size() == 0) continue;
           if (tmp_clauses[clause_idx].size() == 1) {
             // If this is the last literal in the clause, UNSAT
-            throw std::logic_error("Problem found to be UNSAT during simplification");
+            throw std::runtime_error("Problem found to be UNSAT during simplification");
           }
           // Remove literal from clause, since it is 0 / false
           tmp_clauses[clause_idx].erase(lit);
           if (tmp_clauses[clause_idx].size() == 1) {
             const int last_lit = *(tmp_clauses[clause_idx].begin());
             if (original_assignments.count(last_lit) && !original_assignments[last_lit]) {
-              throw std::logic_error("Problem found to be UNSAT during simplification");
+              throw std::runtime_error("Problem found to be UNSAT during simplification");
             }
             if (original_assignments.count(-last_lit) &&
                 original_assignments[-last_lit]) {
-              throw std::logic_error("Problem found to be UNSAT during simplification");
+              throw std::runtime_error("Problem found to be UNSAT during simplification");
             }
             q.push_back({last_lit, true});
             q.push_back({-last_lit, false});

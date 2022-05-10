@@ -76,8 +76,9 @@ std::unique_ptr<SymHash> createHashFunction() {
   } else if (hash_func.compare("RIPEMD160") == 0) {
     return std::make_unique<RIPEMD160>(input_size, difficulty);
   } else {
-    printf("Unsupported hash function: %s\n", hash_func.c_str());
-    throw std::runtime_error("Unsupported hash function");
+    char err_msg[128];
+    snprintf(err_msg, 128, "Unsupported hash function: %s", hash_func.c_str());
+    throw std::runtime_error(err_msg);
   }
 }
 
@@ -89,8 +90,9 @@ std::unique_ptr<Solver> createSolver() {
   } else if (solving_method.compare("bp") == 0) {
     return std::make_unique<bp::BPSolver>();
   } else {
-    printf("Unsupported solver: %s\n", solving_method.c_str());
-    throw std::runtime_error("Unsupported solver");
+    char err_msg[128];
+    snprintf(err_msg, 128, "Unsupported solver: %s", solving_method.c_str());
+    throw std::runtime_error(err_msg);
   }
 }
 

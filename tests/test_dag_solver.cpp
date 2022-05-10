@@ -9,6 +9,7 @@
 
 #include <memory>
 
+#include "core/logic_gate.hpp"
 #include "core/solver.hpp"
 #include "core/sym_hash.hpp"
 #include "dag_solver/dag_solver.hpp"
@@ -50,6 +51,27 @@ TEST(DAGSolverTest, SolveRIPEMD160) {
       EXPECT_TRUE(solved);
     }
   }
+}
+
+TEST(DAGSolverTest, NegatedBitAssignments) {
+  const LogicGate g = LogicGate::fromString("A 3 1 -2");
+  const SymRepresentation problem({g}, {1, -2}, {3});
+  std::unordered_map<int, bool> assignments;
+  assignments[3] = true;
+  assignments[-2] = true;
+  DAGSolver solver;
+  EXPECT_THROW({ solver.solve(problem, assignments); }, std::invalid_argument);
+}
+
+TEST(DAGSolverTest, UnsatisfiableProblem) {
+  const LogicGate g = LogicGate::fromString("A 3 1 -2");
+  const SymRepresentation problem({g}, {1, -2}, {3});
+  std::unordered_map<int, bool> assignments;
+  assignments[3] = true;
+  assignments[1] = true;
+  assignments[2] = true;
+  DAGSolver solver;
+  EXPECT_THROW({ solver.solve(problem, assignments); }, std::runtime_error);
 }
 
 }  // end namespace preimage

@@ -29,6 +29,10 @@ TEST(UtilsTest, Conversions) {
   EXPECT_EQ(utils::str2bits("cheese"), cheese);
 }
 
+TEST(UtilsTest, BadHexString) {
+  EXPECT_THROW({ utils::hex2bits("wxyz"); }, std::domain_error);
+}
+
 TEST(UtilsTest, ZeroBits) {
   const boost::dynamic_bitset<> b = utils::zeroBits(32);
   for (int i = 0; i < 32; ++i) EXPECT_EQ(b[i], 0);

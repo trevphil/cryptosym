@@ -52,4 +52,14 @@ TEST(BPSolverTest, SolveRIPEMD160) {
   }
 }
 
+TEST(BPSolverTest, NegatedBitAssignments) {
+  const LogicGate g = LogicGate::fromString("A 3 1 2");
+  const SymRepresentation problem({g}, {1, 2}, {3});
+  std::unordered_map<int, bool> assignments;
+  assignments[3] = true;
+  assignments[-2] = false;
+  bp::BPSolver solver;
+  EXPECT_THROW({ solver.solve(problem, assignments); }, std::invalid_argument);
+}
+
 }  // end namespace preimage

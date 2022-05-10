@@ -20,6 +20,16 @@
 
 namespace preimage {
 
+TEST(MD5Test, InputSizeMismatch) {
+  MD5 md5(32);
+  const boost::dynamic_bitset<> inputs = utils::randomBits(64);
+  EXPECT_THROW({ md5.call(inputs); }, std::length_error);
+}
+
+TEST(MD5Test, BadInputSize) {
+  EXPECT_THROW({ MD5(31); }, std::length_error);
+}
+
 TEST(MD5Test, RandomInputsAndSizes) {
   utils::seed(1);
   const std::vector<int> inp_sizes{0, 8, 32, 64, 512, 640, 1024};

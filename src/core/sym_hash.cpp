@@ -17,7 +17,7 @@ namespace preimage {
 SymHash::SymHash(int num_input_bits, int difficulty)
     : num_input_bits_(num_input_bits), difficulty_(difficulty) {
   if (num_input_bits_ % 8 != 0) {
-    throw std::domain_error("Number of hash input bits should be a multiple of 8");
+    throw std::length_error("Number of hash input bits should be a multiple of 8");
   }
 }
 
