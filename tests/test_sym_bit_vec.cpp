@@ -90,4 +90,68 @@ TEST(SymBitVecTest, Majority3) {
   EXPECT_EQ(SymBitVec::majority3(a, b, c).intVal(), 0b11011101);
 }
 
+TEST(SymBitVecTest, AccessOutOfBoundsIndex) {
+  SymBitVec bv(0b1101, 4);
+  EXPECT_THROW({ bv.at(-1); }, std::out_of_range);
+  EXPECT_THROW({ bv.at(5); }, std::out_of_range);
+}
+
+TEST(SymBitVecTest, IncompatibleSizes) {
+  SymBitVec a(0b11111111, 8);
+  SymBitVec b(0b01111111, 7);
+  SymBitVec c(0b10110100, 8);
+  EXPECT_THROW({ a& b; }, std::length_error);
+  EXPECT_THROW({ a | b; }, std::length_error);
+  EXPECT_THROW({ a ^ b; }, std::length_error);
+  EXPECT_THROW({ a + b; }, std::length_error);
+  EXPECT_THROW({ SymBitVec::majority3(a, b, c); }, std::length_error);
+  EXPECT_THROW({ SymBitVec::xor3(a, b, c); }, std::length_error);
+}
+
+TEST(SymBitVecTest, ExtractInvalidBounds) {
+  SymBitVec a(0b11111111, 8);
+  EXPECT_THROW({ a.extract(4, 2); }, std::invalid_argument);
+  EXPECT_THROW({ a.extract(0, 9); }, std::out_of_range);
+}
+
+TEST(SymBitVecTest, RotateByLargeNumber) {
+  const SymBitVec a(0b11111101, 8);
+  SymBitVec b = a.rotr(8);
+  EXPECT_EQ(b.at(0).val, true);
+  EXPECT_EQ(b.at(1).val, false);
+  EXPECT_EQ(b.at(2).val, true);
+  b = a.rotr(16);
+  EXPECT_EQ(b.at(0).val, true);
+  EXPECT_EQ(b.at(1).val, false);
+  EXPECT_EQ(b.at(2).val, true);
+  b = a.rotr(1);
+  EXPECT_EQ(b.at(1).val, true);
+  EXPECT_EQ(b.at(2).val, false);
+  EXPECT_EQ(b.at(3).val, true);
+  b = a.rotr(9);
+  EXPECT_EQ(b.at(1).val, true);
+  EXPECT_EQ(b.at(2).val, false);
+  EXPECT_EQ(b.at(3).val, true);
+}
+
+TEST(SymBitVecTest, LeftShift) {
+  const SymBitVec a(0b11111101, 8);
+  SymBitVec b = a << 1;
+  EXPECT_EQ(b.size(), 8);
+  EXPECT_EQ(b.intVal(), 0b11111010);
+  b = a << 100;
+  EXPECT_EQ(b.size(), 8);
+  EXPECT_EQ(b.intVal(), 0);
+}
+
+TEST(SymBitVecTest, RightShift) {
+  const SymBitVec a(0b11111101, 8);
+  SymBitVec b = a >> 1;
+  EXPECT_EQ(b.size(), 8);
+  EXPECT_EQ(b.intVal(), 0b01111110);
+  b = a >> 100;
+  EXPECT_EQ(b.size(), 8);
+  EXPECT_EQ(b.intVal(), 0);
+}
+
 }  // end namespace preimage

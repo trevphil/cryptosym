@@ -26,11 +26,11 @@ class SymBitVec {
   SymBitVec();
   explicit SymBitVec(const std::vector<Bit> &bits);
   SymBitVec(const boost::dynamic_bitset<> &bits, bool unknown = false);
-  SymBitVec(uint64_t n, int sz, bool unknown = false);
+  SymBitVec(uint64_t n, unsigned int sz, bool unknown = false);
 
   virtual ~SymBitVec();
 
-  int size() const;
+  unsigned int size() const;
 
   uint64_t intVal() const;
 
@@ -40,15 +40,15 @@ class SymBitVec {
 
   std::string hex() const;
 
-  Bit at(int index) const;
+  Bit at(unsigned int index) const;
 
   SymBitVec concat(const SymBitVec &other) const;
 
-  SymBitVec extract(int lb, int ub) const;
+  SymBitVec extract(unsigned int lb, unsigned int ub) const;
 
-  SymBitVec resize(int n) const;
+  SymBitVec resize(unsigned int n) const;
 
-  SymBitVec rotr(int n) const;
+  SymBitVec rotr(unsigned int n) const;
 
   SymBitVec reversed() const;
 
@@ -62,9 +62,9 @@ class SymBitVec {
 
   SymBitVec operator+(const SymBitVec &b) const;
 
-  SymBitVec operator<<(int n) const;
+  SymBitVec operator<<(unsigned int n) const;
 
-  SymBitVec operator>>(int n) const;
+  SymBitVec operator>>(unsigned int n) const;
 
   static SymBitVec majority3(const SymBitVec &a, const SymBitVec &b, const SymBitVec &c);
 

@@ -126,7 +126,6 @@ PYBIND11_MODULE(cryptosym, m) {
     return LogicGate::humanReadableType(g.t());
   });
   gate.def("cnf", &LogicGate::cnf);
-  gate.def_static("reset", &LogicGate::reset);
 
   // Symbolic bit vector
   py::class_<SymBitVec> bitvec(m, "SymBitVec");

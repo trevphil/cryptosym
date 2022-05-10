@@ -224,11 +224,11 @@ CNF CNF::simplify(const std::unordered_map<int, bool> &assignments) const {
 }
 
 void CNF::toMIS(const std::string &filename) const {
-  throw std::logic_error("Function not yet implemented.");  // TODO(Trevor)
+  throw std::runtime_error("Function not yet implemented.");  // TODO(Trevor)
 }
 
 void CNF::toGraphColoring(const std::string &filename) const {
-  throw std::logic_error("Function not yet implemented.");  // TODO(Trevor)
+  throw std::runtime_error("Function not yet implemented.");  // TODO(Trevor)
 }
 
 }  // end namespace preimage

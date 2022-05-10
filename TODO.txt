@@ -1,5 +1,32 @@
-- Test C++ exceptions
 - Python bindings (PyBind)
 - PyTest
 - Documentation
 - Publish on ReadTheDocs / Pip
+- cibuildwheel?
+
+pyproject.toml: https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/
+  - Specifies dependencies to build the package (+ tool configurations)
+  - Build deps are installed to a tmp directory where the package is then built
+  - Our file specifies backend "setuptools.build_meta" which is a backend from "setuptools"
+    https://setuptools.pypa.io/en/latest/build_meta.html
+    and it implements the two necessary backend functions: "build_sdist" and "build_wheel"
+
+PyPA = Python Packaging Authority
+
+Wheels
+  - https://realpython.com/python-wheels/
+  - A Python .whl file is essentially a ZIP (.zip) archive with a specially crafted
+    filename that tells installers what Python versions and platforms the wheel will support.
+
+pandas-1.0.3-cp37-cp37m-manylinux1_x86_64.whl
+  At its core, manylinux is a Docker image built off a certain version of the
+  CentOS operating system. It comes bundled with a compiler suite, multiple versions
+  of Python and pip, and an allowed set of shared libraries.
+  (manylinux2014 is newest/best)
+
+Security vulnerabilities:
+- If no wheel is available, `pip install <PACKAGE>` will run the package's
+  `setup.py` which enables arbitrary code execution
+- Wheels built with `manylinux` come packaged with their own version of Linux kernel / libs,
+  rather than using your system's native libs. Therefore, even if you update/patch your libs,
+  the Python wheel could still be vulnerable if it was built with unpatched libraries.
