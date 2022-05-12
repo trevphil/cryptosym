@@ -4,7 +4,7 @@
 	branch = stable
 [submodule "extern/eigen"]
 	path = extern/eigen
-	url = git@gitlab.com:libeigen/eigen.git
+	url = https://gitlab.com/libeigen/eigen.git
 [submodule "extern/cryptopp"]
 	path = extern/cryptopp
 	url = https://github.com/trevphil/cryptopp.git
