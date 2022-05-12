@@ -7,7 +7,7 @@
 	url = git@gitlab.com:libeigen/eigen.git
 [submodule "extern/cryptopp"]
 	path = extern/cryptopp
-	url = git@github.com:trevphil/cryptopp.git
+	url = https://github.com/trevphil/cryptopp.git
 [submodule "extern/cryptominisat"]
 	path = extern/cryptominisat
-	url = git@github.com:trevphil/cryptominisat.git
+	url = https://github.com/trevphil/cryptominisat.git
