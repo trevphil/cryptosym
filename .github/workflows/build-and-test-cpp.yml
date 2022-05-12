@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest ] # , macos-latest, windows-latest ]
+        os: [ ubuntu-latest, macos-latest ] # , windows-latest ]
         python-version: [ "3.9" ]
 
     runs-on: ${{ matrix.os }}
@@ -21,6 +21,10 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v1.12
       - name: Set up ninja
         uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Install boost
+        uses: MarkusJx/install-boost@v2.3.0
+        with:
+          boost_version: 1.78.0
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
