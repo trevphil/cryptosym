@@ -121,6 +121,8 @@ std::string GraphFactor::ftype2str(BPFactorType t) {
     case BPFactorType::Xor3:
       return "Xor3";
   }
+
+  throw std::invalid_argument("Unsupported factor type");
 }
 
 std::string GraphFactor::makeString(int index, BPFactorType t) {
@@ -163,7 +165,7 @@ void GraphFactor::initMessages() {
     }
   }
   // Each edge should map to a unique column
-  assert(l == edge_index_for_table_column_.size());
+  assert(l == static_cast<int>(edge_index_for_table_column_.size()));
 }
 
 Eigen::MatrixXd GraphFactor::gatherIncoming() const {
@@ -336,7 +338,7 @@ void GraphNode::initMessages() {
   in_factor_idx_ = {};
   out_factor_idx_ = {};
   all_factor_idx_ = {};
-  for (int i = 0; i < directions_.size(); i++) {
+  for (int i = 0; i < static_cast<int>(directions_.size()); i++) {
     all_factor_idx_.push_back(i);
     switch (directions_.at(i)) {
       case IODirection::Input:

@@ -90,7 +90,7 @@ void MD5::init() {
 void MD5::decode(SymBitVec output[], const SymBitVec input[], int len) {
   // Decode input (8 bits per SymBitVec) into output (32 bits per SymBitVec)
   assert(len % 4 == 0);
-  for (unsigned int i = 0, j = 0; j < len; i++, j += 4) {
+  for (int i = 0, j = 0; j < len; i++, j += 4) {
     output[i] = (input[j].resize(32)) | (input[j + 1].resize(32) << 8) |
                 (input[j + 2].resize(32) << 16) | (input[j + 3].resize(32) << 24);
   }
@@ -113,7 +113,7 @@ void MD5::update(const SymBitVec input[], int len) {
   int index = count[0] / 8 % MD5_BLOCK_SIZE;
 
   // Update number of bits
-  if ((count[0] += (len << 3)) < (len << 3)) count[1]++;
+  if ((count[0] += (len << 3)) < static_cast<uint32_t>(len << 3)) count[1]++;
   count[1] += (len >> 29);
 
   // Number of bytes we need to fill in `buffer`

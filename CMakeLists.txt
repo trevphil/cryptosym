@@ -4,9 +4,6 @@ project(cryptosym)
 
 set(BUILD_TESTS ON)
 
-add_definitions(-Wshadow -Wunused -Wall -Werror -O3)
-# add_compile_options(-g)
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -75,6 +72,7 @@ add_library(cryptosymlib SHARED
 
 target_link_libraries(cryptosymlib Boost::boost)
 target_link_libraries(cryptosymlib cryptominisat5)
+target_compile_options(cryptosymlib PRIVATE -Werror -Wall -Wextra -O3)
 
 add_executable(main src/main.cpp)
 target_link_libraries(main cryptosymlib)

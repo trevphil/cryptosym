@@ -37,8 +37,8 @@ class SHA256 : public SymHash {
                                         const SymBitVec &g, const SymBitVec &h, int i,
                                         const SymBitVec &ki);
 
-  int local_, count_lo_, count_hi_;
-  int block_size_, digest_size_;
+  int local_, count_lo_, count_hi_, block_size_;
+  unsigned int digest_size_;
   std::vector<SymBitVec> w_, words_, data_, digest_;
 };
 

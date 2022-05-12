@@ -183,6 +183,10 @@ bool DAGSolver::partialSolve(const LogicGate &g, std::vector<int> &solved_lits) 
     case LogicGate::Type::maj_gate:
       return partialSolveMaj(g, solved_lits);
   }
+
+  char err_msg[256];
+  snprintf(err_msg, 256, "Unsupported logic gate: %c", (char)g.t());
+  throw std::invalid_argument(err_msg);
 }
 
 bool DAGSolver::partialSolveAnd(const LogicGate &g, std::vector<int> &solved_lits) {

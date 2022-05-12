@@ -3,6 +3,11 @@
 - Documentation
 - Publish on ReadTheDocs / Pip
 - cibuildwheel?
+- Add license
+
+####################################
+####### Miscellaneous notes ########
+####################################
 
 pyproject.toml: https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/
   - Specifies dependencies to build the package (+ tool configurations)

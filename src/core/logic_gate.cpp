@@ -27,6 +27,10 @@ int numInputs(LogicGate::Type t) {
     case LogicGate::Type::xor3_gate:
       return 3;
   }
+
+  char err_msg[256];
+  snprintf(err_msg, 256, "Unsupported logic gate: %c", (char)t);
+  throw std::invalid_argument(err_msg);
 }
 
 LogicGate::LogicGate() {}
@@ -104,6 +108,10 @@ std::vector<std::vector<int>> LogicGate::cnf() const {
               {-output, inputs[1], inputs[2]},  {output, -inputs[0], -inputs[1]},
               {output, -inputs[0], -inputs[2]}, {output, -inputs[1], -inputs[2]}};
   }
+
+  char err_msg[256];
+  snprintf(err_msg, 256, "CNF not implemented for logic gate: %c", (char)t_);
+  throw std::runtime_error(err_msg);
 }
 
 }  // end namespace preimage

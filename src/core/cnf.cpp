@@ -223,11 +223,11 @@ CNF CNF::simplify(const std::unordered_map<int, bool> &assignments) const {
   return Simplification(*this, assignments).simplified_cnf;
 }
 
-void CNF::toMIS(const std::string &filename) const {
+void CNF::toMIS(const std::string &) const {
   throw std::runtime_error("Function not yet implemented.");  // TODO(Trevor)
 }
 
-void CNF::toGraphColoring(const std::string &filename) const {
+void CNF::toGraphColoring(const std::string &) const {
   throw std::runtime_error("Function not yet implemented.");  // TODO(Trevor)
 }
 

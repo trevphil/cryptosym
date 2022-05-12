@@ -63,7 +63,7 @@ void Graph::printGraph() const {
 void Graph::writeNodes() const {
   std::ofstream outfile;
   outfile.open("/tmp/bp_dist.txt", std::ios::out | std::ios::app);
-  for (int i = 0; i < nodes_.size(); i++) {
+  for (unsigned int i = 0; i < nodes_.size(); i++) {
     outfile << nodes_.at(i)->distanceFromUndetermined();
     if (i != nodes_.size() - 1) outfile << ",";
   }
@@ -71,7 +71,7 @@ void Graph::writeNodes() const {
   outfile.close();
 
   outfile.open("/tmp/bp_bits.txt", std::ios::out | std::ios::app);
-  for (int i = 0; i < nodes_.size(); i++) {
+  for (unsigned int i = 0; i < nodes_.size(); i++) {
     outfile << (int)nodes_.at(i)->bit();
     if (i != nodes_.size() - 1) outfile << ",";
   }

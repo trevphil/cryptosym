@@ -27,9 +27,9 @@ std::unordered_map<int, bool> Solver::solve(const SymRepresentation &problem,
 std::unordered_map<int, bool> Solver::solve(const SymRepresentation &problem,
                                             const boost::dynamic_bitset<> &hash_output) {
   const std::vector<int> &output_indices = problem.outputIndices();
-  const int output_size = static_cast<int>(output_indices.size());
+  const unsigned int output_size = output_indices.size();
   std::unordered_map<int, bool> assignments;
-  for (int k = 0; k < output_size; k++) {
+  for (unsigned int k = 0; k < output_size; k++) {
     // If `hash_output` converted from hex, zeros in MSBs could shorten bitset
     const bool bitval = k < hash_output.size() ? hash_output[k] : false;
     const int output_index = output_indices.at(k);

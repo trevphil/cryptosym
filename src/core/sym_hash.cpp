@@ -49,14 +49,14 @@ SymRepresentation SymHash::getSymbolicRepresentation() {
   SymBitVec inp(0, num_input_bits_, true);
 
   std::vector<int> input_indices(inp.size());
-  for (int i = 0; i < inp.size(); i++) {
+  for (unsigned int i = 0; i < inp.size(); i++) {
     input_indices[i] = inp.at(i).unknown ? inp.at(i).index : 0;
   }
 
   SymBitVec out = hash(inp);
 
   std::vector<int> output_indices(out.size());
-  for (int i = 0; i < out.size(); i++) {
+  for (unsigned int i = 0; i < out.size(); i++) {
     output_indices[i] = out.at(i).unknown ? out.at(i).index : 0;
   }
 

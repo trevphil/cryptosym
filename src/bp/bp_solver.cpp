@@ -83,6 +83,10 @@ BPFactorType BPSolver::convertLogicGate(LogicGate::Type t) const {
     case LogicGate::Type::xor3_gate:
       return BPFactorType::Xor3;
   }
+
+  char err_msg[256];
+  snprintf(err_msg, 256, "Unsupported logic gate: %c", (char)t);
+  throw std::invalid_argument(err_msg);
 }
 
 std::unordered_map<int, bool> BPSolver::solve(

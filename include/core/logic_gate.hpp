@@ -51,6 +51,10 @@ class LogicGate {
       case Type::xor3_gate:
         return "XOR-3";
     }
+
+    char err_msg[256];
+    snprintf(err_msg, 256, "Unsupported logic gate: %c", (char)typ);
+    throw std::invalid_argument(err_msg);
   }
 
   int output;

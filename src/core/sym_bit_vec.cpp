@@ -153,7 +153,7 @@ SymBitVec SymBitVec::operator&(const SymBitVec &b) const {
 }
 
 SymBitVec SymBitVec::operator^(const SymBitVec &b) const {
-  const int n = size();
+  const unsigned int n = size();
   if (n != b.size()) {
     char err_msg[128];
     snprintf(err_msg, 128, "Bit vectors must be same size (%u != %u)", n, b.size());
@@ -165,7 +165,7 @@ SymBitVec SymBitVec::operator^(const SymBitVec &b) const {
 }
 
 SymBitVec SymBitVec::operator|(const SymBitVec &b) const {
-  const int n = size();
+  const unsigned int n = size();
   if (n != b.size()) {
     char err_msg[128];
     snprintf(err_msg, 128, "Bit vectors must be same size (%u != %u)", n, b.size());

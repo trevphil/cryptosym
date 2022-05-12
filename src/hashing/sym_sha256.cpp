@@ -94,7 +94,7 @@ void SHA256::transform() {
     std::rotate(i.begin(), i.begin() + 7, i.end());  // rotate right by 1
   }
 
-  for (int j = 0; j < digest_.size(); j++) {
+  for (unsigned int j = 0; j < digest_.size(); j++) {
     digest_[j] = digest_.at(j) + ss.at(j);
   }
 }
@@ -191,7 +191,7 @@ SymBitVec SHA256::digest() {
   }
 
   SymBitVec result = dig.at(0);
-  for (int i = 1; i < dig.size(); ++i) {
+  for (unsigned int i = 1; i < dig.size(); ++i) {
     result = dig.at(i).concat(result);
   }
   return result;
