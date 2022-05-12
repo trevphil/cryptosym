@@ -2,3 +2,12 @@
 	path = extern/pybind11
 	url = https://github.com/pybind/pybind11
 	branch = stable
+[submodule "extern/eigen"]
+	path = extern/eigen
+	url = git@gitlab.com:libeigen/eigen.git
+[submodule "extern/cryptopp"]
+	path = extern/cryptopp
+	url = git@github.com:trevphil/cryptopp.git
+[submodule "extern/cryptominisat"]
+	path = extern/cryptominisat
+	url = git@github.com:trevphil/cryptominisat.git

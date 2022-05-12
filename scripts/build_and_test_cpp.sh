@@ -2,15 +2,12 @@
 
 set -e
 
-git submodule update --init --recursive
-
 if [ ! -d build ]; then
   mkdir build
 fi
 
 pushd build
-cmake ..
-make -j4
+cmake -GNinja .. && cmake --build .
 mv main ..
 
 if [ -f unit_tests ]; then
@@ -18,4 +15,5 @@ if [ -f unit_tests ]; then
 fi
 
 popd
+
 ./unit_tests

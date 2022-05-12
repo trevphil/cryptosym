@@ -2,35 +2,47 @@ cmake_minimum_required(VERSION 3.12)
 
 project(cryptosym)
 
-set(BUILD_TESTS OFF)
+set(BUILD_TESTS ON)
 
-add_definitions(-std=c++17 -Wshadow -Wunused -Wall -Werror -O3)
+add_definitions(-std=c++20 -Wshadow -Wunused -Wall -Werror -O3)
 # add_compile_options(-g)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(include)
+
+# Automatically fetch/update git submodules
+find_package(Git QUIET)
+if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+  option(GIT_SUBMODULE "Check submodules during build" ON)
+  if(GIT_SUBMODULE)
+    message(STATUS "Submodule update")
+    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                    RESULT_VARIABLE GIT_SUBMOD_RESULT)
+    if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+      message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+    endif()
+  endif()
+endif()
 
 # Boost
 find_package(Boost REQUIRED)
 
 # CryptoMiniSAT
-find_package(cryptominisat5 REQUIRED)
+add_subdirectory(extern/cryptominisat)
 
-# Eigen
-find_package(Eigen3 REQUIRED)
-set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
-set(EIGEN3_LIBRARIES ${EIGEN3_LIBRARIES})
-include_directories(${EIGEN3_INCLUDE_DIR})
+# Eigen (header-only library)
+include_directories(extern/eigen)
 
 if(BUILD_TESTS)
   include_directories(tests/helpers/include)
 
   # Crypto++
-  find_package(CryptoPP REQUIRED)
+  add_subdirectory(extern/cryptopp)
 
-  # GTest
+  # Google Test
   include(FetchContent)
   FetchContent_Declare(
     googletest
@@ -41,7 +53,7 @@ if(BUILD_TESTS)
   FetchContent_MakeAvailable(googletest)
 endif()
 
-# Add all the source files needed to build the executable
+# Add all the source files needed to build the library
 add_library(cryptosymlib SHARED
             src/bp/bp_solver.cpp
             src/bp/graph.cpp
@@ -96,7 +108,3 @@ endif()
 add_subdirectory(extern/pybind11)
 pybind11_add_module(cryptosym src/bindings.cpp)
 target_link_libraries(cryptosym PUBLIC cryptosymlib)
-
-# EXAMPLE_VERSION_INFO is defined by setup.py
-# target_compile_definitions(cmake_example
-#                            PRIVATE VERSION_INFO=${EXAMPLE_VERSION_INFO})
