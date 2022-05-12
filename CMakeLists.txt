@@ -4,7 +4,7 @@ project(cryptosym)
 
 set(BUILD_TESTS ON)
 
-add_definitions(-std=c++20 -Wshadow -Wunused -Wall -Werror -O3)
+add_definitions(-Wshadow -Wunused -Wall -Werror -O3)
 # add_compile_options(-g)
 
 set(CMAKE_CXX_STANDARD 20)
