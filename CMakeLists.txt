@@ -77,6 +77,7 @@ add_library(cryptosymlib SHARED
             src/bp/graph.cpp
             src/bp/node.cpp
             src/core/bit.cpp
+            src/core/bit_vec.cpp
             src/core/cnf.cpp
             src/core/config.cpp
             src/core/logic_gate.cpp
@@ -113,6 +114,7 @@ if(CRYPTOSYM_TESTS)
 
   add_executable(unit_tests
                  tests/helpers/src/eval_solver.cpp
+                 tests/test_bit_vec.cpp
                  tests/test_bp_solver.cpp
                  tests/test_cmsat_solver.cpp
                  tests/test_cnf.cpp
