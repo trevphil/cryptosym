@@ -9,11 +9,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        config:
+          - {
+              os: windows-latest,
+              cc: "cl", cxx: "cl",
+              cmake-cmd: "cmake -GNinja ..",
+              cmake-build-cmd: "cmake --build build --config Release"
+            }
+          - {
+              os: ubuntu-latest,
+              cc: "gcc", cxx: "g++",
+              cmake-cmd: "cmake -GNinja -DCMAKE_BUILD_TYPE=Release ..",
+              cmake-build-cmd: "cmake --build build"
+            }
+          - {
+              os: macos-latest,
+              cc: "clang", cxx: "clang++",
+              cmake-cmd: "cmake -GNinja -DCMAKE_BUILD_TYPE=Release ..",
+              cmake-build-cmd: "cmake --build build"
+            }
         # os: [ ubuntu-latest, macos-latest, windows-latest ]
-        os: [ windows-latest ]
         python-version: [ "3.9" ]
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.config.os }}
 
     steps:
       - name: Checkout repository
@@ -34,8 +52,11 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -GNinja ..
+          ${{ matrix.config.cmake-cmd }}
+        env:
+          CC: ${{ matrix.config.cc }}
+          CXX: ${{ matrix.config.cxx }}
       - name: Compile C++
-        run: cmake --build build
+        run: ${{ matrix.config.cmake-build-cmd }}
       - name: Run tests
         run: ctest --test-dir build
