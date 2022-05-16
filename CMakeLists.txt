@@ -6,6 +6,7 @@ enable_language(CXX)
 
 project(cryptosym)
 
+set(CMAKE_BUILD_TYPE Release)
 set(CRYPTOSYM_COMMAND_LINE_TOOL ON)
 set(CRYPTOSYM_PYTHON_BINDINGS ON)
 set(CRYPTOSYM_TESTS ON)
