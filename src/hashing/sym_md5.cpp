@@ -2,7 +2,8 @@
  * Copyright (c) 2022 Authors:
  *   - Trevor Phillips <trevphil3@gmail.com>
  *
- * All rights reserved.
+ * Distributed under the CC BY-NC-SA 4.0 license
+ * (See accompanying file LICENSE.md).
  */
 
 // Based off of: http://www.zedwood.com/article/cpp-md5-function

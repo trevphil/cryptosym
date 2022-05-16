@@ -92,7 +92,11 @@ add_library(cryptosymlib SHARED
             src/hashing/sym_sha256.cpp
             src/dag_solver/dag_solver.cpp)
 
-target_compile_options(cryptosymlib PRIVATE -Werror -Wall -Wextra -O3)
+set(CRYPTOSYM_COMPILE_OPTIONS "-O3 -Werror -Wall -Wextra")
+if(MSVC)
+  set(CRYPTOSYM_COMPILE_OPTIONS "${CRYPTOSYM_COMPILE_OPTIONS} -Wno-format")
+endif()
+target_compile_options(cryptosymlib PRIVATE "${CRYPTOSYM_COMPILE_OPTIONS}")
 target_link_libraries(cryptosymlib cryptominisat5)
 
 # Command-line tool
