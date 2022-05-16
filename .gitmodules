@@ -5,9 +5,6 @@
 [submodule "extern/eigen"]
 	path = extern/eigen
 	url = https://gitlab.com/libeigen/eigen.git
-[submodule "extern/cryptopp"]
-	path = extern/cryptopp
-	url = https://github.com/trevphil/cryptopp.git
 [submodule "extern/cryptominisat"]
 	path = extern/cryptominisat
-	url = https://github.com/trevphil/cryptominisat.git
+	url = https://github.com/msoos/cryptominisat.git

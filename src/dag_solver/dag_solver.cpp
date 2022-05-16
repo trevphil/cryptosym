@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <queue>
+#include <stdexcept>
 
 #include "core/config.hpp"
 #include "core/utils.hpp"

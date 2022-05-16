@@ -5,7 +5,7 @@
  * All rights reserved.
  */
 
-#include <cryptopp/dll.h>
+#include <dll.h>
 #include <gtest/gtest.h>
 
 #include <boost/algorithm/string.hpp>

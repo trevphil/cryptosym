@@ -7,6 +7,8 @@
 
 #include "core/sym_hash.hpp"
 
+#include <stdexcept>
+
 #include "core/bit.hpp"
 #include "core/config.hpp"
 #include "core/logic_gate.hpp"

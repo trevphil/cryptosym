@@ -1,9 +1,10 @@
-- Python bindings (PyBind)
-- PyTest
-- Documentation
-- Publish on ReadTheDocs / Pip
-- cibuildwheel?
-- Add license
+1. Remove Boost
+2. Build C++ on Linux, Mac, Windows on GitHub Actions CI
+3. Add license
+4. Finish Python bindings (PyBind)
+5. PyTest equivalent tests for all C++ tests
+6. Documentation (ReadTheDocs)
+7. cibuildwheel / pip
 
 ####################################
 ####### Miscellaneous notes ########

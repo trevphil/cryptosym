@@ -8,6 +8,7 @@
 #include "core/sym_bit_vec.hpp"
 
 #include <algorithm>
+#include <stdexcept>
 
 #include "core/utils.hpp"
 

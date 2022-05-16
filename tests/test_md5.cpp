@@ -12,8 +12,8 @@
 #include <string>
 
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
-#include <cryptopp/dll.h>
-#include <cryptopp/md5.h>
+#include <dll.h>
+#include <md5.h>
 
 #include "core/utils.hpp"
 #include "hashing/sym_md5.hpp"

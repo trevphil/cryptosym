@@ -11,6 +11,7 @@
 #include <map>
 #include <queue>
 #include <set>
+#include <stdexcept>
 #include <unordered_map>
 
 #include "core/bit.hpp"

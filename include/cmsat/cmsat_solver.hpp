@@ -10,6 +10,7 @@
 #include <cryptominisat5/cryptominisat.h>
 
 #include <memory>
+#include <stdexcept>
 #include <unordered_map>
 #include <vector>
 

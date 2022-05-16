@@ -5,9 +5,9 @@
  * All rights reserved.
  */
 
-#include <cryptopp/dll.h>
-#include <cryptopp/ripemd.h>
+#include <dll.h>
 #include <gtest/gtest.h>
+#include <ripemd.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/dynamic_bitset.hpp>

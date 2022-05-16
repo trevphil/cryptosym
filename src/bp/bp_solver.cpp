@@ -10,6 +10,7 @@
 #include <assert.h>
 
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 #include "bp/node.hpp"
@@ -128,8 +129,9 @@ std::unordered_map<int, bool> BPSolver::solve(
     const double c = g_.maxChange();
 
     if (config::verbose) {
-      printf("Iter %d/%d - %lld ms, entropy sum %.3f, max change %.3f\n", g_.iterations(),
-             BP_MAX_ITER, end - start, e, c);
+      const int runtime = static_cast<int>(end - start);
+      printf("Iter %d/%d - %d ms, entropy sum %.3f, max change %.3f\n", g_.iterations(),
+             BP_MAX_ITER, runtime, e, c);
     }
 
     if (e < BP_ENTROPY_THRESHOLD) {

@@ -7,6 +7,7 @@
 
 #include <map>
 #include <memory>
+#include <stdexcept>
 #include <string>
 
 #include "bp/bp_solver.hpp"

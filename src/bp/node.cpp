@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <iostream>
 #include <limits>
+#include <stdexcept>
 
 #include "bp/params.hpp"
 

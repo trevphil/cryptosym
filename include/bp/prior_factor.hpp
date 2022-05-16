@@ -8,6 +8,7 @@
 #pragma once
 
 #include <memory>
+#include <stdexcept>
 
 #include "bp/node.hpp"
 
