@@ -13,7 +13,8 @@
 #include <string>
 
 #define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
-#include <dll.h>
+#include <cryptlib.h>
+#include <hex.h>
 #include <md5.h>
 
 #include "core/bit_vec.hpp"

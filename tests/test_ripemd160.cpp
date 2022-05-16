@@ -6,8 +6,9 @@
  * (See accompanying file LICENSE.md).
  */
 
-#include <dll.h>
+#include <cryptlib.h>
 #include <gtest/gtest.h>
+#include <hex.h>
 #include <ripemd.h>
 
 #include <algorithm>

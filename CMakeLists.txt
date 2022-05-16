@@ -56,7 +56,9 @@ if(CRYPTOSYM_TESTS)
     GIT_REPOSITORY https://github.com/trevphil/cryptopp
     GIT_TAG 49fd7ffb03b9c6fa35b56e4e17904f6e124cf76f  # Release 8.6.0
   )
-  set(BUILD_TESTING OFF CACHE BOOL "" FORCE)  # Don't build Crypto++ tests
+  set(BUILD_STATIC ON CACHE BOOL "Build static Crypto++ library" FORCE)
+  set(BUILD_SHARED OFF CACHE BOOL "Build shared Crypto++ library" FORCE)
+  set(BUILD_TESTING OFF CACHE BOOL "Build Crypto++ tests" FORCE)
   FetchContent_MakeAvailable(cryptopp)
   set(cryptopp_DIR "${cryptopp_BINARY_DIR}")
   find_package(cryptopp REQUIRED CONFIGS cryptopp-config-version.cmake)
@@ -133,7 +135,7 @@ if(CRYPTOSYM_TESTS)
 
   target_link_libraries(unit_tests gtest_main)
   target_link_libraries(unit_tests cryptosymlib)
-  target_link_libraries(unit_tests cryptopp-shared)
+  target_link_libraries(unit_tests cryptopp-static)
 
   include(GoogleTest)
   gtest_discover_tests(unit_tests)
