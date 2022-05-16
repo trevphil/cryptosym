@@ -5,7 +5,6 @@
 #include <sstream>
 #include <vector>
 
-#include "core/bit.hpp"
 #include "core/bit_vec.hpp"
 #include "core/config.hpp"
 #include "core/logic_gate.hpp"

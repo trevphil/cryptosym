@@ -9,9 +9,9 @@
 
 #include <stdexcept>
 
-#include "core/bit.hpp"
 #include "core/config.hpp"
 #include "core/logic_gate.hpp"
+#include "core/sym_bit.hpp"
 #include "core/utils.hpp"
 
 namespace preimage {
@@ -44,7 +44,7 @@ BitVec SymHash::call(const BitVec &hash_input) {
 BitVec SymHash::callRandom() { return call(utils::randomBits(num_input_bits_)); }
 
 SymRepresentation SymHash::getSymbolicRepresentation() {
-  Bit::reset();
+  SymBit::reset();
   LogicGate::reset();
   SymBitVec inp(0, num_input_bits_, true);
 
@@ -62,7 +62,7 @@ SymRepresentation SymHash::getSymbolicRepresentation() {
 
   SymRepresentation sym_rep(LogicGate::global_gates, input_indices, output_indices);
   LogicGate::reset();
-  Bit::reset();
+  SymBit::reset();
   return sym_rep;
 }
 

@@ -10,8 +10,8 @@
 #include <string>
 #include <vector>
 
-#include "core/bit.hpp"
 #include "core/bit_vec.hpp"
+#include "core/sym_bit.hpp"
 
 namespace preimage {
 
@@ -24,8 +24,11 @@ the LSB is at index 0 and the MSB at index 3.
 class SymBitVec {
  public:
   SymBitVec();
-  explicit SymBitVec(const std::vector<Bit> &bits);
+
+  explicit SymBitVec(const std::vector<SymBit> &bits);
+
   SymBitVec(const BitVec &bits, bool unknown = false);
+
   SymBitVec(uint64_t n, unsigned int sz, bool unknown = false);
 
   virtual ~SymBitVec();
@@ -40,7 +43,7 @@ class SymBitVec {
 
   std::string hex() const;
 
-  Bit at(unsigned int index) const;
+  SymBit at(unsigned int index) const;
 
   SymBitVec concat(const SymBitVec &other) const;
 
@@ -71,7 +74,7 @@ class SymBitVec {
   static SymBitVec xor3(const SymBitVec &a, const SymBitVec &b, const SymBitVec &c);
 
  private:
-  std::vector<Bit> bits_;
+  std::vector<SymBit> bits_;
 };
 
 }  // end namespace preimage

@@ -15,9 +15,9 @@
 #include <stdexcept>
 #include <unordered_map>
 
-#include "core/bit.hpp"
 #include "core/config.hpp"
 #include "core/logic_gate.hpp"
+#include "core/sym_bit.hpp"
 #include "core/sym_hash.hpp"
 #include "core/utils.hpp"
 

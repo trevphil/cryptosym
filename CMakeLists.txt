@@ -76,12 +76,12 @@ add_library(cryptosymlib SHARED
             src/bp/bp_solver.cpp
             src/bp/graph.cpp
             src/bp/node.cpp
-            src/core/bit.cpp
             src/core/bit_vec.cpp
             src/core/cnf.cpp
             src/core/config.cpp
             src/core/logic_gate.cpp
             src/core/solver.cpp
+            src/core/sym_bit.cpp
             src/core/sym_bit_vec.cpp
             src/core/sym_hash.cpp
             src/core/sym_representation.cpp

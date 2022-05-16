@@ -16,13 +16,13 @@ namespace preimage {
 
 SymBitVec::SymBitVec() : bits_({}) {}
 
-SymBitVec::SymBitVec(const std::vector<Bit> &bits) : bits_(bits) {}
+SymBitVec::SymBitVec(const std::vector<SymBit> &bits) : bits_(bits) {}
 
 SymBitVec::SymBitVec(const BitVec &bits, bool unknown) {
   bits_ = {};
   bits_.reserve(bits.size());
   for (unsigned int i = 0; i < bits.size(); ++i) {
-    bits_.push_back(Bit(bits[i], unknown));
+    bits_.push_back(SymBit(bits[i], unknown));
   }
 }
 
@@ -30,7 +30,7 @@ SymBitVec::SymBitVec(uint64_t n, unsigned int sz, bool unknown) {
   bits_ = {};
   bits_.reserve(sz);
   for (unsigned int i = 0; i < sz; i++) {
-    bits_.push_back(Bit((n >> i) & 1, unknown));
+    bits_.push_back(SymBit((n >> i) & 1, unknown));
   }
 }
 
@@ -63,7 +63,7 @@ std::string SymBitVec::bin() const { return utils::binstr(bits()); }
 
 std::string SymBitVec::hex() const { return utils::hexstr(bits()); }
 
-Bit SymBitVec::at(unsigned int index) const {
+SymBit SymBitVec::at(unsigned int index) const {
   const unsigned int n = size();
   if (index >= n) {
     char err_msg[128];
@@ -80,7 +80,7 @@ SymBitVec SymBitVec::concat(const SymBitVec &other) const {
    Then A.concat(B) gives [1, 0, 1, 1, 0, 0, 0, 1] = 141
                           LSB                  MSB
   */
-  std::vector<Bit> bits = bits_;
+  std::vector<SymBit> bits = bits_;
   bits.insert(bits.end(), other.bits_.begin(), other.bits_.end());
   return SymBitVec(bits);
 }
@@ -97,7 +97,7 @@ SymBitVec SymBitVec::extract(unsigned int lb, unsigned int ub) const {
     throw std::invalid_argument(err_msg);
   }
 
-  std::vector<Bit> bits;
+  std::vector<SymBit> bits;
   for (unsigned int i = lb; i < ub; i++) {
     bits.push_back(at(i));
   }
@@ -108,14 +108,14 @@ SymBitVec SymBitVec::resize(unsigned int n) const {
   const unsigned int m = size();
   if (n == m) return *this;
 
-  std::vector<Bit> bits;
+  std::vector<SymBit> bits;
   if (n > 0 && n < m) {
     for (unsigned int i = 0; i < n; i++) bits.push_back(at(i));
   } else if (n > m) {
     const unsigned int num_zeros = n - m;
     bits = bits_;
     for (unsigned int i = 0; i < num_zeros; i++) {
-      bits.push_back(Bit::zero());
+      bits.push_back(SymBit::zero());
     }
   }
   return SymBitVec(bits);
@@ -124,20 +124,20 @@ SymBitVec SymBitVec::resize(unsigned int n) const {
 SymBitVec SymBitVec::rotr(unsigned int n) const {
   const unsigned int sz = size();
   n = n % sz;
-  std::vector<Bit> bits = bits_;
+  std::vector<SymBit> bits = bits_;
   std::rotate(bits.begin(), bits.begin() + sz - n, bits.end());
   return SymBitVec(bits);
 }
 
 SymBitVec SymBitVec::reversed() const {
-  std::vector<Bit> bits = bits_;
+  std::vector<SymBit> bits = bits_;
   std::reverse(bits.begin(), bits.end());
   return SymBitVec(bits);
 }
 
 SymBitVec SymBitVec::operator~() const {
-  std::vector<Bit> bits = {};
-  for (const Bit &b : bits_) bits.push_back(~b);
+  std::vector<SymBit> bits = {};
+  for (const SymBit &b : bits_) bits.push_back(~b);
   return SymBitVec(bits);
 }
 
@@ -148,7 +148,7 @@ SymBitVec SymBitVec::operator&(const SymBitVec &b) const {
     snprintf(err_msg, 128, "Bit vectors must be same size (%u != %u)", n, b.size());
     throw std::length_error(err_msg);
   }
-  std::vector<Bit> bits = {};
+  std::vector<SymBit> bits = {};
   for (unsigned int i = 0; i < n; i++) bits.push_back(at(i) & b.at(i));
   return SymBitVec(bits);
 }
@@ -160,7 +160,7 @@ SymBitVec SymBitVec::operator^(const SymBitVec &b) const {
     snprintf(err_msg, 128, "Bit vectors must be same size (%u != %u)", n, b.size());
     throw std::length_error(err_msg);
   }
-  std::vector<Bit> bits = {};
+  std::vector<SymBit> bits = {};
   for (unsigned int i = 0; i < n; i++) bits.push_back(at(i) ^ b.at(i));
   return SymBitVec(bits);
 }
@@ -172,7 +172,7 @@ SymBitVec SymBitVec::operator|(const SymBitVec &b) const {
     snprintf(err_msg, 128, "Bit vectors must be same size (%u != %u)", n, b.size());
     throw std::length_error(err_msg);
   }
-  std::vector<Bit> bits = {};
+  std::vector<SymBit> bits = {};
   for (unsigned int i = 0; i < n; i++) bits.push_back(at(i) | b.at(i));
   return SymBitVec(bits);
 }
@@ -186,12 +186,12 @@ SymBitVec SymBitVec::operator+(const SymBitVec &b) const {
     throw std::length_error(err_msg);
   }
 
-  Bit carry = Bit::zero();
-  std::vector<Bit> output_bits = {};
+  SymBit carry = SymBit::zero();
+  std::vector<SymBit> output_bits = {};
   output_bits.reserve(n);
 
   for (unsigned int i = 0; i < n; ++i) {
-    const auto result = Bit::add(at(i), b.at(i), carry);
+    const auto result = SymBit::add(at(i), b.at(i), carry);
     output_bits.push_back(result.first);
     carry = result.second;
   }
@@ -208,8 +208,8 @@ SymBitVec SymBitVec::operator<<(unsigned int n) const {
   if (n == 0) return *this;
   const unsigned int m = size();
   n = std::min(m, n);
-  std::vector<Bit> bits = {};
-  for (unsigned int i = 0; i < n; i++) bits.push_back(Bit::zero());
+  std::vector<SymBit> bits = {};
+  for (unsigned int i = 0; i < n; i++) bits.push_back(SymBit::zero());
   for (unsigned int i = 0; i < m - n; i++) bits.push_back(at(i));
   SymBitVec result(bits);
   return result;
@@ -225,9 +225,9 @@ SymBitVec SymBitVec::operator>>(unsigned int n) const {
   if (n == 0) return *this;
   const unsigned int m = size();
   n = std::min(m, n);
-  std::vector<Bit> bits = {};
+  std::vector<SymBit> bits = {};
   for (unsigned int i = n; i < m; i++) bits.push_back(at(i));
-  for (unsigned int i = 0; i < n; i++) bits.push_back(Bit::zero());
+  for (unsigned int i = 0; i < n; i++) bits.push_back(SymBit::zero());
   SymBitVec result(bits);
   return result;
 }
@@ -241,9 +241,9 @@ SymBitVec SymBitVec::majority3(const SymBitVec &a, const SymBitVec &b,
     throw std::length_error(err_msg);
   }
 
-  std::vector<Bit> bits = {};
+  std::vector<SymBit> bits = {};
   for (unsigned int i = 0; i < a.size(); i++) {
-    bits.push_back(Bit::majority3(a.at(i), b.at(i), c.at(i)));
+    bits.push_back(SymBit::majority3(a.at(i), b.at(i), c.at(i)));
   }
   return SymBitVec(bits);
 }
@@ -256,9 +256,9 @@ SymBitVec SymBitVec::xor3(const SymBitVec &a, const SymBitVec &b, const SymBitVe
     throw std::length_error(err_msg);
   }
 
-  std::vector<Bit> bits = {};
+  std::vector<SymBit> bits = {};
   for (unsigned int i = 0; i < a.size(); i++) {
-    bits.push_back(Bit::xor3(a.at(i), b.at(i), c.at(i)));
+    bits.push_back(SymBit::xor3(a.at(i), b.at(i), c.at(i)));
   }
   return SymBitVec(bits);
 }

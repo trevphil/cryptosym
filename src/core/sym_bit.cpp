@@ -5,7 +5,7 @@
  * All rights reserved.
  */
 
-#include "core/bit.hpp"
+#include "core/sym_bit.hpp"
 
 #include <vector>
 
@@ -14,44 +14,44 @@
 
 namespace preimage {
 
-thread_local int Bit::global_index = 1;  // 1-based indexing
+thread_local int SymBit::global_index = 1;  // 1-based indexing
 
-Bit::Bit(bool bit_val, bool is_unknown) : val(bit_val), unknown(is_unknown) {
+SymBit::SymBit(bool bit_val, bool is_unknown) : val(bit_val), unknown(is_unknown) {
   if (unknown) {
-    index = Bit::global_index++;
+    index = SymBit::global_index++;
   }
 }
 
-Bit::~Bit() {}
+SymBit::~SymBit() {}
 
-Bit Bit::zero() { return Bit(0, false); }
+SymBit SymBit::zero() { return SymBit(0, false); }
 
-Bit Bit::one() { return Bit(1, false); }
+SymBit SymBit::one() { return SymBit(1, false); }
 
-Bit Bit::constant(bool val) { return Bit(val, false); }
+SymBit SymBit::constant(bool val) { return SymBit(val, false); }
 
-void Bit::reset() { global_index = 1; }
+void SymBit::reset() { global_index = 1; }
 
-Bit Bit::operator~() const {
-  Bit b(!val, false);
+SymBit SymBit::operator~() const {
+  SymBit b(!val, false);
   b.index = -index;
   b.unknown = unknown;
   return b;
 }
 
-Bit Bit::operator&(const Bit &b) const {
+SymBit SymBit::operator&(const SymBit &b) const {
   // If AND-ing with a constant of 0, result will be always be 0
-  const Bit a = *this;
-  if (!a.unknown && !a.val) return Bit::zero();
-  if (!b.unknown && !b.val) return Bit::zero();
+  const SymBit a = *this;
+  if (!a.unknown && !a.val) return SymBit::zero();
+  if (!b.unknown && !b.val) return SymBit::zero();
 
   if (a.unknown && b.unknown) {
     // (0 & 0 = 0), (1 & 1 = 1)
     if (a.index == b.index) return a;
     // (0 & 1 = 0), (1 & 0 = 0)
-    if (a.index == -b.index) return Bit::zero();
+    if (a.index == -b.index) return SymBit::zero();
 
-    Bit result(a.val & b.val, true);
+    SymBit result(a.val & b.val, true);
     LogicGate f(LogicGate::Type::and_gate, result.index, {a.index, b.index});
     LogicGate::global_gates.push_back(f);
     return result;
@@ -62,27 +62,27 @@ Bit Bit::operator&(const Bit &b) const {
     // Here, "a" is a constant equal to 1, so result is directly "b"
     return b;
   } else {
-    return Bit::constant(a.val & b.val);  // Both are constants
+    return SymBit::constant(a.val & b.val);  // Both are constants
   }
 }
 
-Bit Bit::operator^(const Bit &b) const {
-  const Bit a = *this;
+SymBit SymBit::operator^(const SymBit &b) const {
+  const SymBit a = *this;
 
   if (a.unknown && b.unknown) {
     // a ^ a is always 0
-    if (a.index == b.index) return Bit::zero();
+    if (a.index == b.index) return SymBit::zero();
     // a ^ !a is always 1
-    if (a.index == -b.index) return Bit::one();
+    if (a.index == -b.index) return SymBit::one();
 
     if (config::only_and_gates) {
-      const Bit tmp1 = ~(a & b);
-      const Bit tmp2 = ~(a & tmp1);
-      const Bit tmp3 = ~(b & tmp1);
+      const SymBit tmp1 = ~(a & b);
+      const SymBit tmp2 = ~(a & tmp1);
+      const SymBit tmp3 = ~(b & tmp1);
       return ~(tmp2 & tmp3);
     }
 
-    Bit result(a.val ^ b.val, true);
+    SymBit result(a.val ^ b.val, true);
     LogicGate f(LogicGate::Type::xor_gate, result.index, {a.index, b.index});
     LogicGate::global_gates.push_back(f);
     return result;
@@ -97,29 +97,29 @@ Bit Bit::operator^(const Bit &b) const {
     // XOR with a constant of 1 is the inverse of the other input
     return ~b;
   } else {
-    return Bit::constant(a.val ^ b.val);  // Both are constants
+    return SymBit::constant(a.val ^ b.val);  // Both are constants
   }
 }
 
-Bit Bit::operator|(const Bit &b) const {
+SymBit SymBit::operator|(const SymBit &b) const {
   // If OR-ing with a constant of 1, result will be always be 1
-  const Bit a = *this;
-  if (!a.unknown && a.val) return Bit::one();
-  if (!b.unknown && b.val) return Bit::one();
+  const SymBit a = *this;
+  if (!a.unknown && a.val) return SymBit::one();
+  if (!b.unknown && b.val) return SymBit::one();
 
   if (a.unknown && b.unknown) {
     // (0 | 0 = 0), (1 | 1 = 1)
     if (a.index == b.index) return a;
     // (0 | 1 = 1), (1 | 0 = 1)
-    if (a.index == -b.index) return Bit::one();
+    if (a.index == -b.index) return SymBit::one();
 
     if (config::only_and_gates) {
-      const Bit tmp1 = ~(a & a);
-      const Bit tmp2 = ~(b & b);
+      const SymBit tmp1 = ~(a & a);
+      const SymBit tmp2 = ~(b & b);
       return ~(tmp1 & tmp2);
     }
 
-    Bit result(a.val | b.val, true);
+    SymBit result(a.val | b.val, true);
     LogicGate f(LogicGate::Type::or_gate, result.index, {a.index, b.index});
     LogicGate::global_gates.push_back(f);
     return result;
@@ -130,26 +130,27 @@ Bit Bit::operator|(const Bit &b) const {
     // Here, "a" is a constant equal to 0, so result is directly "b"
     return b;
   } else {
-    return Bit::constant(a.val | b.val);  // Both are constants
+    return SymBit::constant(a.val | b.val);  // Both are constants
   }
 }
 
-std::pair<Bit, Bit> Bit::add(const Bit &a, const Bit &b) {
-  return add(a, b, Bit::zero());
+std::pair<SymBit, SymBit> SymBit::add(const SymBit &a, const SymBit &b) {
+  return add(a, b, SymBit::zero());
 }
 
-std::pair<Bit, Bit> Bit::add(const Bit &a, const Bit &b, const Bit &carry_in) {
-  const Bit sum1 = xor3(a, b, carry_in);
-  const Bit carry_out = majority3(a, b, carry_in);
+std::pair<SymBit, SymBit> SymBit::add(const SymBit &a, const SymBit &b,
+                                      const SymBit &carry_in) {
+  const SymBit sum1 = xor3(a, b, carry_in);
+  const SymBit carry_out = majority3(a, b, carry_in);
   return {sum1, carry_out};
 }
 
-Bit Bit::majority3(const Bit &a, const Bit &b, const Bit &c) {
+SymBit SymBit::majority3(const SymBit &a, const SymBit &b, const SymBit &c) {
   const int sum = ((int)a.val) + ((int)b.val) + ((int)c.val);
   const bool val = (sum > 1);
 
   std::vector<bool> knowns;
-  std::vector<Bit> unknowns;
+  std::vector<SymBit> unknowns;
   if (!a.unknown)
     knowns.push_back(a.val);
   else
@@ -178,7 +179,7 @@ Bit Bit::majority3(const Bit &a, const Bit &b, const Bit &c) {
     }
 
     // All 3 inputs are unknown --> output will be unknown
-    Bit result(val, true);
+    SymBit result(val, true);
     LogicGate f(LogicGate::Type::maj_gate, result.index, {a.index, b.index, c.index});
     LogicGate::global_gates.push_back(f);
     return result;
@@ -199,20 +200,20 @@ Bit Bit::majority3(const Bit &a, const Bit &b, const Bit &c) {
   } else if (knowns.size() == 2) {
     // If known bits are equal (0, 0) or (1, 1) they will have the majority
     if (knowns.at(0) == knowns.at(1)) {
-      return Bit::constant(knowns.at(0));
+      return SymBit::constant(knowns.at(0));
     } else {
       return unknowns.at(0);  // Otherwise we have Maj3(0, 1, X) = X
     }
   } else {
-    return Bit::constant(val);  // Otherwise all 3 values are known, so not a RV
+    return SymBit::constant(val);  // Otherwise all 3 values are known, so not a RV
   }
 }
 
-Bit Bit::xor3(const Bit &a, const Bit &b, const Bit &c) {
+SymBit SymBit::xor3(const SymBit &a, const SymBit &b, const SymBit &c) {
   const bool val = a.val ^ b.val ^ c.val;
 
   std::vector<bool> knowns;
-  std::vector<Bit> unknowns;
+  std::vector<SymBit> unknowns;
   if (!a.unknown)
     knowns.push_back(a.val);
   else
@@ -239,7 +240,7 @@ Bit Bit::xor3(const Bit &a, const Bit &b, const Bit &c) {
     if (config::only_and_gates) return a ^ b ^ c;
 
     // All 3 inputs are unknown --> output will be unknown
-    Bit result(val, true);
+    SymBit result(val, true);
     LogicGate f(LogicGate::Type::xor3_gate, result.index, {a.index, b.index, c.index});
     LogicGate::global_gates.push_back(f);
     return result;
@@ -258,9 +259,9 @@ Bit Bit::xor3(const Bit &a, const Bit &b, const Bit &c) {
       return ~(unknowns.at(0) ^ unknowns.at(1));
     }
   } else if (knowns.size() == 2) {
-    return unknowns.at(0) ^ Bit::constant(knowns.at(0) ^ knowns.at(1));
+    return unknowns.at(0) ^ SymBit::constant(knowns.at(0) ^ knowns.at(1));
   } else {
-    return Bit::constant(val);  // Otherwise all 3 values are known, so not a RV
+    return SymBit::constant(val);  // Otherwise all 3 values are known, so not a RV
   }
 }
 
