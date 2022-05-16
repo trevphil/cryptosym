@@ -12,6 +12,7 @@
 
 #include "bp/bp_solver.hpp"
 #include "cmsat/cmsat_solver.hpp"
+#include "core/bit_vec.hpp"
 #include "core/config.hpp"
 #include "core/logic_gate.hpp"
 #include "core/solver.hpp"
@@ -127,12 +128,12 @@ void run(int argc, char **argv) {
   printf("%s\n", "-----------------------");
 
   // Solve the problem
-  const boost::dynamic_bitset<> true_input = utils::randomBits(input_size);
-  const boost::dynamic_bitset<> true_hash = hasher->call(true_input);
+  const BitVec true_input = utils::randomBits(input_size);
+  const BitVec true_hash = hasher->call(true_input);
   const std::unordered_map<int, bool> solution = solver->solve(problem, true_hash);
 
   // Build input bits from the solution
-  boost::dynamic_bitset<> preimage(input_size);
+  BitVec preimage(input_size);
   for (int k = 0; k < input_size; k++) {
     const int input_index = problem.inputIndices().at(k);
     if (input_index < 0 && solution.count(-input_index) > 0) {
@@ -143,7 +144,7 @@ void run(int argc, char **argv) {
       preimage[k] = 0;
     }
   }
-  const boost::dynamic_bitset<> actual_hash = hasher->call(preimage);
+  const BitVec actual_hash = hasher->call(preimage);
 
   // Compare the input to the hash function with the reconstructed input
   if (bin_format) {

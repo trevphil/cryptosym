@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include <boost/dynamic_bitset.hpp>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
+#include "core/bit_vec.hpp"
 #include "core/logic_gate.hpp"
 #include "core/sym_representation.hpp"
 
@@ -27,7 +27,7 @@ class Solver {
                                       const std::string &hash_hex);
 
   std::unordered_map<int, bool> solve(const SymRepresentation &problem,
-                                      const boost::dynamic_bitset<> &hash_output);
+                                      const BitVec &hash_output);
 
   virtual std::unordered_map<int, bool> solve(
       const SymRepresentation &problem,

@@ -30,9 +30,6 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
   endif()
 endif()
 
-# Boost
-find_package(Boost REQUIRED)
-
 # Eigen (header-only library)
 include_directories(extern/eigen)
 
@@ -95,7 +92,6 @@ add_library(cryptosymlib SHARED
             src/dag_solver/dag_solver.cpp)
 
 target_compile_options(cryptosymlib PRIVATE -Werror -Wall -Wextra -O3)
-target_link_libraries(cryptosymlib Boost::boost)
 target_link_libraries(cryptosymlib cryptominisat5)
 
 # Command-line tool

@@ -8,10 +8,11 @@
 #include <dll.h>
 #include <gtest/gtest.h>
 
-#include <boost/algorithm/string.hpp>
-#include <boost/dynamic_bitset.hpp>
+#include <algorithm>
+#include <cctype>
 #include <string>
 
+#include "core/bit_vec.hpp"
 #include "core/utils.hpp"
 #include "hashing/sym_sha256.hpp"
 
@@ -42,7 +43,7 @@ TEST(SHA256Test, FixedInput) {
 
 TEST(SHA256Test, InputSizeMismatch) {
   SHA256 sha256(32);
-  const boost::dynamic_bitset<> inputs = utils::randomBits(64);
+  const BitVec inputs = utils::randomBits(64);
   EXPECT_THROW({ sha256.call(inputs); }, std::length_error);
 }
 
@@ -58,7 +59,7 @@ TEST(SHA256Test, RandomInputsAndSizes) {
 
     for (int sample_idx = 0; sample_idx < 10; sample_idx++) {
       // Generate a random input of length "inp_size"
-      const boost::dynamic_bitset<> bits = utils::randomBits(inp_size);
+      const BitVec bits = utils::randomBits(inp_size);
       const int n_bytes = inp_size / 8;
       uint8_t byte_arr[n_bytes];
       for (int byte_idx = 0; byte_idx < n_bytes; byte_idx++) {
@@ -79,7 +80,9 @@ TEST(SHA256Test, RandomInputsAndSizes) {
       encoder.Attach(new CryptoPP::StringSink(expected_output));
       encoder.Put(digest, sizeof(digest));
       encoder.MessageEnd();
-      boost::algorithm::to_lower(expected_output);
+      std::transform(expected_output.begin(), expected_output.end(),
+                     expected_output.begin(),
+                     [](unsigned char c) -> unsigned char { return std::tolower(c); });
 
       // Call SHA256 using custom hash function
       const std::string h = utils::hexstr(sha256.call(bits));

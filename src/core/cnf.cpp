@@ -9,10 +9,26 @@
 
 #include <assert.h>
 
-#include <boost/algorithm/string.hpp>
+#include <algorithm>
 #include <fstream>
+#include <iterator>
+#include <regex>
+#include <sstream>
 #include <stdexcept>
 #include <utility>
+
+std::string trim(const std::string &s) {
+  std::regex e("^\\s+|\\s+$");
+  return std::regex_replace(s, e, "");
+}
+
+std::vector<std::string> splitByWhitespace(const std::string &s) {
+  std::istringstream buffer(s);
+  std::vector<std::string> ret;
+  std::copy(std::istream_iterator<std::string>(buffer),
+            std::istream_iterator<std::string>(), std::back_inserter(ret));
+  return ret;
+}
 
 namespace preimage {
 
@@ -193,16 +209,15 @@ CNF CNF::fromFile(const std::string &filename) {
   std::vector<std::string> parts;
 
   while (std::getline(cnf_file, line)) {
-    boost::algorithm::trim(line);
+    line = trim(line);
     if (line.size() == 0 || line[0] == '#') continue;
     if (line.rfind("p cnf ", 0) == 0) {
-      line = line.substr(6);
-      boost::algorithm::trim(line);
-      boost::split(parts, line, isspace);
+      line = trim(line.substr(6));
+      parts = splitByWhitespace(line);
       num_vars = std::stoi(parts[0]);
       num_clauses = std::stoi(parts[1]);
     } else {
-      boost::split(parts, line, isspace);
+      parts = splitByWhitespace(line);
       std::set<int> clause;
       for (const std::string &s : parts) {
         const int lit = std::stoi(s);

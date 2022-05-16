@@ -9,7 +9,6 @@
 
 #include <algorithm>
 #include <array>
-#include <boost/dynamic_bitset.hpp>
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
@@ -20,25 +19,27 @@
 #include <string>
 #include <vector>
 
+#include "core/bit_vec.hpp"
+
 namespace preimage {
 
 namespace utils {
 
 void seed(unsigned int s);
 
-boost::dynamic_bitset<> zeroBits(int n);
+BitVec zeroBits(unsigned int n);
 
-boost::dynamic_bitset<> randomBits(int n);
+BitVec randomBits(unsigned int n);
 
-boost::dynamic_bitset<> randomBits(int n, unsigned int s);
+BitVec randomBits(unsigned int n, unsigned int s);
 
-boost::dynamic_bitset<> str2bits(const std::string &s);
+BitVec str2bits(const std::string &s);
 
-std::string hexstr(const boost::dynamic_bitset<> &bs);
+std::string hexstr(const BitVec &bs);
 
-boost::dynamic_bitset<> hex2bits(const std::string &hex_str);
+BitVec hex2bits(const std::string &hex_str);
 
-std::string binstr(const boost::dynamic_bitset<> &bs);
+std::string binstr(const BitVec &bs);
 
 std::chrono::system_clock::rep ms_since_epoch();
 

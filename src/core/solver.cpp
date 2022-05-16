@@ -20,17 +20,17 @@ Solver::~Solver() {}
 
 std::unordered_map<int, bool> Solver::solve(const SymRepresentation &problem,
                                             const std::string &hash_hex) {
-  const boost::dynamic_bitset<> bitvec = utils::hex2bits(hash_hex);
+  const BitVec bitvec = utils::hex2bits(hash_hex);
   return solve(problem, bitvec);
 }
 
 std::unordered_map<int, bool> Solver::solve(const SymRepresentation &problem,
-                                            const boost::dynamic_bitset<> &hash_output) {
+                                            const BitVec &hash_output) {
   const std::vector<int> &output_indices = problem.outputIndices();
   const unsigned int output_size = output_indices.size();
   std::unordered_map<int, bool> assignments;
   for (unsigned int k = 0; k < output_size; k++) {
-    // If `hash_output` converted from hex, zeros in MSBs could shorten bitset
+    // If `hash_output` converted from hex, zeros in MSBs could shorten bitvec
     const bool bitval = k < hash_output.size() ? hash_output[k] : false;
     const int output_index = output_indices.at(k);
     if (output_index < 0) {

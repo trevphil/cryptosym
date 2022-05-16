@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include <boost/dynamic_bitset.hpp>
 #include <string>
 
+#include "core/bit_vec.hpp"
 #include "core/sym_bit_vec.hpp"
 #include "core/sym_representation.hpp"
 
@@ -23,9 +23,9 @@ class SymHash {
 
   int numInputBits() const;
 
-  boost::dynamic_bitset<> call(const boost::dynamic_bitset<> &hash_input);
+  BitVec call(const BitVec &hash_input);
 
-  boost::dynamic_bitset<> callRandom();
+  BitVec callRandom();
 
   SymRepresentation getSymbolicRepresentation();
 

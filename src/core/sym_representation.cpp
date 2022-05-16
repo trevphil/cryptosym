@@ -11,6 +11,7 @@
 #include <map>
 #include <queue>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <unordered_map>
 

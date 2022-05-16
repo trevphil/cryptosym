@@ -27,7 +27,7 @@ SymHash::~SymHash() {}
 
 int SymHash::numInputBits() const { return num_input_bits_; }
 
-boost::dynamic_bitset<> SymHash::call(const boost::dynamic_bitset<> &hash_input) {
+BitVec SymHash::call(const BitVec &hash_input) {
   const int inp_size = static_cast<int>(hash_input.size());
   if (inp_size != num_input_bits_) {
     char err_msg[128];
@@ -41,9 +41,7 @@ boost::dynamic_bitset<> SymHash::call(const boost::dynamic_bitset<> &hash_input)
   return out.bits();
 }
 
-boost::dynamic_bitset<> SymHash::callRandom() {
-  return call(utils::randomBits(num_input_bits_));
-}
+BitVec SymHash::callRandom() { return call(utils::randomBits(num_input_bits_)); }
 
 SymRepresentation SymHash::getSymbolicRepresentation() {
   Bit::reset();

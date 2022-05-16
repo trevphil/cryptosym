@@ -8,19 +8,19 @@
 
 #include "eval_solver.hpp"
 
-#include <boost/dynamic_bitset.hpp>
 #include <unordered_map>
 
+#include "core/bit_vec.hpp"
 #include "core/sym_representation.hpp"
 
 namespace preimage {
 
 bool evaluateSolver(std::shared_ptr<Solver> solver, std::shared_ptr<SymHash> hasher) {
-  const boost::dynamic_bitset<> expected_hash = hasher->callRandom();
+  const BitVec expected_hash = hasher->callRandom();
   const SymRepresentation problem = hasher->getSymbolicRepresentation();
   const std::unordered_map<int, bool> solution = solver->solve(problem, expected_hash);
 
-  boost::dynamic_bitset<> preimage(hasher->numInputBits());
+  BitVec preimage(hasher->numInputBits());
   for (int k = 0; k < hasher->numInputBits(); k++) {
     const int input_index = problem.inputIndices().at(k);
     if (input_index < 0 && solution.count(-input_index) > 0) {
@@ -32,7 +32,7 @@ bool evaluateSolver(std::shared_ptr<Solver> solver, std::shared_ptr<SymHash> has
     }
   }
 
-  const boost::dynamic_bitset<> actual_hash = hasher->call(preimage);
+  const BitVec actual_hash = hasher->call(preimage);
   return expected_hash == actual_hash;
 }
 

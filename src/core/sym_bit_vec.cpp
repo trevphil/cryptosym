@@ -18,10 +18,10 @@ SymBitVec::SymBitVec() : bits_({}) {}
 
 SymBitVec::SymBitVec(const std::vector<Bit> &bits) : bits_(bits) {}
 
-SymBitVec::SymBitVec(const boost::dynamic_bitset<> &bits, bool unknown) {
+SymBitVec::SymBitVec(const BitVec &bits, bool unknown) {
   bits_ = {};
   bits_.reserve(bits.size());
-  for (boost::dynamic_bitset<>::size_type i = 0; i < bits.size(); ++i) {
+  for (unsigned int i = 0; i < bits.size(); ++i) {
     bits_.push_back(Bit(bits[i], unknown));
   }
 }
@@ -52,9 +52,9 @@ uint64_t SymBitVec::intVal() const {
   return result;
 }
 
-boost::dynamic_bitset<> SymBitVec::bits() const {
+BitVec SymBitVec::bits() const {
   const unsigned int n = size();
-  boost::dynamic_bitset<> b(n);
+  BitVec b(n);
   for (unsigned int i = 0; i < n; ++i) b[i] = at(i).val;
   return b;
 }

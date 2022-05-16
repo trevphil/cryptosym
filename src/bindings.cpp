@@ -2,11 +2,11 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include <boost/dynamic_bitset.hpp>
 #include <sstream>
 #include <vector>
 
 #include "core/bit.hpp"
+#include "core/bit_vec.hpp"
 #include "core/config.hpp"
 #include "core/logic_gate.hpp"
 #include "core/sym_bit_vec.hpp"
@@ -19,9 +19,9 @@ namespace pybind11 {
 namespace detail {
 
 template <>
-struct type_caster<boost::dynamic_bitset<>> {
+struct type_caster<preimage::BitVec> {
  public:
-  PYBIND11_TYPE_CASTER(boost::dynamic_bitset<>, _("boost::dynamic_bitset<>"));
+  PYBIND11_TYPE_CASTER(preimage::BitVec, _("preimage::BitVec"));
 
   bool load(handle src, bool implicit_conversions) {
     // Python --> C++
@@ -31,7 +31,7 @@ struct type_caster<boost::dynamic_bitset<>> {
 
     const unsigned int num_bytes = py::len(byte_obj);
     const unsigned int n = num_bytes * 8;
-    value = boost::dynamic_bitset<>(n);
+    value = preimage::BitVec(n);
 
     unsigned int bit_idx = 0;
     for (unsigned int byte_idx = 0; byte_idx < num_bytes; ++byte_idx) {
@@ -42,7 +42,7 @@ struct type_caster<boost::dynamic_bitset<>> {
       }
       const unsigned long b = PyLong_AsUnsignedLong(b_obj);
       for (int offset = 0; offset < 8 && bit_idx < n; offset++) {
-        value[bit_idx++] = (b >> offset) & 1;
+        value[bit_idx++] = static_cast<bool>((b >> offset) & 1);
       }
     }
 
@@ -50,10 +50,10 @@ struct type_caster<boost::dynamic_bitset<>> {
     return !PyErr_Occurred();
   }
 
-  static handle cast(const boost::dynamic_bitset<> &src, return_value_policy policy,
+  static handle cast(const preimage::BitVec &src, return_value_policy policy,
                      handle parent) {
     // C++ --> Python
-    const unsigned int n = static_cast<unsigned int>(src.size());
+    const unsigned int n = src.size();
     if (n == 0) return py::bytes("");
 
     const unsigned int num_bytes = (n / 8) + (unsigned int)(n % 8 != 0);
@@ -98,8 +98,8 @@ PYBIND11_MODULE(cryptosym, m) {
   py::module u = m.def_submodule("utils");
   u.def("seed", &utils::seed, py::arg("seed_value"));
   u.def("zero_bits", &utils::zeroBits, py::arg("n"));
-  u.def("random_bits", py::overload_cast<int>(&utils::randomBits), py::arg("n"));
-  u.def("random_bits", py::overload_cast<int, unsigned int>(&utils::randomBits),
+  u.def("random_bits", py::overload_cast<unsigned int>(&utils::randomBits), py::arg("n"));
+  u.def("random_bits", py::overload_cast<unsigned int, unsigned int>(&utils::randomBits),
         py::arg("n"), py::arg("seed_value"));
   u.def("str2bits", &utils::str2bits, py::arg("s"));
   u.def("hexstr", &utils::hexstr, py::arg("raw_bytes"));
@@ -130,7 +130,7 @@ PYBIND11_MODULE(cryptosym, m) {
   // Symbolic bit vector
   py::class_<SymBitVec> bitvec(m, "SymBitVec");
   bitvec.def(py::init());
-  bitvec.def(py::init<const boost::dynamic_bitset<> &, bool>(), py::arg("bits"),
+  bitvec.def(py::init<const BitVec &, bool>(), py::arg("bits"),
              py::arg("unknown") = false);
   bitvec.def(py::init<uint64_t, int, bool>(), py::arg("n"), py::arg("size"),
              py::arg("unknown") = false);

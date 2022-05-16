@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <boost/dynamic_bitset.hpp>
 #include <vector>
 
 #include "core/cnf.hpp"

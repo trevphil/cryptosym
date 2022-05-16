@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include <boost/dynamic_bitset.hpp>
 #include <string>
 #include <vector>
 
 #include "core/bit.hpp"
+#include "core/bit_vec.hpp"
 
 namespace preimage {
 
@@ -25,7 +25,7 @@ class SymBitVec {
  public:
   SymBitVec();
   explicit SymBitVec(const std::vector<Bit> &bits);
-  SymBitVec(const boost::dynamic_bitset<> &bits, bool unknown = false);
+  SymBitVec(const BitVec &bits, bool unknown = false);
   SymBitVec(uint64_t n, unsigned int sz, bool unknown = false);
 
   virtual ~SymBitVec();
@@ -34,7 +34,7 @@ class SymBitVec {
 
   uint64_t intVal() const;
 
-  boost::dynamic_bitset<> bits() const;
+  BitVec bits() const;
 
   std::string bin() const;
 

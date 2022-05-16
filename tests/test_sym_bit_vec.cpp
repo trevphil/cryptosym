@@ -7,15 +7,15 @@
 
 #include <gtest/gtest.h>
 
-#include <boost/dynamic_bitset.hpp>
 #include <string>
 
+#include "core/bit_vec.hpp"
 #include "core/sym_bit_vec.hpp"
 
 namespace preimage {
 
 TEST(SymBitVecTest, Conversions) {
-  const boost::dynamic_bitset<> bits_a(16, 0b1101001100011101);
+  const BitVec bits_a(16, 0b1101001100011101);
   const SymBitVec bv(bits_a);
   const std::string hex = "d31d";
   const std::string bin = "1101001100011101";
@@ -24,7 +24,7 @@ TEST(SymBitVecTest, Conversions) {
   EXPECT_EQ(bv.bin(), bin);
   EXPECT_EQ(bv.hex(), hex);
 
-  boost::dynamic_bitset<> bits_b(64, 0xDEADBEEF);
+  BitVec bits_b(64, 0xDEADBEEF);
   SymBitVec bv1(bits_b);
   SymBitVec bv2(0xDEADBEEF, 64);
   EXPECT_EQ(bv1.bits(), bits_b);

@@ -80,6 +80,26 @@ TEST(CNFTest, ReadWrite) {
   EXPECT_EQ(cnf.clauses[1], clause1);
 }
 
+TEST(CNFTest, TrimSpaces) {
+  std::ofstream cnf_file;
+  cnf_file.open("/tmp/whitespace.cnf");
+  cnf_file << "# This is a comment \n";
+  cnf_file << " # Also a comment\n";
+  cnf_file << "p cnf 3 2 \r\n";
+  cnf_file << "# Another comment\n";
+  cnf_file << " 2 -1    3\t0 \r\n";
+  cnf_file << "\t-3 2 0\n";
+  cnf_file << "\n";
+  cnf_file.close();
+  CNF cnf = CNF::fromFile("/tmp/whitespace.cnf");
+  EXPECT_EQ(cnf.num_vars, 3);
+  EXPECT_EQ(cnf.num_clauses, 2);
+  const std::set<int> clause0 = {-1, 2, 3};
+  const std::set<int> clause1 = {-3, 2};
+  EXPECT_EQ(cnf.clauses[0], clause0);
+  EXPECT_EQ(cnf.clauses[1], clause1);
+}
+
 TEST(CNFTest, LoadFromNonexistantFile) {
   EXPECT_THROW({ CNF::fromFile("/not/a/file.cnf"); }, std::invalid_argument);
 }

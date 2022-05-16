@@ -5,9 +5,10 @@
  * All rights reserved.
  */
 
+#include "core/utils.hpp"
+
 #include <algorithm>
 #include <array>
-#include <boost/dynamic_bitset.hpp>
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
@@ -24,48 +25,41 @@ namespace utils {
 
 void seed(unsigned int s) { std::srand(s); }
 
-boost::dynamic_bitset<> zeroBits(int n) {
-  boost::dynamic_bitset<> x(n);
-  for (int i = 0; i < n; ++i) x[i] = 0;
+BitVec zeroBits(unsigned int n) { return BitVec(n, 0); }
+
+BitVec randomBits(unsigned int n) {
+  BitVec x(n);
+  for (unsigned int i = 0; i < n; ++i) x[i] = rand() % 2;
   return x;
 }
 
-boost::dynamic_bitset<> randomBits(int n) {
-  boost::dynamic_bitset<> x(n);
-  for (int i = 0; i < n; ++i) x[i] = rand() % 2;
-  return x;
-}
-
-boost::dynamic_bitset<> randomBits(int n, unsigned int s) {
+BitVec randomBits(unsigned int n, unsigned int s) {
   seed(s);
   return randomBits(n);
 }
 
-boost::dynamic_bitset<> str2bits(const std::string &s) {
-  const int n = s.size();
-  const int n_bits = n * 8;
-  boost::dynamic_bitset<> bits(n_bits);
-  for (int i = 0; i < n; ++i) {
+BitVec str2bits(const std::string &s) {
+  const unsigned int n = s.size();
+  const unsigned int n_bits = n * 8;
+  BitVec bits(n_bits);
+  for (unsigned int i = 0; i < n; ++i) {
     char c = s[i];
-    for (int j = 0; j < 8; j++) {
-      bits[(8 * i) + j] = (c >> j) & 1;
+    for (unsigned int j = 0; j < 8; j++) {
+      bits[(8 * i) + j] = static_cast<bool>((c >> j) & 1);
     }
   }
   return bits;
 }
 
-std::string hexstr(const boost::dynamic_bitset<> &bs) {
-  std::string bitset_str;
-  boost::to_string(bs, bitset_str);
-  std::string b(bitset_str);
-
+std::string hexstr(const BitVec &bs) {
+  std::string bitset_str = bs.toString();
   std::string out = "";
 
-  for (unsigned int i = 0; i < b.size(); i += 4) {
+  for (unsigned int i = 0; i < bs.size(); i += 4) {
     int8_t n = 0;
     for (unsigned int j = i; j < i + 4; ++j) {
       n <<= 1;
-      if (b[j] == '1') n |= 1;
+      if (bitset_str[j] == '1') n |= 1;
     }
 
     out.push_back(n <= 9 ? ('0' + n) : ('a' + n - 10));
@@ -114,18 +108,14 @@ const char *hex2bin(char c) {
   }
 }
 
-boost::dynamic_bitset<> hex2bits(const std::string &hex_str) {
+BitVec hex2bits(const std::string &hex_str) {
   std::string bin_str;
-  const int n = static_cast<int>(hex_str.length());
-  for (int i = 0; i < n; ++i) bin_str += hex2bin(hex_str[i]);
-  return boost::dynamic_bitset<>(bin_str);
+  const unsigned int n = hex_str.length();
+  for (unsigned int i = 0; i < n; ++i) bin_str += hex2bin(hex_str[i]);
+  return BitVec(bin_str);
 }
 
-std::string binstr(const boost::dynamic_bitset<> &bs) {
-  std::string bitset_str;
-  boost::to_string(bs, bitset_str);
-  return bitset_str;
-}
+std::string binstr(const BitVec &bs) { return bs.toString(); }
 
 std::chrono::system_clock::rep ms_since_epoch() {
   static_assert(std::is_integral<std::chrono::system_clock::rep>::value,
