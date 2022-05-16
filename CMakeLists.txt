@@ -44,6 +44,9 @@ set(NOVALGRIND ON CACHE BOOL "" FORCE)
 set(NOBREAKID ON CACHE BOOL "" FORCE)
 set(ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 set(ENABLE_PYTHON_INTERFACE OFF CACHE BOOL "" FORCE)
+if(MSVC AND NOT (COMPILE_DEFINITIONS MATCHES "(.*)_MSC_VER(.*)"))
+  add_definitions(-D_MSC_VER)
+endif()
 add_subdirectory(extern/cryptominisat)
 include_directories("${cryptominisat5_BINARY_DIR}/cmsat5-src")
 
@@ -56,8 +59,6 @@ if(CRYPTOSYM_TESTS)
     GIT_REPOSITORY https://github.com/trevphil/cryptopp
     GIT_TAG 49fd7ffb03b9c6fa35b56e4e17904f6e124cf76f  # Release 8.6.0
   )
-  set(BUILD_STATIC ON CACHE BOOL "Build static Crypto++ library" FORCE)
-  set(BUILD_SHARED OFF CACHE BOOL "Build shared Crypto++ library" FORCE)
   set(BUILD_TESTING OFF CACHE BOOL "Build Crypto++ tests" FORCE)
   FetchContent_MakeAvailable(cryptopp)
   set(cryptopp_DIR "${cryptopp_BINARY_DIR}")
@@ -135,7 +136,7 @@ if(CRYPTOSYM_TESTS)
 
   target_link_libraries(unit_tests gtest_main)
   target_link_libraries(unit_tests cryptosymlib)
-  target_link_libraries(unit_tests cryptopp-static)
+  target_link_libraries(unit_tests cryptopp-shared)
 
   include(GoogleTest)
   gtest_discover_tests(unit_tests)
