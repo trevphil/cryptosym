@@ -78,7 +78,7 @@ std::unordered_map<int, bool> DAGSolver::solve(
     }
   }
 
-  bool preferred_assignment;
+  bool preferred_assignment = false;
   int picked_lit = pickLiteral(preferred_assignment);
   pushStack(picked_lit, preferred_assignment, false);
   bool conflict = propagate(picked_lit, problem.gates()) < 0;
