@@ -42,8 +42,9 @@ unsigned int SymBitVec::size() const { return bits_.size(); }
 uint64_t SymBitVec::intVal() const {
   const unsigned int n = size();
   if (n > sizeof(uint64_t) * 8) {
-    printf("Possible int overflow, coercing %u-bit SymBitVec to %lu-bit int\n", n,
-           sizeof(uint64_t) * 8);
+    const unsigned int max_bits = static_cast<unsigned int>(sizeof(uint64_t) * 8);
+    printf("Possible int overflow, coercing %u-bit SymBitVec to %u-bit int\n", n,
+           max_bits);
   }
   uint64_t result = 0;
   for (unsigned int i = 0; i < n; ++i) {

@@ -15,7 +15,7 @@ namespace preimage {
 
 thread_local std::vector<LogicGate> LogicGate::global_gates = {};
 
-int numInputs(LogicGate::Type t) {
+unsigned int numInputs(LogicGate::Type t) {
   switch (t) {
     case LogicGate::Type::and_gate:
       return 2;
@@ -38,11 +38,12 @@ LogicGate::LogicGate() {}
 
 LogicGate::LogicGate(LogicGate::Type typ, const int out, const std::vector<int> &inp)
     : output(out), inputs(inp), t_(typ) {
-  const int n_inputs = numInputs(t_);
-  if (n_inputs != static_cast<int>(inp.size())) {
+  const unsigned int n_inputs = numInputs(t_);
+  if (n_inputs != inp.size()) {
     char err_msg[128];
-    snprintf(err_msg, 128, "%s gate requires %d input(s) but got %lu\n",
-             LogicGate::humanReadableType(t_).c_str(), n_inputs, inp.size());
+    const unsigned int got = static_cast<unsigned int>(inp.size());
+    snprintf(err_msg, 128, "%s gate requires %u input(s) but got %u\n",
+             LogicGate::humanReadableType(t_).c_str(), n_inputs, got);
     throw std::invalid_argument(err_msg);
   }
   if (output <= 0) {

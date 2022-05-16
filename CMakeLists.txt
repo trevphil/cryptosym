@@ -94,7 +94,7 @@ add_library(cryptosymlib SHARED
 
 set(CRYPTOSYM_COMPILE_OPTIONS -Werror -Wall -Wextra -O3)
 if(MSVC)
-  set(CRYPTOSYM_COMPILE_OPTIONS ${CRYPTOSYM_COMPILE_OPTIONS} -Wno-format)
+  set(CRYPTOSYM_COMPILE_OPTIONS ${CRYPTOSYM_COMPILE_OPTIONS} -Wno-error=format)
 endif()
 target_compile_options(cryptosymlib PRIVATE ${CRYPTOSYM_COMPILE_OPTIONS})
 target_link_libraries(cryptosymlib cryptominisat5)
