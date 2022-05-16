@@ -133,4 +133,6 @@ if(CRYPTOSYM_TESTS)
 
   include(GoogleTest)
   gtest_discover_tests(unit_tests)
+
+  add_test(NAME cryptosym_unit_tests COMMAND unit_tests)
 endif()
