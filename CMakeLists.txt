@@ -43,12 +43,6 @@ set(NOVALGRIND ON CACHE BOOL "" FORCE)
 set(NOBREAKID ON CACHE BOOL "" FORCE)
 set(ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 set(ENABLE_PYTHON_INTERFACE OFF CACHE BOOL "" FORCE)
-message("MSVC = " ${MSVC})
-message("COMPILE_DEFINITIONS = " ${COMPILE_DEFINITIONS})
-if(MSVC AND NOT (COMPILE_DEFINITIONS MATCHES "(.*)_MSC_VER(.*)"))
-  add_definitions(-D_MSC_VER)
-  message("COMPILE_DEFINITIONS = " ${COMPILE_DEFINITIONS})
-endif()
 add_subdirectory(extern/cryptominisat)
 include_directories("${cryptominisat5_BINARY_DIR}/cmsat5-src")
 
@@ -57,8 +51,6 @@ include_directories("${cryptominisat5_BINARY_DIR}/cmsat5-src")
 # foreach (_variableName ${_variableNames})
 #     message(STATUS "${_variableName}=${${_variableName}}")
 # endforeach()
-
-# message(FATAL_ERROR "done")
 
 if(CRYPTOSYM_TESTS)
   include_directories(tests/helpers/include)
@@ -105,11 +97,11 @@ add_library(cryptosymlib SHARED
             src/hashing/sym_sha256.cpp
             src/dag_solver/dag_solver.cpp)
 
-set(CRYPTOSYM_COMPILE_OPTIONS -Werror -Wall -Wextra -O2)
-if(MSVC)
-  set(CRYPTOSYM_COMPILE_OPTIONS ${CRYPTOSYM_COMPILE_OPTIONS} -Wno-error=format)
-endif()
-target_compile_options(cryptosymlib PRIVATE ${CRYPTOSYM_COMPILE_OPTIONS})
+if(CMAKE_COMPILER_IS_GNUCXX)
+  message(STATUS "Adding target compile options")
+  target_compile_options(cryptosymlib PRIVATE -Werror -Wall -Wextra -O2)
+endif(CMAKE_COMPILER_IS_GNUCXX)
+
 target_link_libraries(cryptosymlib cryptominisat5)
 
 # Command-line tool
