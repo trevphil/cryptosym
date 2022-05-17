@@ -33,7 +33,7 @@ jobs:
           mkdir build
           cd build
           cmake -GNinja ..
-        env:
+        env:  # Set compilers to use MSVC (not MinGW)
           CC: cl
           CXX: cl
       - name: Compile C++

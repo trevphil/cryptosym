@@ -98,7 +98,7 @@ add_library(cryptosymlib SHARED
             src/dag_solver/dag_solver.cpp)
 
 if(MSVC)
-  target_compile_options(cryptosymlib PRIVATE /W3 /WX)
+  target_compile_options(cryptosymlib PRIVATE /W3)
 else()
   target_compile_options(cryptosymlib PRIVATE -Werror -Wall -Wextra)
 endif()
