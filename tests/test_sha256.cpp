@@ -10,6 +10,7 @@
 #include <gtest/gtest.h>
 #include <hex.h>
 #include <sha.h>
+#include <stdlib.h>
 
 #include <algorithm>
 #include <cctype>
@@ -56,18 +57,18 @@ TEST(SHA256Test, BadInputSize) {
 
 TEST(SHA256Test, RandomInputsAndSizes) {
   utils::seed(1);
-  const std::vector<int> inp_sizes{8, 32, 64, 512, 640, 1024};
-  for (int inp_size : inp_sizes) {
+  const std::vector<unsigned int> inp_sizes{8, 32, 64, 512, 640, 1024};
+  for (unsigned int inp_size : inp_sizes) {
     SHA256 sha256(inp_size);
 
     for (int sample_idx = 0; sample_idx < 10; sample_idx++) {
       // Generate a random input of length "inp_size"
       const BitVec bits = utils::randomBits(inp_size);
-      const int n_bytes = inp_size / 8;
-      uint8_t byte_arr[n_bytes];
-      for (int byte_idx = 0; byte_idx < n_bytes; byte_idx++) {
+      const unsigned int n_bytes = inp_size / 8;
+      uint8_t *byte_arr = reinterpret_cast<uint8_t *>(calloc(n_bytes, sizeof(uint8_t)));
+      for (unsigned int byte_idx = 0; byte_idx < n_bytes; byte_idx++) {
         byte_arr[byte_idx] = 0;
-        for (int k = 0; k < 8; k++) {
+        for (unsigned int k = 0; k < 8; k++) {
           byte_arr[byte_idx] += bits[(byte_idx * 8) + k] << k;
         }
       }
@@ -76,6 +77,7 @@ TEST(SHA256Test, RandomInputsAndSizes) {
       CryptoPP::SHA256 cryptopp_sha256;
       uint8_t digest[CryptoPP::SHA256::DIGESTSIZE];
       cryptopp_sha256.CalculateDigest(digest, byte_arr, n_bytes);
+      free(byte_arr);
 
       // Convert output to lowercase hexadecimal
       CryptoPP::HexEncoder encoder;

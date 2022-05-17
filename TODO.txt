@@ -3,6 +3,8 @@
 3. PyTest equivalent tests for all C++ tests
 4. Documentation (ReadTheDocs)
 5. cibuildwheel / pip
+6. Clean up CMakeLists.txt (cryptopp (DLL?) and cryptominisat)
+    - static vs. shared libraries?
 
 ####################################
 ####### Miscellaneous notes ########
