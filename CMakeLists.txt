@@ -105,7 +105,7 @@ add_library(cryptosymlib SHARED
             src/hashing/sym_sha256.cpp
             src/dag_solver/dag_solver.cpp)
 
-set(CRYPTOSYM_COMPILE_OPTIONS -Werror -Wall -Wextra -O3)
+set(CRYPTOSYM_COMPILE_OPTIONS -Werror -Wall -Wextra -O2)
 if(MSVC)
   set(CRYPTOSYM_COMPILE_OPTIONS ${CRYPTOSYM_COMPILE_OPTIONS} -Wno-error=format)
 endif()
