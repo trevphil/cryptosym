@@ -32,16 +32,18 @@ class MD5 : public SymHash {
 
   void finalize();
 
-  void decode(SymBitVec output[], const SymBitVec input[], int len);
+  void decode(std::vector<SymBitVec> &output, const std::vector<SymBitVec> &input,
+              int len);
 
-  void encode(SymBitVec output[], const SymBitVec input[], int len);
+  void encode(std::vector<SymBitVec> &output, const std::vector<SymBitVec> &input,
+              int len);
 
-  void update(const SymBitVec input[], int len);
+  void update(const std::vector<SymBitVec> &input, int len);
 
-  void transform(const SymBitVec block[MD5_BLOCK_SIZE]);
+  void transform(const std::vector<SymBitVec> &block);
 
-  void transformInternal(const SymBitVec block[MD5_BLOCK_SIZE], SymBitVec &a,
-                         SymBitVec &b, SymBitVec &c, SymBitVec &d);
+  void transformInternal(const std::vector<SymBitVec> &block, SymBitVec &a, SymBitVec &b,
+                         SymBitVec &c, SymBitVec &d);
 
   static inline SymBitVec F(const SymBitVec &x, const SymBitVec &y, const SymBitVec &z) {
     return (x & y) | (~x & z);
@@ -91,16 +93,16 @@ class MD5 : public SymHash {
 
   // Bytes that didn't fit into last 64-byte chunk.
   // Each SymBitVec is 8 bits.
-  SymBitVec buffer[MD5_BLOCK_SIZE];
+  std::vector<SymBitVec> buffer;
 
   // 64-bit counter for number of bits (lo, hi).
   uint32_t count[2];
 
   // Digest so far. Each SymBitVec is 32 bits.
-  SymBitVec state[4];
+  std::vector<SymBitVec> state;
 
   // Final digest result. Each SymBitVec is 8 bits.
-  SymBitVec digest[16];
+  std::vector<SymBitVec> digest;
 
   // Known constants
   std::vector<SymBitVec> constants_;
