@@ -1,6 +1,7 @@
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <stdlib.h>
 
 #include <sstream>
 #include <vector>
@@ -57,7 +58,8 @@ struct type_caster<preimage::BitVec> {
 
     const unsigned int num_bytes = (n / 8) + (unsigned int)(n % 8 != 0);
     unsigned int bit_idx = 0;
-    unsigned char data[num_bytes];
+    unsigned char *data =
+        reinterpret_cast<unsigned char *>(calloc(num_bytes, sizeof(unsigned char)));
 
     for (unsigned int byte_idx = 0; byte_idx < num_bytes; ++byte_idx) {
       data[byte_idx] = 0b00000000;
@@ -69,6 +71,7 @@ struct type_caster<preimage::BitVec> {
     const std::string s(reinterpret_cast<const char *>(data), num_bytes);
     const py::bytes b = py::bytes(s);
     b.inc_ref();  // TODO - Without this, segfault. With: mem leak?
+    free(data);
     return b.ptr();
   }
 };

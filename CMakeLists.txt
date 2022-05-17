@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 enable_language(CXX)
 
@@ -97,10 +97,11 @@ add_library(cryptosymlib SHARED
             src/hashing/sym_sha256.cpp
             src/dag_solver/dag_solver.cpp)
 
-if(CMAKE_COMPILER_IS_GNUCXX)
-  message(STATUS "Adding target compile options")
-  target_compile_options(cryptosymlib PRIVATE -Werror -Wall -Wextra -O2)
-endif(CMAKE_COMPILER_IS_GNUCXX)
+if(MSVC)
+  target_compile_options(cryptosymlib PRIVATE /W3 /WX)
+else()
+  target_compile_options(cryptosymlib PRIVATE -Werror -Wall -Wextra)
+endif()
 
 target_link_libraries(cryptosymlib cryptominisat5)
 
