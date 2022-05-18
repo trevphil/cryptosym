@@ -10,6 +10,18 @@
 ####### Miscellaneous notes ########
 ####################################
 
+SHARED
+Shared libraries are .so (or in Windows .dll, or in OS X .dylib) files.
+All the code relating to the library is in this file, and it is referenced
+by programs using it at run-time. A program using a shared library only
+makes reference to the code that it uses in the shared library.
+
+STATIC
+Static libraries are .a (or in Windows .lib) files. All the code relating to
+the library is in this file, and it is directly linked into the program at
+compile time. A program using a static library takes copies of the code that
+it uses from the static library and makes it part of the program.
+
 pyproject.toml: https://pip.pypa.io/en/stable/reference/build-system/pyproject-toml/
   - Specifies dependencies to build the package (+ tool configurations)
   - Build deps are installed to a tmp directory where the package is then built

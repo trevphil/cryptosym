@@ -6,13 +6,21 @@ enable_language(CXX)
 
 project(cryptosym)
 
+# Configurable build settings
 set(CRYPTOSYM_COMMAND_LINE_TOOL ON)
 set(CRYPTOSYM_PYTHON_BINDINGS ON)
 set(CRYPTOSYM_TESTS ON)
 
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE RelWithDebInfo)
+  message(STATUS "cryptosym building in default mode: ${CMAKE_BUILD_TYPE}")
+endif()
+
 include(FetchContent)
-include(ExternalProject)
-include_directories(include)
+include(GNUInstallDirs)
+
+# Custom `include(...)` directives
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Automatically fetch/update git submodules
 find_package(Git QUIET)
@@ -28,6 +36,9 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
     endif()
   endif()
 endif()
+
+# Project header files
+include_directories(include)
 
 # Eigen (header-only library)
 include_directories(extern/eigen)
@@ -46,25 +57,11 @@ set(ENABLE_PYTHON_INTERFACE OFF CACHE BOOL "" FORCE)
 add_subdirectory(extern/cryptominisat)
 include_directories("${cryptominisat5_BINARY_DIR}/cmsat5-src")
 
-# get_cmake_property(_variableNames VARIABLES)
-# list (SORT _variableNames)
-# foreach (_variableName ${_variableNames})
-#     message(STATUS "${_variableName}=${${_variableName}}")
-# endforeach()
-
 if(CRYPTOSYM_TESTS)
   include_directories(tests/helpers/include)
 
   # Crypto++
-  FetchContent_Declare(
-    cryptopp
-    GIT_REPOSITORY https://github.com/trevphil/cryptopp
-    GIT_TAG 49fd7ffb03b9c6fa35b56e4e17904f6e124cf76f  # Release 8.6.0
-  )
-  set(BUILD_TESTING OFF CACHE BOOL "Build Crypto++ tests" FORCE)
-  FetchContent_MakeAvailable(cryptopp)
-  set(cryptopp_DIR "${cryptopp_BINARY_DIR}")
-  find_package(cryptopp REQUIRED CONFIGS cryptopp-config-version.cmake)
+  include(BuildCryptoPP)
 
   # Google Test
   FetchContent_Declare(
@@ -77,7 +74,7 @@ if(CRYPTOSYM_TESTS)
 endif()
 
 # Add all the source files needed to build the library
-add_library(cryptosymlib SHARED
+add_library(cryptosymlib STATIC
             src/bp/bp_solver.cpp
             src/bp/graph.cpp
             src/bp/node.cpp
@@ -98,7 +95,7 @@ add_library(cryptosymlib SHARED
             src/dag_solver/dag_solver.cpp)
 
 if(MSVC)
-  target_compile_options(cryptosymlib PRIVATE /W3)
+  target_compile_options(cryptosymlib PRIVATE /W3 /wd4267)
 else()
   target_compile_options(cryptosymlib PRIVATE -Werror -Wall -Wextra)
 endif()
@@ -108,7 +105,7 @@ target_link_libraries(cryptosymlib cryptominisat5)
 # Command-line tool
 if(CRYPTOSYM_COMMAND_LINE_TOOL)
   add_executable(main src/main.cpp)
-  target_link_libraries(main cryptosymlib)
+  target_link_libraries(main PUBLIC cryptosymlib)
 endif()
 
 # Python bindings via PyBind11
@@ -139,7 +136,7 @@ if(CRYPTOSYM_TESTS)
 
   target_link_libraries(unit_tests gtest_main)
   target_link_libraries(unit_tests cryptosymlib)
-  target_link_libraries(unit_tests cryptopp-shared)
+  target_link_libraries(unit_tests cryptopp-static)
 
   include(GoogleTest)
   gtest_discover_tests(unit_tests)

@@ -8,3 +8,9 @@
 [submodule "extern/cryptominisat"]
 	path = extern/cryptominisat
 	url = https://github.com/msoos/cryptominisat.git
+[submodule "extern/cryptopp"]
+	path = extern/cryptopp
+	url = https://github.com/weidai11/cryptopp.git
+[submodule "extern/cryptopp-cmake"]
+	path = extern/cryptopp-cmake
+	url = https://github.com/noloader/cryptopp-cmake.git

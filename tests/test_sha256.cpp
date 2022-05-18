@@ -6,10 +6,10 @@
  * (See accompanying file LICENSE.md).
  */
 
-#include <cryptlib.h>
+#include <cryptopp/cryptlib.h>
+#include <cryptopp/hex.h>
+#include <cryptopp/sha.h>
 #include <gtest/gtest.h>
-#include <hex.h>
-#include <sha.h>
 #include <stdlib.h>
 
 #include <algorithm>

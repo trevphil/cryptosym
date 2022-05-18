@@ -44,7 +44,7 @@ TEST(BPSolverTest, SolveMD5) {
 
 TEST(BPSolverTest, SolveRIPEMD160) {
   std::shared_ptr<Solver> solver = std::make_shared<bp::BPSolver>();
-  for (int d = 1; d <= 3; ++d) {
+  for (int d = 1; d <= 2; ++d) {
     std::shared_ptr<SymHash> hasher = std::make_shared<RIPEMD160>(64, d);
     for (int i = 0; i < 3; ++i) {
       const bool solved = evaluateSolver(solver, hasher);
