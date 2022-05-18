@@ -139,7 +139,7 @@ if(CRYPTOSYM_TESTS)
   target_link_libraries(unit_tests cryptopp-static)
 
   include(GoogleTest)
-  gtest_discover_tests(unit_tests)
+  gtest_add_tests(TARGET unit_tests)
 
   add_test(NAME cryptosym_unit_tests COMMAND unit_tests)
 endif()

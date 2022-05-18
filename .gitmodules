@@ -13,4 +13,4 @@
 	url = https://github.com/weidai11/cryptopp.git
 [submodule "extern/cryptopp-cmake"]
 	path = extern/cryptopp-cmake
-	url = https://github.com/noloader/cryptopp-cmake.git
+	url = https://github.com/trevphil/cryptopp-cmake.git
