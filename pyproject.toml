@@ -4,7 +4,6 @@ requires = [
     "cmake>=3.22",
     "ninja",
     "wheel",
-    "pytest",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -16,6 +15,7 @@ minversion = "6.0"
 testpaths = ["tests"]
 
 [tool.cibuildwheel]
+test-requires = "pytest"
 test-command = "pytest {project}/tests"
 test-skip = "*universal2:arm64"
 before-build = "rm -rf {project}/build"

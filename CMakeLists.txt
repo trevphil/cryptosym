@@ -49,6 +49,11 @@ include_directories(include)
 # Eigen (header-only library)
 include_directories(extern/eigen)
 
+# PyBind11
+if(CRYPTOSYM_PYTHON_BINDINGS)
+  add_subdirectory(extern/pybind11)
+endif()
+
 # CryptoMiniSAT
 set(MIT ON CACHE BOOL "" FORCE)
 set(ONLY_SIMPLE ON CACHE BOOL "" FORCE)
@@ -118,7 +123,6 @@ endif()
 
 # Python bindings via PyBind11
 if(CRYPTOSYM_PYTHON_BINDINGS)
-  add_subdirectory(extern/pybind11)
   pybind11_add_module(cryptosym src/bindings.cpp)
   target_link_libraries(cryptosym PUBLIC cryptosymlib)
 endif()
