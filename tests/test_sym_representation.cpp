@@ -8,6 +8,7 @@
 
 #include <gtest/gtest.h>
 
+#include <filesystem>
 #include <vector>
 
 #include "core/logic_gate.hpp"
@@ -21,8 +22,6 @@ TEST(SymRepresentationTest, Initialization) {
   SymRepresentation rep(gates, {1, 2, 3}, {0, 4, 5});
   EXPECT_EQ(rep.numVars(), 5);
   EXPECT_EQ(rep.gates().size(), 2);
-  EXPECT_EQ(rep.gates().at(1).t(), LogicGate::Type::and_gate);
-  EXPECT_EQ(rep.gates().at(0).t(), LogicGate::Type::xor_gate);
 
   const std::vector<int> inputs = {1, 2, 3};
   const std::vector<int> outputs = {0, 4, 5};
@@ -66,8 +65,9 @@ TEST(SymRepresentationTest, ConvertDAG) {
   EXPECT_EQ(rep.inputIndices(), inputs);
   EXPECT_EQ(rep.outputIndices(), outputs);
 
-  rep.toDAG("/tmp/dag.txt");
-  rep = SymRepresentation::fromDAG("/tmp/dag.txt");
+  const std::filesystem::path path = std::filesystem::temp_directory_path() / "dag.txt";
+  rep.toDAG(path.string());
+  rep = SymRepresentation::fromDAG(path.string());
   EXPECT_EQ(rep.numVars(), 6);
   EXPECT_EQ(rep.gates().size(), 3);
   EXPECT_EQ(rep.inputIndices(), inputs);
@@ -75,7 +75,9 @@ TEST(SymRepresentationTest, ConvertDAG) {
 }
 
 TEST(SymRepresentationTest, LoadInvalidDAG) {
-  EXPECT_ANY_THROW({ SymRepresentation::fromDAG("/tmp/not_a_dag.txt"); });
+  std::filesystem::path path = std::filesystem::temp_directory_path();
+  path = path / "not" / "a" / "dag.txt";
+  EXPECT_ANY_THROW({ SymRepresentation::fromDAG(path.string()); });
 }
 
 }  // end namespace preimage

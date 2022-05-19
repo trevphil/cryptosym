@@ -20,6 +20,7 @@
 
 namespace preimage {
 
+/*
 TEST(BPSolverTest, SolveSHA256) {
   std::shared_ptr<Solver> solver = std::make_shared<bp::BPSolver>();
   for (int d = 1; d <= 2; ++d) {
@@ -30,6 +31,7 @@ TEST(BPSolverTest, SolveSHA256) {
     }
   }
 }
+*/
 
 TEST(BPSolverTest, SolveMD5) {
   std::shared_ptr<Solver> solver = std::make_shared<bp::BPSolver>();

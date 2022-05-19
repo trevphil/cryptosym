@@ -21,6 +21,9 @@ include(GNUInstallDirs)
 
 # Custom `include(...)` directives
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
+set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
+set(BUILD_SHARED_LIBS OFF)
 
 # Automatically fetch/update git submodules
 find_package(Git QUIET)
@@ -54,6 +57,7 @@ set(NOVALGRIND ON CACHE BOOL "" FORCE)
 set(NOBREAKID ON CACHE BOOL "" FORCE)
 set(ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 set(ENABLE_PYTHON_INTERFACE OFF CACHE BOOL "" FORCE)
+# set(STATICCOMPILE ON CACHE BOOL "" FORCE)
 add_subdirectory(extern/cryptominisat)
 include_directories("${cryptominisat5_BINARY_DIR}/cmsat5-src")
 
@@ -70,6 +74,7 @@ if(CRYPTOSYM_TESTS)
   )
   # For Windows: Prevent overriding the parent project's compiler/linker settings
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+  set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(googletest)
 endif()
 
@@ -139,7 +144,7 @@ if(CRYPTOSYM_TESTS)
   target_link_libraries(unit_tests cryptopp-static)
 
   include(GoogleTest)
-  gtest_add_tests(TARGET unit_tests)
+  gtest_discover_tests(unit_tests)
 
   add_test(NAME cryptosym_unit_tests COMMAND unit_tests)
 endif()

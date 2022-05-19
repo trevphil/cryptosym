@@ -8,6 +8,7 @@
 
 #include <gtest/gtest.h>
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <set>
@@ -70,9 +71,10 @@ TEST(CNFTest, NumSatisfiedClausesPartialAssignment) {
 }
 
 TEST(CNFTest, ReadWrite) {
+  const std::filesystem::path path = std::filesystem::temp_directory_path() / "a.cnf";
   CNF cnf({{-1, 2}, {3, -4}}, 8);
-  cnf.toFile("/tmp/a.cnf");
-  cnf = CNF::fromFile("/tmp/a.cnf");
+  cnf.toFile(path.string());
+  cnf = CNF::fromFile(path.string());
   EXPECT_EQ(cnf.num_vars, 8);
   EXPECT_EQ(cnf.num_clauses, 2);
   const std::set<int> clause0 = {-1, 2};
@@ -82,8 +84,10 @@ TEST(CNFTest, ReadWrite) {
 }
 
 TEST(CNFTest, TrimSpaces) {
+  const std::filesystem::path path =
+      std::filesystem::temp_directory_path() / "whitespace.cnf";
   std::ofstream cnf_file;
-  cnf_file.open("/tmp/whitespace.cnf");
+  cnf_file.open(path.string());
   cnf_file << "# This is a comment \n";
   cnf_file << " # Also a comment\n";
   cnf_file << "p cnf 3 2 \r\n";
@@ -92,7 +96,7 @@ TEST(CNFTest, TrimSpaces) {
   cnf_file << "\t-3 2 0\n";
   cnf_file << "\n";
   cnf_file.close();
-  CNF cnf = CNF::fromFile("/tmp/whitespace.cnf");
+  CNF cnf = CNF::fromFile(path.string());
   EXPECT_EQ(cnf.num_vars, 3);
   EXPECT_EQ(cnf.num_clauses, 2);
   const std::set<int> clause0 = {-1, 2, 3};
@@ -102,17 +106,21 @@ TEST(CNFTest, TrimSpaces) {
 }
 
 TEST(CNFTest, LoadFromNonexistantFile) {
-  EXPECT_THROW({ CNF::fromFile("/not/a/file.cnf"); }, std::invalid_argument);
+  std::filesystem::path path = std::filesystem::temp_directory_path();
+  path = path / "not" / "a" / "file.cnf";
+  EXPECT_THROW({ CNF::fromFile(path.string()); }, std::invalid_argument);
 }
 
 TEST(CNFTest, LoadDimacsWithoutHeader) {
+  const std::filesystem::path path =
+      std::filesystem::temp_directory_path() / "dimacs.cnf";
   std::fstream dimacs;
-  dimacs.open("/tmp/dimacs.cnf", std::ios_base::out);
+  dimacs.open(path.string(), std::ios_base::out);
   ASSERT_TRUE(dimacs.is_open());
   dimacs << "1 2 3 0\n";
   dimacs << "3 -1 -4 0\n";
   dimacs.close();
-  EXPECT_THROW({ CNF::fromFile("/tmp/dimacs.cnf"); }, std::runtime_error);
+  EXPECT_THROW({ CNF::fromFile(path.string()); }, std::runtime_error);
 }
 
 TEST(CNFTest, SimplifyWithZeroIndexedAssignments) {

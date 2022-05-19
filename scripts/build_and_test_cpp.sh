@@ -7,7 +7,8 @@ if [ ! -d build ]; then
 fi
 
 pushd build
-cmake -GNinja .. && cmake --build .
+cmake -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
+cmake --build .
 popd
 
-ctest --test-dir build
+ctest --test-dir build -C RelWithDebInfo

@@ -1,9 +1,6 @@
 # Include usage of external projects
 include(FetchContent)
 
-# Define the release version we want to use for Crypto++
-set(CRYPTOPP_GIT_TAG CRYPTOPP_8_6_0)
-
 set(BUILD_STATIC ON CACHE BOOL "" FORCE)
 set(BUILD_SHARED OFF CACHE BOOL "" FORCE)
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
