@@ -6,14 +6,19 @@ on:
 
 jobs:
   build_wheels:
-    name: Build wheels on ${{ matrix.os }}
+    name: Build wheels on ${{ matrix.os }} for Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ ubuntu-20.04, windows-2019, macos-10.15 ]
+        python-version: [ "3.9", "3.10" ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
       - name: Set up cmake
         uses: lukka/get-cmake@latest
       - name: Set up ninja
