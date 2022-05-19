@@ -42,7 +42,7 @@ jobs:
       - name: Run tests
         run: ctest --test-dir build -C ${{ matrix.build-type }}
 
-  linux-macos-jobs:
+  linux-and-macos-jobs:
     strategy:
       fail-fast: false
       matrix:
