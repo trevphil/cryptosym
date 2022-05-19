@@ -49,7 +49,7 @@ jobs:
         os: [ ubuntu-latest, macos-latest ]
         python-version: [ "3.9" ]
         build-type: [ RelWithDebInfo ]
-    runs-on: ${{ matrix.config.os }}
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
