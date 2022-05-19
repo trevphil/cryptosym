@@ -10,3 +10,4 @@ dataset_generator
 .idea
 unit_tests
 *.egg-info
+*.whl
