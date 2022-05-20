@@ -1,15 +1,20 @@
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/stl/filesystem.h>
 #include <stdlib.h>
 
+#include <filesystem>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include "core/bit_vec.hpp"
+#include "core/cnf.hpp"
 #include "core/config.hpp"
 #include "core/logic_gate.hpp"
 #include "core/sym_bit_vec.hpp"
+#include "core/sym_representation.hpp"
 #include "core/utils.hpp"
 
 namespace py = pybind11;
@@ -87,7 +92,12 @@ namespace preimage {
 PYBIND11_MODULE(cryptosym, m) {
   m.doc() = "cryptosym";
 
-  // Configuration
+  /*
+   *****************************************************
+    Configuration
+   *****************************************************
+   */
+
   py::class_<dummy>(m, "config")
       .def_property_static(
           "only_and_gates", [](py::object) { return config::only_and_gates; },
@@ -96,7 +106,12 @@ PYBIND11_MODULE(cryptosym, m) {
           "verbose", [](py::object) { return config::verbose; },
           [](py::object, bool v) { config::verbose = v; });
 
-  // Utilities
+  /*
+   *****************************************************
+    Utilities
+   *****************************************************
+   */
+
   py::module u = m.def_submodule("utils");
   u.def("seed", &utils::seed, py::arg("seed_value"));
   u.def("zero_bits", &utils::zeroBits, py::arg("n"));
@@ -108,7 +123,12 @@ PYBIND11_MODULE(cryptosym, m) {
   u.def("binstr", &utils::binstr, py::arg("raw_bytes"));
   u.def("hex2bits", &utils::hex2bits, py::arg("hex_str"));
 
-  // Logic gate
+  /*
+   *****************************************************
+    Logic gate
+   *****************************************************
+   */
+
   py::class_<LogicGate> gate(m, "LogicGate");
   py::enum_<LogicGate::Type>(gate, "Type")
       .value("and_gate", LogicGate::Type::and_gate)
@@ -129,7 +149,12 @@ PYBIND11_MODULE(cryptosym, m) {
   });
   gate.def("cnf", &LogicGate::cnf);
 
-  // Symbolic bit vector
+  /*
+   *****************************************************
+    SymBitVec
+   *****************************************************
+   */
+
   py::class_<SymBitVec> bitvec(m, "SymBitVec");
   bitvec.def(py::init());
   bitvec.def(py::init<const BitVec &, bool>(), py::arg("bits"),
@@ -178,13 +203,72 @@ PYBIND11_MODULE(cryptosym, m) {
   bitvec.def_static("maj3", &SymBitVec::maj3, py::arg("a"), py::arg("b"), py::arg("c"));
   bitvec.def_static("xor3", &SymBitVec::xor3, py::arg("a"), py::arg("b"), py::arg("c"));
 
-  // CNF
+  /*
+   *****************************************************
+    CNF
+   *****************************************************
+   */
 
-  // Symbolic representation
+  py::class_<CNF> cnf(m, "CNF");
+  cnf.def(py::init());
+  cnf.def(py::init<const std::vector<LogicGate> &>(), py::arg("gates"));
+  cnf.def(py::init<const std::vector<std::set<int>> &, int>(), py::arg("clauses"),
+          py::arg("num_vars"));
+  cnf.def(py::init(&CNF::fromFile), py::arg("file_path"));
+  cnf.def(
+      py::init([](const std::filesystem::path &p) { return CNF::fromFile(p.string()); }),
+      py::arg("file_path"));
+  cnf.def("num_sat_clauses", &CNF::numSatClauses, py::arg("assignments"));
+  cnf.def("approximation_ratio", &CNF::approximationRatio, py::arg("assignments"));
+  cnf.def("simplify", &CNF::simplify, py::arg("assignments"));
+  cnf.def("to_file", &CNF::toFile, py::arg("file_path"));
+  cnf.def(
+      "to_file",
+      [](const CNF &c, const std::filesystem::path &p) { c.toFile(p.string()); },
+      py::arg("file_path"));
+  cnf.def_property_readonly("num_vars", [](const CNF &c) { return c.num_vars; });
+  cnf.def_property_readonly("num_clauses", [](const CNF &c) { return c.num_clauses; });
+  cnf.def_property_readonly("clauses", [](const CNF &c) { return c.clauses; });
 
-  // Symbolic hash function
+  /*
+   *****************************************************
+    SymRepresentation
+   *****************************************************
+   */
 
-  // Solver
+  py::class_<SymRepresentation> rep(m, "SymRepresentation");
+  rep.def(py::init<const std::vector<LogicGate> &, const std::vector<int> &,
+                   const std::vector<int> &>(),
+          py::arg("gates"), py::arg("input_indices"), py::arg("output_indices"));
+  rep.def(py::init(&SymRepresentation::fromDAG), py::arg("dag_file"));
+  rep.def(py::init([](const std::filesystem::path &p) {
+            return SymRepresentation::fromDAG(p.string());
+          }),
+          py::arg("dag_file"));
+  rep.def_property_readonly("num_vars", &SymRepresentation::numVars);
+  rep.def_property_readonly("gates", &SymRepresentation::gates);
+  rep.def_property_readonly("input_indices", &SymRepresentation::inputIndices);
+  rep.def_property_readonly("output_indices", &SymRepresentation::outputIndices);
+  rep.def("to_dag", &SymRepresentation::toDAG, py::arg("file_path"));
+  rep.def(
+      "to_dag",
+      [](const SymRepresentation &s, const std::filesystem::path &p) {
+        s.toDAG(p.string());
+      },
+      py::arg("file_path"));
+  rep.def("to_cnf", &SymRepresentation::toCNF);
+
+  /*
+   *****************************************************
+    SymHash
+   *****************************************************
+   */
+
+  /*
+   *****************************************************
+    Solver
+   *****************************************************
+   */
 }
 
 }  // end namespace preimage

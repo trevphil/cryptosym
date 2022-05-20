@@ -1,3 +1,11 @@
+"""
+Copyright (c) 2022 Authors:
+    - Trevor Phillips <trevphil3@gmail.com>
+
+Distributed under the CC BY-NC-SA 4.0 license
+(See accompanying file LICENSE.md).
+"""
+
 import os
 import re
 import subprocess
@@ -7,7 +15,7 @@ from pathlib import Path
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
-__version__ = "1.0.1"  # TODO - Move back to 1.0.0 for first non-test release
+__version__ = "1.0.2"  # TODO - Move back to 1.0.0 for first non-test release
 
 # Convert distutils Windows platform specifiers to CMake -A arguments
 PLATFORM_TO_CMAKE = {

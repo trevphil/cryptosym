@@ -49,6 +49,7 @@ jobs:
         env:
           # Skip 32-bit architectures, only build 64-bit
           CIBW_ARCHS: auto64
+          CIBW_TEST_COMMAND: python -m pytest {project}/tests
       - name: Verify clean directory
         run: git diff --exit-code
         shell: bash
