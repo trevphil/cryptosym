@@ -96,7 +96,7 @@ SymBitVec SymBitVec::extract(unsigned int lb, unsigned int ub) const {
     char err_msg[128];
     snprintf(err_msg, 128, "%s, got [%u, %u]",
              "Lower bound of `extract` must be less than upper bound", lb, ub);
-    throw std::invalid_argument(err_msg);
+    throw std::out_of_range(err_msg);
   }
 
   std::vector<SymBit> bits;
@@ -124,6 +124,13 @@ SymBitVec SymBitVec::resize(unsigned int n) const {
 }
 
 SymBitVec SymBitVec::rotr(unsigned int n) const {
+  n = n % size();
+  std::vector<SymBit> bits = bits_;
+  std::rotate(bits.begin(), bits.begin() + n, bits.end());
+  return SymBitVec(bits);
+}
+
+SymBitVec SymBitVec::rotl(unsigned int n) const {
   const unsigned int sz = size();
   n = n % sz;
   std::vector<SymBit> bits = bits_;
@@ -234,8 +241,18 @@ SymBitVec SymBitVec::operator>>(unsigned int n) const {
   return result;
 }
 
-SymBitVec SymBitVec::majority3(const SymBitVec &a, const SymBitVec &b,
-                               const SymBitVec &c) {
+
+bool SymBitVec::operator==(const SymBitVec &b) const {
+  if (size() != b.size()) return false;
+  for (unsigned int i = 0; i < size(); ++i) {
+    if (at(i).val != b.at(i).val) return false;
+  }
+  return true;
+}
+
+bool SymBitVec::operator!=(const SymBitVec &b) const { return !(*this == b); }
+
+SymBitVec SymBitVec::maj3(const SymBitVec &a, const SymBitVec &b, const SymBitVec &c) {
   if ((a.size() != b.size()) || (a.size() != c.size())) {
     char err_msg[128];
     snprintf(err_msg, 128, "Bit vectors must be same size, got (%u, %u, %u)", a.size(),
@@ -245,7 +262,7 @@ SymBitVec SymBitVec::majority3(const SymBitVec &a, const SymBitVec &b,
 
   std::vector<SymBit> bits = {};
   for (unsigned int i = 0; i < a.size(); i++) {
-    bits.push_back(SymBit::majority3(a.at(i), b.at(i), c.at(i)));
+    bits.push_back(SymBit::maj3(a.at(i), b.at(i), c.at(i)));
   }
   return SymBitVec(bits);
 }

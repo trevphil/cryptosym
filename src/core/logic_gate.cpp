@@ -23,7 +23,7 @@ unsigned int numInputs(LogicGate::Type t) {
       return 2;
     case LogicGate::Type::xor_gate:
       return 2;
-    case LogicGate::Type::maj_gate:
+    case LogicGate::Type::maj3_gate:
       return 3;
     case LogicGate::Type::xor3_gate:
       return 3;
@@ -105,7 +105,7 @@ std::vector<std::vector<int>> LogicGate::cnf() const {
               {-output, inputs[0], -inputs[1], -inputs[2]},
               {-output, -inputs[0], inputs[1], -inputs[2]},
               {-output, -inputs[0], -inputs[1], inputs[2]}};
-    case Type::maj_gate:
+    case Type::maj3_gate:
       return {{-output, inputs[0], inputs[1]},  {-output, inputs[0], inputs[2]},
               {-output, inputs[1], inputs[2]},  {output, -inputs[0], -inputs[1]},
               {output, -inputs[0], -inputs[2]}, {output, -inputs[1], -inputs[2]}};

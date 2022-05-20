@@ -20,7 +20,7 @@ class LogicGate {
     and_gate = 'A',
     xor_gate = 'X',
     or_gate = 'O',
-    maj_gate = 'M',
+    maj3_gate = 'M',
     xor3_gate = 'Z'
   };
 
@@ -48,7 +48,7 @@ class LogicGate {
         return "OR";
       case Type::xor_gate:
         return "XOR-2";
-      case Type::maj_gate:
+      case Type::maj3_gate:
         return "Maj-3";
       case Type::xor3_gate:
         return "XOR-3";

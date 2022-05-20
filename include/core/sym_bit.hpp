@@ -38,7 +38,7 @@ class SymBit {
                                        const SymBit &carry_in);
   static std::pair<SymBit, SymBit> add(const SymBit &a, const SymBit &b);
 
-  static SymBit majority3(const SymBit &a, const SymBit &b, const SymBit &c);
+  static SymBit maj3(const SymBit &a, const SymBit &b, const SymBit &c);
 
   static SymBit xor3(const SymBit &a, const SymBit &b, const SymBit &c);
 

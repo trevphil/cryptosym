@@ -7,7 +7,7 @@ from pathlib import Path
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"  # TODO - Move back to 1.0.0 for first non-test release
 
 # Convert distutils Windows platform specifiers to CMake -A arguments
 PLATFORM_TO_CMAKE = {

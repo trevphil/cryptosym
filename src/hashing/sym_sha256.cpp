@@ -14,7 +14,7 @@
 namespace preimage {
 
 #define Ch(x, y, z) (z ^ (x & (y ^ z)))
-#define Maj(x, y, z) (SymBitVec::majority3(x, y, z))
+#define Maj(x, y, z) (SymBitVec::maj3(x, y, z))
 #define S(x, n) ((x >> (n & 31)) | (x << (32 - (n & 31))))
 #define R(x, n) (x >> n)
 #define Sigma0(x) (SymBitVec::xor3(S(x, 2), S(x, 13), S(x, 22)))

@@ -55,7 +55,7 @@ void CMSatSolver::initializeSolver(int num_vars, const std::vector<LogicGate> &g
     switch (g.t()) {
       case LogicGate::Type::and_gate:
       case LogicGate::Type::or_gate:
-      case LogicGate::Type::maj_gate:
+      case LogicGate::Type::maj3_gate:
         addClause(g);
         break;
       case LogicGate::Type::xor_gate:

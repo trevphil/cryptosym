@@ -80,7 +80,7 @@ BPFactorType BPSolver::convertLogicGate(LogicGate::Type t) const {
       return BPFactorType::Xor;
     case LogicGate::Type::or_gate:
       return BPFactorType::Or;
-    case LogicGate::Type::maj_gate:
+    case LogicGate::Type::maj3_gate:
       return BPFactorType::Maj;
     case LogicGate::Type::xor3_gate:
       return BPFactorType::Xor3;

@@ -54,6 +54,8 @@ class SymBitVec {
 
   SymBitVec rotr(unsigned int n) const;
 
+  SymBitVec rotl(unsigned int n) const;
+
   SymBitVec reversed() const;
 
   SymBitVec operator~() const;
@@ -70,7 +72,11 @@ class SymBitVec {
 
   SymBitVec operator>>(unsigned int n) const;
 
-  static SymBitVec majority3(const SymBitVec &a, const SymBitVec &b, const SymBitVec &c);
+  bool operator==(const SymBitVec &b) const;
+
+  bool operator!=(const SymBitVec &b) const;
+
+  static SymBitVec maj3(const SymBitVec &a, const SymBitVec &b, const SymBitVec &c);
 
   static SymBitVec xor3(const SymBitVec &a, const SymBitVec &b, const SymBitVec &c);
 

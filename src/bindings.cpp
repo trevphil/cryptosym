@@ -114,7 +114,7 @@ PYBIND11_MODULE(cryptosym, m) {
       .value("and_gate", LogicGate::Type::and_gate)
       .value("xor_gate", LogicGate::Type::xor_gate)
       .value("or_gate", LogicGate::Type::or_gate)
-      .value("maj_gate", LogicGate::Type::maj_gate)
+      .value("maj3_gate", LogicGate::Type::maj3_gate)
       .value("xor3_gate", LogicGate::Type::xor3_gate)
       .export_values();
   gate.def(py::init(&LogicGate::fromString), py::arg("string"));
@@ -141,23 +141,50 @@ PYBIND11_MODULE(cryptosym, m) {
   bitvec.def("bits", &SymBitVec::bits);
   bitvec.def("bin", &SymBitVec::bin);
   bitvec.def("hex", &SymBitVec::hex);
-  bitvec.def("__getitem__", [](const SymBitVec &bv, int i) { return bv.at(i).val; });
+  bitvec.def("__getitem__", [](const SymBitVec &bv, int i) {
+    if (i < 0) {
+      i = static_cast<int>(bv.size()) + i;
+    }
+    return bv.at(i).val;
+  });
+  bitvec.def("__getitem__", [](const SymBitVec &b, const py::slice &slice) -> SymBitVec {
+    size_t start = 0, stop = 0, step = 0, slicelength = 0;
+    if (!slice.compute(b.size(), &start, &stop, &step, &slicelength)) {
+      throw py::error_already_set();
+    } else if (step != 1) {
+      char err_msg[128];
+      const int step_i = static_cast<int>(step);
+      snprintf(err_msg, 128, "Slice step size must be 1 (got %d)", step_i);
+      throw py::index_error(err_msg);
+    }
+    const unsigned int start_ui = static_cast<unsigned int>(start);
+    const unsigned int stop_ui = static_cast<unsigned int>(stop);
+    return b.extract(start_ui, stop_ui);
+  });
   bitvec.def("concat", &SymBitVec::concat, py::arg("other"));
-  // TODO: slicing for `extract`
-  //   https://github.com/pybind/pybind11/blob/master/tests/test_sequences_and_iterators.cpp#L288
   bitvec.def("resize", &SymBitVec::resize, py::arg("n"));
   bitvec.def("rotr", &SymBitVec::rotr, py::arg("n"));
+  bitvec.def("rotl", &SymBitVec::rotl, py::arg("n"));
   bitvec.def("__reversed__", &SymBitVec::reversed);
   bitvec.def(~py::self);
   bitvec.def(py::self & py::self);
   bitvec.def(py::self ^ py::self);
   bitvec.def(py::self | py::self);
   bitvec.def(py::self + py::self);
-  // bitvec.def("__lshift__");
-  // bitvec.def("__rshift__");
-  bitvec.def_static("majority3", &SymBitVec::majority3, py::arg("a"), py::arg("b"),
-                    py::arg("c"));
+  bitvec.def(py::self == py::self);
+  bitvec.def(py::self != py::self);
+  bitvec.def("__lshift__", &SymBitVec::operator<<);
+  bitvec.def("__rshift__", &SymBitVec::operator>>);
+  bitvec.def_static("maj3", &SymBitVec::maj3, py::arg("a"), py::arg("b"), py::arg("c"));
   bitvec.def_static("xor3", &SymBitVec::xor3, py::arg("a"), py::arg("b"), py::arg("c"));
+
+  // CNF
+
+  // Symbolic representation
+
+  // Symbolic hash function
+
+  // Solver
 }
 
 }  // end namespace preimage

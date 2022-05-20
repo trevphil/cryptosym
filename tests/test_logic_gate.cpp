@@ -45,7 +45,7 @@ TEST(LogicGateTest, Initialization) {
 TEST(LogicGateTest, StringConversion) {
   const std::string s = "M 4 -1 2 -3";
   const LogicGate g = LogicGate::fromString(s);
-  EXPECT_EQ(g.t(), GType::maj_gate);
+  EXPECT_EQ(g.t(), GType::maj3_gate);
   EXPECT_EQ(g.output, 4);
   EXPECT_EQ(g.inputs.at(0), -1);
   EXPECT_EQ(g.inputs.at(1), 2);
@@ -119,7 +119,7 @@ TEST(LogicGateTest, Xor3GateCNF) {
 }
 
 TEST(LogicGateTest, Maj3GateCNF) {
-  const LogicGate g(GType::maj_gate, 4, {1, 2, 3});
+  const LogicGate g(GType::maj3_gate, 4, {1, 2, 3});
   const auto clauses = g.cnf();
   for (int i = 0; i < (1 << 4); ++i) {
     const bool b1 = (i >> 0) & 1;
@@ -148,8 +148,8 @@ TEST(LogicGateTest, WrongNumberOfInputs) {
   EXPECT_THROW({ LogicGate(GType::xor3_gate, 3, {1, 2}); }, std::invalid_argument);
   EXPECT_THROW({ LogicGate(GType::xor3_gate, 5, {1, 2, 3, 4}); }, std::invalid_argument);
 
-  EXPECT_THROW({ LogicGate(GType::maj_gate, 3, {1, 2}); }, std::invalid_argument);
-  EXPECT_THROW({ LogicGate(GType::maj_gate, 5, {1, 2, 3, 4}); }, std::invalid_argument);
+  EXPECT_THROW({ LogicGate(GType::maj3_gate, 3, {1, 2}); }, std::invalid_argument);
+  EXPECT_THROW({ LogicGate(GType::maj3_gate, 5, {1, 2, 3, 4}); }, std::invalid_argument);
 }
 
 TEST(LogicGateTest, NegatedOutput) {

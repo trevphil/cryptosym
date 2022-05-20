@@ -41,7 +41,8 @@ TEST(SymBitVecTest, BasicOperators) {
   SymBitVec bv2(0b011101, 6);
   EXPECT_EQ(bv1.reversed().intVal(), 0b101011);
   EXPECT_EQ(bv2.reversed().intVal(), 0b101110);
-  EXPECT_EQ(bv1.rotr(2).intVal(), 0b010111);
+  EXPECT_EQ(bv1.rotr(2).intVal(), 0b011101);
+  EXPECT_EQ(bv1.rotl(2).intVal(), 0b010111);
   EXPECT_EQ((bv1 >> 3).intVal(), 0b000110);
   EXPECT_EQ((bv1 << 3).intVal(), 0b101000);
   EXPECT_EQ((~bv1).intVal(), 0b001010);
@@ -53,6 +54,19 @@ TEST(SymBitVecTest, BasicOperators) {
   EXPECT_EQ(bv2.at(0).val, 1);  // LSB
   EXPECT_EQ(bv1.at(5).val, 1);  // MSB
   EXPECT_EQ(bv2.at(5).val, 0);  // MSB
+}
+
+TEST(SymBitVecTest, Equality) {
+  SymBitVec a(0b110101, 6);
+  SymBitVec b(0b110101, 6);
+  SymBitVec c(0b110101, 7);
+  SymBitVec d(0b111111, 6);
+  EXPECT_TRUE(a == b);
+  EXPECT_FALSE(a != b);
+  EXPECT_FALSE(a == c);
+  EXPECT_TRUE(a != c);
+  EXPECT_FALSE(a == d);
+  EXPECT_TRUE(a != d);
 }
 
 TEST(SymBitVecTest, Resizing) {
@@ -88,7 +102,7 @@ TEST(SymBitVecTest, Majority3) {
   SymBitVec a(0b11010101, 8);
   SymBitVec b(0b10001001, 8);
   SymBitVec c(0b01011111, 8);
-  EXPECT_EQ(SymBitVec::majority3(a, b, c).intVal(), 0b11011101);
+  EXPECT_EQ(SymBitVec::maj3(a, b, c).intVal(), 0b11011101);
 }
 
 TEST(SymBitVecTest, AccessOutOfBoundsIndex) {
@@ -105,31 +119,51 @@ TEST(SymBitVecTest, IncompatibleSizes) {
   EXPECT_THROW({ a | b; }, std::length_error);
   EXPECT_THROW({ a ^ b; }, std::length_error);
   EXPECT_THROW({ a + b; }, std::length_error);
-  EXPECT_THROW({ SymBitVec::majority3(a, b, c); }, std::length_error);
+  EXPECT_THROW({ SymBitVec::maj3(a, b, c); }, std::length_error);
   EXPECT_THROW({ SymBitVec::xor3(a, b, c); }, std::length_error);
 }
 
 TEST(SymBitVecTest, ExtractInvalidBounds) {
   SymBitVec a(0b11111111, 8);
-  EXPECT_THROW({ a.extract(4, 2); }, std::invalid_argument);
+  EXPECT_THROW({ a.extract(4, 2); }, std::out_of_range);
   EXPECT_THROW({ a.extract(0, 9); }, std::out_of_range);
 }
 
-TEST(SymBitVecTest, RotateByLargeNumber) {
-  const SymBitVec a(0b11111101, 8);
+TEST(SymBitVecTest, RotateRightByLargeNumber) {
+  const SymBitVec a(0b11111011, 8);
   SymBitVec b = a.rotr(8);
-  EXPECT_EQ(b.at(0).val, true);
-  EXPECT_EQ(b.at(1).val, false);
-  EXPECT_EQ(b.at(2).val, true);
-  b = a.rotr(16);
-  EXPECT_EQ(b.at(0).val, true);
-  EXPECT_EQ(b.at(1).val, false);
-  EXPECT_EQ(b.at(2).val, true);
-  b = a.rotr(1);
   EXPECT_EQ(b.at(1).val, true);
   EXPECT_EQ(b.at(2).val, false);
   EXPECT_EQ(b.at(3).val, true);
+  b = a.rotr(16);
+  EXPECT_EQ(b.at(1).val, true);
+  EXPECT_EQ(b.at(2).val, false);
+  EXPECT_EQ(b.at(3).val, true);
+  b = a.rotr(1);
+  EXPECT_EQ(b.at(0).val, true);
+  EXPECT_EQ(b.at(1).val, false);
+  EXPECT_EQ(b.at(2).val, true);
   b = a.rotr(9);
+  EXPECT_EQ(b.at(0).val, true);
+  EXPECT_EQ(b.at(1).val, false);
+  EXPECT_EQ(b.at(2).val, true);
+}
+
+TEST(SymBitVecTest, RotateLeftByLargeNumber) {
+  const SymBitVec a(0b11111101, 8);
+  SymBitVec b = a.rotl(8);
+  EXPECT_EQ(b.at(0).val, true);
+  EXPECT_EQ(b.at(1).val, false);
+  EXPECT_EQ(b.at(2).val, true);
+  b = a.rotl(16);
+  EXPECT_EQ(b.at(0).val, true);
+  EXPECT_EQ(b.at(1).val, false);
+  EXPECT_EQ(b.at(2).val, true);
+  b = a.rotl(1);
+  EXPECT_EQ(b.at(1).val, true);
+  EXPECT_EQ(b.at(2).val, false);
+  EXPECT_EQ(b.at(3).val, true);
+  b = a.rotl(9);
   EXPECT_EQ(b.at(1).val, true);
   EXPECT_EQ(b.at(2).val, false);
   EXPECT_EQ(b.at(3).val, true);

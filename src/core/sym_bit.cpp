@@ -142,11 +142,11 @@ std::pair<SymBit, SymBit> SymBit::add(const SymBit &a, const SymBit &b) {
 std::pair<SymBit, SymBit> SymBit::add(const SymBit &a, const SymBit &b,
                                       const SymBit &carry_in) {
   const SymBit sum1 = xor3(a, b, carry_in);
-  const SymBit carry_out = majority3(a, b, carry_in);
+  const SymBit carry_out = maj3(a, b, carry_in);
   return {sum1, carry_out};
 }
 
-SymBit SymBit::majority3(const SymBit &a, const SymBit &b, const SymBit &c) {
+SymBit SymBit::maj3(const SymBit &a, const SymBit &b, const SymBit &c) {
   const int sum = ((int)a.val) + ((int)b.val) + ((int)c.val);
   const bool val = (sum > 1);
 
@@ -181,7 +181,7 @@ SymBit SymBit::majority3(const SymBit &a, const SymBit &b, const SymBit &c) {
 
     // All 3 inputs are unknown --> output will be unknown
     SymBit result(val, true);
-    LogicGate f(LogicGate::Type::maj_gate, result.index, {a.index, b.index, c.index});
+    LogicGate f(LogicGate::Type::maj3_gate, result.index, {a.index, b.index, c.index});
     LogicGate::global_gates.push_back(f);
     return result;
   } else if (knowns.size() == 1) {

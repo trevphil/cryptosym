@@ -56,7 +56,7 @@ TEST(SymRepresentationTest, ConvertDAG) {
   const std::vector<LogicGate> gates = {
       LogicGate(LogicGate::Type::and_gate, 4, {1, -2}),
       LogicGate(LogicGate::Type::xor_gate, 5, {2, -3}),
-      LogicGate(LogicGate::Type::maj_gate, 6, {1, 4, 5})};
+      LogicGate(LogicGate::Type::maj3_gate, 6, {1, 4, 5})};
   const std::vector<int> inputs = {1, 2, 3};
   const std::vector<int> outputs = {0, 6, 5, 0, 0};
   SymRepresentation rep(gates, inputs, outputs);

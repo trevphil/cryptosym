@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "Warning: this script likely won't work on Windows"
+
 set -e
 
 if [ ! -d build ]; then

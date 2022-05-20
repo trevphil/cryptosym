@@ -182,7 +182,7 @@ bool DAGSolver::partialSolve(const LogicGate &g, std::vector<int> &solved_lits) 
       return partialSolveXor(g, solved_lits);
     case LogicGate::Type::xor3_gate:
       return partialSolveXor3(g, solved_lits);
-    case LogicGate::Type::maj_gate:
+    case LogicGate::Type::maj3_gate:
       return partialSolveMaj(g, solved_lits);
   }
 

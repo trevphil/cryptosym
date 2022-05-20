@@ -2,6 +2,7 @@
 2. PyTest equivalent tests for all C++ tests
 3. Documentation (ReadTheDocs)
 4. cibuildwheel / pip
+5. README
 
 ####################################
 ####### Miscellaneous notes ########
