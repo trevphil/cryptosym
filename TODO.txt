@@ -1,10 +1,7 @@
-1. Build C++ on Linux, Mac, Windows on GitHub Actions CI
-2. Finish Python bindings (PyBind)
-3. PyTest equivalent tests for all C++ tests
-4. Documentation (ReadTheDocs)
-5. cibuildwheel / pip
-6. Clean up CMakeLists.txt (cryptopp (DLL?) and cryptominisat)
-    - static vs. shared libraries?
+1. Finish Python bindings (PyBind)
+2. PyTest equivalent tests for all C++ tests
+3. Documentation (ReadTheDocs)
+4. cibuildwheel / pip
 
 ####################################
 ####### Miscellaneous notes ########
