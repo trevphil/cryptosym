@@ -1,6 +1,7 @@
 from math import ceil
 
 import pytest
+
 from cryptosym import SymBitVec
 
 

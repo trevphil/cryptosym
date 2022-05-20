@@ -1,4 +1,5 @@
 import pytest
+
 from cryptosym import LogicGate
 
 GType = LogicGate.Type
