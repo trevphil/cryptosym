@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
+if(APPLE)
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "" FORCE)
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 enable_language(CXX)
@@ -25,7 +29,7 @@ set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
 set(BUILD_SHARED_LIBS OFF)
 if(UNIX)
-  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "" FORCE)
 endif()
 
 # Automatically fetch/update git submodules
@@ -123,8 +127,8 @@ endif()
 
 # Python bindings via PyBind11
 if(CRYPTOSYM_PYTHON_BINDINGS)
-  pybind11_add_module(cryptosym src/bindings.cpp)
-  target_link_libraries(cryptosym PUBLIC cryptosymlib)
+  pybind11_add_module(_cpp src/bindings.cpp)
+  target_link_libraries(_cpp PUBLIC cryptosymlib)
 endif()
 
 # C++ tests

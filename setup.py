@@ -15,8 +15,6 @@ from pathlib import Path
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
-__version__ = "1.0.2"  # TODO - Move back to 1.0.0 for first non-test release
-
 # Convert distutils Windows platform specifiers to CMake -A arguments
 PLATFORM_TO_CMAKE = {
     "win32": "Win32",
@@ -53,8 +51,6 @@ class CMakeBuild(build_ext):
         cmake_generator = os.environ.get("CMAKE_GENERATOR", "")
 
         # Set Python_EXECUTABLE instead if you use PYBIND11_FINDPYTHON
-        # EXAMPLE_VERSION_INFO shows you how to pass a value into the C++ code
-        # from Python.
         cmake_args = [
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}",
             f"-DPython_EXECUTABLE={sys.executable}",
@@ -124,29 +120,12 @@ class CMakeBuild(build_ext):
 
         subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=build_temp)
         subprocess.check_call(
-            ["cmake", "--build", ".", "--target", "cryptosym"] + build_args,
+            ["cmake", "--build", ".", "--target", "_cpp"] + build_args,
             cwd=build_temp,
         )
 
 
-def long_description() -> str:
-    if Path("README.md").is_file():
-        return Path("README.md").read_text()
-    return ""
-
-
 setup(
-    name="cryptosym",
-    version=__version__,
-    author="Trevor Phillips",
-    author_email="trevphil3@gmail.com",
-    url="https://github.com/trevphil/preimage-attacks",
-    description="Symbolic bitvector computation with cryptographic applications",
-    long_description=long_description(),
-    long_description_content_type="text/markdown",
-    ext_modules=[CMakeExtension("cryptosym")],
+    ext_modules=[CMakeExtension("cryptosym._cpp")],
     cmdclass={"build_ext": CMakeBuild},
-    extras_require={"test": "pytest>=6.0"},
-    zip_safe=False,
-    python_requires=">=3.9",
 )

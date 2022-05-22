@@ -89,9 +89,7 @@ class dummy {};  // dummy class
 
 namespace preimage {
 
-PYBIND11_MODULE(cryptosym, m) {
-  m.doc() = "cryptosym";
-
+PYBIND11_MODULE(_cpp, m) {
   /*
    *****************************************************
     Configuration
