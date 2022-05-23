@@ -51,25 +51,26 @@ class CMakeBuild(build_ext):
         # Can be set with Conda-Build, for example.
         cmake_generator = os.environ.get("CMAKE_GENERATOR", "")
 
-        find_python = "ON"
-        if self.compiler.compiler_type == "msvc":
-            find_python = "OFF"
-
-        cmake_args = [
-            f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}",
-            # Used by CMake's FindPython (--> called by PyBind11)
-            f"-DPYBIND11_FINDPYTHON={find_python}",
-            f"-DPython_EXECUTABLE={sys.executable}",
-            f"-DPython_INCLUDE_DIR={get_paths()['include']}",
-            f"-DPython_LIBRARY={get_paths()['stdlib']}",
-            # Used by CryptoMiniSAT's find_package(PythonInterp, PythonLibs)
-            f"-DPYTHON_EXECUTABLE={sys.executable}",
-            f"-DPYTHON_INCLUDE_DIRS={get_paths()['include']}",
-            f"-DPYTHON_LIBRARIES={get_paths()['stdlib']}",
-            # Not used on MSVC, but no harm
-            f"-DCMAKE_BUILD_TYPE={cfg}",
-        ]
+        cmake_args = []
         build_args = []
+        using_msvc = self.compiler.compiler_type == "msvc"
+
+        cmake_args += [
+            f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}",
+            f"-DPYBIND11_FINDPYTHON={'OFF' if using_msvc else 'ON'}",
+            f"-DCMAKE_BUILD_TYPE={cfg}",  # Not used on MSVC, but no harm
+        ]
+        if not using_msvc:
+            cmake_args += [
+                # Used by CMake's FindPython (--> called by PyBind11)
+                f"-DPython_EXECUTABLE={sys.executable}",
+                f"-DPython_INCLUDE_DIR={get_paths()['include']}",
+                f"-DPython_LIBRARY={get_paths()['stdlib']}",
+                # Used by CryptoMiniSAT's find_package(PythonInterp, PythonLibs)
+                f"-DPYTHON_EXECUTABLE={sys.executable}",
+                f"-DPYTHON_INCLUDE_DIRS={get_paths()['include']}",
+                f"-DPYTHON_LIBRARIES={get_paths()['stdlib']}",
+            ]
         # Adding CMake arguments set as environment variable
         # (needed e.g. to build for ARM OSx on conda-forge)
         if "CMAKE_ARGS" in os.environ:
@@ -78,7 +79,7 @@ class CMakeBuild(build_ext):
         # In this example, we pass in the version to C++. You might not need to.
         # cmake_args += [f"-DEXAMPLE_VERSION_INFO={self.distribution.get_version()}"]
 
-        if self.compiler.compiler_type != "msvc":
+        if not using_msvc:
             # Using Ninja-build since it a) is available as a wheel and b)
             # multithreads automatically. MSVC would require all variables be
             # exported for Ninja to pick it up, which is a little tricky to do.
