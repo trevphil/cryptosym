@@ -1,0 +1,16 @@
+include VERSION CMakeLists.txt .gitmodules .gitignore
+graft include
+graft src
+graft tests
+graft cmake
+graft extern
+prune extern/eigen/doc
+prune extern/eigen/bench
+prune extern/eigen/test
+prune extern/eigen/unsupported
+prune extern/eigen/demos
+prune extern/eigen/failtest
+prune extern/cryptominisat/docs
+prune extern/cryptominisat/tests
+prune extern/pybind11/docs
+prune extern/pybind11/tests
