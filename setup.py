@@ -51,10 +51,14 @@ class CMakeBuild(build_ext):
         # Can be set with Conda-Build, for example.
         cmake_generator = os.environ.get("CMAKE_GENERATOR", "")
 
+        find_python = "ON"
+        if self.compiler.compiler_type == "msvc":
+            find_python = "OFF"
+
         cmake_args = [
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}",
             # Used by CMake's FindPython (--> called by PyBind11)
-            "-DPYBIND11_FINDPYTHON=ON",
+            f"-DPYBIND11_FINDPYTHON={find_python}",
             f"-DPython_EXECUTABLE={sys.executable}",
             f"-DPython_INCLUDE_DIR={get_paths()['include']}",
             f"-DPython_LIBRARY={get_paths()['stdlib']}",
