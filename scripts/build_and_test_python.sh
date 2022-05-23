@@ -2,10 +2,13 @@
 
 echo "Warning: this script likely won't work on Windows"
 
-pip install --upgrade pip
-pip uninstall -y cryptosym
-rm -rf build
-rm -rf "*.egg-info"
+set -e
+set -x
 
-pip install --no-cache-dir . && \
-  pytest tests
+sh -c './scripts/clean.sh'
+
+python -m pip install --no-cache-dir .
+python -m pip install pytest
+
+TEST_DIR=$(pwd)/tests
+cd $(mktemp -d) && python -m pytest "$TEST_DIR"

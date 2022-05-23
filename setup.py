@@ -11,6 +11,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from sysconfig import get_paths
 
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
@@ -50,11 +51,19 @@ class CMakeBuild(build_ext):
         # Can be set with Conda-Build, for example.
         cmake_generator = os.environ.get("CMAKE_GENERATOR", "")
 
-        # Set Python_EXECUTABLE instead if you use PYBIND11_FINDPYTHON
         cmake_args = [
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}",
+            # Used by CMake's FindPython (--> called by PyBind11)
+            "-DPYBIND11_FINDPYTHON=ON",
             f"-DPython_EXECUTABLE={sys.executable}",
-            f"-DCMAKE_BUILD_TYPE={cfg}",  # not used on MSVC, but no harm
+            f"-DPython_INCLUDE_DIR={get_paths()['include']}",
+            f"-DPython_LIBRARY={get_paths()['stdlib']}",
+            # Used by CryptoMiniSAT's find_package(PythonInterp, PythonLibs)
+            f"-DPYTHON_EXECUTABLE={sys.executable}",
+            f"-DPYTHON_INCLUDE_DIRS={get_paths()['include']}",
+            f"-DPYTHON_LIBRARIES={get_paths()['stdlib']}",
+            # Not used on MSVC, but no harm
+            f"-DCMAKE_BUILD_TYPE={cfg}",
         ]
         build_args = []
         # Adding CMake arguments set as environment variable

@@ -1,6 +1,3 @@
-[project]
-requires-python = ">=3.9"
-
 [build-system]
 requires = [
     "setuptools>=42",
@@ -16,12 +13,13 @@ profile = "black"
 [tool.pytest.ini_options]
 minversion = "6.0"
 
-[tool.cibuildwheel.macos]
-archs = ["x86_64", "universal2"]
-
 [tool.cibuildwheel]
 archs = ["auto64"]
+skip = "pp*"
 test-requires = "pytest"
 test-command = "cd $(mktemp -d) && python -m pytest {project}/tests"
 test-skip = "*_arm64 *_universal2:arm64"
 before-build = "rm -rf {project}/build"
+
+[tool.cibuildwheel.macos]
+archs = ["x86_64", "universal2"]
