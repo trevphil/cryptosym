@@ -30,14 +30,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
-        python-version: [ "3.9" ] # "3.10" ]  # TODO - include 3.10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
-        with:
-          python-version: ${{ matrix.python-version }}
       - name: Set up cmake
         uses: lukka/get-cmake@latest
       - name: Set up ninja
