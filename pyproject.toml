@@ -22,7 +22,7 @@ test-skip = "*_arm64 *_universal2:arm64"
 before-build = "rm -rf {project}/build"
 
 [tool.cibuildwheel.windows]
-test-command = "cd $(mktemp -d) && python -m pytest {project}\\tests"
+test-command = "python -m pytest {project}\\tests"
 
 [tool.cibuildwheel.macos]
 archs = ["x86_64", "universal2"]
