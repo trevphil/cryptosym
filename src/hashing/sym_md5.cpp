@@ -33,7 +33,7 @@
 
 namespace preimage {
 
-MD5::MD5(int num_input_bits, int difficulty)
+SymMD5::SymMD5(int num_input_bits, int difficulty)
     : SymHash(num_input_bits, difficulty), buffer(MD5_BLOCK_SIZE), state(4), digest(16) {
   if (difficulty_ < 0) difficulty_ = defaultDifficulty();
   if (config::verbose) {
@@ -42,7 +42,7 @@ MD5::MD5(int num_input_bits, int difficulty)
   init();
 }
 
-SymBitVec MD5::forward(const SymBitVec &hash_input) {
+SymBitVec SymMD5::forward(const SymBitVec &hash_input) {
   const unsigned int n_bytes = hash_input.size() / 8;
   std::vector<SymBitVec> input(n_bytes);
   for (unsigned int i = 0; i < n_bytes; i++) {
@@ -60,7 +60,7 @@ SymBitVec MD5::forward(const SymBitVec &hash_input) {
   return combined_digest;
 }
 
-void MD5::init() {
+void SymMD5::init() {
   finalized = false;
 
   count[0] = 0;
@@ -89,8 +89,8 @@ void MD5::init() {
   for (uint32_t c : raw_constants) constants_.push_back(SymBitVec(c, 32));
 }
 
-void MD5::decode(std::vector<SymBitVec> &output, const std::vector<SymBitVec> &input,
-                 int len) {
+void SymMD5::decode(std::vector<SymBitVec> &output, const std::vector<SymBitVec> &input,
+                    int len) {
   // Decode input (8 bits per SymBitVec) into output (32 bits per SymBitVec)
   assert(len % 4 == 0);
   for (int i = 0, j = 0; j < len; i++, j += 4) {
@@ -99,8 +99,8 @@ void MD5::decode(std::vector<SymBitVec> &output, const std::vector<SymBitVec> &i
   }
 }
 
-void MD5::encode(std::vector<SymBitVec> &output, const std::vector<SymBitVec> &input,
-                 int len) {
+void SymMD5::encode(std::vector<SymBitVec> &output, const std::vector<SymBitVec> &input,
+                    int len) {
   // Encode input (32 bits per SymBitVec) into output (8 bits per SymBitVec)
   assert(len % 4 == 0);
   for (int i = 0, j = 0; j < len; i++, j += 4) {
@@ -111,7 +111,7 @@ void MD5::encode(std::vector<SymBitVec> &output, const std::vector<SymBitVec> &i
   }
 }
 
-void MD5::update(const std::vector<SymBitVec> &input, int len) {
+void SymMD5::update(const std::vector<SymBitVec> &input, int len) {
   // Each SymBitVec in `input` has 8 bits
   // Compute number of bytes mod 64
   int index = count[0] / 8 % MD5_BLOCK_SIZE;
@@ -153,7 +153,7 @@ void MD5::update(const std::vector<SymBitVec> &input, int len) {
   }
 }
 
-void MD5::transform(const std::vector<SymBitVec> &block) {
+void SymMD5::transform(const std::vector<SymBitVec> &block) {
   SymBitVec a = state[0], b = state[1], c = state[2], d = state[3];
   transformInternal(block, a, b, c, d);
   state[0] = state[0] + a;
@@ -162,8 +162,8 @@ void MD5::transform(const std::vector<SymBitVec> &block) {
   state[3] = state[3] + d;
 }
 
-void MD5::transformInternal(const std::vector<SymBitVec> &block, SymBitVec &a,
-                            SymBitVec &b, SymBitVec &c, SymBitVec &d) {
+void SymMD5::transformInternal(const std::vector<SymBitVec> &block, SymBitVec &a,
+                               SymBitVec &b, SymBitVec &c, SymBitVec &d) {
   // Each SymBitVec in `block` is 8 bits
   std::vector<SymBitVec> x(16);
   decode(x, block, MD5_BLOCK_SIZE);
@@ -371,7 +371,7 @@ void MD5::transformInternal(const std::vector<SymBitVec> &block, SymBitVec &a,
   if (i >= difficulty_) return;
 }
 
-void MD5::finalize() {
+void SymMD5::finalize() {
   if (finalized) return;
 
   static uint8_t padding_raw[64] = {0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

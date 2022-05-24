@@ -73,11 +73,11 @@ int parseArgument(char *arg) {
 
 std::unique_ptr<SymHash> createHashFunction() {
   if (hash_func.compare("SHA256") == 0) {
-    return std::make_unique<SHA256>(input_size, difficulty);
+    return std::make_unique<SymSHA256>(input_size, difficulty);
   } else if (hash_func.compare("MD5") == 0) {
-    return std::make_unique<MD5>(input_size, difficulty);
+    return std::make_unique<SymMD5>(input_size, difficulty);
   } else if (hash_func.compare("RIPEMD160") == 0) {
-    return std::make_unique<RIPEMD160>(input_size, difficulty);
+    return std::make_unique<SymRIPEMD160>(input_size, difficulty);
   } else {
     char err_msg[128];
     snprintf(err_msg, 128, "Unsupported hash function: %s", hash_func.c_str());

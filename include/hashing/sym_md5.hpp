@@ -17,9 +17,9 @@
 
 namespace preimage {
 
-class MD5 : public SymHash {
+class SymMD5 : public SymHash {
  public:
-  MD5(int num_input_bits, int difficulty = -1);
+  SymMD5(int num_input_bits, int difficulty = -1);
 
   SymBitVec forward(const SymBitVec &hash_input) override;
 

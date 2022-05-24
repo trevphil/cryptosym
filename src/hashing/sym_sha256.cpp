@@ -22,7 +22,8 @@ namespace preimage {
 #define Gamma0(x) (SymBitVec::xor3(S(x, 7), S(x, 18), R(x, 3)))
 #define Gamma1(x) (SymBitVec::xor3(S(x, 17), S(x, 19), R(x, 10)))
 
-SHA256::SHA256(int num_input_bits, int difficulty) : SymHash(num_input_bits, difficulty) {
+SymSHA256::SymSHA256(int num_input_bits, int difficulty)
+    : SymHash(num_input_bits, difficulty) {
   if (difficulty_ < 0) difficulty_ = defaultDifficulty();
   if (config::verbose) {
     printf("Initialized %s with difficulty %d\n", hashName().c_str(), difficulty_);
@@ -48,7 +49,7 @@ SHA256::SHA256(int num_input_bits, int difficulty) : SymHash(num_input_bits, dif
   resetState();
 }
 
-void SHA256::resetState() {
+void SymSHA256::resetState() {
   local_ = 0;
   count_lo_ = 0;
   count_hi_ = 0;
@@ -63,17 +64,17 @@ void SHA256::resetState() {
   }
 }
 
-std::pair<SymBitVec, SymBitVec> SHA256::round(const SymBitVec &a, const SymBitVec &b,
-                                              const SymBitVec &c, const SymBitVec &d,
-                                              const SymBitVec &e, const SymBitVec &f,
-                                              const SymBitVec &g, const SymBitVec &h,
-                                              int i, const SymBitVec &ki) {
+std::pair<SymBitVec, SymBitVec> SymSHA256::round(const SymBitVec &a, const SymBitVec &b,
+                                                 const SymBitVec &c, const SymBitVec &d,
+                                                 const SymBitVec &e, const SymBitVec &f,
+                                                 const SymBitVec &g, const SymBitVec &h,
+                                                 int i, const SymBitVec &ki) {
   const SymBitVec t0 = h + Sigma1(e) + Ch(e, f, g) + ki + w_[i];
   const SymBitVec t1 = Sigma0(a) + Maj(a, b, c);
   return {d + t0, t0 + t1};
 }
 
-void SHA256::transform() {
+void SymSHA256::transform() {
   w_ = {};
   std::vector<SymBitVec> d;
   for (const SymBitVec &bv : data_) d.push_back(bv.resize(32));
@@ -100,7 +101,7 @@ void SHA256::transform() {
   }
 }
 
-void SHA256::update(const SymBitVec &bv) {
+void SymSHA256::update(const SymBitVec &bv) {
   int count = bv.size() / 8;
   int buffer_idx = 0;
   int clo = (count_lo_ + (count << 3)) & 0xffffffff;
@@ -151,7 +152,7 @@ void SHA256::update(const SymBitVec &bv) {
   local_ = count;
 }
 
-SymBitVec SHA256::digest() {
+SymBitVec SymSHA256::digest() {
   int count = (count_lo_ >> 3) & 0x3f;
   data_[count] = SymBitVec(0x80, 8);
   count++;
@@ -198,7 +199,7 @@ SymBitVec SHA256::digest() {
   return result;
 }
 
-SymBitVec SHA256::forward(const SymBitVec &hash_input) {
+SymBitVec SymSHA256::forward(const SymBitVec &hash_input) {
   resetState();
   update(hash_input);
   return digest();

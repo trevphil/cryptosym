@@ -24,7 +24,7 @@ namespace preimage {
 TEST(BPSolverTest, SolveSHA256) {
   std::shared_ptr<Solver> solver = std::make_shared<bp::BPSolver>();
   for (int d = 1; d <= 2; ++d) {
-    std::shared_ptr<SymHash> hasher = std::make_shared<SHA256>(64, d);
+    std::shared_ptr<SymHash> hasher = std::make_shared<SymSHA256>(64, d);
     for (int i = 0; i < 3; ++i) {
       const bool solved = evaluateSolver(solver, hasher);
       EXPECT_TRUE(solved);
@@ -36,7 +36,7 @@ TEST(BPSolverTest, SolveSHA256) {
 TEST(BPSolverTest, SolveMD5) {
   std::shared_ptr<Solver> solver = std::make_shared<bp::BPSolver>();
   for (int d = 1; d <= 3; ++d) {
-    std::shared_ptr<SymHash> hasher = std::make_shared<MD5>(64, d);
+    std::shared_ptr<SymHash> hasher = std::make_shared<SymMD5>(64, d);
     for (int i = 0; i < 3; ++i) {
       const bool solved = evaluateSolver(solver, hasher);
       EXPECT_TRUE(solved);
@@ -47,7 +47,7 @@ TEST(BPSolverTest, SolveMD5) {
 TEST(BPSolverTest, SolveRIPEMD160) {
   std::shared_ptr<Solver> solver = std::make_shared<bp::BPSolver>();
   for (int d = 1; d <= 2; ++d) {
-    std::shared_ptr<SymHash> hasher = std::make_shared<RIPEMD160>(64, d);
+    std::shared_ptr<SymHash> hasher = std::make_shared<SymRIPEMD160>(64, d);
     for (int i = 0; i < 3; ++i) {
       const bool solved = evaluateSolver(solver, hasher);
       EXPECT_TRUE(solved);

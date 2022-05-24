@@ -24,21 +24,21 @@
 
 namespace preimage {
 
-TEST(MD5Test, InputSizeMismatch) {
-  MD5 md5(32);
+TEST(SymMD5Test, InputSizeMismatch) {
+  SymMD5 md5(32);
   const BitVec inputs = utils::randomBits(64);
   EXPECT_THROW({ md5.call(inputs); }, std::length_error);
 }
 
-TEST(MD5Test, BadInputSize) {
-  EXPECT_THROW({ MD5(31); }, std::length_error);
+TEST(SymMD5Test, BadInputSize) {
+  EXPECT_THROW({ SymMD5(31); }, std::length_error);
 }
 
-TEST(MD5Test, RandomInputsAndSizes) {
+TEST(SymMD5Test, RandomInputsAndSizes) {
   utils::seed(1);
   const std::vector<unsigned int> inp_sizes{0, 8, 32, 64, 512, 640, 1024};
   for (unsigned int inp_size : inp_sizes) {
-    MD5 md5(inp_size);
+    SymMD5 md5(inp_size);
 
     for (int sample_idx = 0; sample_idx < 10; sample_idx++) {
       // Generate a random input of length "inp_size"

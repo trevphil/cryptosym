@@ -21,7 +21,7 @@ namespace preimage {
   i++;                                      \
   if (i >= difficulty_) return
 
-RIPEMD160::RIPEMD160(int num_input_bits, int difficulty)
+SymRIPEMD160::SymRIPEMD160(int num_input_bits, int difficulty)
     : SymHash(num_input_bits, difficulty) {
   if (difficulty_ < 0) difficulty_ = defaultDifficulty();
   if (config::verbose) {
@@ -40,7 +40,7 @@ RIPEMD160::RIPEMD160(int num_input_bits, int difficulty)
   k9_ = SymBitVec(0, 32);
 }
 
-SymBitVec RIPEMD160::forward(const SymBitVec &hash_input) {
+SymBitVec SymRIPEMD160::forward(const SymBitVec &hash_input) {
   const int n_bytes = hash_input.size() / 8;
 
   resetState();
@@ -73,7 +73,7 @@ SymBitVec RIPEMD160::forward(const SymBitVec &hash_input) {
   return combined_digest;
 }
 
-void RIPEMD160::resetState() {
+void SymRIPEMD160::resetState() {
   buffer_[0] = SymBitVec(0x67452301, 32);
   buffer_[1] = SymBitVec(0xefcdab89, 32);
   buffer_[2] = SymBitVec(0x98badcfe, 32);
@@ -81,7 +81,7 @@ void RIPEMD160::resetState() {
   buffer_[4] = SymBitVec(0xc3d2e1f0, 32);
 }
 
-void RIPEMD160::finalize(const SymBitVec &hash_input, int bit_index, int lo, int hi) {
+void SymRIPEMD160::finalize(const SymBitVec &hash_input, int bit_index, int lo, int hi) {
   for (int i = 0; i < 16; i++) X_[i] = SymBitVec(0, 32);
 
   SymBitVec tmp;
@@ -105,10 +105,10 @@ void RIPEMD160::finalize(const SymBitVec &hash_input, int bit_index, int lo, int
   transform();
 }
 
-void RIPEMD160::transformInternal(SymBitVec &a1, SymBitVec &a2, SymBitVec &b1,
-                                  SymBitVec &b2, SymBitVec &c1, SymBitVec &c2,
-                                  SymBitVec &d1, SymBitVec &d2, SymBitVec &e1,
-                                  SymBitVec &e2) {
+void SymRIPEMD160::transformInternal(SymBitVec &a1, SymBitVec &a2, SymBitVec &b1,
+                                     SymBitVec &b2, SymBitVec &c1, SymBitVec &c2,
+                                     SymBitVec &d1, SymBitVec &d2, SymBitVec &e1,
+                                     SymBitVec &e2) {
   int i = 0;
 
   /* Round 1 */
@@ -292,7 +292,7 @@ void RIPEMD160::transformInternal(SymBitVec &a1, SymBitVec &a2, SymBitVec &b1,
   Subround(F, b2, c2, d2, e2, a2, X_[11], 11, k9_);
 }
 
-void RIPEMD160::transform() {
+void SymRIPEMD160::transform() {
   SymBitVec a1 = buffer_[0];
   SymBitVec a2 = buffer_[0];
   SymBitVec b1 = buffer_[1];

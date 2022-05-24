@@ -16,9 +16,9 @@
 
 namespace preimage {
 
-class SHA256 : public SymHash {
+class SymSHA256 : public SymHash {
  public:
-  SHA256(int num_input_bits, int difficulty = -1);
+  SymSHA256(int num_input_bits, int difficulty = -1);
 
   SymBitVec forward(const SymBitVec &hash_input) override;
 

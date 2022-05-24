@@ -13,9 +13,9 @@
 
 namespace preimage {
 
-class RIPEMD160 : public SymHash {
+class SymRIPEMD160 : public SymHash {
  public:
-  RIPEMD160(int num_input_bits, int difficulty = -1);
+  SymRIPEMD160(int num_input_bits, int difficulty = -1);
 
   SymBitVec forward(const SymBitVec &hash_input) override;
 
