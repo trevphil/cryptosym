@@ -143,9 +143,9 @@ if(CRYPTOSYM_TESTS)
                  tests/test_cnf.cpp
                  tests/test_dag_solver.cpp
                  tests/test_logic_gate.cpp
-                 tests/test_md5.cpp
-                 tests/test_ripemd160.cpp
-                 tests/test_sha256.cpp
+                 tests/test_sym_md5.cpp
+                 tests/test_sym_ripemd160.cpp
+                 tests/test_sym_sha256.cpp
                  tests/test_sym_bit_vec.cpp
                  tests/test_sym_representation.cpp
                  tests/test_utils.cpp)

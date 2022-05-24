@@ -15,7 +15,7 @@ from cryptosym import SymBitVec
 
 def int2bytes(n: int, num_bits: int) -> bytes:
     num_bytes = int(ceil(num_bits / 8))
-    return n.to_bytes(length=num_bytes, byteorder="little")
+    return n.to_bytes(length=num_bytes, byteorder="big")
 
 
 class TestSymBitVec:

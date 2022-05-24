@@ -17,6 +17,7 @@
 #include "core/sym_hash.hpp"
 #include "core/sym_representation.hpp"
 #include "core/utils.hpp"
+#include "hashing/sym_sha256.hpp"
 
 namespace py = pybind11;
 
@@ -35,15 +36,15 @@ struct type_caster<preimage::BitVec> {
     PyObject *byte_obj = PyBytes_FromObject(source);
     if (!byte_obj) return false;
 
-    const unsigned int num_bytes = py::len(byte_obj);
-    const unsigned int n = num_bytes * 8;
+    const int num_bytes = static_cast<int>(py::len(byte_obj));
+    const unsigned int n = static_cast<unsigned int>(num_bytes) * 8;
     value = preimage::BitVec(n);
 
     unsigned int bit_idx = 0;
-    for (unsigned int byte_idx = 0; byte_idx < num_bytes; ++byte_idx) {
+    for (int byte_idx = num_bytes - 1; byte_idx >= 0; --byte_idx) {
       PyObject *b_obj = PySequence_GetItem(byte_obj, byte_idx);
       if (!b_obj) {
-        printf("Failed to get byte %ul of %ul\n", byte_idx, num_bytes);
+        printf("Failed to get byte %d of %d\n", byte_idx, num_bytes);
         return false;
       }
       const unsigned long b = PyLong_AsUnsignedLong(b_obj);
@@ -62,12 +63,12 @@ struct type_caster<preimage::BitVec> {
     const unsigned int n = src.size();
     if (n == 0) return py::bytes("");
 
-    const unsigned int num_bytes = (n / 8) + (unsigned int)(n % 8 != 0);
+    const int num_bytes = static_cast<int>(n / 8) + (int)(n % 8 != 0);
     unsigned int bit_idx = 0;
     unsigned char *data =
         reinterpret_cast<unsigned char *>(calloc(num_bytes, sizeof(unsigned char)));
 
-    for (unsigned int byte_idx = 0; byte_idx < num_bytes; ++byte_idx) {
+    for (int byte_idx = num_bytes - 1; byte_idx >= 0; --byte_idx) {
       data[byte_idx] = 0b00000000;
       for (int offset = 0; offset < 8 && bit_idx < n; offset++) {
         data[byte_idx] |= (src[bit_idx++] << offset);
@@ -298,17 +299,35 @@ PYBIND11_MODULE(_cpp, m) {
    *****************************************************
    */
 
-  py::class_<SymHash, SymHashTrampoline> symhash(m, "SymHash");
-  symhash.def(py::init<int, int>(), py::arg("num_input_bits"),
-              py::arg("difficulty") = -1);
-  symhash.def_property_readonly("num_input_bits", &SymHash::numInputBits);
-  symhash.def_property_readonly("difficulty", &SymHash::difficulty);
-  symhash.def("forward", &SymHash::forward, py::arg("hash_input"));
-  symhash.def("__call__", &SymHash::call, py::arg("hash_input"));
-  symhash.def("__call__", &SymHash::callRandom);
-  symhash.def("symbolic_representation", &SymHash::getSymbolicRepresentation);
-  symhash.def("default_difficulty", &SymHash::defaultDifficulty);
-  symhash.def("hash_name", &SymHash::hashName);
+  py::class_<SymHash, SymHashTrampoline> sym_hash(m, "SymHash");
+  sym_hash.def(py::init<int, int>(), py::arg("num_input_bits"),
+               py::arg("difficulty") = -1);
+  sym_hash.def_property_readonly("num_input_bits", &SymHash::numInputBits);
+  sym_hash.def_property_readonly("difficulty", &SymHash::difficulty);
+  sym_hash.def("forward", &SymHash::forward, py::arg("hash_input"));
+  sym_hash.def("__call__", &SymHash::call, py::arg("hash_input"));
+  sym_hash.def("__call__", &SymHash::callRandom);
+  sym_hash.def("symbolic_representation", &SymHash::getSymbolicRepresentation);
+  sym_hash.def("default_difficulty", &SymHash::defaultDifficulty);
+  sym_hash.def("hash_name", &SymHash::hashName);
+
+  /*
+   *****************************************************
+    SymSHA256
+   *****************************************************
+   */
+
+  py::class_<SymSHA256, SymHash> sym_sha256(m, "SymSHA256");
+  sym_sha256.def(py::init<int, int>(), py::arg("num_input_bits"),
+                 py::arg("difficulty") = -1);
+  sym_sha256.def_property_readonly("num_input_bits", &SymSHA256::numInputBits);
+  sym_sha256.def_property_readonly("difficulty", &SymSHA256::difficulty);
+  sym_sha256.def("forward", &SymSHA256::forward, py::arg("hash_input"));
+  sym_sha256.def("__call__", &SymSHA256::call, py::arg("hash_input"));
+  sym_sha256.def("__call__", &SymSHA256::callRandom);
+  sym_sha256.def("symbolic_representation", &SymSHA256::getSymbolicRepresentation);
+  sym_sha256.def("default_difficulty", &SymSHA256::defaultDifficulty);
+  sym_sha256.def("hash_name", &SymSHA256::hashName);
 
   /*
    *****************************************************

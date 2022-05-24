@@ -95,6 +95,11 @@ class TestSymHash:
         with pytest.raises(ValueError):
             _ = MockHashNoCustomConstructor(31)
 
+    def test_input_size_mismatch(self):
+        h = MockHashNoCustomConstructor(32)
+        with pytest.raises(ValueError):
+            _ = h(utils.random_bits(24))
+
     def test_set_readonly_properties(self):
         h = MockHashNoCustomConstructor(128)
         with pytest.raises(AttributeError):
