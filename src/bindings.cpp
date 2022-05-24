@@ -14,6 +14,7 @@
 #include "core/config.hpp"
 #include "core/logic_gate.hpp"
 #include "core/sym_bit_vec.hpp"
+#include "core/sym_hash.hpp"
 #include "core/sym_representation.hpp"
 #include "core/utils.hpp"
 
@@ -88,6 +89,41 @@ struct type_caster<preimage::BitVec> {
 class dummy {};  // dummy class
 
 namespace preimage {
+
+/*
+ *****************************************************
+  SymHash trampoline class
+ *****************************************************
+*/
+
+class SymHashTrampoline : public SymHash {
+ public:
+  // Inherit the constructor
+  using SymHash::SymHash;
+
+  // Trampoline (need one for each virtual function)
+  int defaultDifficulty() const override {
+    PYBIND11_OVERRIDE_PURE_NAME(int,                  /* Return type */
+                                SymHash,              /* Parent class */
+                                "default_difficulty", /* Name of function in Python */
+                                defaultDifficulty,    /* Name of function in C++ */
+    );
+  }
+
+  std::string hashName() const override {
+    PYBIND11_OVERRIDE_PURE_NAME(std::string, SymHash, "hash_name", hashName, );
+  }
+
+  SymBitVec forward(const SymBitVec &hash_input) override {
+    PYBIND11_OVERRIDE_PURE(SymBitVec, SymHash, forward, hash_input);
+  }
+};
+
+/*
+ *****************************************************
+  PyBind11 Module
+ *****************************************************
+*/
 
 PYBIND11_MODULE(_cpp, m) {
   /*
@@ -261,6 +297,18 @@ PYBIND11_MODULE(_cpp, m) {
     SymHash
    *****************************************************
    */
+
+  py::class_<SymHash, SymHashTrampoline> symhash(m, "SymHash");
+  symhash.def(py::init<int, int>(), py::arg("num_input_bits"),
+              py::arg("difficulty") = -1);
+  symhash.def_property_readonly("num_input_bits", &SymHash::numInputBits);
+  symhash.def_property_readonly("difficulty", &SymHash::difficulty);
+  symhash.def("forward", &SymHash::forward, py::arg("hash_input"));
+  symhash.def("__call__", &SymHash::call, py::arg("hash_input"));
+  symhash.def("__call__", &SymHash::callRandom);
+  symhash.def("symbolic_representation", &SymHash::getSymbolicRepresentation);
+  symhash.def("default_difficulty", &SymHash::defaultDifficulty);
+  symhash.def("hash_name", &SymHash::hashName);
 
   /*
    *****************************************************

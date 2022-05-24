@@ -24,6 +24,8 @@ class SymHash {
 
   int numInputBits() const;
 
+  int difficulty() const;
+
   BitVec call(const BitVec &hash_input);
 
   BitVec callRandom();
@@ -34,8 +36,7 @@ class SymHash {
 
   virtual std::string hashName() const = 0;
 
- protected:
-  virtual SymBitVec hash(const SymBitVec &hash_input) = 0;
+  virtual SymBitVec forward(const SymBitVec &hash_input) = 0;
 
  protected:
   int num_input_bits_;

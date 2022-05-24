@@ -198,7 +198,7 @@ SymBitVec SHA256::digest() {
   return result;
 }
 
-SymBitVec SHA256::hash(const SymBitVec &hash_input) {
+SymBitVec SHA256::forward(const SymBitVec &hash_input) {
   resetState();
   update(hash_input);
   return digest();

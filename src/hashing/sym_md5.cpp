@@ -42,7 +42,7 @@ MD5::MD5(int num_input_bits, int difficulty)
   init();
 }
 
-SymBitVec MD5::hash(const SymBitVec &hash_input) {
+SymBitVec MD5::forward(const SymBitVec &hash_input) {
   const unsigned int n_bytes = hash_input.size() / 8;
   std::vector<SymBitVec> input(n_bytes);
   for (unsigned int i = 0; i < n_bytes; i++) {

@@ -17,7 +17,7 @@ class RIPEMD160 : public SymHash {
  public:
   RIPEMD160(int num_input_bits, int difficulty = -1);
 
-  SymBitVec hash(const SymBitVec &hash_input) override;
+  SymBitVec forward(const SymBitVec &hash_input) override;
 
   int defaultDifficulty() const override { return 160; }
 

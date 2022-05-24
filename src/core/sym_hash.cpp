@@ -28,6 +28,10 @@ SymHash::~SymHash() {}
 
 int SymHash::numInputBits() const { return num_input_bits_; }
 
+int SymHash::difficulty() const {
+  return difficulty_ < 0 ? defaultDifficulty() : difficulty_;
+}
+
 BitVec SymHash::call(const BitVec &hash_input) {
   const int inp_size = static_cast<int>(hash_input.size());
   if (inp_size != num_input_bits_) {
@@ -38,7 +42,7 @@ BitVec SymHash::call(const BitVec &hash_input) {
   }
 
   SymBitVec inp(hash_input, false);
-  SymBitVec out = hash(inp);
+  SymBitVec out = forward(inp);
   return out.bits();
 }
 
@@ -54,7 +58,7 @@ SymRepresentation SymHash::getSymbolicRepresentation() {
     input_indices[i] = inp.at(i).unknown ? inp.at(i).index : 0;
   }
 
-  SymBitVec out = hash(inp);
+  SymBitVec out = forward(inp);
 
   std::vector<int> output_indices(out.size());
   for (unsigned int i = 0; i < out.size(); i++) {

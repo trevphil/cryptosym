@@ -40,7 +40,7 @@ RIPEMD160::RIPEMD160(int num_input_bits, int difficulty)
   k9_ = SymBitVec(0, 32);
 }
 
-SymBitVec RIPEMD160::hash(const SymBitVec &hash_input) {
+SymBitVec RIPEMD160::forward(const SymBitVec &hash_input) {
   const int n_bytes = hash_input.size() / 8;
 
   resetState();
