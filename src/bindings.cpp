@@ -17,6 +17,8 @@
 #include "core/sym_hash.hpp"
 #include "core/sym_representation.hpp"
 #include "core/utils.hpp"
+#include "hashing/sym_md5.hpp"
+#include "hashing/sym_ripemd160.hpp"
 #include "hashing/sym_sha256.hpp"
 
 namespace py = pybind11;
@@ -310,6 +312,42 @@ PYBIND11_MODULE(_cpp, m) {
   sym_hash.def("symbolic_representation", &SymHash::getSymbolicRepresentation);
   sym_hash.def("default_difficulty", &SymHash::defaultDifficulty);
   sym_hash.def("hash_name", &SymHash::hashName);
+
+  /*
+   *****************************************************
+    SymMD5
+   *****************************************************
+   */
+
+  py::class_<SymMD5, SymHash> sym_md5(m, "SymMD5");
+  sym_md5.def(py::init<int, int>(), py::arg("num_input_bits"),
+              py::arg("difficulty") = -1);
+  sym_md5.def_property_readonly("num_input_bits", &SymMD5::numInputBits);
+  sym_md5.def_property_readonly("difficulty", &SymMD5::difficulty);
+  sym_md5.def("forward", &SymMD5::forward, py::arg("hash_input"));
+  sym_md5.def("__call__", &SymMD5::call, py::arg("hash_input"));
+  sym_md5.def("__call__", &SymMD5::callRandom);
+  sym_md5.def("symbolic_representation", &SymMD5::getSymbolicRepresentation);
+  sym_md5.def("default_difficulty", &SymMD5::defaultDifficulty);
+  sym_md5.def("hash_name", &SymMD5::hashName);
+
+  /*
+   *****************************************************
+    SymRIPEMD160
+   *****************************************************
+   */
+
+  py::class_<SymRIPEMD160, SymHash> sym_ripemd160(m, "SymRIPEMD160");
+  sym_ripemd160.def(py::init<int, int>(), py::arg("num_input_bits"),
+                    py::arg("difficulty") = -1);
+  sym_ripemd160.def_property_readonly("num_input_bits", &SymRIPEMD160::numInputBits);
+  sym_ripemd160.def_property_readonly("difficulty", &SymRIPEMD160::difficulty);
+  sym_ripemd160.def("forward", &SymRIPEMD160::forward, py::arg("hash_input"));
+  sym_ripemd160.def("__call__", &SymRIPEMD160::call, py::arg("hash_input"));
+  sym_ripemd160.def("__call__", &SymRIPEMD160::callRandom);
+  sym_ripemd160.def("symbolic_representation", &SymRIPEMD160::getSymbolicRepresentation);
+  sym_ripemd160.def("default_difficulty", &SymRIPEMD160::defaultDifficulty);
+  sym_ripemd160.def("hash_name", &SymRIPEMD160::hashName);
 
   /*
    *****************************************************
