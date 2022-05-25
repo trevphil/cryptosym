@@ -15,7 +15,7 @@ from tests.helpers import int_to_little_endian_bytes
 class TestSymBitVec:
     def test_conversions(self):
         bits_a = int_to_little_endian_bytes(0b1101001100000001, 16)
-        bv = SymBitVec(bits=bits_a)
+        bv = SymBitVec(byte_data=bits_a)
         hex_str = "d301"
         bin_str = "1101001100000001"
         assert bv.bits() == bits_a
@@ -23,9 +23,10 @@ class TestSymBitVec:
         assert bv.bin() == bin_str
         assert bv.hex() == hex_str
         assert len(bv) == 16
+        assert bv.num_bytes == 2
 
         bits_b = int_to_little_endian_bytes(0xDEADBEEF, 40)
-        bv1 = SymBitVec(bits=bits_b)
+        bv1 = SymBitVec(byte_data=bits_b)
         bv2 = SymBitVec(n=0xDEADBEEF, size=40)
         assert bv1.bits() == b"\xef\xbe\xad\xde\x00"  # b'\x00\xde\xad\xbe\xef'
         assert bv2.bits() == b"\xef\xbe\xad\xde\x00"  # b'\x00\xde\xad\xbe\xef'
@@ -35,6 +36,8 @@ class TestSymBitVec:
         assert bv2.hex() == "00deadbeef"
         assert len(bv1) == 40
         assert len(bv2) == 40
+        assert bv1.num_bytes == 5
+        assert bv2.num_bytes == 5
 
     def test_basic_operators(self):
         bv1 = SymBitVec(0b110101, size=6)
@@ -67,9 +70,11 @@ class TestSymBitVec:
         bv = SymBitVec(0b110101, size=6)
         bv_bigger = bv.resize(10)
         assert len(bv_bigger) == 10
+        assert bv_bigger.num_bytes == 2
         assert int(bv_bigger) == 0b0000110101
         bv_smaller = bv.resize(2)
         assert len(bv_smaller) == 2
+        assert bv_smaller.num_bytes == 1
         assert int(bv_smaller) == 0b01
 
     def test_concat(self):
@@ -77,6 +82,7 @@ class TestSymBitVec:
         bv2 = SymBitVec(0b011101, size=6)
         bv12 = bv1.concat(bv2)
         assert len(bv12) == 12
+        assert bv12.num_bytes == 2
         assert int(bv12) == (0b011101 << 6) + 0b110101
 
     def test_indexing(self):
@@ -97,11 +103,14 @@ class TestSymBitVec:
     def test_slicing(self):
         bv = SymBitVec(0b110101, size=6)
         assert len(bv[1:5]) == 4
+        assert bv[1:5].num_bytes == 1
         assert int(bv[1:5]) == 0b1010
         assert len(bv[1:-1]) == 4
+        assert bv[1:-1].num_bytes == 1
         assert int(bv[1:-1]) == 0b1010
         assert int(bv[1:6]) == 0b11010
         assert len(bv[1:100]) == 5
+        assert bv[1:100].num_bytes == 1
         assert int(bv[1:100]) == 0b11010
 
     def test_bad_slicing(self):
@@ -209,10 +218,12 @@ class TestSymBitVec:
 
         b = a << 1
         assert len(b) == 8
+        assert b.num_bytes == 1
         assert int(b) == 0b11111010
 
         b = a << 100
         assert len(b) == 8
+        assert b.num_bytes == 1
         assert int(b) == 0
 
     def test_right_shift(self):
@@ -220,8 +231,10 @@ class TestSymBitVec:
 
         b = a >> 1
         assert len(b) == 8
+        assert b.num_bytes == 1
         assert int(b) == 0b01111110
 
         b = a >> 100
         assert len(b) == 8
+        assert b.num_bytes == 1
         assert int(b) == 0

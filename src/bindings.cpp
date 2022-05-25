@@ -220,12 +220,15 @@ PYBIND11_MODULE(_cpp, m) {
 
   py::class_<SymBitVec> bitvec(m, "SymBitVec");
   bitvec.def(py::init());
-  bitvec.def(py::init<const BitVec &, bool>(), py::arg("bits"),
+  bitvec.def(py::init<const BitVec &, bool>(), py::arg("byte_data"),
              py::arg("unknown") = false);
   bitvec.def(py::init<uint64_t, int, bool>(), py::arg("n"), py::arg("size"),
              py::arg("unknown") = false);
   bitvec.def("__len__", &SymBitVec::size, py::is_operator());
   bitvec.def("__int__", &SymBitVec::intVal, py::is_operator());
+  bitvec.def_property_readonly("num_bytes", [](const SymBitVec &bv) -> unsigned int {
+    return (bv.size() / 8) + static_cast<unsigned int>((bv.size() % 8) != 0);
+  });
   bitvec.def("bits", &SymBitVec::bits);
   bitvec.def("bin", &SymBitVec::bin);
   bitvec.def("hex", &SymBitVec::hex);
