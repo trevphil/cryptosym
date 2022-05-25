@@ -7,12 +7,14 @@
 #include <filesystem>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "core/bit_vec.hpp"
 #include "core/cnf.hpp"
 #include "core/config.hpp"
 #include "core/logic_gate.hpp"
+#include "core/solver.hpp"
 #include "core/sym_bit_vec.hpp"
 #include "core/sym_hash.hpp"
 #include "core/sym_representation.hpp"
@@ -38,15 +40,15 @@ struct type_caster<preimage::BitVec> {
     PyObject *byte_obj = PyBytes_FromObject(source);
     if (!byte_obj) return false;
 
-    const int num_bytes = static_cast<int>(py::len(byte_obj));
-    const unsigned int n = static_cast<unsigned int>(num_bytes) * 8;
+    const unsigned int num_bytes = py::len(byte_obj);
+    const unsigned int n = num_bytes * 8;
     value = preimage::BitVec(n);
 
     unsigned int bit_idx = 0;
-    for (int byte_idx = num_bytes - 1; byte_idx >= 0; --byte_idx) {
+    for (unsigned int byte_idx = 0; byte_idx < num_bytes; ++byte_idx) {
       PyObject *b_obj = PySequence_GetItem(byte_obj, byte_idx);
       if (!b_obj) {
-        printf("Failed to get byte %d of %d\n", byte_idx, num_bytes);
+        printf("Failed to get byte %ul of %ul\n", byte_idx, num_bytes);
         return false;
       }
       const unsigned long b = PyLong_AsUnsignedLong(b_obj);
@@ -65,12 +67,12 @@ struct type_caster<preimage::BitVec> {
     const unsigned int n = src.size();
     if (n == 0) return py::bytes("");
 
-    const int num_bytes = static_cast<int>(n / 8) + (int)(n % 8 != 0);
+    const unsigned int num_bytes = (n / 8) + (unsigned int)(n % 8 != 0);
     unsigned int bit_idx = 0;
     unsigned char *data =
         reinterpret_cast<unsigned char *>(calloc(num_bytes, sizeof(unsigned char)));
 
-    for (int byte_idx = num_bytes - 1; byte_idx >= 0; --byte_idx) {
+    for (unsigned int byte_idx = 0; byte_idx < num_bytes; ++byte_idx) {
       data[byte_idx] = 0b00000000;
       for (int offset = 0; offset < 8 && bit_idx < n; offset++) {
         data[byte_idx] |= (src[bit_idx++] << offset);
@@ -119,6 +121,30 @@ class SymHashTrampoline : public SymHash {
 
   SymBitVec forward(const SymBitVec &hash_input) override {
     PYBIND11_OVERRIDE_PURE(SymBitVec, SymHash, forward, hash_input);
+  }
+};
+
+/*
+ *****************************************************
+  Solver trampoline class
+ *****************************************************
+*/
+
+class SolverTrampoline : public Solver {
+ public:
+  // Inherit the constructor
+  using Solver::Solver;
+  // Use this to fix PyBind11 bug in _OVERRIDE_ macro
+  using VarDict = std::unordered_map<int, bool>;
+
+  std::unordered_map<int, bool> solve(
+      const SymRepresentation &problem,
+      const std::unordered_map<int, bool> &bit_assignments) override {
+    PYBIND11_OVERRIDE_PURE(VarDict, Solver, solve, problem, bit_assignments);
+  }
+
+  std::string solverName() const override {
+    PYBIND11_OVERRIDE_PURE_NAME(std::string, Solver, "solver_name", solverName, );
   }
 };
 
@@ -372,6 +398,22 @@ PYBIND11_MODULE(_cpp, m) {
     Solver
    *****************************************************
    */
+
+  py::class_<Solver, SolverTrampoline> solver(m, "Solver");
+  solver.def(py::init());
+  solver.def(
+      "solve",
+      py::overload_cast<const SymRepresentation &, const std::string &>(&Solver::solve),
+      py::arg("problem"), py::arg("hash_hex"));
+  solver.def("solve",
+             py::overload_cast<const SymRepresentation &, const BitVec &>(&Solver::solve),
+             py::arg("problem"), py::arg("hash_output"));
+  solver.def(
+      "solve",
+      py::overload_cast<const SymRepresentation &, const std::unordered_map<int, bool> &>(
+          &Solver::solve),
+      py::arg("problem"), py::arg("bit_assignments"));
+  solver.def("solver_name", &Solver::solverName);
 }
 
 }  // end namespace preimage

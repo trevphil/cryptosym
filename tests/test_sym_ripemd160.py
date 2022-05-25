@@ -1,8 +1,17 @@
+"""
+Copyright (c) 2022 Authors:
+    - Trevor Phillips <trevphil3@gmail.com>
+
+Distributed under the CC BY-NC-SA 4.0 license
+(See accompanying file LICENSE.md).
+"""
+
 import hashlib
 
 import pytest
 
 from cryptosym import SymBitVec, SymRIPEMD160, utils
+from tests.helpers import reverse_endianness
 
 
 class TestSymRIPEMD160:
@@ -48,10 +57,11 @@ class TestSymRIPEMD160:
             h.difficulty = 100
 
     def test_against_hashlib(self):
-        input_sizes = [0, 64, 256, 1024]
+        input_sizes = [0, 64, 256, 584, 1024, 2048, 4936]
         for inp_size in input_sizes:
             h = SymRIPEMD160(inp_size)
             input_bytes = utils.random_bits(inp_size)
             hlib = hashlib.new("ripemd160")
-            hlib.update(input_bytes[::-1])
-            assert h(input_bytes) == hlib.digest()
+            hlib.update(input_bytes)
+            expected = reverse_endianness(hlib.digest())
+            assert h(input_bytes) == expected
