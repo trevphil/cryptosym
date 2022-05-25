@@ -58,6 +58,8 @@ class SymBitVec {
 
   SymBitVec reversed() const;
 
+  SymBitVec reversedBytes() const;
+
   SymBitVec operator~() const;
 
   SymBitVec operator&(const SymBitVec &b) const;

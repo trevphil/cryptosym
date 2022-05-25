@@ -117,6 +117,8 @@ class SymSHA512(SymHash):
 
     def forward(self, hash_input: SymBitVec) -> SymBitVec:
         self.reset()
+
+        hash_input = hash_input.reversed_bytes()
         self.update(hash_input)
 
         output = SymBitVec()

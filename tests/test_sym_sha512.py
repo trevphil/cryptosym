@@ -57,5 +57,4 @@ class TestSymSHA512:
             hlib = hashlib.sha512()
             hlib.update(input_bytes)
             expected = reverse_endianness(hlib.digest())
-            got = h(input_bytes[::-1])
-            assert got == expected
+            assert h(input_bytes) == expected

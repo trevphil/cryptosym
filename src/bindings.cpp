@@ -257,6 +257,7 @@ PYBIND11_MODULE(_cpp, m) {
   bitvec.def("rotr", &SymBitVec::rotr, py::arg("n"));
   bitvec.def("rotl", &SymBitVec::rotl, py::arg("n"));
   bitvec.def("__reversed__", &SymBitVec::reversed);
+  bitvec.def("reversed_bytes", &SymBitVec::reversedBytes);
   bitvec.def(~py::self);
   bitvec.def(py::self & py::self);
   bitvec.def(py::self ^ py::self);

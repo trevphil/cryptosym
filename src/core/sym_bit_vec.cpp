@@ -144,6 +144,24 @@ SymBitVec SymBitVec::reversed() const {
   return SymBitVec(bits);
 }
 
+SymBitVec SymBitVec::reversedBytes() const {
+  if (size() % 8 != 0) {
+    char err_msg[256];
+    snprintf(err_msg, 256, "To reverse byte Endianness, %s (got %u bits, %s)",
+             "bytes are formed from 8-bit chunks", size(), "need multiple of 8");
+    throw std::runtime_error(err_msg);
+  }
+  std::vector<SymBit> bits;
+  const unsigned int num_bytes = size() / 8;
+  for (unsigned int byte_idx = 0; byte_idx < num_bytes; ++byte_idx) {
+    const unsigned int start = (num_bytes - byte_idx - 1) * 8;
+    for (unsigned int i = 0; i < 8; ++i) {
+      bits.push_back(at(start + i));
+    }
+  }
+  return SymBitVec(bits);
+}
+
 SymBitVec SymBitVec::operator~() const {
   std::vector<SymBit> bits = {};
   for (const SymBit &b : bits_) bits.push_back(~b);
