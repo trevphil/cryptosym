@@ -6,10 +6,16 @@ Distributed under the CC BY-NC-SA 4.0 license
 (See accompanying file LICENSE.md).
 """
 
+from math import ceil
+
 import pytest
 
 from cryptosym import SymBitVec
-from tests.helpers import int_to_little_endian_bytes
+
+
+def int_to_little_endian_bytes(n: int, num_bits: int) -> bytes:
+    num_bytes = int(ceil(num_bits / 8))
+    return n.to_bytes(length=num_bytes, byteorder="little")
 
 
 class TestSymBitVec:

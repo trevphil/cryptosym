@@ -11,7 +11,12 @@ import hashlib
 import pytest
 
 from cryptosym import SymBitVec, SymMD5, utils
-from tests.helpers import reverse_endianness
+
+
+def reverse_endianness(data: bytes) -> bytes:
+    data = bytearray(data)
+    data.reverse()
+    return bytes(data)
 
 
 class TestSymMD5:
