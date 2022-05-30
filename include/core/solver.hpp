@@ -24,11 +24,11 @@ class Solver {
 
   virtual ~Solver();
 
-  std::unordered_map<int, bool> solve(const SymRepresentation &problem,
-                                      const std::string &hash_hex);
+  virtual std::unordered_map<int, bool> solve(const SymRepresentation &problem,
+                                              const std::string &hash_hex);
 
-  std::unordered_map<int, bool> solve(const SymRepresentation &problem,
-                                      const BitVec &hash_output);
+  virtual std::unordered_map<int, bool> solve(const SymRepresentation &problem,
+                                              const BitVec &hash_output);
 
   virtual std::unordered_map<int, bool> solve(
       const SymRepresentation &problem,

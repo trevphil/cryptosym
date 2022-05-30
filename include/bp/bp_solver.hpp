@@ -8,9 +8,11 @@
 
 #pragma once
 
+#include <string>
 #include <unordered_map>
 
 #include "bp/graph.hpp"
+#include "core/bit_vec.hpp"
 #include "core/logic_gate.hpp"
 #include "core/solver.hpp"
 #include "core/sym_representation.hpp"
@@ -24,6 +26,16 @@ class BPSolver : public Solver {
   BPSolver();
 
   std::string solverName() const override { return "Belief Propagation"; }
+
+  std::unordered_map<int, bool> solve(const SymRepresentation &problem,
+                                      const std::string &hash_hex) override {
+    return Solver::solve(problem, hash_hex);
+  }
+
+  std::unordered_map<int, bool> solve(const SymRepresentation &problem,
+                                      const BitVec &hash_output) override {
+    return Solver::solve(problem, hash_output);
+  }
 
   std::unordered_map<int, bool> solve(
       const SymRepresentation &problem,

@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "bp/bp_solver.hpp"
+#include "cmsat/cmsat_solver.hpp"
 #include "core/bit_vec.hpp"
 #include "core/cnf.hpp"
 #include "core/config.hpp"
@@ -19,11 +21,18 @@
 #include "core/sym_hash.hpp"
 #include "core/sym_representation.hpp"
 #include "core/utils.hpp"
+#include "dag_solver/dag_solver.hpp"
 #include "hashing/sym_md5.hpp"
 #include "hashing/sym_ripemd160.hpp"
 #include "hashing/sym_sha256.hpp"
 
 namespace py = pybind11;
+
+/*
+ *****************************************************
+  C++ `BitVec` <--> Python `bytes` conversion
+ *****************************************************
+*/
 
 namespace pybind11 {
 
@@ -116,6 +125,7 @@ class SymHashTrampoline : public SymHash {
   }
 
   std::string hashName() const override {
+    // Note the trailing comma! Use trailing comma if function has 0 arguments
     PYBIND11_OVERRIDE_PURE_NAME(std::string, SymHash, "hash_name", hashName, );
   }
 
@@ -134,8 +144,18 @@ class SolverTrampoline : public Solver {
  public:
   // Inherit the constructor
   using Solver::Solver;
-  // Use this to fix PyBind11 bug in _OVERRIDE_ macro
+  // Use this to fix PyBind11 bug in OVERRIDE macro (related to < >)
   using VarDict = std::unordered_map<int, bool>;
+
+  std::unordered_map<int, bool> solve(const SymRepresentation &problem,
+                                      const std::string &hash_hex) override {
+    PYBIND11_OVERRIDE(VarDict, Solver, solve, problem, hash_hex);
+  }
+
+  std::unordered_map<int, bool> solve(const SymRepresentation &problem,
+                                      const BitVec &hash_output) override {
+    PYBIND11_OVERRIDE(VarDict, Solver, solve, problem, hash_output);
+  }
 
   std::unordered_map<int, bool> solve(
       const SymRepresentation &problem,
@@ -146,7 +166,7 @@ class SolverTrampoline : public Solver {
   std::string solverName() const override {
     PYBIND11_OVERRIDE_PURE_NAME(std::string, Solver, "solver_name", solverName, );
   }
-};
+};  // end class SolverTrampoline
 
 /*
  *****************************************************
@@ -418,6 +438,28 @@ PYBIND11_MODULE(_cpp, m) {
           &Solver::solve),
       py::arg("problem"), py::arg("bit_assignments"));
   solver.def("solver_name", &Solver::solverName);
+
+  /*
+   *****************************************************
+    DAGSolver
+   *****************************************************
+   */
+
+  py::class_<DAGSolver, Solver> dag(m, "DAGSolver");
+  dag.def(py::init());
+  dag.def("solve",
+          py::overload_cast<const SymRepresentation &, const std::string &>(
+              &DAGSolver::solve),
+          py::arg("problem"), py::arg("hash_hex"));
+  dag.def("solve",
+          py::overload_cast<const SymRepresentation &, const BitVec &>(&DAGSolver::solve),
+          py::arg("problem"), py::arg("hash_output"));
+  dag.def(
+      "solve",
+      py::overload_cast<const SymRepresentation &, const std::unordered_map<int, bool> &>(
+          &DAGSolver::solve),
+      py::arg("problem"), py::arg("bit_assignments"));
+  dag.def("solver_name", &DAGSolver::solverName);
 }
 
 }  // end namespace preimage
