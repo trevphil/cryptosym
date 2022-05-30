@@ -54,6 +54,7 @@ class TestDAGSolver:
         hash_hex = cryptosym.utils.hexstr(raw_bytes=hash_output)
         problem = hasher.symbolic_representation()
         solver = DAGSolver()
+        assert solver.solver_name() == "DAG Solver"
 
         solution = solver.solve(problem, hash_output=hash_output)
         preimage = build_input_bytes(solution, problem.input_indices)

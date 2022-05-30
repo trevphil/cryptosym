@@ -483,6 +483,29 @@ PYBIND11_MODULE(_cpp, m) {
           &CMSatSolver::solve),
       py::arg("problem"), py::arg("bit_assignments"));
   cm_solver.def("solver_name", &CMSatSolver::solverName);
+
+  /*
+   *****************************************************
+    BPSolver
+   *****************************************************
+   */
+
+  py::class_<bp::BPSolver, Solver> bp_solver(m, "BPSolver");
+  bp_solver.def(py::init());
+  bp_solver.def("solve",
+                py::overload_cast<const SymRepresentation &, const std::string &>(
+                    &bp::BPSolver::solve),
+                py::arg("problem"), py::arg("hash_hex"));
+  bp_solver.def(
+      "solve",
+      py::overload_cast<const SymRepresentation &, const BitVec &>(&bp::BPSolver::solve),
+      py::arg("problem"), py::arg("hash_output"));
+  bp_solver.def(
+      "solve",
+      py::overload_cast<const SymRepresentation &, const std::unordered_map<int, bool> &>(
+          &bp::BPSolver::solve),
+      py::arg("problem"), py::arg("bit_assignments"));
+  bp_solver.def("solver_name", &bp::BPSolver::solverName);
 }
 
 }  // end namespace preimage

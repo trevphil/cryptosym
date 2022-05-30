@@ -2,6 +2,7 @@
 2. PyTest equivalent tests for all C++ tests
 3. Documentation (ReadTheDocs)
 4. README
+5. Enable Ctrl+C and/or timeout feature for long calls to solve()
 
 ####################################
 ####### Miscellaneous notes ########

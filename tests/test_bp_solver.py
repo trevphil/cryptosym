@@ -1,13 +1,13 @@
 import pytest
 
 import cryptosym
-from cryptosym import CMSatSolver
+from cryptosym import BPSolver
 
 HASH_AND_DIFFICULTY = (
-    (cryptosym.SymMD5, 12),
-    (cryptosym.SymRIPEMD160, 12),
-    (cryptosym.SymSHA256, 8),
-    (cryptosym.SymSHA512, 8),
+    (cryptosym.SymMD5, 3),
+    (cryptosym.SymRIPEMD160, 2),
+    (cryptosym.SymSHA256, 2),
+    (cryptosym.SymSHA512, 2),
 )
 
 
@@ -43,18 +43,18 @@ def build_input_bytes(
     return int(hash_input_bits, 2).to_bytes(n_bytes, byteorder="little")
 
 
-class TestCMSatSolver:
+class TestBPSolver:
     @pytest.mark.parametrize("data", HASH_AND_DIFFICULTY)
     def test_preimage(self, data: tuple[cryptosym.SymHash, int]):
-        cryptosym.utils.seed(42)
+        cryptosym.utils.seed(37)
 
         hash_class, difficulty = data
         hasher = hash_class(64, difficulty=difficulty)
         hash_output = hasher()
         hash_hex = cryptosym.utils.hexstr(raw_bytes=hash_output)
         problem = hasher.symbolic_representation()
-        solver = CMSatSolver()
-        assert solver.solver_name() == "CryptoMiniSAT"
+        solver = BPSolver()
+        assert solver.solver_name() == "Belief Propagation"
 
         solution = solver.solve(problem, hash_output=hash_output)
         preimage = build_input_bytes(solution, problem.input_indices)
@@ -73,14 +73,6 @@ class TestCMSatSolver:
         g = cryptosym.LogicGate("A 3 1 -2")
         problem = cryptosym.SymRepresentation([g], [1, -2], [3])
         assignments = {3: True, -2: True}
-        solver = CMSatSolver()
+        solver = BPSolver()
         with pytest.raises(ValueError):
-            _ = solver.solve(problem, bit_assignments=assignments)
-
-    def test_unsatisfiable_problem(self):
-        g = cryptosym.LogicGate("A 3 1 -2")
-        problem = cryptosym.SymRepresentation([g], [1, -2], [3])
-        assignments = {3: True, 1: True, 2: True}
-        solver = CMSatSolver()
-        with pytest.raises(RuntimeError):
             _ = solver.solve(problem, bit_assignments=assignments)
