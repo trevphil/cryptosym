@@ -1,3 +1,11 @@
+"""
+Copyright (c) 2022 Authors:
+    - Trevor Phillips <trevphil3@gmail.com>
+
+Distributed under the CC BY-NC-SA 4.0 license
+(See accompanying file LICENSE.md).
+"""
+
 import pytest
 
 from cryptosym import SymBitVec, SymHash, SymRepresentation, utils
