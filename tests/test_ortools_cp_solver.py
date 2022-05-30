@@ -9,17 +9,17 @@ Distributed under the CC BY-NC-SA 4.0 license
 import pytest
 
 import cryptosym
-from cryptosym import ORToolsMIPSolver
+from cryptosym import ORToolsCPSolver
 
 HASH_AND_DIFFICULTY = (
     (cryptosym.SymMD5, 12),
     (cryptosym.SymRIPEMD160, 12),
     (cryptosym.SymSHA256, 8),
-    (cryptosym.SymSHA512, 6),
+    (cryptosym.SymSHA512, 8),
 )
 
 
-class TestORToolsMIPSolver:
+class TestORToolsCPSolver:
     @classmethod
     def setup_class(cls):
         cryptosym.config.only_and_gates = True
@@ -37,8 +37,8 @@ class TestORToolsMIPSolver:
         hash_output = hasher()
         hash_hex = cryptosym.utils.hexstr(raw_bytes=hash_output)
         problem = hasher.symbolic_representation()
-        solver = ORToolsMIPSolver()
-        assert solver.solver_name() == "OR-Tools Mixed Integer Programming"
+        solver = ORToolsCPSolver()
+        assert solver.solver_name() == "OR-Tools Constraint Programming"
 
         solution = solver.solve(problem, hash_output=hash_output)
         preimage = helpers.build_input_bytes(solution, problem.input_indices)
@@ -57,6 +57,6 @@ class TestORToolsMIPSolver:
         g = cryptosym.LogicGate("A 3 1 -2")
         problem = cryptosym.SymRepresentation([g], [1, -2], [3])
         assignments = {3: True, 1: True, 2: True}
-        solver = ORToolsMIPSolver()
+        solver = ORToolsCPSolver()
         with pytest.raises(RuntimeError):
             _ = solver.solve(problem, bit_assignments=assignments)
