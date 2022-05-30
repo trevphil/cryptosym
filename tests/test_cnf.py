@@ -52,14 +52,14 @@ class TestCNF:
     def test_approximation_ratio(self):
         cnf = CNF([{-1, 2}, {3, -4}, {-5, 6}, {7, -8}], 8)
         assignments = {
-          1: True,
-          2: False,
-          3: False,
-          4: True,
-          5: True,
-          6: False,
-          7: False,
-          8: False,
+            1: True,
+            2: False,
+            3: False,
+            4: True,
+            5: True,
+            6: False,
+            7: False,
+            8: False,
         }
         assert cnf.num_sat_clauses(assignments=assignments) == 1
         assert cnf.approximation_ratio(assignments=assignments) == pytest.approx(0.25)
