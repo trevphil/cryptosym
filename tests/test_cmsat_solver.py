@@ -1,7 +1,7 @@
 import pytest
 
 import cryptosym
-from cryptosym import DAGSolver
+from cryptosym import CMSatSolver
 
 HASH_AND_DIFFICULTY = (
     (cryptosym.SymMD5, 12),
@@ -43,17 +43,17 @@ def build_input_bytes(
     return int(hash_input_bits, 2).to_bytes(n_bytes, byteorder="little")
 
 
-class TestDAGSolver:
+class TestCMSatSolver:
     @pytest.mark.parametrize("data", HASH_AND_DIFFICULTY)
     def test_preimage(self, data: tuple[cryptosym.SymHash, int]):
-        cryptosym.utils.seed(37)
+        cryptosym.utils.seed(42)
 
         hash_class, difficulty = data
         hasher = hash_class(64, difficulty=difficulty)
         hash_output = hasher()
         hash_hex = cryptosym.utils.hexstr(raw_bytes=hash_output)
         problem = hasher.symbolic_representation()
-        solver = DAGSolver()
+        solver = CMSatSolver()
 
         solution = solver.solve(problem, hash_output=hash_output)
         preimage = build_input_bytes(solution, problem.input_indices)
@@ -72,7 +72,7 @@ class TestDAGSolver:
         g = cryptosym.LogicGate("A 3 1 -2")
         problem = cryptosym.SymRepresentation([g], [1, -2], [3])
         assignments = {3: True, -2: True}
-        solver = DAGSolver()
+        solver = CMSatSolver()
         with pytest.raises(ValueError):
             _ = solver.solve(problem, bit_assignments=assignments)
 
@@ -80,6 +80,6 @@ class TestDAGSolver:
         g = cryptosym.LogicGate("A 3 1 -2")
         problem = cryptosym.SymRepresentation([g], [1, -2], [3])
         assignments = {3: True, 1: True, 2: True}
-        solver = DAGSolver()
+        solver = CMSatSolver()
         with pytest.raises(RuntimeError):
             _ = solver.solve(problem, bit_assignments=assignments)

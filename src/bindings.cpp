@@ -460,6 +460,29 @@ PYBIND11_MODULE(_cpp, m) {
           &DAGSolver::solve),
       py::arg("problem"), py::arg("bit_assignments"));
   dag.def("solver_name", &DAGSolver::solverName);
+
+  /*
+   *****************************************************
+    CMSatSolver
+   *****************************************************
+   */
+
+  py::class_<CMSatSolver, Solver> cm_solver(m, "CMSatSolver");
+  cm_solver.def(py::init());
+  cm_solver.def("solve",
+                py::overload_cast<const SymRepresentation &, const std::string &>(
+                    &CMSatSolver::solve),
+                py::arg("problem"), py::arg("hash_hex"));
+  cm_solver.def(
+      "solve",
+      py::overload_cast<const SymRepresentation &, const BitVec &>(&CMSatSolver::solve),
+      py::arg("problem"), py::arg("hash_output"));
+  cm_solver.def(
+      "solve",
+      py::overload_cast<const SymRepresentation &, const std::unordered_map<int, bool> &>(
+          &CMSatSolver::solve),
+      py::arg("problem"), py::arg("bit_assignments"));
+  cm_solver.def("solver_name", &CMSatSolver::solverName);
 }
 
 }  // end namespace preimage
