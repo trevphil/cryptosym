@@ -6,21 +6,14 @@ Distributed under the CC BY-NC-SA 4.0 license
 (See accompanying file LICENSE.md).
 """
 
-from math import ceil
-
 import pytest
 
 from cryptosym import SymBitVec
 
 
-def int_to_little_endian_bytes(n: int, num_bits: int) -> bytes:
-    num_bytes = int(ceil(num_bits / 8))
-    return n.to_bytes(length=num_bytes, byteorder="little")
-
-
 class TestSymBitVec:
-    def test_conversions(self):
-        bits_a = int_to_little_endian_bytes(0b1101001100000001, 16)
+    def test_conversions(self, helpers):
+        bits_a = helpers.int_to_little_endian_bytes(0b1101001100000001, 16)
         bv = SymBitVec(byte_data=bits_a)
         hex_str = "d301"
         bin_str = "1101001100000001"
@@ -31,11 +24,11 @@ class TestSymBitVec:
         assert len(bv) == 16
         assert bv.num_bytes == 2
 
-        bits_b = int_to_little_endian_bytes(0xDEADBEEF, 40)
+        bits_b = helpers.int_to_little_endian_bytes(0xDEADBEEF, 40)
         bv1 = SymBitVec(byte_data=bits_b)
         bv2 = SymBitVec(n=0xDEADBEEF, size=40)
-        assert bv1.bits() == b"\xef\xbe\xad\xde\x00"  # b'\x00\xde\xad\xbe\xef'
-        assert bv2.bits() == b"\xef\xbe\xad\xde\x00"  # b'\x00\xde\xad\xbe\xef'
+        assert bv1.bits() == b"\xef\xbe\xad\xde\x00"
+        assert bv2.bits() == b"\xef\xbe\xad\xde\x00"
         assert int(bv1) == 0xDEADBEEF
         assert int(bv2) == 0xDEADBEEF
         assert bv1.hex() == "00deadbeef"

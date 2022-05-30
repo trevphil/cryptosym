@@ -19,41 +19,9 @@ HASH_AND_DIFFICULTY = (
 )
 
 
-def build_assignments(
-    hash_output: bytes, hash_output_indices: list[int]
-) -> dict[int, bool]:
-    hash_output = int.from_bytes(hash_output, byteorder="little")
-    hash_output = bin(hash_output)[2:][::-1]
-    bit_assignments = {}
-    for i, var in zip(hash_output_indices, hash_output):
-        var = {"0": False, "1": True}[var]
-        if i < 0:
-            bit_assignments[-i] = not var
-        elif i > 0:
-            bit_assignments[i] = var
-    return bit_assignments
-
-
-def build_input_bytes(
-    bit_assignments: dict[int, bool], hash_input_indices: list[int]
-) -> bytes:
-    hash_input_bits = ""
-    for i in hash_input_indices:
-        if i < 0 and -i in bit_assignments:
-            hash_input_bits += str(int(not bit_assignments[-i]))
-        elif i > 0 and i in bit_assignments:
-            hash_input_bits += str(int(bit_assignments[i]))
-        else:
-            hash_input_bits += "0"
-
-    n_bytes = len(hash_input_bits) // 8
-    hash_input_bits = hash_input_bits[::-1]
-    return int(hash_input_bits, 2).to_bytes(n_bytes, byteorder="little")
-
-
 class TestDAGSolver:
     @pytest.mark.parametrize("data", HASH_AND_DIFFICULTY)
-    def test_preimage(self, data: tuple[cryptosym.SymHash, int]):
+    def test_preimage(self, data: tuple[cryptosym.SymHash, int], helpers):
         cryptosym.utils.seed(37)
 
         hash_class, difficulty = data
@@ -65,16 +33,16 @@ class TestDAGSolver:
         assert solver.solver_name() == "DAG Solver"
 
         solution = solver.solve(problem, hash_output=hash_output)
-        preimage = build_input_bytes(solution, problem.input_indices)
+        preimage = helpers.build_input_bytes(solution, problem.input_indices)
         assert hash_output == hasher(preimage)
 
         solution = solver.solve(problem, hash_hex=hash_hex)
-        preimage = build_input_bytes(solution, problem.input_indices)
+        preimage = helpers.build_input_bytes(solution, problem.input_indices)
         assert hash_output == hasher(preimage)
 
-        assignments = build_assignments(hash_output, problem.output_indices)
+        assignments = helpers.build_assignments(hash_output, problem.output_indices)
         solution = solver.solve(problem, bit_assignments=assignments)
-        preimage = build_input_bytes(solution, problem.input_indices)
+        preimage = helpers.build_input_bytes(solution, problem.input_indices)
         assert hash_output == hasher(preimage)
 
     def test_negated_bit_assignments(self):

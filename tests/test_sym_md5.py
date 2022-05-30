@@ -13,12 +13,6 @@ import pytest
 from cryptosym import SymBitVec, SymMD5, utils
 
 
-def reverse_endianness(data: bytes) -> bytes:
-    data = bytearray(data)
-    data.reverse()
-    return bytes(data)
-
-
 class TestSymMD5:
     def test_sym_md5_features(self):
         h = SymMD5(128)
@@ -61,12 +55,12 @@ class TestSymMD5:
         with pytest.raises(AttributeError):
             h.difficulty = 100
 
-    def test_against_hashlib(self):
+    def test_against_hashlib(self, helpers):
         input_sizes = [0, 64, 256, 584, 1024, 2048, 4936]
         for inp_size in input_sizes:
             h = SymMD5(inp_size)
             input_bytes = utils.random_bits(inp_size)
             hlib = hashlib.md5()
             hlib.update(input_bytes)
-            expected = reverse_endianness(hlib.digest())
+            expected = helpers.reverse_endianness(hlib.digest())
             assert h(input_bytes) == expected

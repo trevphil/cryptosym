@@ -6,40 +6,33 @@ Distributed under the CC BY-NC-SA 4.0 license
 (See accompanying file LICENSE.md).
 """
 
-from math import ceil
-
 import pytest
 
 from cryptosym import utils
 
 
-def int_to_little_endian_bytes(n: int, num_bits: int) -> bytes:
-    num_bytes = int(ceil(num_bits / 8))
-    return n.to_bytes(length=num_bytes, byteorder="little")
-
-
 class TestUtils:
-    def test_conversions(self):
-        b = int_to_little_endian_bytes(0b1101001100011101, 16)
+    def test_conversions(self, helpers):
+        b = helpers.int_to_little_endian_bytes(0b1101001100011101, 16)
         hex_str = "d31d"
         bin_str = "1101001100011101"
         assert utils.hexstr(raw_bytes=b) == hex_str
         assert utils.binstr(raw_bytes=b) == bin_str
         assert utils.hex2bits(hex_str=hex_str) == b
 
-        deadbeef = int_to_little_endian_bytes(0xDEADBEEF, 64)
+        deadbeef = helpers.int_to_little_endian_bytes(0xDEADBEEF, 64)
         assert utils.hexstr(raw_bytes=deadbeef) == "00000000deadbeef"
 
-        cheese = int_to_little_endian_bytes(0x657365656863, 48)
+        cheese = helpers.int_to_little_endian_bytes(0x657365656863, 48)
         assert utils.str2bits(s="cheese") == cheese
 
     def test_bad_hex_string(self):
         with pytest.raises(ValueError):
             utils.hex2bits(hex_str="wxyz")
 
-    def test_zero_bits(self):
+    def test_zero_bits(self, helpers):
         b = utils.zero_bits(n=32)
-        assert b == int_to_little_endian_bytes(0, num_bits=32)
+        assert b == helpers.int_to_little_endian_bytes(0, num_bits=32)
 
     def test_random_bits(self):
         s = 42
