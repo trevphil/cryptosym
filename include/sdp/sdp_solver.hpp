@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2022 Authors:
+ *   - Trevor Phillips <trevphil3@gmail.com>
+ *
+ * Distributed under the CC BY-NC-SA 4.0 license
+ * (See accompanying file LICENSE.md).
+ */
+
+#pragma once
+
+#include <Eigen/Dense>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+#include "core/cnf.hpp"
+#include "core/solver.hpp"
+#include "core/sym_representation.hpp"
+
+namespace preimage {
+
+class SDPSolver : public Solver {
+ public:
+  SDPSolver(unsigned int rounding_trials = 100);
+
+  virtual ~SDPSolver();
+
+  std::string solverName() const override { return "SDP Mixing Method"; }
+
+  inline Eigen::MatrixXf getV() const { return v_; }
+
+  std::unordered_map<int, bool> solve(const SymRepresentation &problem,
+                                      const std::string &hash_hex) override {
+    return Solver::solve(problem, hash_hex);
+  }
+
+  std::unordered_map<int, bool> solve(const SymRepresentation &problem,
+                                      const BitVec &hash_output) override {
+    return Solver::solve(problem, hash_output);
+  }
+
+  std::unordered_map<int, bool> solve(
+      const SymRepresentation &problem,
+      const std::unordered_map<int, bool> &bit_assignments) override;
+
+  std::unordered_map<int, bool> randomizedRoundingTrial(const Eigen::MatrixXf &v) const;
+
+ protected:
+  void initialize(const CNF &cnf);
+
+  float applyMixingKernel(const CNF &cnf);
+
+  unsigned int num_rounding_trials_;
+  int n_, m_, k_;
+  std::unordered_map<int, std::vector<int>> lit2clauses_;
+  Eigen::MatrixXf v_, z_;
+};
+
+}  // end namespace preimage

@@ -13,12 +13,6 @@ import pytest
 from cryptosym import SymBitVec, SymSHA256, utils
 
 
-def reverse_endianness(data: bytes) -> bytes:
-    data = bytearray(data)
-    data.reverse()
-    return bytes(data)
-
-
 class TestSymSHA256:
     def test_sym_sha256_features(self):
         h = SymSHA256(128)
@@ -61,12 +55,12 @@ class TestSymSHA256:
         with pytest.raises(AttributeError):
             h.difficulty = 100
 
-    def test_against_hashlib(self):
+    def test_against_hashlib(self, helpers):
         input_sizes = [0, 64, 256, 584, 1024, 2048, 4936]
         for inp_size in input_sizes:
             h = SymSHA256(inp_size)
             input_bytes = utils.random_bits(inp_size)
             hlib = hashlib.sha256()
             hlib.update(input_bytes)
-            expected = reverse_endianness(hlib.digest())
+            expected = helpers.reverse_endianness(hlib.digest())
             assert h(input_bytes) == expected

@@ -39,15 +39,22 @@ class TestCNF:
     def test_simplification(self):
         cnf = CNF([{1, 2, -3}, {-2, 4}], 4)
 
-        cnf = cnf.simplify(assignments={2: False})
+        cnf, assignments, lit_new_to_old = cnf.simplify(assignments={2: False})
         assert cnf.num_vars == 2
         assert cnf.num_clauses == 1
         assert cnf.clauses[0] == {-1, 2}
+        assert assignments[2] is False
+        assert len(lit_new_to_old) == 2
+        assert lit_new_to_old[1] == 3
+        assert lit_new_to_old[2] == 1
 
-        cnf = cnf.simplify({1: False})
+        cnf, assignments, lit_new_to_old = cnf.simplify({2: False})
         assert cnf.num_clauses == 0
         assert cnf.num_vars == 0
         assert len(cnf.clauses) == 0
+        assert len(lit_new_to_old) == 0
+        assert assignments[2] is False
+        assert assignments[1] is False
 
     def test_approximation_ratio(self):
         cnf = CNF([{-1, 2}, {3, -4}, {-5, 6}, {7, -8}], 8)
@@ -110,7 +117,12 @@ class TestCNF:
         with pytest.raises(ValueError):
             _ = cnf.simplify({2: True, 0: False})
 
+    def test_simplify_with_negative_indexed_assignments(self):
+        cnf = CNF([{-1, 2}, {3, -4}], num_vars=8)
+        with pytest.raises(ValueError):
+            _ = cnf.simplify({-2: False})
+
     def test_simplify_results_in_unsatisfiability(self):
         cnf = CNF([{-1, 2}, {-2, 3}], num_vars=3)
         with pytest.raises(RuntimeError):
-            _ = cnf.simplify({-1: False, 3: False})
+            _ = cnf.simplify({1: True, 3: False})

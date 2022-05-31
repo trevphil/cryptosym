@@ -24,11 +24,12 @@
 #include "hashing/sym_md5.hpp"
 #include "hashing/sym_ripemd160.hpp"
 #include "hashing/sym_sha256.hpp"
+#include "sdp/sdp_solver.hpp"
 
 namespace preimage {
 
 std::string hash_func = "SHA256";
-std::string solving_method = "dag";
+std::string solving_method = "cmsat";
 int input_size = 64;
 int difficulty = -1;
 bool bin_format = false;
@@ -63,7 +64,7 @@ int parseArgument(char *arg) {
     help_msg << "\td=DIFFICULTY (-1 for hash's default difficulty)" << std::endl;
     help_msg << "\ti=NUM_INPUT_BITS (must be a multiple of 8)" << std::endl;
     help_msg << "\tsolver=SOLVER" << std::endl;
-    help_msg << "\t -> one of: dag, cmsat, bp" << std::endl;
+    help_msg << "\t -> one of: dag, cmsat, bp, sdp" << std::endl;
     printf("%s\n", help_msg.str().c_str());
     return 1;
   }
@@ -92,6 +93,8 @@ std::unique_ptr<Solver> createSolver() {
     return std::make_unique<DAGSolver>();
   } else if (solving_method.compare("bp") == 0) {
     return std::make_unique<bp::BPSolver>();
+  } else if (solving_method.compare("sdp") == 0) {
+    return std::make_unique<SDPSolver>(1000);
   } else {
     char err_msg[128];
     snprintf(err_msg, 128, "Unsupported solver: %s", solving_method.c_str());

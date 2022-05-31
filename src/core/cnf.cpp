@@ -35,11 +35,10 @@ namespace preimage {
 
 struct Simplification {
  public:
-  Simplification(const CNF &cnf, const std::unordered_map<int, bool> &assignments) {
+  Simplification(const CNF &cnf, std::unordered_map<int, bool> &assignments) {
     std::vector<std::pair<int, bool>> q;
     std::vector<std::set<int>> tmp_clauses = cnf.clauses;
     std::unordered_map<int, std::set<int>> lit2clauses;
-    original_assignments = assignments;
 
     // Mapping from: literal --> indices of clauses which use that literal
     for (int c = 0; c < cnf.num_clauses; ++c) {
@@ -48,8 +47,12 @@ struct Simplification {
 
     // Queue will contain literals for which we KNOW the assignment
     for (const auto &itr : assignments) {
-      if (itr.first == 0) {
-        throw std::invalid_argument("CNF variables should be 1-indexed (0 is reserved)");
+      if (itr.first <= 0) {
+        char err_msg[128];
+        snprintf(err_msg, 128,
+                 "CNF assignments should be 1-indexed and not negated (got %d)",
+                 itr.first);
+        throw std::invalid_argument(err_msg);
       }
       q.push_back({itr.first, itr.second});
       q.push_back({-itr.first, !itr.second});
@@ -60,8 +63,8 @@ struct Simplification {
       const int lit = q.back().first;
       const bool val = q.back().second;
       q.pop_back();
-      original_assignments[lit] = val;
-      original_assignments[-lit] = !val;
+      assignments[lit] = val;
+      assignments[-lit] = !val;
 
       const std::set<int> &clause_indices = lit2clauses[lit];
       if (val) {
@@ -78,11 +81,10 @@ struct Simplification {
           tmp_clauses[clause_idx].erase(lit);
           if (tmp_clauses[clause_idx].size() == 1) {
             const int last_lit = *(tmp_clauses[clause_idx].begin());
-            if (original_assignments.count(last_lit) && !original_assignments[last_lit]) {
+            if (assignments.count(last_lit) && !assignments[last_lit]) {
               throw std::runtime_error("Problem found to be UNSAT during simplification");
             }
-            if (original_assignments.count(-last_lit) &&
-                original_assignments[-last_lit]) {
+            if (assignments.count(-last_lit) && assignments[-last_lit]) {
               throw std::runtime_error("Problem found to be UNSAT during simplification");
             }
             q.push_back({last_lit, true});
@@ -101,12 +103,13 @@ struct Simplification {
       if (orig_clause.size() == 0) continue;  // Automatically SAT
       std::set<int> simplified_clause;
       for (int orig_lit : orig_clause) {
-        if (lit_original_to_simplified.count(orig_lit) == 0) {
-          lit_original_to_simplified[std::abs(orig_lit)] = k;
-          lit_original_to_simplified[-std::abs(orig_lit)] = -k;
-          k++;
+        const int positive_lit = std::abs(orig_lit);
+        if (lit_original_to_simplified.count(positive_lit) == 0) {
+          lit_original_to_simplified[positive_lit] = k++;
         }
-        simplified_clause.insert(lit_original_to_simplified[orig_lit]);
+        int new_lit = lit_original_to_simplified[positive_lit];
+        new_lit *= (orig_lit == positive_lit ? 1 : -1);
+        simplified_clause.insert(new_lit);
       }
       simplified_clauses.push_back(simplified_clause);
     }
@@ -123,7 +126,6 @@ struct Simplification {
 
   CNF original_cnf, simplified_cnf;
   std::unordered_map<int, int> lit_simplified_to_original;
-  std::unordered_map<int, bool> original_assignments;
 };
 
 CNF::CNF() : num_vars(0), num_clauses(0), clauses({}) {}
@@ -147,7 +149,7 @@ CNF::CNF(const std::vector<std::set<int>> &cls, int n_var) {
   num_clauses = static_cast<int>(clauses.size());
 }
 
-int CNF::numSatClauses(const std::unordered_map<int, bool> &assignments) {
+int CNF::numSatClauses(const std::unordered_map<int, bool> &assignments) const {
   int num_sat = 0;
 
   for (const auto &clause : clauses) {
@@ -173,7 +175,7 @@ int CNF::numSatClauses(const std::unordered_map<int, bool> &assignments) {
   return num_sat;
 }
 
-double CNF::approximationRatio(const std::unordered_map<int, bool> &assignments) {
+double CNF::approximationRatio(const std::unordered_map<int, bool> &assignments) const {
   if (num_clauses == 0) return 1.0;
   return numSatClauses(assignments) / static_cast<double>(num_clauses);
 }
@@ -236,8 +238,11 @@ CNF CNF::fromFile(const std::string &filename) {
   return CNF(clauses, num_vars);
 }
 
-CNF CNF::simplify(const std::unordered_map<int, bool> &assignments) const {
-  return Simplification(*this, assignments).simplified_cnf;
+CNF CNF::simplify(std::unordered_map<int, bool> &assignments,
+                  std::unordered_map<int, int> &lit_new_to_old) const {
+  const Simplification simplification(*this, assignments);
+  lit_new_to_old = simplification.lit_simplified_to_original;
+  return simplification.simplified_cnf;
 }
 
 void CNF::toMIS(const std::string &) const {

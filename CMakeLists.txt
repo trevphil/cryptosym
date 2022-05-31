@@ -109,7 +109,8 @@ add_library(cryptosymlib STATIC
             src/hashing/sym_md5.cpp
             src/hashing/sym_ripemd160.cpp
             src/hashing/sym_sha256.cpp
-            src/dag_solver/dag_solver.cpp)
+            src/dag_solver/dag_solver.cpp
+            src/sdp/sdp_solver.cpp)
 
 if(MSVC)
   target_compile_options(cryptosymlib PRIVATE /W3 /wd4267)
@@ -143,6 +144,7 @@ if(CRYPTOSYM_TESTS)
                  tests/test_cnf.cpp
                  tests/test_dag_solver.cpp
                  tests/test_logic_gate.cpp
+                 tests/test_sdp_solver.cpp
                  tests/test_sym_md5.cpp
                  tests/test_sym_ripemd160.cpp
                  tests/test_sym_sha256.cpp

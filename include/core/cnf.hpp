@@ -25,9 +25,9 @@ class CNF {
 
   CNF(const std::vector<std::set<int>> &cls, int n_var);
 
-  int numSatClauses(const std::unordered_map<int, bool> &assignments);
+  int numSatClauses(const std::unordered_map<int, bool> &assignments) const;
 
-  double approximationRatio(const std::unordered_map<int, bool> &assignments);
+  double approximationRatio(const std::unordered_map<int, bool> &assignments) const;
 
   void toFile(const std::string &filename) const;
 
@@ -37,7 +37,8 @@ class CNF {
 
   void toGraphColoring(const std::string &filename) const;
 
-  CNF simplify(const std::unordered_map<int, bool> &assignments) const;
+  CNF simplify(std::unordered_map<int, bool> &assignments,
+               std::unordered_map<int, int> &lit_new_to_old) const;
 
   int num_vars;
   int num_clauses;

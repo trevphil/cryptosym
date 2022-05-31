@@ -33,18 +33,27 @@ TEST(CNFTest, Initialization) {
 TEST(CNFTest, Simplification) {
   CNF cnf({{1, 2, -3}, {-2, 4}}, 4);
   std::unordered_map<int, bool> assignments;
+  std::unordered_map<int, int> lit_new_to_old;
   assignments[2] = false;
-  cnf = cnf.simplify(assignments);
+  cnf = cnf.simplify(assignments, lit_new_to_old);
   EXPECT_EQ(cnf.num_clauses, 1);
   EXPECT_EQ(cnf.num_vars, 2);
   const std::set<int> clause = {-1, 2};
   EXPECT_EQ(cnf.clauses[0], clause);
+  EXPECT_EQ(assignments[2], false);
+  EXPECT_EQ(lit_new_to_old.size(), 2);
+  EXPECT_EQ(lit_new_to_old[1], 3);
+  EXPECT_EQ(lit_new_to_old[2], 1);
 
   assignments.clear();
-  assignments[1] = false;
-  cnf = cnf.simplify(assignments);
+  lit_new_to_old.clear();
+  assignments[2] = false;
+  cnf = cnf.simplify(assignments, lit_new_to_old);
   EXPECT_EQ(cnf.num_clauses, 0);
   EXPECT_EQ(cnf.num_vars, 0);
+  EXPECT_EQ(lit_new_to_old.size(), 0);
+  EXPECT_EQ(assignments[2], false);
+  EXPECT_EQ(assignments[1], false);
 }
 
 TEST(CNFTest, ApproximationRatio) {
@@ -126,17 +135,27 @@ TEST(CNFTest, LoadDimacsWithoutHeader) {
 TEST(CNFTest, SimplifyWithZeroIndexedAssignments) {
   CNF cnf({{-1, 2}, {3, -4}}, 8);
   std::unordered_map<int, bool> assignments;
+  std::unordered_map<int, int> lit_new_to_old;
   assignments[2] = true;
   assignments[0] = false;
-  EXPECT_THROW({ cnf.simplify(assignments); }, std::invalid_argument);
+  EXPECT_THROW({ cnf.simplify(assignments, lit_new_to_old); }, std::invalid_argument);
+}
+
+TEST(CNFTest, SimplifyWithNegativeIndexedAssignments) {
+  CNF cnf({{-1, 2}, {3, -4}}, 8);
+  std::unordered_map<int, bool> assignments;
+  std::unordered_map<int, int> lit_new_to_old;
+  assignments[-2] = false;
+  EXPECT_THROW({ cnf.simplify(assignments, lit_new_to_old); }, std::invalid_argument);
 }
 
 TEST(CNFTest, SimplifyResultsInUnsatisfiability) {
   CNF cnf({{-1, 2}, {-2, 3}}, 3);
   std::unordered_map<int, bool> assignments;
-  assignments[-1] = false;
+  std::unordered_map<int, int> lit_new_to_old;
+  assignments[1] = true;
   assignments[3] = false;
-  EXPECT_THROW({ cnf.simplify(assignments); }, std::runtime_error);
+  EXPECT_THROW({ cnf.simplify(assignments, lit_new_to_old); }, std::runtime_error);
 }
 
 }  // end namespace preimage

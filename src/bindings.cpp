@@ -57,7 +57,7 @@ struct type_caster<preimage::BitVec> {
     for (unsigned int byte_idx = 0; byte_idx < num_bytes; ++byte_idx) {
       PyObject *b_obj = PySequence_GetItem(byte_obj, byte_idx);
       if (!b_obj) {
-        printf("Failed to get byte %ul of %ul\n", byte_idx, num_bytes);
+        printf("Failed to get byte %u of %u\n", byte_idx, num_bytes);
         return false;
       }
       const unsigned long b = PyLong_AsUnsignedLong(b_obj);
@@ -132,7 +132,7 @@ class SymHashTrampoline : public SymHash {
   SymBitVec forward(const SymBitVec &hash_input) override {
     PYBIND11_OVERRIDE_PURE(SymBitVec, SymHash, forward, hash_input);
   }
-};
+};  // end class SymHashTrampoline
 
 /*
  *****************************************************
@@ -307,7 +307,15 @@ PYBIND11_MODULE(_cpp, m) {
       py::arg("file_path"));
   cnf.def("num_sat_clauses", &CNF::numSatClauses, py::arg("assignments"));
   cnf.def("approximation_ratio", &CNF::approximationRatio, py::arg("assignments"));
-  cnf.def("simplify", &CNF::simplify, py::arg("assignments"));
+  cnf.def(
+      "simplify",
+      [](const CNF &obj, const std::unordered_map<int, bool> &assignments) {
+        std::unordered_map<int, bool> new_assignments = assignments;
+        std::unordered_map<int, int> lit_new_to_old;
+        const CNF simplified = obj.simplify(new_assignments, lit_new_to_old);
+        return py::make_tuple(simplified, new_assignments, lit_new_to_old);
+      },
+      py::arg("assignments"));
   cnf.def("to_file", &CNF::toFile, py::arg("file_path"));
   cnf.def(
       "to_file",
