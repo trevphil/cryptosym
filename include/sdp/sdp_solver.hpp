@@ -27,8 +27,6 @@ class SDPSolver : public Solver {
 
   std::string solverName() const override { return "SDP Mixing Method"; }
 
-  inline Eigen::MatrixXf getV() const { return v_; }
-
   std::unordered_map<int, bool> solve(const SymRepresentation &problem,
                                       const std::string &hash_hex) override {
     return Solver::solve(problem, hash_hex);
@@ -39,11 +37,13 @@ class SDPSolver : public Solver {
     return Solver::solve(problem, hash_output);
   }
 
+  Eigen::MatrixXf mixingMethod(const CNF &cnf);
+
+  std::unordered_map<int, bool> randomizedRoundingTrial(const Eigen::MatrixXf &v) const;
+
   std::unordered_map<int, bool> solve(
       const SymRepresentation &problem,
       const std::unordered_map<int, bool> &bit_assignments) override;
-
-  std::unordered_map<int, bool> randomizedRoundingTrial(const Eigen::MatrixXf &v) const;
 
  protected:
   void initialize(const CNF &cnf);

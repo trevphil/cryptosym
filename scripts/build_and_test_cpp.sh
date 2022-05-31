@@ -5,13 +5,11 @@ echo "Warning: this script likely won't work on Windows"
 set -e
 set -x
 
-sh -c './scripts/clean.sh'
-
 Python_EXECUTABLE=$(python -c 'import sys; print(sys.executable)')
 Python_INCLUDE_DIR=$(python -c 'import sysconfig; print(sysconfig.get_paths()["include"])')
 Python_LIBRARY=$(python -c 'import sysconfig; print(sysconfig.get_paths()["stdlib"])')
 
-mkdir build
+mkdir build || true
 pushd build
 cmake -GNinja \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \

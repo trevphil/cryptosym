@@ -9,10 +9,13 @@
 #include <gtest/gtest.h>
 
 #include <memory>
+#include <unordered_map>
 
+#include "core/cnf.hpp"
 #include "core/logic_gate.hpp"
 #include "core/solver.hpp"
 #include "core/sym_hash.hpp"
+#include "core/sym_representation.hpp"
 #include "eval_solver.hpp"
 #include "hashing/sym_md5.hpp"
 #include "hashing/sym_ripemd160.hpp"
@@ -75,10 +78,10 @@ TEST(SDPSolverTest, ApproximateSolveMD5) {
   SDPSolver sdp(100);
   SymMD5 md5(64, 20);
   const SymRepresentation problem = md5.getSymbolicRepresentation();
+  const CNF cnf = problem.toCNF();
   for (int i = 0; i < 4; ++i) {
     const BitVec hash_out = md5.callRandom();
     const auto solution = sdp.solve(problem, hash_out);
-    const CNF cnf = problem.toCNF();
     const double approx_ratio = cnf.approximationRatio(solution);
     EXPECT_GE(approx_ratio, 0.92);
   }

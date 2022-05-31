@@ -1,3 +1,4 @@
+#include <pybind11/eigen.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -25,6 +26,7 @@
 #include "hashing/sym_md5.hpp"
 #include "hashing/sym_ripemd160.hpp"
 #include "hashing/sym_sha256.hpp"
+#include "sdp/sdp_solver.hpp"
 
 namespace py = pybind11;
 
@@ -514,6 +516,32 @@ PYBIND11_MODULE(_cpp, m) {
           &bp::BPSolver::solve),
       py::arg("problem"), py::arg("bit_assignments"));
   bp_solver.def("solver_name", &bp::BPSolver::solverName);
+
+  /*
+   *****************************************************
+    SDPSolver
+   *****************************************************
+   */
+
+  py::class_<SDPSolver, Solver> sdp_solver(m, "SDPSolver");
+  sdp_solver.def(py::init<unsigned int>(), py::arg("num_rounding_trials") = 100);
+  sdp_solver.def("solve",
+                 py::overload_cast<const SymRepresentation &, const std::string &>(
+                     &SDPSolver::solve),
+                 py::arg("problem"), py::arg("hash_hex"));
+  sdp_solver.def(
+      "solve",
+      py::overload_cast<const SymRepresentation &, const BitVec &>(&SDPSolver::solve),
+      py::arg("problem"), py::arg("hash_output"));
+  sdp_solver.def(
+      "solve",
+      py::overload_cast<const SymRepresentation &, const std::unordered_map<int, bool> &>(
+          &SDPSolver::solve),
+      py::arg("problem"), py::arg("bit_assignments"));
+  sdp_solver.def("solver_name", &SDPSolver::solverName);
+  sdp_solver.def("mixing_method", &SDPSolver::mixingMethod, py::arg("cnf"));
+  sdp_solver.def("randomized_rounding_trial", &SDPSolver::randomizedRoundingTrial,
+                 py::arg("sdp_embedding"));
 }
 
 }  // end namespace preimage

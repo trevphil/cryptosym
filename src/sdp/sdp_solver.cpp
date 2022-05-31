@@ -13,7 +13,10 @@
 namespace preimage {
 
 SDPSolver::SDPSolver(unsigned int rounding_trials)
-    : Solver(), num_rounding_trials_(rounding_trials), n_(0), m_(0), k_(0) {}
+    : Solver(), num_rounding_trials_(rounding_trials), n_(0), m_(0), k_(0) {
+  v_ = Eigen::MatrixXf(0, 0);
+  z_ = Eigen::MatrixXf(0, 0);
+}
 
 SDPSolver::~SDPSolver() {}
 
@@ -48,6 +51,29 @@ void SDPSolver::initialize(const CNF &cnf) {
     }
     z_.row(j) -= v_.row(0);
   }
+}
+
+Eigen::MatrixXf SDPSolver::mixingMethod(const CNF &cnf) {
+  if (cnf.num_vars == 0 || cnf.num_clauses == 0) {
+    throw std::runtime_error("Cannot run SDP on empty CNF");
+  }
+
+  initialize(cnf);
+
+  int iter = 0;
+  float eps = 1e-4;
+
+  while (true) {
+    const float delta = applyMixingKernel(cnf);
+    if (iter > 0 && delta < eps) break;
+    if (iter == 0) eps *= delta;
+    ++iter;
+    if (config::verbose) {
+      printf("Iteration %d, delta = %.4f\t(eps = %.4f)\n", iter, delta, eps);
+    }
+  }
+
+  return v_;
 }
 
 float SDPSolver::applyMixingKernel(const CNF &cnf) {
@@ -113,20 +139,7 @@ std::unordered_map<int, bool> SDPSolver::solve(
     return solution;
   }
 
-  initialize(cnf);
-
-  int iter = 0;
-  float eps = 1e-4;
-
-  while (true) {
-    const float delta = applyMixingKernel(cnf);
-    if (iter > 0 && delta < eps) break;
-    if (iter == 0) eps *= delta;
-    ++iter;
-    if (config::verbose) {
-      printf("Iteration %d, delta = %.4f\t(eps = %.4f)\n", iter, delta, eps);
-    }
-  }
+  v_ = mixingMethod(cnf);
 
   double best_approx_ratio = 0.0;
   std::unordered_map<int, bool> best_assignment;
