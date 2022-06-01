@@ -8,8 +8,13 @@ Distributed under the CC BY-NC-SA 4.0 license
 
 import pytest
 
-import cryptosym
-from cryptosym import ORToolsMIPSolver
+try:
+    import cryptosym
+    from cryptosym import ORToolsMIPSolver
+
+    SKIP_TESTS = False
+except ImportError:
+    SKIP_TESTS = True
 
 HASH_AND_DIFFICULTY = (
     (cryptosym.SymMD5, 12),
@@ -19,6 +24,7 @@ HASH_AND_DIFFICULTY = (
 )
 
 
+@pytest.mark.skipif(SKIP_TESTS, reason="OR-Tools not supported")
 class TestORToolsMIPSolver:
     @classmethod
     def setup_class(cls):

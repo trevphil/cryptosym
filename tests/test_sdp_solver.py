@@ -13,10 +13,10 @@ import cryptosym
 from cryptosym import SDPSolver
 
 HASH_AND_DIFFICULTY = (
-    (cryptosym.SymMD5, 12),
-    (cryptosym.SymRIPEMD160, 12),
-    (cryptosym.SymSHA256, 16),
-    (cryptosym.SymSHA512, 8),
+    (cryptosym.SymMD5, 4),
+    (cryptosym.SymRIPEMD160, 4),
+    (cryptosym.SymSHA256, 4),
+    (cryptosym.SymSHA512, 4),
 )
 
 

@@ -16,10 +16,17 @@ minversion = "6.0"
 [tool.cibuildwheel]
 archs = ["auto64"]
 skip = "pp*"
-test-requires = "pytest,numpy>=1.19"
+before-build = "rm -rf {project}/build"
+test-requires = ["pytest", "numpy>=1.19"]
 test-command = "cd $(mktemp -d) && python -m pytest {project}/tests"
 test-skip = "*_arm64 *_universal2:arm64"
-before-build = "rm -rf {project}/build"
+# Will cause the wheel to be installed with `pip install <wheel_file>[ortools]`
+test-extras = ["ortools"]
+
+[[tool.cibuildwheel.overrides]]
+# OR-Tools does not have a pre-built binary wheel for musllinux
+select = "*musllinux*"
+test-extras = []
 
 [tool.cibuildwheel.windows]
 test-command = "python -m pytest {project}\\tests"

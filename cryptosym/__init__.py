@@ -7,6 +7,10 @@ Distributed under the CC BY-NC-SA 4.0 license
 """
 
 from ._cpp import *  # noqa: F401,F403
-from .ortools_cp_solver import ORToolsCPSolver  # noqa: F401
-from .ortools_mip_solver import ORToolsMIPSolver  # noqa: F401
+
+try:
+    from .ortools_cp_solver import ORToolsCPSolver  # noqa: F401
+    from .ortools_mip_solver import ORToolsMIPSolver  # noqa: F401
+except ImportError:
+    pass
 from .sym_sha512 import SymSHA512  # noqa: F401

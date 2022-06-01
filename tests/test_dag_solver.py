@@ -12,17 +12,17 @@ import cryptosym
 from cryptosym import DAGSolver
 
 HASH_AND_DIFFICULTY = (
-    (cryptosym.SymMD5, 12),
-    (cryptosym.SymRIPEMD160, 12),
-    (cryptosym.SymSHA256, 8),
-    (cryptosym.SymSHA512, 8),
+    (cryptosym.SymMD5, 4),
+    (cryptosym.SymRIPEMD160, 4),
+    (cryptosym.SymSHA256, 4),
+    (cryptosym.SymSHA512, 4),
 )
 
 
 class TestDAGSolver:
     @pytest.mark.parametrize("data", HASH_AND_DIFFICULTY)
     def test_preimage(self, data: tuple[cryptosym.SymHash, int], helpers):
-        cryptosym.utils.seed(37)
+        cryptosym.utils.seed(14)
 
         hash_class, difficulty = data
         hasher = hash_class(64, difficulty=difficulty)
