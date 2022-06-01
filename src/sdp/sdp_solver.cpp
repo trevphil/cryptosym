@@ -67,7 +67,7 @@ Eigen::MatrixXf SDPSolver::mixingMethod(const CNF &cnf) {
   float eps = 1e-4;
 
   while (true) {
-    const float delta = applyMixingKernel(cnf);
+    const float delta = applyMixingKernel();
     if (iter > 0 && delta < eps) break;
     if (iter == 0) eps *= delta;
     ++iter;
@@ -79,7 +79,7 @@ Eigen::MatrixXf SDPSolver::mixingMethod(const CNF &cnf) {
   return v_;
 }
 
-float SDPSolver::applyMixingKernel(const CNF &cnf) {
+float SDPSolver::applyMixingKernel() {
   float delta = 0.0;
 
   for (int i = 1; i <= n_; ++i) {

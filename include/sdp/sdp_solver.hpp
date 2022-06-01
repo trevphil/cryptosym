@@ -48,7 +48,7 @@ class SDPSolver : public Solver {
  protected:
   void initialize(const CNF &cnf);
 
-  float applyMixingKernel(const CNF &cnf);
+  float applyMixingKernel();
 
   unsigned int num_rounding_trials_;
   int n_, m_, k_;
