@@ -16,6 +16,7 @@ SDPSolver::SDPSolver(unsigned int rounding_trials)
     : Solver(), num_rounding_trials_(rounding_trials), n_(0), m_(0), k_(0) {
   v_ = Eigen::MatrixXf(0, 0);
   z_ = Eigen::MatrixXf(0, 0);
+  loss_weights_ = Eigen::VectorXf(0);
 }
 
 SDPSolver::~SDPSolver() {}
@@ -43,6 +44,7 @@ void SDPSolver::initialize(const CNF &cnf) {
   v_.array().colwise() /= norm.array();
 
   z_ = Eigen::MatrixXf::Zero(m_, k_);
+  loss_weights_ = Eigen::VectorXf(m_);
   for (int j = 0; j < m_; ++j) {
     const std::set<int> &clause = cnf.clauses.at(j);
     for (int lit : clause) {
@@ -50,6 +52,7 @@ void SDPSolver::initialize(const CNF &cnf) {
       z_.row(j) += s * v_.row(std::abs(lit));
     }
     z_.row(j) -= v_.row(0);
+    loss_weights_(j) = 1.0 / ((clause.size() << 2) + 1e-7);
   }
 }
 
@@ -83,6 +86,8 @@ float SDPSolver::applyMixingKernel(const CNF &cnf) {
     const Eigen::RowVectorXf v_before = v_.row(i).replicate(1, 1);
 
     const std::vector<int> &referenced_clauses = lit2clauses_[i];
+    if (referenced_clauses.size() == 0) continue;
+
     for (const int signed_index : referenced_clauses) {
       const float s = signed_index < 0 ? -1.0 : 1.0;
       const int j = std::abs(signed_index) - 1;
@@ -93,11 +98,10 @@ float SDPSolver::applyMixingKernel(const CNF &cnf) {
     for (const int signed_index : referenced_clauses) {
       const float s = signed_index < 0 ? -1.0 : 1.0;
       const int j = std::abs(signed_index) - 1;
-      const size_t nj = cnf.clauses.at(j).size();
-      v_.row(i) -= (s / (4.0 * nj)) * z_.row(j);
+      v_.row(i) -= s * loss_weights_(j) * z_.row(j);
     }
     const float v_norm = v_.row(i).norm();
-    v_.row(i) /= v_norm;
+    v_.row(i) /= (v_norm + 1e-7);
 
     for (const int signed_index : referenced_clauses) {
       const float s = signed_index < 0 ? -1.0 : 1.0;

@@ -54,6 +54,7 @@ class SDPSolver : public Solver {
   int n_, m_, k_;
   std::unordered_map<int, std::vector<int>> lit2clauses_;
   Eigen::MatrixXf v_, z_;
+  Eigen::VectorXf loss_weights_;
 };
 
 }  // end namespace preimage
