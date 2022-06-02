@@ -29,7 +29,7 @@ select = "*musllinux*"
 test-extras = []
 
 [tool.cibuildwheel.windows]
-test-command = "python -m pytest {project}\\tests --import-mode importlib"
+test-command = "python -m pytest {project}\\tests --import-mode append"
 
 [tool.cibuildwheel.macos]
 archs = ["x86_64", "universal2"]
