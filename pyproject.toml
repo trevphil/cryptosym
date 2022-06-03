@@ -18,7 +18,7 @@ archs = ["auto64"]
 skip = "pp*"
 before-build = "rm -rf {project}/build"
 test-requires = ["pytest", "numpy>=1.19"]
-test-command = "cd $(mktemp -d) && python -m pytest {project}/tests --import-mode importlib"
+test-command = "pytest {project} --import-mode=importlib --ignore=extern"
 test-skip = "*_arm64 *_universal2:arm64"
 # Will cause the wheel to be installed with `pip install <wheel_file>[ortools]`
 test-extras = ["ortools"]
@@ -27,9 +27,6 @@ test-extras = ["ortools"]
 # OR-Tools does not have a pre-built binary wheel for musllinux
 select = "*musllinux*"
 test-extras = []
-
-[tool.cibuildwheel.windows]
-test-command = "python -m pytest {project}\\tests --import-mode append"
 
 [tool.cibuildwheel.macos]
 archs = ["x86_64", "universal2"]
