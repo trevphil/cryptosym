@@ -12,13 +12,14 @@ profile = "black"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
+norecursedirs = ["extern", "_deps"]
 
 [tool.cibuildwheel]
 archs = ["auto64"]
 skip = "pp*"
 before-build = "rm -rf {project}/build"
 test-requires = ["pytest", "numpy>=1.19"]
-test-command = "pytest {project} --import-mode=importlib --ignore=extern"
+test-command = "pytest {project} --import-mode=importlib -v"
 test-skip = "*_arm64 *_universal2:arm64"
 # Will cause the wheel to be installed with `pip install <wheel_file>[ortools]`
 test-extras = ["ortools"]
