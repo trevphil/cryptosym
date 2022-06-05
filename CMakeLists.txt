@@ -1,7 +1,13 @@
 cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
+if(POLICY CMP0091)
+  cmake_policy(SET CMP0091 NEW)
+endif()
+
 if(APPLE)
   set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "" FORCE)
+elseif(MSVC)
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
@@ -47,6 +53,15 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
   endif()
 endif()
 
+if(MSVC)
+  # Compile static library
+  add_compile_options(
+    $<$<CONFIG:>:/MT>
+    $<$<CONFIG:Debug>:/MTd>
+    $<$<CONFIG:Release>:/MT>
+  )
+endif()
+
 # Project header files
 include_directories(include)
 
@@ -69,7 +84,7 @@ set(NOVALGRIND ON CACHE BOOL "" FORCE)
 set(NOBREAKID ON CACHE BOOL "" FORCE)
 set(ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 set(ENABLE_PYTHON_INTERFACE OFF CACHE BOOL "" FORCE)
-# set(STATICCOMPILE ON CACHE BOOL "" FORCE)
+set(STATICCOMPILE ON CACHE BOOL "" FORCE)
 add_subdirectory(extern/cryptominisat)
 include_directories("${cryptominisat5_BINARY_DIR}/cmsat5-src")
 
@@ -91,7 +106,7 @@ if(CRYPTOSYM_TESTS)
 endif()
 
 # Add all the source files needed to build the library
-add_library(cryptosymlib STATIC
+add_library(cryptosym STATIC
             src/bp/bp_solver.cpp
             src/bp/graph.cpp
             src/bp/node.cpp
@@ -113,23 +128,23 @@ add_library(cryptosymlib STATIC
             src/sdp/sdp_solver.cpp)
 
 if(MSVC)
-  target_compile_options(cryptosymlib PRIVATE /W3 /wd4267)
+  target_compile_options(cryptosym PRIVATE /W3 /wd4267)
 else()
-  target_compile_options(cryptosymlib PRIVATE -Werror -Wall -Wextra)
+  target_compile_options(cryptosym PRIVATE -Werror -Wall -Wextra)
 endif()
 
-target_link_libraries(cryptosymlib cryptominisat5)
+target_link_libraries(cryptosym cryptominisat5)
 
 # Command-line tool
 if(CRYPTOSYM_COMMAND_LINE_TOOL)
   add_executable(main src/main.cpp)
-  target_link_libraries(main PUBLIC cryptosymlib)
+  target_link_libraries(main PUBLIC cryptosym)
 endif()
 
 # Python bindings via PyBind11
 if(CRYPTOSYM_PYTHON_BINDINGS)
   pybind11_add_module(_cpp src/bindings.cpp)
-  target_link_libraries(_cpp PUBLIC cryptosymlib)
+  target_link_libraries(_cpp PUBLIC cryptosym)
 endif()
 
 # C++ tests
@@ -153,7 +168,7 @@ if(CRYPTOSYM_TESTS)
                  tests/test_utils.cpp)
 
   target_link_libraries(unit_tests gtest_main)
-  target_link_libraries(unit_tests cryptosymlib)
+  target_link_libraries(unit_tests cryptosym)
   target_link_libraries(unit_tests cryptopp-static)
 
   include(GoogleTest)
