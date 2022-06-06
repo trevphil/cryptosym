@@ -1,6 +1,8 @@
-1. Documentation (ReadTheDocs)
-2. README
-3. Enable Ctrl+C and/or timeout feature for long calls to solve()
+1. Verify that build works on all platforms, both from source and wheel
+2. ExecutionContext
+3. Documentation (ReadTheDocs)
+4. README
+5. Enable Ctrl+C and/or timeout feature for long calls to solve()
 
 ####################################
 ####### Miscellaneous notes ########

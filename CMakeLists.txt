@@ -7,7 +7,7 @@ endif()
 if(APPLE)
   set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "" FORCE)
 elseif(MSVC)
-  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "" FORCE)
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
@@ -33,7 +33,7 @@ include(GNUInstallDirs)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
-set(BUILD_SHARED_LIBS OFF)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 if(UNIX)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "" FORCE)
 endif()
@@ -55,11 +55,7 @@ endif()
 
 if(MSVC)
   # Compile static library
-  add_compile_options(
-    $<$<CONFIG:>:/MT>
-    $<$<CONFIG:Debug>:/MTd>
-    $<$<CONFIG:Release>:/MT>
-  )
+  include(ForceStaticLibs)
 endif()
 
 # Project header files
