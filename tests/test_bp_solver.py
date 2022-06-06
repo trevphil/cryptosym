@@ -15,7 +15,6 @@ HASH_AND_DIFFICULTY = (
     (cryptosym.SymMD5, 3),
     (cryptosym.SymRIPEMD160, 2),
     (cryptosym.SymSHA256, 1),
-    (cryptosym.SymSHA512, 1),
 )
 
 
